@@ -1,4 +1,5 @@
-import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import type { CollectionAfterOperationHook, CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import { APIError } from 'payload'
 
 import { authenticated } from '../access/authenticated'
 import { isAdmin, isAdminField, isAdminOrSelf } from '../access/users'
@@ -16,6 +17,31 @@ const firstUserIsAdmin: CollectionBeforeChangeHook = async ({ data, operation, r
   if (totalDocs === 0) data.role = 'admin'
 
   return data
+}
+
+// Sem nenhum administrador, ninguém mais cuida dos usuários e só dá para recuperar pelo banco.
+// Confere depois da operação inteira, ainda dentro da transação: em lote, o Payload processa os
+// documentos em paralelo e só guarda o erro de cada um, então uma checagem por documento deixaria
+// passar "apagar os dois últimos administradores de uma vez". O erro aqui desfaz tudo.
+const keepOneAdmin: CollectionAfterOperationHook<'users'> = async ({ operation, req, result }) => {
+  if (!['delete', 'deleteByID', 'update', 'updateByID'].includes(operation)) return result
+
+  const { totalDocs } = await req.payload.count({
+    collection: 'users',
+    where: { role: { equals: 'admin' } },
+    overrideAccess: true,
+    req,
+  })
+  if (totalDocs === 0) {
+    throw new APIError(
+      'O site precisa de pelo menos um administrador. Antes, transforme outra conta em administrador.',
+      400,
+      null,
+      true,
+    )
+  }
+
+  return result
 }
 
 export const Users: CollectionConfig = {
@@ -49,6 +75,7 @@ export const Users: CollectionConfig = {
     },
   },
   hooks: {
+    afterOperation: [keepOneAdmin],
     beforeChange: [firstUserIsAdmin],
   },
   fields: [

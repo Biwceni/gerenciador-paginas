@@ -13,7 +13,9 @@ const storagePublicURL = process.env.S3_PUBLIC_URL ? new URL(process.env.S3_PUBL
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+  // Sem includeSubDomains por enquanto: no domínio principal do cliente, ele obrigaria HTTPS em
+  // todos os subdomínios dele por 2 anos. Decidir na fase 5, já sabendo qual é o domínio.
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
   // SAMEORIGIN e não DENY: a prévia do editor (Puck, fase 2) roda em iframe do mesmo domínio.
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
 ]

@@ -18,6 +18,7 @@ Abra http://localhost:3000/admin e crie o primeiro usuário. Ele vira **administ
 
 - Sem **nenhuma** variável `S3_*`, as fotos ficam na pasta local `media/`. Com só algumas preenchidas, ou na Vercel sem todas, o app recusa subir e diz quais faltam.
 - Sem `RESEND_API_KEY`, o e-mail de recuperação de senha aparece só no terminal.
+- Para testar no computador, use `npm run dev`. O build de produção (`npm run build` e `npm start`) usa cookie de sessão seguro, que o navegador só guarda com HTTPS: em `http://localhost` o login não se mantém.
 - O banco muda **só por migrações**, também em desenvolvimento (`push: false`). Depois de mudar coleções ou globals: `npm run payload -- migrate:create <nome>` e `npm run payload -- migrate`. Rode `migrate` também na primeira vez, antes do `npm run dev`.
 
 ## Comandos
