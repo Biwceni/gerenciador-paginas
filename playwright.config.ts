@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-import 'dotenv/config'
+import './tests/useTestDatabase'
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -35,7 +35,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    reuseExistingServer: true,
+    // Sobe um servidor próprio já apontado para o banco de testes. Um `npm run dev` aberto
+    // estaria no banco de dev, então ele não é reaproveitado (pare-o antes de rodar).
+    reuseExistingServer: false,
     url: 'http://localhost:3000',
   },
 })

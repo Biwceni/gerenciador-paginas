@@ -124,6 +124,10 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * Administradores também cuidam dos usuários. Editores cuidam do site.
+   */
+  role: 'admin' | 'editor';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -266,6 +270,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  role?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

@@ -6,6 +6,18 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
+// Só o bucket deste ambiente (dev ou produção): `*.supabase.co` deixaria qualquer projeto
+// Supabase usar a otimização de imagens do site.
+const storagePublicURL = process.env.S3_PUBLIC_URL ? new URL(process.env.S3_PUBLIC_URL) : null
+
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+  // SAMEORIGIN e não DENY: a prévia do editor (Puck, fase 2) roda em iframe do mesmo domínio.
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+]
+
 const nextConfig: NextConfig = {
   // Não gerar AGENTS.md: o repositório guarda só código e o README.
   agentRules: false,
@@ -18,13 +30,18 @@ const nextConfig: NextConfig = {
         pathname: '/media/**',
       },
     ],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-    ],
+    remotePatterns: storagePublicURL
+      ? [
+          {
+            protocol: 'https',
+            hostname: storagePublicURL.hostname,
+            pathname: `${storagePublicURL.pathname.replace(/\/$/, '')}/**`,
+          },
+        ]
+      : [],
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }]
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

@@ -8,7 +8,6 @@
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "ci": "npm run payload -- migrate && npm run build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
-    "devsafe": "rm -rf .next && cross-env NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
@@ -53,6 +52,7 @@
     "vitest": "4.0.18"
   },
   "engines": {
-    "node": ">=24.22.1"
+    "node": ">=24.22.1",
+    "npm": ">=11"
   }
 }

@@ -30,7 +30,8 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    mimeTypes: ['image/*'],
+    // Lista fechada: `image/*` aceitaria SVG, que pode carregar script e fica público no bucket.
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'],
     focalPoint: true,
     imageSizes: [
       { name: 'thumbnail', width: 400 },

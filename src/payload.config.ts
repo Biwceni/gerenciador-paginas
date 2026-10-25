@@ -15,8 +15,26 @@ import { getServerURL, PRODUCT_NAME } from './lib/site'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// Sem as variáveis do Storage (ex.: rodando local sem Supabase), as fotos ficam na pasta /media.
-const storageEnabled = Boolean(process.env.S3_BUCKET)
+const STORAGE_ENV = [
+  'S3_BUCKET',
+  'S3_ENDPOINT',
+  'S3_REGION',
+  'S3_ACCESS_KEY_ID',
+  'S3_SECRET_ACCESS_KEY',
+  'S3_PUBLIC_URL',
+] as const
+const missingStorageEnv = STORAGE_ENV.filter((name) => !process.env[name])
+
+// Sem nenhuma variável do Storage, só em desenvolvimento, as fotos ficam na pasta /media.
+// Na Vercel essa pasta é somente leitura e some a cada deploy, então lá todas são obrigatórias.
+// Configuração pela metade gera endereços de foto quebrados, então também é erro.
+if (
+  missingStorageEnv.length > 0 &&
+  (process.env.VERCEL || missingStorageEnv.length < STORAGE_ENV.length)
+) {
+  throw new Error(`Faltam variáveis do Storage: ${missingStorageEnv.join(', ')}`)
+}
+const storageEnabled = missingStorageEnv.length === 0
 
 export default buildConfig({
   serverURL: getServerURL(),
@@ -63,6 +81,9 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL || '',
     },
     migrationDir: path.resolve(dirname, 'migrations'),
+    // O banco só muda por migração, também em desenvolvimento: o Supabase de dev é o mesmo
+    // das prévias da Vercel, que rodam migrações, e misturar os dois modos corrompe o histórico.
+    push: false,
   }),
   // Sem RESEND_API_KEY, o Payload só escreve os e-mails no terminal (bom para desenvolver).
   email: process.env.RESEND_API_KEY
@@ -73,6 +94,12 @@ export default buildConfig({
       })
     : undefined,
   sharp,
+  // Com envio direto ao Storage, este é o único limite que o servidor confere antes de assinar o envio.
+  upload: {
+    limits: {
+      fileSize: 10_000_000,
+    },
+  },
   plugins: [
     s3Storage({
       enabled: storageEnabled,
