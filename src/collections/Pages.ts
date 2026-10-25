@@ -91,6 +91,18 @@ export const Pages: CollectionConfig = {
       },
     },
     {
+      // Marca as páginas de teste do `npm run seed`, para o `recriar` apagar só elas.
+      // Só o script (com `overrideAccess`) escreve; pela API o campo é recusado.
+      name: 'createdBySeed',
+      type: 'checkbox',
+      defaultValue: false,
+      access: {
+        create: () => false,
+        update: () => false,
+      },
+      admin: { hidden: true },
+    },
+    {
       name: 'seo',
       type: 'group',
       label: 'Como aparece no Google',

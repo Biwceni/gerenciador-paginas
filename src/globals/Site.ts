@@ -39,16 +39,22 @@ type SiteData = {
  * Ao publicar, copia as fontes escolhidas do Google Fonts para o nosso Storage e guarda o CSS
  * pronto: o site não depende do Google nem manda o endereço do visitante para lá (LGPD).
  * Só refaz quando as fontes mudam. Rascunho não baixa nada.
+ *
+ * `fontFaces` e `fontKey` só são escritos aqui: o que vier na requisição é descartado (o campo
+ * escondido no painel ainda é aceito pela API, e o CSS vai para a página). O layout também
+ * escapa o CSS, como segunda defesa.
  */
-const prepareSiteFonts: GlobalBeforeChangeHook = async ({ data, originalDoc, req }) => {
+export const prepareSiteFonts: GlobalBeforeChangeHook = async ({ data, originalDoc, req }) => {
   const site = data as SiteData
+  const previous = originalDoc as SiteData | undefined
+  site.fontFaces = previous?.fontFaces ?? null
+  site.fontKey = previous?.fontKey ?? null
   if (site._status !== 'published') return data
 
   const headings = site.fonts?.headings?.trim() || ''
   const body = site.fonts?.body?.trim() || ''
   const key = `${headings}|${body}`
-  const previous = originalDoc as SiteData | undefined
-  if (key === previous?.fontKey && (site.fontFaces ?? previous?.fontFaces)) return data
+  if (key === previous?.fontKey && previous?.fontFaces) return data
 
   try {
     const { css, resolved } = await prepareFonts([headings, body])

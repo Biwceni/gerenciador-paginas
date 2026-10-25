@@ -157,6 +157,7 @@ export interface Page {
     | number
     | boolean
     | null;
+  createdBySeed?: boolean | null;
   /**
    * Opcional. Em branco, o site usa o nome da página e o começo do texto dela.
    */
@@ -335,6 +336,7 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   campaign?: T;
   content?: T;
+  createdBySeed?: T;
   seo?:
     | T
     | {

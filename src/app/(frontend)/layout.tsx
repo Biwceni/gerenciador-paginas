@@ -4,6 +4,7 @@ import React from 'react'
 import { themeStyle } from '@/components/site/theme'
 import { getSite, populatedMedia } from '@/lib/content'
 import { FALLBACK_SITE_NAME, getServerURL, isIndexable } from '@/lib/site'
+import { safeStyleText } from '@/lib/theme'
 
 import './styles.css'
 
@@ -35,7 +36,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="pt-BR">
       <head>
         {/* CSS montado pelo servidor ao publicar as configurações, com as fontes no nosso Storage. */}
-        {site.fontFaces && <style dangerouslySetInnerHTML={{ __html: site.fontFaces }} />}
+        {site.fontFaces && (
+          <style dangerouslySetInnerHTML={{ __html: safeStyleText(site.fontFaces) }} />
+        )}
       </head>
       <body style={themeStyle(site)}>
         <a className="skip-link" href="#conteudo">

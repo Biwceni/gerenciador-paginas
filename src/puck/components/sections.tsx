@@ -6,7 +6,7 @@ import { type ContentMetadata, getPhoto } from '../references'
 import type { CallToActionProps, GalleryProps, HeroProps, TextImageProps } from '../schema'
 import { SectionButton } from './Button'
 
-// Desenho das seções conforme o protótipo (docs/prototipo/prototipo-meu-site.html).
+// Desenho das seções conforme o protótipo navegável.
 
 type WithMetadata<P> = P & { metadata: ContentMetadata }
 

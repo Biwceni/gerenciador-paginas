@@ -55,3 +55,12 @@ export function instagramLink(
   }
   return null
 }
+
+// Página do site: começa com uma barra só ("//outro-site.com" levaria para fora).
+const INTERNAL_PATH = /^\/(?!\/)/
+
+/** Como desenhar um endereço: página do site, link de fora ou nada (endereço inseguro). */
+export function linkKind(href: string): 'internal' | 'external' | null {
+  if (INTERNAL_PATH.test(href)) return 'internal'
+  return isSafeURL(href) ? 'external' : null
+}

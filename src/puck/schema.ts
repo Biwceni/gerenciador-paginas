@@ -12,7 +12,7 @@ import { isSafeURL } from '../lib/links'
  * Os textos aceitam vazio: um rascunho pode ter seções pela metade. O que é obrigatório para ir ao ar
  * fica nas checagens do botão Publicar (fase 2).
  *
- * As seções seguem o protótipo (docs/prototipo). As demais (destaques, depoimentos, perguntas,
+ * As seções seguem o protótipo navegável. As demais (destaques, depoimentos, perguntas,
  * contato, formulário e links) entram na fase 2, com a ficha de cada uma.
  */
 export const CONTENT_VERSION = 1

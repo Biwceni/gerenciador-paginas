@@ -20,6 +20,7 @@ Abra http://localhost:3000/admin e crie o primeiro usuário. Ele vira **administ
 - Sem `RESEND_API_KEY`, o e-mail de recuperação de senha aparece só no terminal.
 - Para testar no computador, use `npm run dev`. O build de produção (`npm run build` e `npm start`) usa cookie de sessão seguro, que o navegador só guarda com HTTPS: em `http://localhost` o login não se mantém.
 - O banco muda **só por migrações**, também em desenvolvimento (`push: false`). Depois de mudar coleções ou globals: `npm run payload -- migrate:create <nome>` e `npm run payload -- migrate`. Rode `migrate` também na primeira vez, antes do `npm run dev`.
+- Páginas de teste: `npm run seed` só roda com `SEED_PERMITIDO=1` no `.env` do computador (nunca na Vercel) e nunca na produção. O `recriar` apaga só as páginas criadas pelo script, mas regrava configurações, cabeçalho e rodapé. O seed roda fora do Next: com `npm run dev` o site já mostra as mudanças; num build (`npm start` ou Vercel), elas aparecem na próxima publicação pelo painel ou no próximo deploy.
 
 ## Comandos
 

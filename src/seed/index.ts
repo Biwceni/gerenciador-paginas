@@ -4,27 +4,17 @@ import type { Page } from '../payload-types'
 import { CONTENT_VERSION, type PageComponent, type PageContent } from '../puck/schema'
 
 // Páginas de teste da fase 1, até existir o editor visual. Seguem o modelo "Café, Aconchegante" do
-// protótipo (docs/prototipo), com Lorem Ipsum no conteúdo e nomes de página, menu e botões legíveis.
+// protótipo navegável, com Lorem Ipsum no conteúdo e nomes de página, menu e botões legíveis.
 //
 // Sem `recreate`, só cria o que ainda não existe: rodar de novo não apaga nem sobrescreve nada que
-// alguém mudou no painel. Com `recreate` (npm run seed -- recriar), apaga as páginas de teste e
-// regrava as configurações, o cabeçalho e o rodapé.
+// alguém mudou no painel. Com `recreate` (npm run seed -- recriar), apaga as páginas criadas pelo
+// script (marcadas com `createdBySeed`) e regrava as configurações, o cabeçalho e o rodapé.
+// Quem chama confere antes se o banco pode receber dados de teste (`src/seed/run.ts`).
 
 const L_S = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
 const L_M =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
 const HERO_TITLE = 'Lorem ipsum dolor sit amet, consectetur'
-
-// Endereços que o seed cria ou já criou (inclusive os da primeira versão), para o `--recriar`.
-const SEED_SLUGS = [
-  'inicio',
-  'sobre',
-  'nossos-cafes',
-  'contato',
-  'novidades',
-  'servicos',
-  'em-breve',
-]
 
 const content = (items: PageComponent[]): PageContent => ({
   version: CONTENT_VERSION,
@@ -203,7 +193,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
   if (recreate) {
     const { docs } = await payload.find({
       collection: 'pages',
-      where: { slug: { in: SEED_SLUGS } },
+      where: { createdBySeed: { equals: true } },
       draft: true,
       depth: 0,
       pagination: false,
@@ -238,6 +228,11 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
       overrideAccess: true,
     })
     let doc: Page | undefined = docs[0]
+    if (doc && !doc.createdBySeed) {
+      payload.logger.info(
+        `Já existe uma página em /${page.slug} que não é de teste: não foi mexida.`,
+      )
+    }
     if (!doc) {
       doc = await payload.create({
         collection: 'pages',
@@ -246,6 +241,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
           slug: page.slug,
           content: content(page.items({ ids, photo })),
           _status: page.status,
+          createdBySeed: true,
         },
         draft: page.status === 'draft',
         overrideAccess: true,
@@ -288,7 +284,8 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
   }
 
   const header = await payload.findGlobal({ slug: 'header', draft: true, overrideAccess: true })
-  if (recreate || !header.items?.length) {
+  // Só grava se o cabeçalho nunca foi salvo (um menu vazio publicado de propósito fica como está).
+  if (recreate || !header.updatedAt) {
     await payload.updateGlobal({
       slug: 'header',
       data: {
@@ -309,7 +306,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
   }
 
   const footer = await payload.findGlobal({ slug: 'footer', draft: true, overrideAccess: true })
-  if (recreate || !footer.text) {
+  if (recreate || !footer.updatedAt) {
     await payload.updateGlobal({
       slug: 'footer',
       data: {
