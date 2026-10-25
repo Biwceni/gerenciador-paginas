@@ -1,4 +1,8 @@
-import type { CollectionAfterOperationHook, CollectionBeforeChangeHook, CollectionConfig } from 'payload'
+import type {
+  CollectionAfterOperationHook,
+  CollectionBeforeChangeHook,
+  CollectionConfig,
+} from 'payload'
 import { APIError } from 'payload'
 
 import { authenticated } from '../access/authenticated'
