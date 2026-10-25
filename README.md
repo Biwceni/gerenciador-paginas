@@ -29,9 +29,12 @@ Abra http://localhost:3000/admin e crie o primeiro usuário. Ele vira **administ
 | `npm run build`                            | Build de produção                                                    |
 | `npm run ci`                               | Roda as migrações e depois o build (usado na Vercel)                 |
 | `npm run payload -- migrate:create <nome>` | Cria uma migração depois de mudar coleções ou globals                |
+| `npm run seed`                             | Cria as páginas de teste, o menu, o rodapé e as configurações        |
+| `npm run seed -- recriar`                  | Apaga as páginas de teste e grava tudo de novo                       |
 | `npm run generate:types`                   | Atualiza `src/payload-types.ts`                                      |
 | `npm run generate:importmap`               | Atualiza o mapa de componentes do painel                             |
 | `npm run lint` / `npm run typecheck`       | Checagens                                                            |
+| `npm run test:unit`                        | Testes sem banco (endereços, cores, links, formato do conteúdo)      |
 | `npm run test:int` / `npm run test:e2e`    | Testes (usam o banco de `TEST_DATABASE_URL`, nunca o `DATABASE_URL`) |
 
 ## Configurar os serviços
@@ -42,6 +45,7 @@ Abra http://localhost:3000/admin e crie o primeiro usuário. Ele vira **administ
 2. **Storage:** crie um bucket **público** (ex.: `fotos`). Em _Edit bucket_, ligue **Restrict file upload size** com **10 MB** e, em **Allowed MIME types**, coloque `image/jpeg, image/png, image/webp, image/avif, image/gif`. Esse limite vale mesmo se a chave S3 ou um link de envio vazar.
 3. **S3:** em _Project Settings > Storage > S3 Connection_, gere uma chave de acesso e preencha `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID` e `S3_SECRET_ACCESS_KEY`. `S3_BUCKET` é o nome do bucket.
 4. `S3_PUBLIC_URL` = `https://<projeto>.supabase.co/storage/v1/object/public/<bucket>`.
+5. **Fontes:** crie outro bucket **público**, `fontes`, com **Restrict file upload size** em **2 MB** e **Allowed MIME types** só com `font/woff2`. Ao publicar as configurações, o servidor copia as fontes escolhidas do Google Fonts para ele (o visitante não baixa nada do Google). Preencha `S3_FONTS_BUCKET=fontes` e `S3_FONTS_PUBLIC_URL` = `https://<projeto>.supabase.co/storage/v1/object/public/fontes`; a chave S3 é a mesma.
 
 As fotos vão do navegador direto para o Storage (o limite da Vercel é ~4,5 MB por envio) e o site lê pelo endereço público do bucket.
 

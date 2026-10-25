@@ -67,8 +67,9 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
+    pages: Page;
     media: Media;
+    users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,8 +77,9 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -87,8 +89,16 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    site: Site;
+    header: Header;
+    footer: Footer;
+  };
+  globalsSelect: {
+    site: SiteSelect<false> | SiteSelect<true>;
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -119,34 +129,51 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "pages".
  */
-export interface User {
+export interface Page {
   id: number;
-  name?: string | null;
   /**
-   * Administradores também cuidam dos usuários. Editores cuidam do site.
+   * Aparece no menu, na aba do navegador e no Google. Ex.: "Quem somos".
    */
-  role: 'admin' | 'editor';
+  title: string;
+  /**
+   * Fim do endereço no navegador. Ex.: "quem-somos" fica seusite.com.br/quem-somos. Deixe vazio para criar a partir do nome da página.
+   */
+  slug: string;
+  /**
+   * Esconde o menu e deixa o rodapé numa linha só, para quem chega por um anúncio não sair da página.
+   */
+  campaign?: boolean | null;
+  /**
+   * Montado pelo editor visual. Por enquanto, as páginas de teste vêm do script de exemplo.
+   */
+  content:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Opcional. Em branco, o site usa o nome da página e o começo do texto dela.
+   */
+  seo?: {
+    title?: string | null;
+    /**
+     * Uma ou duas frases sobre a página. Até 160 letras.
+     */
+    description?: string | null;
+    /**
+     * Aparece quando alguém manda o link da página no WhatsApp ou nas redes.
+     */
+    image?: (number | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -192,6 +219,37 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name?: string | null;
+  /**
+   * Administradores também cuidam dos usuários. Editores cuidam do site.
+   */
+  role: 'admin' | 'editor';
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -215,12 +273,16 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'pages';
+        value: number | Page;
       } | null)
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -266,28 +328,23 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "pages_select".
  */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  role?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  resetPasswordRequestedAt?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  campaign?: T;
+  content?: T;
+  seo?:
     | T
     | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
+        title?: T;
+        description?: T;
+        image?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -335,6 +392,31 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -372,6 +454,250 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site".
+ */
+export interface Site {
+  id: number;
+  name: string;
+  /**
+   * Uma frase curta sobre o negócio. A primeira frase também vai no título da página inicial no Google.
+   */
+  tagline?: string | null;
+  /**
+   * Sem logo, o site usa as iniciais do nome.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * A página que abre quando alguém entra no endereço do site. Precisa estar publicada.
+   */
+  homepage?: (number | null) | Page;
+  /**
+   * A cor do texto dos botões e do rodapé é escolhida sozinha, para ficar fácil de ler.
+   */
+  colors: {
+    primary: string;
+    background: string;
+    surface: string;
+    text: string;
+    footer: string;
+  };
+  /**
+   * A fonte é copiada do Google Fonts para o seu site quando você publica.
+   */
+  fonts?: {
+    /**
+     * Nome de uma fonte do Google Fonts, como "Poppins" ou "Lora". Em branco, usa a fonte padrão.
+     */
+    headings?: string | null;
+    /**
+     * Nome de uma fonte do Google Fonts, como "Poppins" ou "Lora". Em branco, usa a fonte padrão.
+     */
+    body?: string | null;
+  };
+  fontFaces?: string | null;
+  fontKey?: string | null;
+  /**
+   * Aparece no rodapé e nas seções de contato de todas as páginas.
+   */
+  contact?: {
+    /**
+     * Com DDD. Ex.: (31) 99999-0000. Os botões de WhatsApp usam este número.
+     */
+    whatsapp?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+    /**
+     * Ex.: Seg a sáb, das 7h às 19h.
+     */
+    hours?: string | null;
+  };
+  /**
+   * Deixe em branco o que não usa.
+   */
+  social?: {
+    /**
+     * O perfil, como @seunegocio.
+     */
+    instagram?: string | null;
+    facebook?: string | null;
+    youtube?: string | null;
+    tiktok?: string | null;
+    linkedin?: string | null;
+  };
+  /**
+   * Usada quando uma página não tem frase própria. Até 160 letras.
+   */
+  seoDescription?: string | null;
+  /**
+   * Aparece quando alguém manda o link do site no WhatsApp ou nas redes. Cada página pode ter a sua.
+   */
+  shareImage?: (number | null) | Media;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Topo de todas as páginas: logo, menu e um botão de destaque.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  /**
+   * Itens que levam para páginas que não estão no ar ficam escondidos.
+   */
+  items?:
+    | {
+        label: string;
+        link?: {
+          kind?: ('page' | 'whatsapp' | 'url') | null;
+          page?: (number | null) | Page;
+          /**
+           * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
+           */
+          url?: string | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Opcional. Ex.: "Fale conosco".
+   */
+  button?: {
+    label?: string | null;
+    link?: {
+      kind?: ('page' | 'whatsapp' | 'url') | null;
+      page?: (number | null) | Page;
+      /**
+       * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
+       */
+      url?: string | null;
+    };
+  };
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Fim de todas as páginas. Telefone, e-mail, endereço e horário vêm das configurações do site.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  text?: string | null;
+  showMenu?: boolean | null;
+  showContact?: boolean | null;
+  showSocial?: boolean | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site_select".
+ */
+export interface SiteSelect<T extends boolean = true> {
+  name?: T;
+  tagline?: T;
+  logo?: T;
+  homepage?: T;
+  colors?:
+    | T
+    | {
+        primary?: T;
+        background?: T;
+        surface?: T;
+        text?: T;
+        footer?: T;
+      };
+  fonts?:
+    | T
+    | {
+        headings?: T;
+        body?: T;
+      };
+  fontFaces?: T;
+  fontKey?: T;
+  contact?:
+    | T
+    | {
+        whatsapp?: T;
+        phone?: T;
+        email?: T;
+        address?: T;
+        hours?: T;
+      };
+  social?:
+    | T
+    | {
+        instagram?: T;
+        facebook?: T;
+        youtube?: T;
+        tiktok?: T;
+        linkedin?: T;
+      };
+  seoDescription?: T;
+  shareImage?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        label?: T;
+        link?:
+          | T
+          | {
+              kind?: T;
+              page?: T;
+              url?: T;
+            };
+        id?: T;
+      };
+  button?:
+    | T
+    | {
+        label?: T;
+        link?:
+          | T
+          | {
+              kind?: T;
+              page?: T;
+              url?: T;
+            };
+      };
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  text?: T;
+  showMenu?: T;
+  showContact?: T;
+  showSocial?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -9,7 +9,11 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { Media } from './collections/Media'
+import { Pages } from './collections/Pages'
 import { Users } from './collections/Users'
+import { Footer } from './globals/Footer'
+import { Header } from './globals/Header'
+import { Site } from './globals/Site'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
 
 const filename = fileURLToPath(import.meta.url)
@@ -35,6 +39,17 @@ if (
   throw new Error(`Faltam variáveis do Storage: ${missingStorageEnv.join(', ')}`)
 }
 const storageEnabled = missingStorageEnv.length === 0
+
+// Bucket das fontes do site (copiadas do Google ao publicar as configurações). Mesma regra:
+// obrigatório na Vercel; no computador, sem as duas variáveis, o site usa os arquivos do Google.
+const FONT_STORAGE_ENV = ['S3_FONTS_BUCKET', 'S3_FONTS_PUBLIC_URL'] as const
+const missingFontEnv = FONT_STORAGE_ENV.filter((name) => !process.env[name])
+if (
+  missingFontEnv.length > 0 &&
+  (process.env.VERCEL || missingFontEnv.length < FONT_STORAGE_ENV.length)
+) {
+  throw new Error(`Faltam variáveis do Storage das fontes: ${missingFontEnv.join(', ')}`)
+}
 
 export default buildConfig({
   serverURL: getServerURL(),
@@ -70,7 +85,8 @@ export default buildConfig({
       },
     },
   },
-  collections: [Users, Media],
+  collections: [Pages, Media, Users],
+  globals: [Site, Header, Footer],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
