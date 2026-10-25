@@ -7,6 +7,8 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  // Não gerar AGENTS.md: o repositório guarda só código e o README.
+  agentRules: false,
   images: {
     localPatterns: [
       {
