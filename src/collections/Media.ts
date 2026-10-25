@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
+import { revalidateOnChange, revalidateOnDelete } from '../hooks/revalidate'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -15,7 +16,13 @@ export const Media: CollectionConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Site',
     useAsTitle: 'alt',
+  },
+  // A foto e o texto alternativo aparecem nas páginas já publicadas.
+  hooks: {
+    afterChange: [revalidateOnChange],
+    afterDelete: [revalidateOnDelete],
   },
   fields: [
     {

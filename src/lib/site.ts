@@ -13,3 +13,9 @@ export function getServerURL(): string {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
   return 'http://localhost:3000'
 }
+
+/** Só o site em produção aparece no Google; prévias e o computador ficam de fora. */
+export const isIndexable = (): boolean => process.env.VERCEL_ENV === 'production'
+
+// Nome usado no site enquanto as configurações não foram publicadas.
+export const FALLBACK_SITE_NAME = 'Meu site'

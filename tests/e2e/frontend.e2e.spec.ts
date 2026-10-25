@@ -1,13 +1,19 @@
 import { test, expect } from '@playwright/test'
 
+// O banco de testes começa vazio: sem página inicial publicada, o início mostra um aviso, não 404.
 test.describe('Frontend', () => {
-  test('can go on homepage', async ({ page }) => {
-    await page.goto('http://localhost:3000')
+  test('início abre mesmo sem página inicial', async ({ page }) => {
+    const response = await page.goto('http://localhost:3000')
 
-    await expect(page).toHaveTitle(/Em construção/)
+    expect(response?.status()).toBe(200)
+    await expect(page.locator('h1').first()).toHaveText('Site em preparação')
+  })
 
-    const heading = page.locator('h1').first()
+  test('endereço que não existe mostra a página de erro do site', async ({ page }) => {
+    const response = await page.goto('http://localhost:3000/nao-existe')
 
-    await expect(heading).toHaveText('Seu site está em construção')
+    expect(response?.status()).toBe(404)
+    await expect(page.locator('h1').first()).toHaveText('Página não encontrada')
+    await expect(page.getByRole('link', { name: 'Ir para o início' })).toBeVisible()
   })
 })
