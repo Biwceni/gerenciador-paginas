@@ -1,0 +1,17 @@
+// Marca do produto no painel (provisória até existir identidade visual).
+.gp-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .gp-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.gp-logo__name {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--theme-text);
+}
