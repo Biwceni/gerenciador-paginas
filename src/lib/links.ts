@@ -56,8 +56,10 @@ export function instagramLink(
   return null
 }
 
-// Página do site: começa com uma barra só ("//outro-site.com" levaria para fora).
-const INTERNAL_PATH = /^\/(?!\/)/
+// Página do site: começa com uma barra só e não tem barra invertida nem espaço. O navegador trata
+// "\" como "/" e descarta tabulação e quebra de linha, então "//outro-site.com",
+// "/\outro-site.com" e "/<tab>/outro-site.com" levariam para fora.
+const INTERNAL_PATH = /^\/(?![/\\])[^\s\\]*$/
 
 /** Como desenhar um endereço: página do site, link de fora ou nada (endereço inseguro). */
 export function linkKind(href: string): 'internal' | 'external' | null {
