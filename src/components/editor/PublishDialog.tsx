@@ -47,7 +47,7 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
   )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ addedToMenu: boolean } | null>(null)
+  const [done, setDone] = useState<{ addedToMenu: boolean; menuError?: string } | null>(null)
 
   const { mediaIds, pageIds } = useMemo(() => collectReferences(data), [data])
   const weakPhotos = mediaIds.flatMap((id) => {
@@ -80,16 +80,25 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
         if (alt) onPhotoChanged((await updatePhotoAlt(apiRoute, photo.id, alt)).doc)
       }
       await onPublish()
-      const menuAdded = menu.kind === 'can-add' && addToMenu
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Não deu para publicar.')
+      setBusy(false)
+      return
+    }
+    // A página já está no ar: se o menu falhar, é só um aviso na tela de "Pronto".
+    try {
       if (menu.kind === 'can-add' && addToMenu) {
         await addMenuItem(apiRoute, menu.items, {
           label: page.title.slice(0, 30),
           link: { kind: 'page', page: pageId },
         })
-      }
-      setDone({ addedToMenu: menuAdded })
+        setDone({ addedToMenu: true })
+      } else setDone({ addedToMenu: false })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Não deu para publicar.')
+      setDone({
+        addedToMenu: false,
+        menuError: caught instanceof Error ? caught.message : 'erro desconhecido',
+      })
     } finally {
       setBusy(false)
     }
@@ -104,6 +113,11 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
           Quem acessar <b>{address}</b> já vê a versão nova.
           {done.addedToMenu && ' Ela também entrou no menu.'}
         </p>
+        {done.menuError && (
+          <p className="ed-hint ed-hint--warn">
+            Não deu para colocar a página no menu ({done.menuError}). Coloque pelo Cabeçalho.
+          </p>
+        )}
         <div className="ed-row">
           <a className="ed-btn ed-btn--primary" href={page.path} rel="noopener" target="_blank">
             Ver no site

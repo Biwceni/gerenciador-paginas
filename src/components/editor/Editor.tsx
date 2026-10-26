@@ -282,13 +282,17 @@ export function Editor(props: EditorProps) {
 
   const publish = useCallback(async () => {
     await flush()
+    // Guardado antes do envio: o que mudar enquanto publica continua contando como não salvo.
+    const json = JSON.stringify(latest.current)
     const parsed = parsePageContent({ version: CONTENT_VERSION, data: latest.current })
     if (!parsed.success) throw new Error(friendlyError(parsed.error))
     await publishPage(apiRoute, pageId, parsed.data)
-    lastSaved.current = JSON.stringify(latest.current)
+    lastSaved.current = json
     setLive(true)
-    setHasChanges(false)
-    setSave({ state: 'saved', at: new Date() })
+    const changedMeanwhile = JSON.stringify(latest.current) !== json
+    setHasChanges(changedMeanwhile)
+    setSave(changedMeanwhile ? { state: 'pending' } : { state: 'saved', at: new Date() })
+    if (changedMeanwhile) void flush()
   }, [apiRoute, flush, pageId])
 
   const isHome = pageId === homepageId

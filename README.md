@@ -56,6 +56,6 @@ Crie uma chave em resend.com com permissão **Sending access** (só envio) e pre
 
 ### Vercel
 
-1. Importe o repositório. _Build Command_: `npm run ci`.
+1. Importe o repositório. _Build Command_: `npm run ci`. Ele roda as migrações e o build, mas **as prévias não migram** (`scripts/migrar.mjs`): o banco é o mesmo do site no ar, e uma branch em revisão não pode mudá-lo antes do merge. Migração nova de uma branch é aplicada no computador e, até o merge, só pode acrescentar (nada de renomear ou apagar coluna).
 2. Em _Environment Variables_, cadastre as variáveis do `.env.example` em _Production_, _Preview_ e _Development_, todas com o mesmo projeto Supabase. Um `PAYLOAD_SECRET` diferente para cada ambiente.
 3. `NEXT_PUBLIC_SERVER_URL` pode ficar vazio: o código usa o domínio da Vercel.

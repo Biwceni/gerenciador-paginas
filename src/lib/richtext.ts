@@ -6,8 +6,6 @@ import { linkKind } from './links'
 // por aqui ao salvar e ao ler: só sobram as marcações da lista e, nos links, endereços seguros.
 const ALLOWED_TAGS = ['p', 'br', 'h3', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'a']
 
-const REMOVED = 'removido'
-
 export function sanitizeRichText(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
@@ -22,8 +20,10 @@ export function sanitizeRichText(html: string): string {
       a: (tagName, attribs): sanitizeHtml.Tag => {
         const href = attribs.href?.trim() ?? ''
         const kind = linkKind(href)
-        // Endereço inseguro ou caminho que leva para fora (a mesma regra do `SiteLink`): só o texto.
-        if (!kind) return { tagName: REMOVED, attribs: {} }
+        // Endereço inseguro ou caminho que leva para fora (a mesma regra do `SiteLink`): o link
+        // fica sem endereço (não leva a lugar nenhum). Trocar por uma marcação fora da lista faria o
+        // sanitize-html fechar a marcação seguinte com o nome errado e quebrar o resto do texto.
+        if (!kind) return { tagName, attribs: {} }
         return {
           tagName,
           attribs:

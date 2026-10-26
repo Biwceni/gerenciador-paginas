@@ -810,6 +810,12 @@
     color: inherit;
   }
 
+  /* Link que teve o endereço recusado (inseguro): fica só o texto, sem cara de link. */
+  .rich-text a:not([href]) {
+    color: inherit;
+    text-decoration: none;
+  }
+
   /* Vídeo do YouTube */
 
   .video figure {

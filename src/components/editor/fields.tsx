@@ -153,7 +153,8 @@ export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
     setChoosingURL(raw === OTHER_SITE)
     if (raw === '') return onChange(null)
     if (raw === 'whatsapp') return onChange({ kind: 'whatsapp' })
-    if (raw === OTHER_SITE) return isSafeURL(url) ? onChange({ kind: 'url', url }) : undefined
+    // Sem endereço válido ainda, o link fica vazio (e não com o destino antigo escondido).
+    if (raw === OTHER_SITE) return onChange(isSafeURL(url) ? { kind: 'url', url } : null)
     const [kind, page, section] = raw.split(':')
     if (kind === 'page') return onChange({ kind: 'page', pageId: Number(page) })
     onChange({ kind: 'section', pageId: Number(page), sectionId: section })
@@ -215,7 +216,7 @@ export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
             onChange={(event) => {
               const next = event.target.value.trim()
               setURL(next)
-              if (isSafeURL(next)) onChange({ kind: 'url', url: next })
+              onChange(isSafeURL(next) ? { kind: 'url', url: next } : null)
             }}
             placeholder="https://"
             type="url"

@@ -111,7 +111,7 @@ describe('seções da fase 2', () => {
       },
     ])
     const item = result.success ? result.data.data.content[0] : null
-    expect(item?.type === 'RichText' && item.props.body).toBe('<p>Oi aqui</p>')
+    expect(item?.type === 'RichText' && item.props.body).toBe('<p>Oi <a>aqui</a></p>')
   })
 
   it('junta as páginas citadas por links para seção', () => {
@@ -155,6 +155,12 @@ describe('âncoras das seções', () => {
       }),
     ).toEqual({ a: 'servicos', c: 'servicos-2', d: 'fale' })
   })
+
+  it('não repetem os ids fixos do site, como o do conteúdo principal', () => {
+    expect(sectionAnchors({ content: [item('a', 'Conteúdo'), item('b', 'Menu celular')] })).toEqual(
+      { a: 'conteudo-2', b: 'menu-celular-2' },
+    )
+  })
 })
 
 describe('texto simples (HTML)', () => {
@@ -174,9 +180,21 @@ describe('texto simples (HTML)', () => {
   })
 
   it('recusa links que levam para fora disfarçados de página do site', () => {
-    expect(sanitizeRichText('<a href="//mal.com">a</a>')).toBe('a')
-    expect(sanitizeRichText('<a href="/\\mal.com">a</a>')).toBe('a')
-    expect(sanitizeRichText('<a href="data:text/html,x">a</a>')).toBe('a')
+    // O link fica sem endereço: não leva a lugar nenhum.
+    expect(sanitizeRichText('<a href="//mal.com">a</a>')).toBe('<a>a</a>')
+    expect(sanitizeRichText('<a href="/\\mal.com">a</a>')).toBe('<a>a</a>')
+    expect(sanitizeRichText('<a href="data:text/html,x">a</a>')).toBe('<a>a</a>')
+  })
+
+  it('link inseguro não quebra as marcações seguintes', () => {
+    expect(
+      sanitizeRichText('<p><a href="javascript:x">j</a> <a href="https://ok.com">ok</a> fim</p>'),
+    ).toBe(
+      '<p><a>j</a> <a href="https://ok.com" target="_blank" rel="noopener noreferrer">ok</a> fim</p>',
+    )
+    expect(
+      sanitizeRichText('<p><a href="javascript:x">j</a></p><p>texto <strong>b</strong></p>'),
+    ).toBe('<p><a>j</a></p><p>texto <strong>b</strong></p>')
   })
 
   it('vira texto corrido para a descrição do Google', () => {
