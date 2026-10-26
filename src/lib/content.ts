@@ -5,7 +5,10 @@ import config from '@/payload.config'
 import type { Footer, Header, Media, Page, Site } from '@/payload-types'
 
 import { whatsAppURL } from './links'
-import { pageHref } from '../puck/references'
+import { relationID } from './relations'
+import { FALLBACK_SITE_NAME } from './site'
+import { sectionAnchors } from '../puck/anchors'
+import { pageHref, type SiteInfo } from '../puck/references'
 import { parsePageContent, type PuckPageData } from '../puck/schema'
 
 // Tudo aqui lê como visitante (`overrideAccess: false`, sem usuário) e só o que está publicado:
@@ -57,10 +60,7 @@ export const getPageByID = cache(async (id: number): Promise<Page | null> => {
   return docs[0] ?? null
 })
 
-export function relationID(value: number | { id: number } | null | undefined): number | null {
-  if (value == null) return null
-  return typeof value === 'number' ? value : value.id
-}
+export { relationID } from './relations'
 
 /** A página inicial escolhida nas configurações, se estiver publicada. */
 export async function getHomepage(): Promise<Page | null> {
@@ -81,8 +81,15 @@ export function populatedMedia(value: number | Media | null | undefined): Media 
   return value && typeof value === 'object' && value.url ? value : null
 }
 
-/** O que os links precisam saber do site: qual é a página inicial e o WhatsApp. */
-export type SiteLinks = { homepageId: number | null; whatsappHref: string | null }
+/**
+ * O que os links precisam saber do site: qual é a página inicial, o WhatsApp e, para links a uma
+ * seção, as âncoras das páginas citadas (por página e por id da seção).
+ */
+export type SiteLinks = {
+  homepageId: number | null
+  whatsappHref: string | null
+  pageAnchors?: Record<number, Record<string, string>>
+}
 
 export function siteLinks(site: Partial<Site>): SiteLinks {
   return {
@@ -91,11 +98,52 @@ export function siteLinks(site: Partial<Site>): SiteLinks {
   }
 }
 
+/** O que as seções mostram das configurações: nome, logo e contato. */
+export function siteInfo(site: Partial<Site>): SiteInfo {
+  return {
+    name: site.name || FALLBACK_SITE_NAME,
+    logo: populatedMedia(site.logo),
+    contact: site.contact ?? {},
+  }
+}
+
 type LinkValue = {
-  kind?: 'page' | 'whatsapp' | 'url' | null
+  kind?: 'page' | 'section' | 'whatsapp' | 'url' | null
   page?: number | Page | null
+  section?: string | null
   url?: string | null
 }
+
+/**
+ * Âncoras das páginas que o cabeçalho cita com links para seção, lidas na versão publicada.
+ * Uma busca só por requisição, dividida entre cabeçalho e rodapé.
+ */
+export const getMenuAnchors = cache(async (): Promise<Record<number, Record<string, string>>> => {
+  const header = await getHeader()
+  const links = [...(header.items ?? []).map((item) => item.link), header.button?.link]
+  const ids = [
+    ...new Set(links.flatMap((link) => (link?.kind === 'section' ? [relationID(link.page)] : []))),
+  ].filter((id): id is number => id !== null)
+  if (!ids.length) return {}
+
+  const payload = await getPayloadClient()
+  const { docs } = await payload.find({
+    collection: 'pages',
+    where: { id: { in: ids } },
+    select: { content: true },
+    depth: 0,
+    draft: false,
+    limit: ids.length,
+    pagination: false,
+    overrideAccess: false,
+  })
+  return Object.fromEntries(
+    docs.map((doc) => {
+      const parsed = parsePageContent(doc.content)
+      return [doc.id, parsed.success ? sectionAnchors(parsed.data.data) : {}]
+    }),
+  )
+})
 
 /**
  * Endereço de um link dos globals. Página que não está no ar chega só como id (o visitante não
@@ -107,5 +155,9 @@ export function resolveLink(link: LinkValue | null | undefined, site: SiteLinks)
   if (link.kind === 'whatsapp') return site.whatsappHref
   const page = link.page
   if (!page || typeof page !== 'object' || page._status !== 'published') return null
-  return pageHref(page, site.homepageId)
+  const href = pageHref(page, site.homepageId)
+  if (link.kind !== 'section') return href
+  // Seção que saiu da página (ou ganhou outro nome) leva para a página.
+  const anchor = link.section ? site.pageAnchors?.[page.id]?.[link.section] : undefined
+  return anchor ? `${href}#${anchor}` : href
 }

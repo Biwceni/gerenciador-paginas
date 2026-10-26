@@ -19,3 +19,14 @@ export const isIndexable = (): boolean => process.env.VERCEL_ENV === 'production
 
 // Nome usado no site enquanto as configurações não foram publicadas.
 export const FALLBACK_SITE_NAME = 'Meu site'
+
+/** "Café Grão Mineiro" → "CG": aparece no lugar do logo enquanto não houver um. */
+export function initials(name: string): string {
+  const words = name.split(/\s+/).filter((word) => word.length > 2)
+  return (
+    words
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('') || name.slice(0, 2)
+  ).toUpperCase()
+}

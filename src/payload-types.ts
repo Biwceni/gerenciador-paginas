@@ -145,9 +145,6 @@ export interface Page {
    * Esconde o menu e deixa o rodapé numa linha só, para quem chega por um anúncio não sair da página.
    */
   campaign?: boolean | null;
-  /**
-   * Montado pelo editor visual. Por enquanto, as páginas de teste vêm do script de exemplo.
-   */
   content:
     | {
         [k: string]: unknown;
@@ -557,8 +554,9 @@ export interface Header {
     | {
         label: string;
         link?: {
-          kind?: ('page' | 'whatsapp' | 'url') | null;
+          kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
           page?: (number | null) | Page;
+          section?: string | null;
           /**
            * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
            */
@@ -573,8 +571,9 @@ export interface Header {
   button?: {
     label?: string | null;
     link?: {
-      kind?: ('page' | 'whatsapp' | 'url') | null;
+      kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
       page?: (number | null) | Page;
+      section?: string | null;
       /**
        * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
        */
@@ -666,6 +665,7 @@ export interface HeaderSelect<T extends boolean = true> {
           | {
               kind?: T;
               page?: T;
+              section?: T;
               url?: T;
             };
         id?: T;
@@ -679,6 +679,7 @@ export interface HeaderSelect<T extends boolean = true> {
           | {
               kind?: T;
               page?: T;
+              section?: T;
               url?: T;
             };
       };

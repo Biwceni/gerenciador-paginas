@@ -14,6 +14,7 @@ import { Users } from './collections/Users'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Site } from './globals/Site'
+import { EDITOR_VIEW_PATH } from './lib/editor'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
 
 const filename = fileURLToPath(import.meta.url)
@@ -66,6 +67,14 @@ export default buildConfig({
       graphics: {
         Icon: '/components/admin/Icon#Icon',
         Logo: '/components/admin/Logo#Logo',
+      },
+      views: {
+        // Editor visual das páginas, em tela cheia: /admin/editor/<id>.
+        pageEditor: {
+          Component: '/components/editor/EditorView#EditorView',
+          path: EDITOR_VIEW_PATH,
+          meta: { title: 'Editor' },
+        },
       },
     },
   },

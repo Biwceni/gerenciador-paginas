@@ -1,9 +1,14 @@
 import type { Payload } from 'payload'
 
 import type { Page } from '../payload-types'
-import { CONTENT_VERSION, type PageComponent, type PageContent } from '../puck/schema'
+import {
+  type ColumnPiece,
+  CONTENT_VERSION,
+  type PageComponent,
+  type PageContent,
+} from '../puck/schema'
 
-// Páginas de teste da fase 1, até existir o editor visual. Seguem o modelo "Café, Aconchegante" do
+// Páginas de teste, com exemplos das seções. Seguem o modelo "Café, Aconchegante" do
 // protótipo navegável, com Lorem Ipsum no conteúdo e nomes de página, menu e botões legíveis.
 //
 // Sem `recreate`, só cria o que ainda não existe: rodar de novo não apaga nem sobrescreve nada que
@@ -15,6 +20,11 @@ const L_S = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
 const L_M =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
 const HERO_TITLE = 'Lorem ipsum dolor sit amet, consectetur'
+
+const columnText = (id: string): ColumnPiece => ({
+  type: 'ColumnText',
+  props: { id, title: 'Dolor sit amet', text: L_M },
+})
 
 const content = (items: PageComponent[]): PageContent => ({
   version: CONTENT_VERSION,
@@ -41,7 +51,14 @@ const pages: SeedPage[] = [
     items: () => [
       {
         type: 'CallToAction',
-        props: { id: 'cta-novidades', title: 'Novidades', text: L_S, button: null, style: 'soft' },
+        props: {
+          id: 'cta-novidades',
+          menuLabel: '',
+          title: 'Novidades',
+          text: L_S,
+          button: null,
+          style: 'soft',
+        },
       },
     ],
   },
@@ -60,6 +77,26 @@ const pages: SeedPage[] = [
           button: { label: 'Chamar no WhatsApp', link: whatsapp },
           style: 'soft',
           align: 'left',
+        },
+      },
+      {
+        type: 'Contact',
+        props: {
+          id: 'contato-endereco',
+          menuLabel: 'Endereço',
+          title: 'Venha nos visitar',
+          text: L_S,
+          style: 'light',
+        },
+      },
+      {
+        type: 'Faq',
+        props: {
+          id: 'contato-perguntas',
+          menuLabel: 'Perguntas',
+          title: 'Perguntas frequentes',
+          items: [1, 2, 3].map(() => ({ question: 'Lorem ipsum dolor sit amet?', answer: L_M })),
+          style: 'soft',
         },
       },
     ],
@@ -82,9 +119,22 @@ const pages: SeedPage[] = [
         },
       },
       {
+        type: 'Columns',
+        props: {
+          id: 'colunas-cafes',
+          menuLabel: '',
+          layout: 'thirds',
+          column1: [columnText('coluna-1')],
+          column2: [columnText('coluna-2')],
+          column3: [columnText('coluna-3')],
+          style: 'light',
+        },
+      },
+      {
         type: 'CallToAction',
         props: {
           id: 'cta-cafes',
+          menuLabel: '',
           title: 'Lorem Ipsum',
           text: 'Este botão leva para uma página em rascunho, então ele não aparece no site.',
           button: { label: 'Ver novidades', link: { kind: 'page', pageId: ids.novidades } },
@@ -114,6 +164,7 @@ const pages: SeedPage[] = [
         type: 'TextImage',
         props: {
           id: 'texto-sobre',
+          menuLabel: '',
           title: 'Lorem Ipsum',
           text: L_M,
           image: photo(0),
@@ -122,9 +173,33 @@ const pages: SeedPage[] = [
         },
       },
       {
+        type: 'Features',
+        props: {
+          id: 'destaques-sobre',
+          menuLabel: '',
+          title: 'Lorem Ipsum',
+          items: [1, 2, 3].map(() => ({ title: 'Dolor sit amet', text: L_S })),
+          style: 'light',
+        },
+      },
+      {
+        type: 'Testimonials',
+        props: {
+          id: 'depoimentos-sobre',
+          menuLabel: '',
+          title: 'Consectetur Adipiscing',
+          items: [
+            { quote: L_M, name: 'Lorem Ipsum' },
+            { quote: L_M, name: 'Dolor Amet' },
+          ],
+          style: 'soft',
+        },
+      },
+      {
         type: 'Gallery',
         props: {
           id: 'galeria-sobre',
+          menuLabel: '',
           title: 'Dolor Amet',
           images: [photo(0), photo(1), photo(2)].filter((ref) => ref !== null),
           style: 'light',
@@ -134,6 +209,7 @@ const pages: SeedPage[] = [
         type: 'CallToAction',
         props: {
           id: 'cta-sobre',
+          menuLabel: '',
           title: 'Sit Consectetur',
           text: L_S,
           button: { label: 'Ver endereço', link: { kind: 'page', pageId: ids.contato } },
@@ -166,6 +242,7 @@ const pages: SeedPage[] = [
         type: 'TextImage',
         props: {
           id: 'texto-inicio',
+          menuLabel: '',
           title: 'Lorem Ipsum',
           text: L_M,
           image: photo(1),
@@ -177,6 +254,7 @@ const pages: SeedPage[] = [
         type: 'CallToAction',
         props: {
           id: 'cta-inicio',
+          menuLabel: '',
           title: 'Dolor Amet',
           text: L_S,
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },

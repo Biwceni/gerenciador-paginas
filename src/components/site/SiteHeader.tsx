@@ -3,35 +3,25 @@ import React from 'react'
 
 import {
   getHeader,
+  getMenuAnchors,
   getSite,
   populatedMedia,
   relationID,
   resolveLink,
   siteLinks,
 } from '@/lib/content'
-import { FALLBACK_SITE_NAME } from '@/lib/site'
+import { FALLBACK_SITE_NAME, initials } from '@/lib/site'
 
 import { HeaderMenu } from './HeaderMenu'
 import { Photo } from './Photo'
 import { SiteLink } from './SiteLink'
 
-/** "Café Grão Mineiro" → "CG": aparece no lugar do logo enquanto não houver um. */
-export function initials(name: string): string {
-  const words = name.split(/\s+/).filter((word) => word.length > 2)
-  return (
-    words
-      .slice(0, 2)
-      .map((word) => word[0])
-      .join('') || name.slice(0, 2)
-  ).toUpperCase()
-}
-
 export type MenuItem = { id: string; label: string; href: string; current: boolean }
 
 /** Itens do menu que levam a algo no ar (os outros somem), marcando a página atual. */
 export async function getMenuItems(currentPageId?: number | null): Promise<MenuItem[]> {
-  const [site, header] = await Promise.all([getSite(), getHeader()])
-  const links = siteLinks(site)
+  const [site, header, pageAnchors] = await Promise.all([getSite(), getHeader(), getMenuAnchors()])
+  const links = { ...siteLinks(site), pageAnchors }
   return (header.items ?? []).flatMap((item, index) => {
     const href = resolveLink(item.link, links)
     if (!href) return []
@@ -51,14 +41,17 @@ type Props = {
 }
 
 export async function SiteHeader({ currentPageId, campaign }: Props) {
-  const [site, header, items] = await Promise.all([
+  const [site, header, items, pageAnchors] = await Promise.all([
     getSite(),
     getHeader(),
     getMenuItems(currentPageId),
+    getMenuAnchors(),
   ])
   const name = site.name || FALLBACK_SITE_NAME
   const logo = populatedMedia(site.logo)
-  const buttonHref = header.button?.label ? resolveLink(header.button.link, siteLinks(site)) : null
+  const buttonHref = header.button?.label
+    ? resolveLink(header.button.link, { ...siteLinks(site), pageAnchors })
+    : null
   const hasNav = !campaign && (items.length > 0 || buttonHref)
 
   const navContent = (

@@ -40,7 +40,7 @@ Abra http://localhost:3000/admin e crie o primeiro usuário. Ele vira **administ
 
 ## Configurar os serviços
 
-### Supabase (um projeto para dev, outro para produção)
+### Supabase (um projeto só, para o computador, as prévias e a produção)
 
 1. **Banco:** em _Connect_, copie a string do **Transaction pooler** (porta 6543) para `DATABASE_URL`.
 2. **Storage:** crie um bucket **público** (ex.: `fotos`). Em _Edit bucket_, ligue **Restrict file upload size** com **10 MB** e, em **Allowed MIME types**, coloque `image/jpeg, image/png, image/webp, image/avif, image/gif`. Esse limite vale mesmo se a chave S3 ou um link de envio vazar.
@@ -57,5 +57,5 @@ Crie uma chave em resend.com com permissão **Sending access** (só envio) e pre
 ### Vercel
 
 1. Importe o repositório. _Build Command_: `npm run ci`.
-2. Em _Environment Variables_, cadastre as variáveis do `.env.example`: Supabase **dev** para _Preview_ e _Development_, Supabase **produção** para _Production_. Um `PAYLOAD_SECRET` diferente para cada ambiente.
+2. Em _Environment Variables_, cadastre as variáveis do `.env.example` em _Production_, _Preview_ e _Development_, todas com o mesmo projeto Supabase. Um `PAYLOAD_SECRET` diferente para cada ambiente.
 3. `NEXT_PUBLIC_SERVER_URL` pode ficar vazio: o código usa o domínio da Vercel.

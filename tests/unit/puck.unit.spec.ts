@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { collectReferences, getHref } from '@/puck/references'
+import { collectReferences, type ContentMetadata, getHref } from '@/puck/references'
 import { CONTENT_VERSION, emptyPageContent, parsePageContent } from '@/puck/schema'
 import { extractDescription, firstPhotoId, firstSentence } from '@/puck/seo'
 
@@ -17,8 +17,9 @@ const hero = {
   },
 }
 
+// Conteúdo na versão 1 (antes do "Nome no menu"): todos os testes passam pela migração.
 const valid = {
-  version: CONTENT_VERSION,
+  version: 1,
   data: {
     root: { props: {} },
     content: [
@@ -82,6 +83,8 @@ describe('parsePageContent', () => {
       }).success,
     ).toBe(false)
     expect(parsePageContent({ ...valid, version: 999 }).success).toBe(false)
+    // Versão nova sem o campo que a migração colocaria.
+    expect(parsePageContent({ ...valid, version: CONTENT_VERSION }).success).toBe(false)
     expect(parsePageContent(withHero({ style: 'neon' })).success).toBe(false)
     expect(
       parsePageContent(
@@ -100,11 +103,22 @@ describe('referências', () => {
   if (!data.success) throw new Error('conteúdo de teste inválido')
 
   it('junta fotos e páginas citadas, sem repetir', () => {
-    expect(collectReferences(data.data.data)).toEqual({ mediaIds: [7, 8], pageIds: [3] })
+    expect(collectReferences(data.data.data)).toEqual({
+      mediaIds: [7, 8],
+      pageIds: [3],
+      sectionPageIds: [],
+    })
   })
 
   it('link para página fora do ar ou WhatsApp sem número não tem endereço', () => {
-    const metadata = { photos: {}, pageHrefs: { 3: '/servicos' }, whatsappHref: null }
+    const metadata: ContentMetadata = {
+      photos: {},
+      pageHrefs: { 3: '/servicos' },
+      pageAnchors: { 3: { 'faq-1': 'perguntas' } },
+      anchors: {},
+      whatsappHref: null,
+      site: { name: 'Café', logo: null, contact: {} },
+    }
     expect(getHref(metadata, { kind: 'page', pageId: 3 })).toBe('/servicos')
     expect(getHref(metadata, { kind: 'page', pageId: 4 })).toBeNull()
     expect(getHref(metadata, { kind: 'whatsapp' })).toBeNull()
@@ -112,6 +126,12 @@ describe('referências', () => {
       'https://wa.me/55',
     )
     expect(getHref(metadata, null)).toBeNull()
+    expect(getHref(metadata, { kind: 'section', pageId: 3, sectionId: 'faq-1' })).toBe(
+      '/servicos#perguntas',
+    )
+    // Seção que saiu da página leva para a página; página fora do ar, para lugar nenhum.
+    expect(getHref(metadata, { kind: 'section', pageId: 3, sectionId: 'x' })).toBe('/servicos')
+    expect(getHref(metadata, { kind: 'section', pageId: 4, sectionId: 'faq-1' })).toBeNull()
   })
 
   it('tira descrição e foto para o Google e o compartilhamento', () => {
