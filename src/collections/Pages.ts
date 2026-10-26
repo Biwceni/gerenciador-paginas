@@ -9,7 +9,10 @@ import { describeContentError, emptyPageContent, parsePageContent } from '../puc
 
 // Roda também nos rascunhos (o `validate` dos campos o Payload pula neles): nenhum conteúdo fora do
 // formato chega ao banco. Guarda o resultado do Zod, já migrado e sem campos desconhecidos.
-const validateContent: FieldHook = ({ value, req }) => {
+const validateContent: FieldHook = ({ value, req, operation }) => {
+  // Atualização sem o conteúdo (ex.: só o nome ou o Google, pelo editor): o Payload mantém o que já
+  // está salvo. Trocar por conteúdo vazio aqui apagaria a página.
+  if (value === undefined && operation === 'update') return value
   const result = parsePageContent(value)
   if (!result.success) {
     throw new ValidationError({
@@ -46,7 +49,9 @@ export const Pages: CollectionConfig = {
     _status: true,
   },
   versions: {
-    drafts: true,
+    // O editor salva o rascunho sozinho a cada mudança. Com `autosave`, esses salvamentos
+    // atualizam um único rascunho em vez de criar uma versão nova cada vez.
+    drafts: { autosave: { interval: 2000 } },
     maxPerDoc: 50,
   },
   hooks: {
@@ -66,6 +71,14 @@ export const Pages: CollectionConfig = {
     },
     slugField,
     {
+      name: 'openEditor',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: { Field: '/components/admin/OpenEditorButton#OpenEditorButton' },
+      },
+    },
+    {
       name: 'campaign',
       type: 'checkbox',
       label: 'Página de campanha',
@@ -83,8 +96,9 @@ export const Pages: CollectionConfig = {
       required: true,
       defaultValue: emptyPageContent(),
       admin: {
-        description:
-          'Montado pelo editor visual. Por enquanto, as páginas de teste vêm do script de exemplo.',
+        // Fora do formulário do painel: o conteúdo só muda pelo editor visual. Assim o formulário
+        // (que também salva sozinho) nunca grava por cima o conteúdo que o editor acabou de salvar.
+        disabled: true,
       },
       hooks: {
         beforeValidate: [validateContent],

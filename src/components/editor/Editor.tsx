@@ -1,0 +1,447 @@
+'use client'
+
+import '@puckeditor/core/no-external.css'
+import '@/app/(frontend)/styles.css'
+import './editor.css'
+
+import { createUsePuck, type Data, Puck, useGetPuck, type Viewports } from '@puckeditor/core'
+import { toast } from '@payloadcms/ui'
+import Link from 'next/link'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import type { z } from 'zod'
+
+import type { Media } from '@/payload-types'
+import { COLUMN_PIECES } from '@/puck/config'
+import { editorConfig } from '@/puck/editor-config'
+import { type ContentMetadata, mainHeadingID, type SiteInfo } from '@/puck/references'
+import { CONTENT_VERSION, parsePageContent, type PuckPageData } from '@/puck/schema'
+import { extractDescription } from '@/puck/seo'
+
+import { publishPage, saveDraft } from './api'
+import { type EditorPageSummary, EditorProvider } from './context'
+import { dictionary } from './dictionary'
+import { EditorFrame, FrameStyleProvider } from './EditorFrame'
+import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
+import { PhotoPicker } from './PhotoPicker'
+import { PublishDialog } from './PublishDialog'
+import { type SiteChrome, SitePreviewProvider } from './SitePreview'
+import { VersionsDialog } from './VersionsDialog'
+
+export type EditorProps = {
+  apiRoute: string
+  adminRoute: string
+  page: PageSettings & { id: number; live: boolean; hasChanges: boolean }
+  initialData: PuckPageData
+  photos: Media[]
+  pages: EditorPageSummary[]
+  homepageId: number | null
+  site: SiteInfo
+  whatsappHref: string | null
+  theme: Record<string, string>
+  fontFaces: string | null
+  chrome: SiteChrome
+}
+
+type SaveState =
+  | { state: 'saved'; at?: Date }
+  | { state: 'pending' | 'saving' }
+  | { state: 'error'; message: string }
+
+type DialogName = 'publish' | 'versions' | 'settings' | null
+
+const SAVE_DELAY = 1200
+const PIECES: readonly string[] = COLUMN_PIECES
+
+const viewports: Viewports = [
+  { width: 1280, height: 'auto', label: 'Computador', icon: 'Monitor' },
+  { width: 390, height: 'auto', label: 'Celular', icon: 'Smartphone' },
+]
+
+const usePuck = createUsePuck()
+
+const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+/** Mensagem de erro de formato que o leigo entende. */
+function friendlyError(error: z.ZodError): string {
+  const issue = error.issues[0]
+  if (issue?.code === 'too_big') {
+    return issue.origin === 'array'
+      ? `Passou do número máximo de itens (${issue.maximum}). Remova algum para salvar.`
+      : `Um texto passou do limite de ${issue.maximum} letras. Encurte para salvar.`
+  }
+  if (issue?.code === 'too_small' && issue.origin === 'array') {
+    return 'Uma seção ficou sem nenhum item. Coloque pelo menos um para salvar.'
+  }
+  return 'Algo na página ficou num formato que não dá para salvar. Desfaça a última mudança.'
+}
+
+/** Controles da barra de cima, que fica dentro do Puck (override do cabeçalho). */
+type Chrome = {
+  title: string
+  status: string
+  statusTone: 'ok' | 'warn' | 'muted'
+  canPublish: boolean
+  livePath: string | null
+  backHref: string
+  open: (dialog: DialogName) => void
+  leave: () => Promise<void>
+  /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
+  connect: (getPuck: GetPuck) => void
+}
+
+type GetPuck = ReturnType<typeof useGetPuck>
+
+const ChromeContext = createContext<Chrome | null>(null)
+
+function EditorHeader() {
+  const chrome = useContext(ChromeContext)
+  const history = usePuck((state) => state.history)
+  const getPuck = useGetPuck()
+  const connect = chrome?.connect
+  useEffect(() => connect?.(getPuck), [connect, getPuck])
+  if (!chrome) return <></>
+
+  return (
+    <header className="ed-top">
+      <Link
+        aria-label="Voltar para as páginas"
+        className="ed-icon-btn"
+        href={chrome.backHref}
+        onClick={async (event) => {
+          event.preventDefault()
+          await chrome.leave()
+          window.location.href = chrome.backHref
+        }}
+        title="Voltar para as páginas"
+      >
+        ←
+      </Link>
+      <div className="ed-top__title">
+        <b>{chrome.title}</b>
+        <span className={`ed-top__status ed-top__status--${chrome.statusTone}`} role="status">
+          {chrome.status}
+        </span>
+      </div>
+      <div className="ed-top__actions">
+        <button
+          aria-label="Desfazer"
+          className="ed-icon-btn"
+          disabled={!history.hasPast}
+          onClick={history.back}
+          title="Desfazer"
+          type="button"
+        >
+          ↶
+        </button>
+        <button
+          aria-label="Refazer"
+          className="ed-icon-btn"
+          disabled={!history.hasFuture}
+          onClick={history.forward}
+          title="Refazer"
+          type="button"
+        >
+          ↷
+        </button>
+        <button className="ed-btn ed-hide-sm" onClick={() => chrome.open('versions')} type="button">
+          Versões
+        </button>
+        <button className="ed-btn ed-hide-sm" onClick={() => chrome.open('settings')} type="button">
+          Página e Google
+        </button>
+        {chrome.livePath && (
+          <a className="ed-btn ed-hide-sm" href={chrome.livePath} rel="noopener" target="_blank">
+            Ver no site
+          </a>
+        )}
+        <button
+          className="ed-btn ed-btn--primary"
+          disabled={!chrome.canPublish}
+          onClick={() => chrome.open('publish')}
+          type="button"
+        >
+          {chrome.canPublish ? 'Publicar' : 'Publicada'}
+        </button>
+      </div>
+    </header>
+  )
+}
+
+export function Editor(props: EditorProps) {
+  const { apiRoute, adminRoute, initialData, homepageId, site, whatsappHref } = props
+  const pageId = props.page.id
+
+  const [settings, setSettings] = useState<PageSettings>({
+    title: props.page.title,
+    slug: props.page.slug,
+    campaign: props.page.campaign,
+    seo: props.page.seo,
+  })
+  const [live, setLive] = useState(props.page.live)
+  const [hasChanges, setHasChanges] = useState(props.page.hasChanges)
+  const [save, setSave] = useState<SaveState>({ state: 'saved' })
+  const [dialog, setDialog] = useState<DialogName>(null)
+  const [photos, setPhotos] = useState(props.photos)
+  const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
+  const [data, setData] = useState<PuckPageData>(initialData)
+
+  const latest = useRef<PuckPageData>(initialData)
+  const lastSaved = useRef(JSON.stringify(initialData))
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saving = useRef<Promise<void>>(Promise.resolve())
+  // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
+  const getPuck = useRef<GetPuck | null>(null)
+  const connect = useCallback((value: GetPuck) => {
+    getPuck.current = value
+  }, [])
+
+  const photoById = useMemo(
+    () => Object.fromEntries(photos.map((photo) => [photo.id, photo])) as Record<number, Media>,
+    [photos],
+  )
+
+  const addPhoto = useCallback(
+    (photo: Media) =>
+      setPhotos((current) => [photo, ...current.filter((item) => item.id !== photo.id)]),
+    [],
+  )
+
+  // Salva o que está na tela, se mudou desde o último salvamento. Um salvamento por vez.
+  const flush = useCallback((): Promise<void> => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = null
+    saving.current = saving.current.then(async () => {
+      const current = latest.current
+      const json = JSON.stringify(current)
+      if (json === lastSaved.current) return
+      const parsed = parsePageContent({ version: CONTENT_VERSION, data: current })
+      if (!parsed.success) return setSave({ state: 'error', message: friendlyError(parsed.error) })
+      setSave({ state: 'saving' })
+      try {
+        await saveDraft(apiRoute, pageId, { content: parsed.data })
+        lastSaved.current = json
+        setHasChanges(true)
+        setSave(
+          JSON.stringify(latest.current) === json
+            ? { state: 'saved', at: new Date() }
+            : { state: 'pending' },
+        )
+      } catch (caught) {
+        setSave({
+          state: 'error',
+          message: caught instanceof Error ? caught.message : 'sem conexão com o servidor',
+        })
+      }
+    })
+    return saving.current
+  }, [apiRoute, pageId])
+
+  const onChange = useCallback(
+    (next: Data) => {
+      const puckData = next as PuckPageData
+      latest.current = puckData
+      setData(puckData)
+      if (JSON.stringify(puckData) === lastSaved.current) return
+      setSave({ state: 'pending' })
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = setTimeout(() => void flush(), SAVE_DELAY)
+    },
+    [flush],
+  )
+
+  // Fechar a aba com mudança ainda não salva: o navegador pergunta antes.
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (JSON.stringify(latest.current) !== lastSaved.current) event.preventDefault()
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [])
+
+  // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
+  const onAction = useCallback(
+    (_action: unknown, next: { data: Data }, previous: { data: Data }) => {
+      if (!next.data.content.some((item) => PIECES.includes(item.type))) return
+      setTimeout(() => {
+        getPuck.current?.().dispatch({ type: 'setData', data: previous.data })
+        toast.info(
+          'Essa peça só entra dentro de uma seção Colunas. Arraste para dentro de uma coluna.',
+        )
+      })
+    },
+    [],
+  )
+
+  const publish = useCallback(async () => {
+    await flush()
+    // Guardado antes do envio: o que mudar enquanto publica continua contando como não salvo.
+    const json = JSON.stringify(latest.current)
+    const parsed = parsePageContent({ version: CONTENT_VERSION, data: latest.current })
+    if (!parsed.success) throw new Error(friendlyError(parsed.error))
+    await publishPage(apiRoute, pageId, parsed.data)
+    lastSaved.current = json
+    setLive(true)
+    const changedMeanwhile = JSON.stringify(latest.current) !== json
+    setHasChanges(changedMeanwhile)
+    setSave(changedMeanwhile ? { state: 'pending' } : { state: 'saved', at: new Date() })
+    if (changedMeanwhile) void flush()
+  }, [apiRoute, flush, pageId])
+
+  const isHome = pageId === homepageId
+  const path = isHome ? '/' : `/${settings.slug}`
+  const unsaved = save.state === 'pending' || save.state === 'saving'
+  const savedAt = save.state === 'saved' ? save.at : undefined
+
+  const status =
+    save.state === 'saving'
+      ? 'Salvando…'
+      : save.state === 'pending'
+        ? 'Salvando em instantes…'
+        : save.state === 'error'
+          ? `Não deu para salvar: ${save.message}`
+          : live && !hasChanges
+            ? 'Tudo publicado'
+            : `Salvo automaticamente${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''} · ${
+                live ? 'há mudanças fora do ar' : 'rascunho, ainda não está no ar'
+              }`
+
+  const chrome: Chrome = {
+    title: settings.title,
+    status,
+    statusTone: save.state === 'error' ? 'warn' : live && !hasChanges ? 'ok' : 'muted',
+    canPublish: !live || hasChanges || unsaved || save.state === 'error',
+    livePath: live ? path : null,
+    backHref: `${adminRoute}/collections/pages`,
+    open: setDialog,
+    leave: flush,
+    connect,
+  }
+
+  // O que as seções precisam para desenhar na prévia. Todas as páginas contam (até rascunhos):
+  // no editor, o botão aparece; a checagem de Publicar avisa do rascunho.
+  const metadata: ContentMetadata = useMemo(
+    () => ({
+      photos: photoById,
+      pageHrefs: Object.fromEntries(
+        props.pages.map((item) => [item.id, item.id === homepageId ? '/' : `/${item.slug}`]),
+      ),
+      pageAnchors: {},
+      anchors: {},
+      whatsappHref,
+      site,
+      mainHeadingId: mainHeadingID(data),
+      editing: true,
+    }),
+    [data, homepageId, photoById, props.pages, site, whatsappHref],
+  )
+
+  const context = useMemo(
+    () => ({
+      apiRoute,
+      pageId,
+      homepageId,
+      site,
+      whatsappHref,
+      photos,
+      photoById,
+      pages: props.pages,
+      pickPhoto: (onPick: (photo: Media) => void) => setPicking(() => onPick),
+    }),
+    [apiRoute, homepageId, pageId, photoById, photos, props.pages, site, whatsappHref],
+  )
+
+  const preview = useMemo(
+    () => ({ ...props.chrome, campaign: Boolean(settings.campaign) }),
+    [props.chrome, settings.campaign],
+  )
+
+  const frameStyle = useMemo(
+    () => ({ theme: props.theme, fontFaces: props.fontFaces }),
+    [props.theme, props.fontFaces],
+  )
+
+  return (
+    <EditorProvider value={context}>
+      <FrameStyleProvider value={frameStyle}>
+        <SitePreviewProvider value={preview}>
+          <ChromeContext.Provider value={chrome}>
+            <div className="ed-root">
+              <Puck<typeof editorConfig>
+                config={editorConfig}
+                data={initialData}
+                dictionary={dictionary}
+                height="100%"
+                iframe={{ enabled: true, syncHostStyles: false }}
+                metadata={metadata}
+                onAction={(action, next, previous) => onAction(action, next, previous)}
+                onChange={onChange}
+                overrides={{ header: EditorHeader, iframe: EditorFrame }}
+                viewports={viewports}
+              />
+            </div>
+
+            {picking && (
+              <PhotoPicker
+                onClose={() => setPicking(null)}
+                onPick={(photo) => {
+                  picking(photo)
+                  setPicking(null)
+                }}
+                onUploaded={addPhoto}
+                photos={photos}
+              />
+            )}
+
+            {dialog === 'publish' && (
+              <PublishDialog
+                apiRoute={apiRoute}
+                data={data}
+                onClose={() => setDialog(null)}
+                onPhotoChanged={addPhoto}
+                onPublish={publish}
+                page={{ title: settings.title, seoTitle: settings.seo?.title ?? '', path }}
+              />
+            )}
+
+            {dialog === 'versions' && (
+              <VersionsDialog
+                apiRoute={apiRoute}
+                onClose={() => setDialog(null)}
+                onRestore={(restored) => {
+                  getPuck.current?.().dispatch({ type: 'setData', data: restored })
+                  setDialog(null)
+                  toast.success('Versão recuperada no rascunho. Publique para colocar no ar.')
+                }}
+                pageId={pageId}
+              />
+            )}
+
+            {dialog === 'settings' && (
+              <PageSettingsDialog
+                apiRoute={apiRoute}
+                automatic={{
+                  title: `${settings.title} | ${site.name}`,
+                  description: extractDescription(data) ?? '',
+                }}
+                onClose={() => setDialog(null)}
+                onSaved={(next) => {
+                  setSettings(next)
+                  setHasChanges(true)
+                }}
+                settings={settings}
+              />
+            )}
+          </ChromeContext.Provider>
+        </SitePreviewProvider>
+      </FrameStyleProvider>
+    </EditorProvider>
+  )
+}

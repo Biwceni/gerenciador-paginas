@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <style dangerouslySetInnerHTML={{ __html: safeStyleText(site.fontFaces) }} />
         )}
       </head>
-      <body style={themeStyle(site)}>
+      <body className="site" style={themeStyle(site)}>
         <a className="skip-link" href="#conteudo">
           Pular para o conteúdo
         </a>

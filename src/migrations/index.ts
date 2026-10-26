@@ -3,6 +3,8 @@ import * as migration_20261025_174452_users_role from './20261025_174452_users_r
 import * as migration_20261025_192209_paginas_e_globals from './20261025_192209_paginas_e_globals';
 import * as migration_20261025_194602_visual_do_prototipo from './20261025_194602_visual_do_prototipo';
 import * as migration_20261025_214813_marca_paginas_de_teste from './20261025_214813_marca_paginas_de_teste';
+import * as migration_20261025_225422_rascunho_automatico from './20261025_225422_rascunho_automatico';
+import * as migration_20261025_234228_link_para_secao from './20261025_234228_link_para_secao';
 
 export const migrations = [
   {
@@ -28,6 +30,16 @@ export const migrations = [
   {
     up: migration_20261025_214813_marca_paginas_de_teste.up,
     down: migration_20261025_214813_marca_paginas_de_teste.down,
-    name: '20261025_214813_marca_paginas_de_teste'
+    name: '20261025_214813_marca_paginas_de_teste',
+  },
+  {
+    up: migration_20261025_225422_rascunho_automatico.up,
+    down: migration_20261025_225422_rascunho_automatico.down,
+    name: '20261025_225422_rascunho_automatico',
+  },
+  {
+    up: migration_20261025_234228_link_para_secao.up,
+    down: migration_20261025_234228_link_para_secao.down,
+    name: '20261025_234228_link_para_secao'
   },
 ];

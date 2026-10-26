@@ -9,8 +9,8 @@ type LinkFieldArgs = {
 }
 
 /**
- * Link escolhido como no editor: uma página do site (relação, não endereço digitado), o WhatsApp
- * das configurações ou um endereço de fora. O mesmo formato de `linkRefSchema`, com nomes de campo do Payload.
+ * Link escolhido como no editor: uma página do site (relação, não endereço digitado), uma seção de
+ * uma página (para sites de uma página só), o WhatsApp das configurações ou um endereço de fora. O mesmo formato de `linkRefSchema`, com nomes de campo do Payload.
  */
 export function linkField({
   name = 'link',
@@ -29,6 +29,7 @@ export function linkField({
         defaultValue: 'page',
         options: [
           { label: 'Uma página do site', value: 'page' },
+          { label: 'Uma seção de uma página', value: 'section' },
           { label: 'WhatsApp da empresa', value: 'whatsapp' },
           { label: 'Outro site, e-mail ou telefone', value: 'url' },
         ],
@@ -40,12 +41,28 @@ export function linkField({
         relationTo: 'pages',
         label: 'Página',
         admin: {
-          condition: (_, siblingData) => (siblingData?.kind ?? 'page') === 'page',
+          condition: (_, siblingData) => ['page', 'section'].includes(siblingData?.kind ?? 'page'),
         },
         validate: (value: unknown, { siblingData }: { siblingData: Record<string, unknown> }) =>
-          !required || (siblingData?.kind ?? 'page') !== 'page' || value
+          (!required && siblingData?.kind !== 'section') ||
+          !['page', 'section'].includes((siblingData?.kind as string) ?? 'page') ||
+          value
             ? true
             : 'Escolha uma página.',
+      },
+      {
+        // Guarda o id da seção (não o nome no menu): trocar o nome não quebra o link.
+        name: 'section',
+        type: 'text',
+        label: 'Seção',
+        admin: {
+          condition: (_, siblingData) => siblingData?.kind === 'section',
+          components: { Field: '/components/admin/SectionSelectField#SectionSelectField' },
+        },
+        validate: (
+          value: null | string | undefined,
+          { siblingData }: { siblingData: Record<string, unknown> },
+        ) => (siblingData?.kind !== 'section' || value ? true : 'Escolha uma seção da página.'),
       },
       {
         name: 'url',
