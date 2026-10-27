@@ -77,8 +77,26 @@ export const DEFAULT_FORM = {
 export const CONSENT_TEXT =
   'Concordo com o uso dos meus dados para receber resposta a esta mensagem.'
 
+/**
+ * Nomes usados pelo próprio formulário do site. Começam com um prefixo reservado, que os campos
+ * criados pelo leigo não podem usar: um campo dele com o mesmo nome se misturaria com estes.
+ */
+export const RESERVED_FIELD_PREFIX = '_gp_'
+
 /** Campo escondido: só robô preenche. Envio com ele preenchido é descartado. */
-export const HONEYPOT_FIELD = 'site_url'
+export const HONEYPOT_FIELD = `${RESERVED_FIELD_PREFIX}armadilha`
+
+/** Caixa do "Concordo" no formulário do site (vai para o campo `consent` da mensagem). */
+export const CONSENT_INPUT = `${RESERVED_FIELD_PREFIX}concordo`
+
+/** Nome de um campo criado pelo leigo na tela de Formulários: mensagem, ou `true` quando serve. */
+export function validateFieldName(name: unknown): string | true {
+  if (typeof name !== 'string' || !name.trim()) return 'Dê um nome ao campo. Ex.: telefone.'
+  if (name.trim().startsWith(RESERVED_FIELD_PREFIX)) {
+    return `Nomes começando com "${RESERVED_FIELD_PREFIX}" são do sistema. Escolha outro.`
+  }
+  return true
+}
 
 const MAX_VALUE = 5000
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

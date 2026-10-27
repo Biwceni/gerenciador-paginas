@@ -1,9 +1,20 @@
-import type { CollectionAfterChangeHook, CollectionBeforeChangeHook } from 'payload'
+import type {
+  CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
+} from 'payload'
 import { APIError, ValidationError } from 'payload'
 
 import { checkSubmission, CONSENT_TEXT, HONEYPOT_FIELD, toFormDefinition } from '../lib/forms'
 import { relationID } from '../lib/relations'
+import { collectReferences } from '../puck/references'
+import { parsePageContent } from '../puck/schema'
 import { FALLBACK_SITE_NAME, getServerURL, PRODUCT_NAME } from '../lib/site'
+
+// Limite de mensagens no site todo. Cada uma manda um e-mail, e a cota do Resend é a mesma da
+// recuperação de senha e do convite: uma enxurrada de envios não pode esgotá-la.
+const RATE_WINDOW_MS = 10 * 60 * 1000
+const RATE_LIMIT = 20
 
 type SubmissionData = {
   form?: unknown
@@ -24,6 +35,21 @@ export const checkFormSubmission: CollectionBeforeChangeHook = async ({ data, op
   const trap = submission.submissionData?.find((item) => item?.field === HONEYPOT_FIELD)
   if (typeof trap?.value === 'string' && trap.value.trim()) {
     throw new APIError('Não deu para enviar a mensagem.', 400, null, true)
+  }
+
+  const { totalDocs: recent } = await req.payload.count({
+    collection: 'form-submissions',
+    where: { createdAt: { greater_than: new Date(Date.now() - RATE_WINDOW_MS).toISOString() } },
+    overrideAccess: true,
+    req,
+  })
+  if (recent >= RATE_LIMIT) {
+    throw new APIError(
+      'Chegaram muitas mensagens agora. Tente de novo em alguns minutos.',
+      429,
+      null,
+      true,
+    )
   }
 
   if (submission.consent !== true) {
@@ -53,6 +79,44 @@ export const checkFormSubmission: CollectionBeforeChangeHook = async ({ data, op
   submission.submissionData = result.data
   submission.consentText = CONSENT_TEXT
   return submission
+}
+
+/**
+ * Formulário que está numa seção de página (rascunho mais recente ou no ar) não pode ser excluído:
+ * a seção ficaria sem campos e sem aviso no site.
+ */
+export const protectFormDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const formId = Number(id)
+  const query = {
+    collection: 'pages',
+    select: { title: true, content: true },
+    depth: 0,
+    limit: 500,
+    pagination: false,
+    overrideAccess: true,
+    req,
+  } as const
+  const [latest, live] = await Promise.all([
+    req.payload.find({ ...query, draft: true }),
+    req.payload.find({ ...query, draft: false }),
+  ])
+  const titles = new Map(latest.docs.map((doc) => [doc.id, doc.title]))
+  const using = new Set<number>()
+  for (const doc of [...latest.docs, ...live.docs]) {
+    const content = parsePageContent(doc.content)
+    if (content.success && collectReferences(content.data.data).formIds.includes(formId)) {
+      using.add(doc.id)
+    }
+  }
+  if (using.size) {
+    const names = [...using].map((pageId) => `“${titles.get(pageId) ?? pageId}”`).join(', ')
+    throw new APIError(
+      `Este formulário está na página ${names}. Tire a seção de lá antes de excluir.`,
+      400,
+      null,
+      true,
+    )
+  }
 }
 
 const escapeHTML = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)

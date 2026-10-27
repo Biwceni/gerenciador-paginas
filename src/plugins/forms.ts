@@ -2,7 +2,8 @@ import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import type { Field } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
-import { checkFormSubmission, notifyNewMessage } from '../hooks/formSubmissions'
+import { checkFormSubmission, notifyNewMessage, protectFormDelete } from '../hooks/formSubmissions'
+import { validateFieldName } from '../lib/forms'
 
 // Partes do formulário do plugin que o leigo não usa: e-mails com modelo (o aviso de mensagem nova
 // é nosso, para o e-mail das Configurações), redirecionamento e mensagem de confirmação em texto
@@ -15,11 +16,32 @@ const SUBMISSION_LABELS: Record<string, string> = {
   submissionData: 'Dados enviados',
 }
 
+/** Valida o campo "nome" de um bloco, que o plugin põe dentro de linhas (`row`). */
+const validateNameField = (field: Field): Field => {
+  if ('name' in field && field.name === 'name') {
+    return { ...field, validate: validateFieldName } as Field
+  }
+  if (field.type === 'row') return { ...field, fields: field.fields.map(validateNameField) }
+  return field
+}
+
+/** O "nome" de cada campo do formulário não pode usar o prefixo reservado (`validateFieldName`). */
+const checkFieldNames = (field: Field): Field =>
+  field.type === 'blocks' && field.name === 'fields'
+    ? {
+        ...field,
+        blocks: field.blocks.map((block) => ({
+          ...block,
+          fields: block.fields.map(validateNameField),
+        })),
+      }
+    : field
+
 const hideTechnical = (fields: Field[]): Field[] =>
   fields.map((field) =>
     'name' in field && HIDDEN_FORM_FIELDS.includes(field.name)
       ? ({ ...field, required: false, admin: { ...field.admin, hidden: true } } as Field)
-      : field,
+      : checkFieldNames(field),
   )
 
 /**
@@ -57,6 +79,9 @@ export const formsPlugin = formBuilderPlugin({
       description: 'Campos dos formulários que aparecem na seção "Formulário" das páginas.',
     },
     fields: ({ defaultFields }) => hideTechnical(defaultFields),
+    hooks: {
+      beforeDelete: [protectFormDelete],
+    },
   },
   formSubmissionOverrides: {
     labels: { singular: 'Mensagem', plural: 'Mensagens' },

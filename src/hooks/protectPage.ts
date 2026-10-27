@@ -1,4 +1,8 @@
-import type { CollectionBeforeDeleteHook, PayloadRequest } from 'payload'
+import type {
+  CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
+  PayloadRequest,
+} from 'payload'
 import { APIError } from 'payload'
 
 import type { Header } from '../payload-types'
@@ -60,4 +64,31 @@ export const protectPageDelete: CollectionBeforeDeleteHook = async ({ context, i
       true,
     )
   }
+}
+
+/**
+ * A página inicial não pode sair do ar: o endereço principal do site daria "não encontrada".
+ * O Payload não diz ao gancho se é um rascunho sendo salvo, então vale o que a requisição pediu:
+ * pela API REST, salvar rascunho vem com `?draft=true` (editor, salvamento automático, painel) e
+ * "tirar do ar" vem sem ele. A API local (código do servidor, como o seed) fica de fora; pelo
+ * GraphQL, que não usamos, salvar rascunho da página inicial também é recusado.
+ */
+export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (operation !== 'update' || req.payloadAPI === 'local') return data
+  if (data._status !== 'draft' || req.query?.draft === 'true') return data
+  const pageId = Number(originalDoc?.id)
+  if ((await homepageIDs(req)).has(pageId)) {
+    throw new APIError(
+      'A página inicial não pode sair do ar. Escolha outra página inicial antes.',
+      400,
+      null,
+      true,
+    )
+  }
+  return data
 }

@@ -2,7 +2,7 @@
 
 import React, { useId, useState } from 'react'
 
-import { CONSENT_TEXT, type FormDefinition, HONEYPOT_FIELD } from '@/lib/forms'
+import { CONSENT_INPUT, CONSENT_TEXT, type FormDefinition, HONEYPOT_FIELD } from '@/lib/forms'
 
 type Props = {
   form: FormDefinition
@@ -44,7 +44,7 @@ export function SiteForm({ form, pageId, successMessage, preview }: Props) {
         body: JSON.stringify({
           form: form.id,
           page: pageId,
-          consent: values.get('consent') === 'on',
+          consent: values.get(CONSENT_INPUT) === 'on',
           submissionData: [
             ...form.fields.map((field) => ({
               field: field.name,
@@ -145,7 +145,7 @@ export function SiteForm({ form, pageId, successMessage, preview }: Props) {
       </div>
 
       <label className="site-form__check">
-        <input disabled={preview} name="consent" required type="checkbox" />
+        <input disabled={preview} name={CONSENT_INPUT} required type="checkbox" />
         <span>{CONSENT_TEXT}</span>
       </label>
 
