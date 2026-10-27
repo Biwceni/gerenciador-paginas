@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
+import { protectPhotoDelete } from '../hooks/protectPhoto'
 import { revalidateOnChange, revalidateOnDelete } from '../hooks/revalidate'
 
 export const Media: CollectionConfig = {
@@ -23,6 +24,7 @@ export const Media: CollectionConfig = {
   hooks: {
     afterChange: [revalidateOnChange],
     afterDelete: [revalidateOnDelete],
+    beforeDelete: [protectPhotoDelete],
   },
   fields: [
     {

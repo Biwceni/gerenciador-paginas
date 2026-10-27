@@ -107,12 +107,14 @@ describe('referências', () => {
       mediaIds: [7, 8],
       pageIds: [3],
       sectionPageIds: [],
+      formIds: [],
     })
   })
 
   it('link para página fora do ar ou WhatsApp sem número não tem endereço', () => {
     const metadata: ContentMetadata = {
       photos: {},
+      forms: {},
       pageHrefs: { 3: '/servicos' },
       pageAnchors: { 3: { 'faq-1': 'perguntas' } },
       anchors: {},

@@ -8,6 +8,7 @@ import { APIError } from 'payload'
 import { authenticated } from '../access/authenticated'
 import { isAdmin, isAdminField, isAdminOrSelf } from '../access/users'
 import { resetPasswordEmailHTML, resetPasswordEmailSubject } from '../email/resetPassword'
+import { inviteUser } from '../endpoints/inviteUser'
 
 // O primeiro usuário do site vira administrador; os seguintes nascem como editor.
 const firstUserIsAdmin: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
@@ -78,6 +79,8 @@ export const Users: CollectionConfig = {
       generateEmailSubject: resetPasswordEmailSubject,
     },
   },
+  // Convite pela tela Configurações: `POST /api/users/invite`.
+  endpoints: [{ path: '/invite', method: 'post', handler: inviteUser }],
   hooks: {
     afterOperation: [keepOneAdmin],
     beforeChange: [firstUserIsAdmin],

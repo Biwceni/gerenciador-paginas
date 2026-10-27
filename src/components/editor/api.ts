@@ -8,7 +8,7 @@ import type { PageContent } from '@/puck/schema'
 
 type PayloadError = { errors?: { message?: string; data?: { errors?: { message?: string }[] } }[] }
 
-async function request<T>(apiRoute: string, path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(apiRoute: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiRoute}${path}`, {
     credentials: 'include',
     ...init,

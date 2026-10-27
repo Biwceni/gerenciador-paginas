@@ -51,7 +51,7 @@ export async function readMenu(
     if (draft._status === 'draft') {
       return {
         kind: 'cannot-add',
-        reason: 'O Cabeçalho tem mudanças ainda não publicadas. Coloque pelo Cabeçalho.',
+        reason: 'O menu tem mudanças ainda não publicadas. Coloque em Menu e rodapé.',
       }
     }
     return { kind: 'can-add', items }

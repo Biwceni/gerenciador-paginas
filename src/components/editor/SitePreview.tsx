@@ -42,14 +42,14 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
     <>
       <Locked
         href={preview.headerAdminHref}
-        tip="Topo do site: é igual em todas as páginas. Clique para mudar no Cabeçalho."
+        tip="Topo do site: é igual em todas as páginas. Clique para mudar em Menu e rodapé."
       >
         {preview.campaign ? preview.headerCampaign : preview.header}
       </Locked>
       <main id="conteudo">{children}</main>
       <Locked
         href={preview.footerAdminHref}
-        tip="Rodapé do site: é igual em todas as páginas. Clique para mudar no Rodapé."
+        tip="Rodapé do site: é igual em todas as páginas. Clique para mudar em Menu e rodapé."
       >
         {preview.campaign ? preview.footerCampaign : preview.footer}
       </Locked>

@@ -179,6 +179,20 @@ export const columnImagePropsSchema = z.object({
   caption: z.string().max(120),
 })
 
+/** Formulário do plugin de formulários, por relação (o id), como as fotos. */
+export const formRefSchema = z.object({ formId: id }).nullable()
+
+export const formPropsSchema = z.object({
+  id: componentId,
+  menuLabel,
+  title,
+  text: z.string().max(600),
+  form: formRefSchema,
+  /** Frase que aparece no lugar do formulário depois de enviar. */
+  successMessage: z.string().max(200),
+  style: sectionStyle,
+})
+
 export const columnButtonPropsSchema = z.object({
   id: componentId,
   button: buttonSchema.nullable(),
@@ -218,6 +232,8 @@ const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Columns'), props: columnsPropsSchema }),
   z.object({ type: z.literal('RichText'), props: richTextPropsSchema }),
   z.object({ type: z.literal('Video'), props: videoPropsSchema }),
+  // Seção nova (fase 3): só acrescenta um tipo, as outras não mudam, então a versão continua a 2.
+  z.object({ type: z.literal('Form'), props: formPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -251,6 +267,8 @@ export type ContactProps = z.infer<typeof contactPropsSchema>
 export type LinkListProps = z.infer<typeof linkListPropsSchema>
 export type RichTextProps = z.infer<typeof richTextPropsSchema>
 export type VideoProps = z.infer<typeof videoPropsSchema>
+export type FormProps = z.infer<typeof formPropsSchema>
+export type FormRef = z.infer<typeof formRefSchema>
 export type ColumnsProps = z.infer<typeof columnsPropsSchema>
 export type ColumnTextProps = z.infer<typeof columnTextPropsSchema>
 export type ColumnImageProps = z.infer<typeof columnImagePropsSchema>

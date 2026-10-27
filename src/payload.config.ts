@@ -16,6 +16,7 @@ import { Header } from './globals/Header'
 import { Site } from './globals/Site'
 import { EDITOR_VIEW_PATH } from './lib/editor'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
+import { formsPlugin } from './plugins/forms'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -68,7 +69,43 @@ export default buildConfig({
         Icon: '/components/admin/Icon#Icon',
         Logo: '/components/admin/Logo#Logo',
       },
+      // Painel do leigo (fase 3): menu e tela inicial nossos, no visual do protótipo.
+      Nav: '/components/panel/PanelNav#PanelNav',
+      providers: ['/components/panel/PanelFonts#PanelFonts'],
       views: {
+        dashboard: {
+          Component: '/components/panel/Dashboard#Dashboard',
+        },
+        panelPages: {
+          Component: '/components/panel/PagesView#PagesView',
+          path: '/paginas',
+          exact: true,
+          meta: { title: 'Páginas' },
+        },
+        panelNewPage: {
+          Component: '/components/panel/NewPageView#NewPageView',
+          path: '/paginas/nova',
+          exact: true,
+          meta: { title: 'Nova página' },
+        },
+        panelPhotos: {
+          Component: '/components/panel/PhotosView#PhotosView',
+          path: '/fotos',
+          exact: true,
+          meta: { title: 'Fotos' },
+        },
+        panelMenu: {
+          Component: '/components/panel/MenuView#MenuView',
+          path: '/menu-e-rodape',
+          exact: true,
+          meta: { title: 'Menu e rodapé' },
+        },
+        panelSettings: {
+          Component: '/components/panel/SettingsView#SettingsView',
+          path: '/configuracoes',
+          exact: true,
+          meta: { title: 'Configurações' },
+        },
         // Editor visual das páginas, em tela cheia: /admin/editor/<id>.
         pageEditor: {
           Component: '/components/editor/EditorView#EditorView',
@@ -126,6 +163,7 @@ export default buildConfig({
     },
   },
   plugins: [
+    formsPlugin,
     s3Storage({
       enabled: storageEnabled,
       alwaysInsertFields: true,

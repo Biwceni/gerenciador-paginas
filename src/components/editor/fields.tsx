@@ -7,10 +7,12 @@ import { toast } from '@payloadcms/ui'
 import { createUsePuck } from '@puckeditor/core'
 import React, { useState } from 'react'
 
+import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
 import { youtubeID } from '@/lib/youtube'
-import type { LinkRef, PhotoRef } from '@/puck/schema'
+import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 
+import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { addMenuItem, linksTo, readMenu } from './menu'
 
@@ -340,4 +342,78 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
 /** Aviso fixo no painel de opções (não guarda nada). */
 export function Notice({ children }: { children: React.ReactNode }) {
   return <p className="ed-notice">{children}</p>
+}
+
+/**
+ * Qual formulário aparece na seção. Guarda só o id (relação). Sem nenhum formulário ainda, cria o
+ * padrão (Nome, WhatsApp, E-mail e Mensagem) com um clique; os campos se mudam na tela de
+ * Formulários do painel.
+ */
+export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
+  const { adminRoute, apiRoute, forms, addForm } = useEditor()
+  const [creating, setCreating] = useState(false)
+  const selected = value ? forms.find((form) => form.id === value.formId) : undefined
+
+  const createDefault = async () => {
+    setCreating(true)
+    try {
+      const { doc } = await request<{ doc: Parameters<typeof toFormDefinition>[0] }>(
+        apiRoute,
+        '/forms',
+        { method: 'POST', body: JSON.stringify({ ...DEFAULT_FORM, confirmationType: 'message' }) },
+      )
+      const form = toFormDefinition(doc)
+      addForm(form)
+      onChange({ formId: form.id })
+    } catch (error) {
+      toast.error(
+        `Não deu para criar o formulário: ${error instanceof Error ? error.message : 'tente de novo.'}`,
+      )
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  return (
+    <div className="ed-link-field">
+      {forms.length > 0 && (
+        <select
+          className="ed-input"
+          disabled={readOnly}
+          onChange={(event) =>
+            onChange(event.target.value ? { formId: Number(event.target.value) } : null)
+          }
+          value={selected ? String(selected.id) : ''}
+        >
+          <option value="">Escolha um formulário</option>
+          {forms.map((form) => (
+            <option key={form.id} value={form.id}>
+              {form.title || `Formulário ${form.id}`}
+            </option>
+          ))}
+        </select>
+      )}
+      {selected ? (
+        <p className="ed-hint">
+          Campos: {selected.fields.map((field) => field.label).join(', ') || 'nenhum'}.{' '}
+          <a href={`${adminRoute}/collections/forms/${selected.id}`} rel="noopener" target="_blank">
+            Mudar os campos
+          </a>
+        </p>
+      ) : (
+        <button
+          className="ed-btn ed-btn--sm"
+          disabled={readOnly || creating}
+          onClick={createDefault}
+          type="button"
+        >
+          {creating ? 'Criando…' : 'Criar formulário padrão (Nome, WhatsApp, E-mail, Mensagem)'}
+        </button>
+      )}
+      <p className="ed-hint">
+        As mensagens ficam em Mensagens, no painel, e chegam no e-mail das Configurações. Quem envia
+        precisa marcar que concorda com o uso dos dados.
+      </p>
+    </div>
+  )
 }

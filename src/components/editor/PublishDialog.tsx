@@ -115,7 +115,7 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
         </p>
         {done.menuError && (
           <p className="ed-hint ed-hint--warn">
-            Não deu para colocar a página no menu ({done.menuError}). Coloque pelo Cabeçalho.
+            Não deu para colocar a página no menu ({done.menuError}). Coloque em Menu e rodapé.
           </p>
         )}
         <div className="ed-row">

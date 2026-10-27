@@ -888,6 +888,113 @@
     }
   }
 
+  /* Formulário */
+
+  .form-section {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .form-section__intro {
+    display: grid;
+    gap: 14px;
+  }
+
+  .form-section__intro .section-title {
+    margin-bottom: 0;
+  }
+
+  .site-form {
+    display: grid;
+    gap: 16px;
+  }
+
+  .site-form__field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .site-form__field label {
+    font-weight: 600;
+  }
+
+  .site-form input:not([type='checkbox']),
+  .site-form textarea,
+  .site-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-background);
+    color: var(--color-text);
+    font: inherit;
+  }
+
+  .site-form textarea {
+    resize: vertical;
+  }
+
+  .site-form input:focus-visible,
+  .site-form textarea:focus-visible,
+  .site-form select:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  .site-form__check {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 15px;
+  }
+
+  .site-form__check input {
+    width: 20px;
+    height: 20px;
+    margin: 2px 0 0;
+    flex: none;
+    accent-color: var(--color-primary);
+  }
+
+  /* Armadilha para robôs: fora da tela, sem sumir do HTML. */
+  .site-form__trap {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .site-form__error {
+    margin: 0;
+    font-weight: 600;
+    color: #b23a2b;
+  }
+
+  .site-form__sent {
+    margin: 0;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--color-background);
+    color: var(--color-text);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .section--brand .site-form__field label,
+  .section--brand .site-form__check {
+    color: var(--color-on-primary);
+  }
+
+  @media (max-width: 720px) {
+    .form-section {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   /* Só na prévia do editor: avisos no lugar do que falta e textos vazios clicáveis. */
 
   & .editor-placeholder {

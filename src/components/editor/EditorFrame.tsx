@@ -30,7 +30,7 @@ function isSiteRule(rule: CSSRule): boolean {
  * painel num arquivo só, então a cópia é regra por regra, e não do arquivo inteiro: as classes do
  * painel (algumas com o mesmo nome, como `.section-title`) não podem entrar na prévia.
  */
-function siteCSS(): string {
+export function siteCSS(): string {
   const parts: string[] = []
   for (const sheet of Array.from(document.styleSheets)) {
     let rules: CSSRule[]

@@ -132,6 +132,7 @@ describe('seções da fase 2', () => {
       mediaIds: [],
       pageIds: [5],
       sectionPageIds: [5],
+      formIds: [],
     })
   })
 

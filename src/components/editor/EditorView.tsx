@@ -8,8 +8,10 @@ import { SiteHeader } from '@/components/site/SiteHeader'
 import { themeStyle } from '@/components/site/theme'
 import { siteInfo, siteLinks } from '@/lib/content'
 import { editorPath } from '@/lib/editor'
-import { sectionAnchors } from '@/puck/anchors'
+import { panelHref } from '@/lib/panel'
+import { toFormDefinition } from '@/lib/forms'
 import { parsePageContent } from '@/puck/schema'
+import { pageSummary } from '@/puck/summary'
 
 import type { EditorPageSummary } from './context'
 import { Editor } from './Editor'
@@ -33,7 +35,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
   if (!Number.isInteger(id) || id <= 0) notFound()
 
   const access = { overrideAccess: false, user } as const
-  const [draft, livePages, pages, photos, site] = await Promise.all([
+  const [draft, livePages, pages, photos, site, forms] = await Promise.all([
     payload.findByID({
       collection: 'pages',
       id,
@@ -72,6 +74,15 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       ...access,
     }),
     payload.findGlobal({ slug: 'site', depth: 1, draft: false, ...access }),
+    payload.find({
+      collection: 'forms',
+      select: { title: true, submitButtonLabel: true, fields: true },
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      sort: 'title',
+      ...access,
+    }),
   ])
   if (!draft) notFound()
 
@@ -88,28 +99,9 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
   const liveIds = new Set(livePages.docs.map((doc) => doc.id))
   const live = liveIds.has(id)
 
-  const summaries: EditorPageSummary[] = pages.docs.map((doc) => {
-    const parsed = parsePageContent(doc.content)
-    const anchors = parsed.success ? sectionAnchors(parsed.data.data) : {}
-    const labels = parsed.success
-      ? Object.fromEntries(
-          parsed.data.data.content.map((item) => [
-            item.props.id,
-            'menuLabel' in item.props ? item.props.menuLabel : '',
-          ]),
-        )
-      : {}
-    return {
-      id: doc.id,
-      title: doc.title,
-      slug: doc.slug,
-      published: liveIds.has(doc.id),
-      sections: Object.keys(anchors).map((sectionId) => ({
-        id: sectionId,
-        label: labels[sectionId] || sectionId,
-      })),
-    }
-  })
+  const summaries: EditorPageSummary[] = pages.docs.map((doc) =>
+    pageSummary(doc, liveIds.has(doc.id)),
+  )
 
   const links = siteLinks(site)
 
@@ -122,11 +114,12 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
         headerCampaign: <SiteHeader campaign currentPageId={id} />,
         footer: <SiteFooter />,
         footerCampaign: <SiteFooter campaign />,
-        headerAdminHref: `${adminRoute}/globals/header`,
-        footerAdminHref: `${adminRoute}/globals/footer`,
+        headerAdminHref: panelHref(adminRoute, 'menu'),
+        footerAdminHref: panelHref(adminRoute, 'menu'),
       }}
       apiRoute={payload.config.routes.api}
       fontFaces={site.fontFaces ?? null}
+      forms={forms.docs.map(toFormDefinition)}
       homepageId={links.homepageId}
       initialData={content.data.data}
       page={{

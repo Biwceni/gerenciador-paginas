@@ -4,6 +4,7 @@ import { ValidationError } from 'payload'
 import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { slugField } from '../fields/slug'
+import { protectPageDelete } from '../hooks/protectPage'
 import { revalidateOnDelete, revalidateOnPublish } from '../hooks/revalidate'
 import { describeContentError, emptyPageContent, parsePageContent } from '../puck/schema'
 
@@ -57,6 +58,7 @@ export const Pages: CollectionConfig = {
   hooks: {
     afterChange: [revalidateOnPublish],
     afterDelete: [revalidateOnDelete],
+    beforeDelete: [protectPageDelete],
   },
   fields: [
     {

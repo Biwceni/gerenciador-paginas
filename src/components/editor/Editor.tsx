@@ -18,6 +18,8 @@ import React, {
 } from 'react'
 import type { z } from 'zod'
 
+import type { FormDefinition } from '@/lib/forms'
+import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
 import { COLUMN_PIECES } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
@@ -41,6 +43,7 @@ export type EditorProps = {
   page: PageSettings & { id: number; live: boolean; hasChanges: boolean }
   initialData: PuckPageData
   photos: Media[]
+  forms: FormDefinition[]
   pages: EditorPageSummary[]
   homepageId: number | null
   site: SiteInfo
@@ -190,6 +193,7 @@ export function Editor(props: EditorProps) {
   const [save, setSave] = useState<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
   const [photos, setPhotos] = useState(props.photos)
+  const [forms, setForms] = useState(props.forms)
   const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
   const [data, setData] = useState<PuckPageData>(initialData)
 
@@ -202,6 +206,17 @@ export function Editor(props: EditorProps) {
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
   }, [])
+
+  const formById = useMemo(
+    () =>
+      Object.fromEntries(forms.map((form) => [form.id, form])) as Record<number, FormDefinition>,
+    [forms],
+  )
+  const addForm = useCallback(
+    (form: FormDefinition) =>
+      setForms((current) => [...current.filter((item) => item.id !== form.id), form]),
+    [],
+  )
 
   const photoById = useMemo(
     () => Object.fromEntries(photos.map((photo) => [photo.id, photo])) as Record<number, Media>,
@@ -319,7 +334,7 @@ export function Editor(props: EditorProps) {
     statusTone: save.state === 'error' ? 'warn' : live && !hasChanges ? 'ok' : 'muted',
     canPublish: !live || hasChanges || unsaved || save.state === 'error',
     livePath: live ? path : null,
-    backHref: `${adminRoute}/collections/pages`,
+    backHref: panelHref(adminRoute, 'pages'),
     open: setDialog,
     leave: flush,
     connect,
@@ -330,6 +345,8 @@ export function Editor(props: EditorProps) {
   const metadata: ContentMetadata = useMemo(
     () => ({
       photos: photoById,
+      forms: formById,
+      pageId,
       pageHrefs: Object.fromEntries(
         props.pages.map((item) => [item.id, item.id === homepageId ? '/' : `/${item.slug}`]),
       ),
@@ -340,7 +357,7 @@ export function Editor(props: EditorProps) {
       mainHeadingId: mainHeadingID(data),
       editing: true,
     }),
-    [data, homepageId, photoById, props.pages, site, whatsappHref],
+    [data, formById, homepageId, pageId, photoById, props.pages, site, whatsappHref],
   )
 
   const context = useMemo(
@@ -353,9 +370,24 @@ export function Editor(props: EditorProps) {
       photos,
       photoById,
       pages: props.pages,
+      forms,
+      addForm,
+      adminRoute,
       pickPhoto: (onPick: (photo: Media) => void) => setPicking(() => onPick),
     }),
-    [apiRoute, homepageId, pageId, photoById, photos, props.pages, site, whatsappHref],
+    [
+      addForm,
+      adminRoute,
+      apiRoute,
+      forms,
+      homepageId,
+      pageId,
+      photoById,
+      photos,
+      props.pages,
+      site,
+      whatsappHref,
+    ],
   )
 
   const preview = useMemo(

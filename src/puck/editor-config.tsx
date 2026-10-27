@@ -4,6 +4,7 @@ import { type Config, type CustomField, type Field, FieldLabel } from '@puckedit
 import React from 'react'
 
 import {
+  FormField,
   LinkField,
   MenuLabelField,
   Notice,
@@ -405,6 +406,32 @@ const sections: { [K in keyof Components]: Section<K> } = {
       caption: '',
       cover: null,
       style: 'light',
+    },
+  },
+  Form: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase'),
+      form: {
+        type: 'custom',
+        label: 'Formulário',
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <FormField {...props} />
+          </FieldLabel>
+        ),
+      },
+      successMessage: { type: 'textarea', label: 'Frase depois de enviar' },
+      style: sectionStyle,
+      menuLabel,
+    },
+    defaultProps: {
+      menuLabel: '',
+      title: 'Fale com a gente',
+      text: 'Deixe seus dados e respondemos em pouco tempo.',
+      form: null,
+      successMessage: 'Recebemos sua mensagem! Respondemos em breve.',
+      style: 'soft',
     },
   },
   ColumnText: {
