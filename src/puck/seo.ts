@@ -23,6 +23,7 @@ function sectionText(item: PageComponent): string {
     case 'CallToAction':
     case 'Contact':
     case 'LinkList':
+    case 'Form':
       return item.props.text
     case 'Features':
       return item.props.items[0]?.text ?? ''

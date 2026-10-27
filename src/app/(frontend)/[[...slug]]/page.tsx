@@ -132,10 +132,12 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
 
   const [payload, site] = await Promise.all([getPayloadClient(), getSite()])
   const data = readPageContent(page)
-  const metadata = await resolveReferences(payload, data, {
-    ...siteLinks(site),
-    info: siteInfo(site),
-  })
+  const metadata = await resolveReferences(
+    payload,
+    data,
+    { ...siteLinks(site), info: siteInfo(site) },
+    page.id,
+  )
   const campaign = Boolean(page.campaign)
 
   return (

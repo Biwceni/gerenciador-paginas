@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import React from 'react'
 
 import {
@@ -10,13 +9,11 @@ import {
   resolveLink,
   siteLinks,
 } from '@/lib/content'
-import { FALLBACK_SITE_NAME, initials } from '@/lib/site'
+import { FALLBACK_SITE_NAME } from '@/lib/site'
 
-import { HeaderMenu } from './HeaderMenu'
-import { Photo } from './Photo'
-import { SiteLink } from './SiteLink'
+import { type MenuItem, SiteHeaderView } from './SiteChrome'
 
-export type MenuItem = { id: string; label: string; href: string; current: boolean }
+export type { MenuItem }
 
 /** Itens do menu que levam a algo no ar (os outros somem), marcando a página atual. */
 export async function getMenuItems(currentPageId?: number | null): Promise<MenuItem[]> {
@@ -40,6 +37,7 @@ type Props = {
   campaign?: boolean
 }
 
+/** Topo publicado. */
 export async function SiteHeader({ currentPageId, campaign }: Props) {
   const [site, header, items, pageAnchors] = await Promise.all([
     getSite(),
@@ -47,54 +45,17 @@ export async function SiteHeader({ currentPageId, campaign }: Props) {
     getMenuItems(currentPageId),
     getMenuAnchors(),
   ])
-  const name = site.name || FALLBACK_SITE_NAME
-  const logo = populatedMedia(site.logo)
   const buttonHref = header.button?.label
     ? resolveLink(header.button.link, { ...siteLinks(site), pageAnchors })
     : null
-  const hasNav = !campaign && (items.length > 0 || buttonHref)
-
-  const navContent = (
-    <>
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>
-            <SiteLink aria-current={item.current ? 'page' : undefined} href={item.href}>
-              {item.label}
-            </SiteLink>
-          </li>
-        ))}
-      </ul>
-      {buttonHref && (
-        <SiteLink className="button" href={buttonHref}>
-          {header.button?.label}
-        </SiteLink>
-      )}
-    </>
-  )
 
   return (
-    <header className="site-header">
-      <div className="container site-header__bar">
-        <Link className="site-header__brand" href="/">
-          {logo ? (
-            <Photo className="site-header__logo" media={logo} sizes="160px" />
-          ) : (
-            <span aria-hidden="true" className="site-header__initials">
-              {initials(name)}
-            </span>
-          )}
-          <span>{name}</span>
-        </Link>
-        {hasNav && (
-          <>
-            <nav aria-label="Menu principal" className="site-header__nav">
-              {navContent}
-            </nav>
-            <HeaderMenu>{navContent}</HeaderMenu>
-          </>
-        )}
-      </div>
-    </header>
+    <SiteHeaderView
+      button={buttonHref ? { label: header.button?.label ?? '', href: buttonHref } : null}
+      campaign={campaign}
+      items={items}
+      logo={populatedMedia(site.logo)}
+      name={site.name || FALLBACK_SITE_NAME}
+    />
   )
 }

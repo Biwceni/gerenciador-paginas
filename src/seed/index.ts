@@ -278,7 +278,14 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
       overrideAccess: true,
     })
     for (const doc of docs) {
-      await payload.delete({ collection: 'pages', id: doc.id, overrideAccess: true })
+      // O `recriar` refaz também as configurações e o menu, então pode apagar a página inicial e
+      // as do menu (ver `protectPageDelete`).
+      await payload.delete({
+        collection: 'pages',
+        id: doc.id,
+        overrideAccess: true,
+        context: { seedRecreate: true },
+      })
       payload.logger.info(`Página de teste apagada: /${doc.slug}`)
     }
   }

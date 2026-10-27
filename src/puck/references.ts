@@ -1,5 +1,6 @@
 import type { Payload } from 'payload'
 
+import { type FormDefinition, toFormDefinition } from '../lib/forms'
 import type { Media, Site } from '../payload-types'
 import { sectionAnchors } from './anchors'
 import { type LinkRef, parsePageContent, type PhotoRef, type PuckPageData } from './schema'
@@ -7,6 +8,10 @@ import { type LinkRef, parsePageContent, type PhotoRef, type PuckPageData } from
 /** O que as seções precisam para desenhar: fotos, endereços e contato já buscados no banco. */
 export type ContentMetadata = {
   photos: Record<number, Media>
+  /** Formulários citados pelas seções "Formulário". */
+  forms: Record<number, FormDefinition>
+  /** Página que está sendo desenhada (vai junto com as mensagens dos formulários). */
+  pageId?: number
   pageHrefs: Record<number, string>
   /** Âncoras das seções de outras páginas citadas em links, por página e por id da seção. */
   pageAnchors: Record<number, Record<string, string>>
@@ -31,19 +36,26 @@ export type SiteInfo = {
   contact: NonNullable<Site['contact']>
 }
 
-type References = { mediaIds: number[]; pageIds: number[]; sectionPageIds: number[] }
+type References = {
+  mediaIds: number[]
+  pageIds: number[]
+  sectionPageIds: number[]
+  formIds: number[]
+}
 
 /** Junta os ids de fotos e páginas citados no conteúdo, em qualquer seção ou nível. */
 export function collectReferences(data: PuckPageData): References {
   const mediaIds = new Set<number>()
   const pageIds = new Set<number>()
   const sectionPageIds = new Set<number>()
+  const formIds = new Set<number>()
 
   const walk = (value: unknown) => {
     if (Array.isArray(value)) return value.forEach(walk)
     if (!value || typeof value !== 'object') return
     const record = value as Record<string, unknown>
     if (typeof record.mediaId === 'number') mediaIds.add(record.mediaId)
+    if (typeof record.formId === 'number') formIds.add(record.formId)
     if ((record.kind === 'page' || record.kind === 'section') && typeof record.pageId === 'number')
       pageIds.add(record.pageId)
     if (record.kind === 'section' && typeof record.pageId === 'number')
@@ -52,7 +64,12 @@ export function collectReferences(data: PuckPageData): References {
   }
   walk(data)
 
-  return { mediaIds: [...mediaIds], pageIds: [...pageIds], sectionPageIds: [...sectionPageIds] }
+  return {
+    mediaIds: [...mediaIds],
+    pageIds: [...pageIds],
+    sectionPageIds: [...sectionPageIds],
+    formIds: [...formIds],
+  }
 }
 
 export function pageHref(page: { id: number; slug?: string | null }, homepageId?: number | null) {
@@ -73,10 +90,11 @@ export async function resolveReferences(
   payload: Payload,
   data: PuckPageData,
   site: { homepageId: number | null; whatsappHref: string | null; info: SiteInfo },
+  pageId?: number,
 ): Promise<ContentMetadata> {
-  const { mediaIds, pageIds, sectionPageIds } = collectReferences(data)
+  const { mediaIds, pageIds, sectionPageIds, formIds } = collectReferences(data)
 
-  const [media, pages] = await Promise.all([
+  const [media, pages, forms] = await Promise.all([
     mediaIds.length
       ? payload.find({
           collection: 'media',
@@ -100,6 +118,17 @@ export async function resolveReferences(
           overrideAccess: false,
         })
       : null,
+    formIds.length
+      ? payload.find({
+          collection: 'forms',
+          where: { id: { in: formIds } },
+          select: { title: true, submitButtonLabel: true, fields: true },
+          depth: 0,
+          limit: formIds.length,
+          pagination: false,
+          overrideAccess: false,
+        })
+      : null,
   ])
 
   const pageAnchors: Record<number, Record<string, string>> = {}
@@ -111,6 +140,8 @@ export async function resolveReferences(
 
   return {
     photos: Object.fromEntries((media?.docs ?? []).map((doc) => [doc.id, doc])),
+    forms: Object.fromEntries((forms?.docs ?? []).map((doc) => [doc.id, toFormDefinition(doc)])),
+    pageId,
     pageHrefs: Object.fromEntries(
       (pages?.docs ?? []).map((doc) => [doc.id, pageHref(doc, site.homepageId)]),
     ),

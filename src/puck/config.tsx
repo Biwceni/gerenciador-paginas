@@ -10,6 +10,7 @@ import {
   Contact,
   Faq,
   Features,
+  Form,
   Gallery,
   Hero,
   LinkList,
@@ -28,6 +29,7 @@ import type {
   ContactProps,
   FaqProps,
   FeaturesProps,
+  FormProps,
   GalleryProps,
   HeroProps,
   LinkListProps,
@@ -56,6 +58,7 @@ export type Components = {
   }
   RichText: Props<RichTextProps>
   Video: Props<VideoProps>
+  Form: Props<FormProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
   ColumnButton: Props<ColumnButtonProps>
@@ -75,6 +78,7 @@ export const SECTION_LABELS = {
   Columns: 'Colunas',
   RichText: 'Texto simples',
   Video: 'Vídeo do YouTube',
+  Form: 'Formulário',
 } as const
 
 export const COLUMN_PIECES = ['ColumnText', 'ColumnImage', 'ColumnButton'] as const
@@ -156,6 +160,10 @@ export const renderConfig: Config<Components> = {
     Video: {
       label: SECTION_LABELS.Video,
       render: ({ puck, ...props }) => <Video {...props} metadata={meta(puck)} />,
+    },
+    Form: {
+      label: SECTION_LABELS.Form,
+      render: ({ puck, ...props }) => <Form {...props} metadata={meta(puck)} />,
     },
     ColumnText: {
       label: PIECE_LABELS.ColumnText,

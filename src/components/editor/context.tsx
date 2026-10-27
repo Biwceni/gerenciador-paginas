@@ -2,17 +2,13 @@
 
 import { createContext, useContext } from 'react'
 
+import type { FormDefinition } from '@/lib/forms'
 import type { Media } from '@/payload-types'
 import type { SiteInfo } from '@/puck/references'
+import type { PageSummary } from '@/puck/summary'
 
 /** Uma página do site, como o seletor de links precisa: nome, situação e seções com nome no menu. */
-export type EditorPageSummary = {
-  id: number
-  title: string
-  slug: string
-  published: boolean
-  sections: { id: string; label: string }[]
-}
+export type EditorPageSummary = PageSummary
 
 export type EditorContextValue = {
   apiRoute: string
@@ -23,6 +19,11 @@ export type EditorContextValue = {
   photos: Media[]
   photoById: Record<number, Media>
   pages: EditorPageSummary[]
+  /** Formulários do site, para a seção "Formulário". */
+  forms: FormDefinition[]
+  /** Acrescenta um formulário criado agora (o "Criar formulário padrão" do campo). */
+  addForm: (form: FormDefinition) => void
+  adminRoute: string
   /** Abre a biblioteca de fotos; `onPick` recebe a foto escolhida ou enviada na hora. */
   pickPhoto: (onPick: (photo: Media) => void) => void
 }

@@ -80,6 +80,8 @@ export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
       )}
 
       <UploadDrawer
+        // Sem isso, depois de criar a foto o Payload leva para a tela padrão dela e sai do editor.
+        redirectAfterCreate={false}
         onSave={({ doc, operation }) => {
           if (operation !== 'create') return
           closeDrawer()

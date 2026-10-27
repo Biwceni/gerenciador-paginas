@@ -15,6 +15,7 @@ import type {
   ContactProps,
   FaqProps,
   FeaturesProps,
+  FormProps,
   GalleryProps,
   HeroProps,
   LinkListProps,
@@ -24,6 +25,7 @@ import type {
   VideoProps,
 } from '../schema'
 import { SectionButton } from './Button'
+import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
 
 // Desenho das seções conforme o protótipo navegável. Serve no site e na prévia do editor
@@ -335,6 +337,37 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
             <EditorPlaceholder>
               WhatsApp, telefone, e-mail, endereço e horário aparecem aqui quando forem preenchidos
               nas Configurações do site.
+            </EditorPlaceholder>
+          )
+        )}
+      </div>
+    </Section>
+  )
+}
+
+/** Formulário: título e frase de um lado, os campos do formulário escolhido do outro. */
+export function Form(props: WithMetadata<FormProps>) {
+  const { id, title, text, form, successMessage, style, metadata } = props
+  const definition = form ? metadata.forms[form.formId] : undefined
+
+  return (
+    <Section id={id} metadata={metadata} style={style}>
+      <div className="container form-section">
+        <div className="form-section__intro">
+          <SectionTitle title={title} />
+          <Paragraphs text={text} />
+        </div>
+        {definition ? (
+          <SiteForm
+            form={definition}
+            pageId={metadata.pageId}
+            preview={metadata.editing}
+            successMessage={successMessage}
+          />
+        ) : (
+          metadata.editing && (
+            <EditorPlaceholder>
+              Escolha qual formulário aparece aqui, no painel da direita.
             </EditorPlaceholder>
           )
         )}
