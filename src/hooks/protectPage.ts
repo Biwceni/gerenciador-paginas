@@ -72,6 +72,9 @@ export const protectPageDelete: CollectionBeforeDeleteHook = async ({ context, i
  * pela API REST, salvar rascunho vem com `?draft=true` (editor, salvamento automático, painel) e
  * "tirar do ar" vem sem ele. A API local (código do servidor, como o seed) fica de fora; pelo
  * GraphQL, que não usamos, salvar rascunho da página inicial também é recusado.
+ *
+ * O Payload converte `req.query` antes dos ganchos: o `draft` chega como booleano. Aceita também o
+ * texto, caso a conversão mude.
  */
 export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
   data,
@@ -80,7 +83,8 @@ export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
   req,
 }) => {
   if (operation !== 'update' || req.payloadAPI === 'local') return data
-  if (data._status !== 'draft' || req.query?.draft === 'true') return data
+  const savingDraft = req.query?.draft === true || req.query?.draft === 'true'
+  if (data._status !== 'draft' || savingDraft) return data
   const pageId = Number(originalDoc?.id)
   if ((await homepageIDs(req)).has(pageId)) {
     throw new APIError(

@@ -31,6 +31,10 @@ describe('página inicial', () => {
   })
 
   it('aceita salvar rascunho dela e tirar do ar outras páginas', async () => {
+    // O Payload entrega o `draft` já convertido para booleano (`?draft=true&autosave=true`).
+    await expect(
+      unpublish(homepageReq({ query: { draft: true, autosave: true } })),
+    ).resolves.toBeTruthy()
     await expect(unpublish(homepageReq({ query: { draft: 'true' } }))).resolves.toBeTruthy()
     await expect(unpublish(homepageReq({}), 7)).resolves.toBeTruthy()
     await expect(unpublish(homepageReq({ payloadAPI: 'local' }))).resolves.toBeTruthy()
