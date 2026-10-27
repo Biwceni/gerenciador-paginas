@@ -6,6 +6,7 @@ import * as migration_20261025_214813_marca_paginas_de_teste from './20261025_21
 import * as migration_20261025_225422_rascunho_automatico from './20261025_225422_rascunho_automatico';
 import * as migration_20261025_234228_link_para_secao from './20261025_234228_link_para_secao';
 import * as migration_20261027_003103_formularios from './20261027_003103_formularios';
+import * as migration_20261027_013052_rls_tabelas from './20261027_013052_rls_tabelas';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20261027_003103_formularios.up,
     down: migration_20261027_003103_formularios.down,
-    name: '20261027_003103_formularios'
+    name: '20261027_003103_formularios',
+  },
+  {
+    up: migration_20261027_013052_rls_tabelas.up,
+    down: migration_20261027_013052_rls_tabelas.down,
+    name: '20261027_013052_rls_tabelas'
   },
 ];
