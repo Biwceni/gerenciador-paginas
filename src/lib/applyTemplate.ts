@@ -6,7 +6,7 @@ import { collectReferences } from '../puck/references'
 import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/schema'
 import { relationID } from './relations'
 import { slugify, uniqueSlug } from './slug'
-import { remapTemplateContent, type TemplateIds } from './templates'
+import { isTemplatePhotoURL, remapTemplateContent, type TemplateIds } from './templates'
 
 // Aplicar um modelo (fase 4): copia as fotos para a biblioteca, cria os formulários e as páginas e,
 // no modelo de site, troca as configurações, o menu e o rodapé. Chamado pelos endpoints em
@@ -22,7 +22,10 @@ const PHOTO_TYPES: Record<string, string> = {
 const PHOTO_LIMIT = 10_000_000
 
 async function downloadPhoto(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+  // O endereço já é conferido ao salvar o modelo; aqui de novo, e sem seguir redirecionamento,
+  // para o servidor nunca buscar nada fora dos bancos de fotos.
+  if (!isTemplatePhotoURL(url)) throw new Error('Endereço de foto fora do Pexels e do Unsplash')
+  const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(20_000) })
   if (!response.ok) throw new Error(`O banco de fotos respondeu ${response.status}`)
   const mimetype = response.headers.get('content-type')?.split(';')[0].trim() ?? ''
   if (!PHOTO_TYPES[mimetype]) throw new Error(`Tipo de arquivo inesperado: ${mimetype}`)
@@ -34,18 +37,19 @@ async function downloadPhoto(url: string) {
 /**
  * Copia para a biblioteca as fotos do modelo que as páginas usam, uma vez cada: a foto já copiada
  * antes (mesmo endereço) é reaproveitada. Foto que não deu para copiar fica de fora (id 0): o
- * lugar dela fica vazio na página, e o resto do modelo segue.
+ * lugar dela fica vazio na página, o resto do modelo segue e `missing` conta quantas faltaram,
+ * para a tela avisar.
  */
 export async function copyTemplatePhotos(
   req: PayloadRequest,
   template: Pick<Template, 'pages' | 'photos'>,
-): Promise<number[]> {
+): Promise<{ ids: number[]; missing: number }> {
   const used = new Set(
     (template.pages ?? []).flatMap((page) => collectReferences(templateContent(page)).mediaIds),
   )
   const list = (template.photos ?? []).map((photo, index) => (used.has(index + 1) ? photo : null))
   const urls = list.flatMap((photo) => (photo ? [photo.url] : []))
-  if (!urls.length) return list.map(() => 0)
+  if (!urls.length) return { ids: list.map(() => 0), missing: 0 }
 
   const { docs } = await req.payload.find({
     collection: 'media',
@@ -90,7 +94,7 @@ export async function copyTemplatePhotos(
     }
     ids.push((photo && copied.get(photo.url)) || 0)
   }
-  return ids
+  return { ids, missing: list.filter((photo, index) => photo && !ids[index]).length }
 }
 
 async function createTemplateForms(req: PayloadRequest, template: Template): Promise<number[]> {
@@ -165,9 +169,9 @@ export async function applySiteTemplate(
   req: PayloadRequest,
   template: Template,
   answers: SiteAnswers,
-): Promise<{ homepage: number; pages: number[] }> {
+): Promise<{ homepage: number; pages: number[]; missingPhotos: number }> {
   // Fora da transação: copiar foto leva tempo e o arquivo vai para o Storage de qualquer jeito.
-  const photos = await copyTemplatePhotos(req, template)
+  const { ids: photos, missing: missingPhotos } = await copyTemplatePhotos(req, template)
 
   const shouldCommit = await initTransaction(req)
   try {
@@ -230,11 +234,17 @@ export async function applySiteTemplate(
       })
     }
 
+    // Vão todos os campos: o Payload completa o que faltar com o último rascunho, e uma mudança
+    // não publicada das Configurações iria para o ar junto. O resto vem do que está no ar.
     const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access })
     const sample = template.site
     await req.payload.updateGlobal({
       slug: 'site',
       data: {
+        logo: relationID(site.logo),
+        social: site.social,
+        seoDescription: site.seoDescription,
+        shareImage: relationID(site.shareImage),
         name: answers.name,
         tagline: answers.tagline || sample?.tagline || null,
         homepage: ids.pages[0],
@@ -299,7 +309,7 @@ export async function applySiteTemplate(
     })
 
     if (shouldCommit) await commitTransaction(req)
-    return { homepage: ids.pages[0], pages: ids.pages }
+    return { homepage: ids.pages[0], pages: ids.pages, missingPhotos }
   } catch (error) {
     await killTransaction(req)
     throw error
@@ -314,10 +324,10 @@ export async function applyPageTemplate(
   req: PayloadRequest,
   template: Template,
   page: { title: string; slug: string },
-): Promise<Page> {
+): Promise<{ doc: Page; missingPhotos: number }> {
   const source = template.pages?.[0]
   if (!source) throw new Error('O modelo não tem página.')
-  const photos = await copyTemplatePhotos(req, template)
+  const { ids: photos, missing: missingPhotos } = await copyTemplatePhotos(req, template)
 
   const shouldCommit = await initTransaction(req)
   try {
@@ -338,7 +348,7 @@ export async function applyPageTemplate(
       req,
     })
     if (shouldCommit) await commitTransaction(req)
-    return doc
+    return { doc, missingPhotos }
   } catch (error) {
     await killTransaction(req)
     throw error

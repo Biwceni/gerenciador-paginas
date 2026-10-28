@@ -181,7 +181,13 @@ describe('aplicar um modelo de site', () => {
     const { req, calls } = fakeReq({
       pages: [old],
       live: [{ id: 5 }],
-      site: { contact: { email: 'dono@site.com', address: 'Rua Real, 1' } },
+      site: {
+        contact: { email: 'dono@site.com', address: 'Rua Real, 1' },
+        logo: { id: 9 },
+        social: { instagram: '@publicado' },
+        seoDescription: 'No ar',
+        shareImage: 4,
+      },
     })
     const result = await applySiteTemplate(req, template, {
       name: 'Padaria da Ana',
@@ -213,6 +219,11 @@ describe('aplicar um modelo de site', () => {
       homepage: 100,
       fonts: { headings: 'Lora', body: 'Figtree' },
       contact: { email: 'dono@site.com', address: 'Rua Real, 1', whatsapp: '(31) 99999-0000' },
+      // O que o modelo não troca vai do que está no ar: senão o Payload completaria com o rascunho.
+      logo: 9,
+      social: { instagram: '@publicado' },
+      seoDescription: 'No ar',
+      shareImage: 4,
       _status: 'published',
     })
     const header = globals.find((c) => c.args.slug === 'header')!.args.data as {
@@ -247,6 +258,28 @@ describe('aplicar um modelo de site', () => {
     const update = second.calls.find((c) => c.op === 'update')!
     const data = (update.args.data as { content: { data: PuckPageData } }).content.data
     expect(data.content[0].props).toMatchObject({ title: 'Loja da Bia' })
+  })
+})
+
+describe('fotos que não deu para copiar', () => {
+  it('ficam vazias e são contadas para o aviso', async () => {
+    const seed = templateSeeds.find((item) => item.key === 'pagina-contato')!
+    const original = globalThis.fetch
+    globalThis.fetch = (async () => {
+      throw new Error('sem rede')
+    }) as typeof fetch
+    try {
+      const { req, calls } = fakeReq()
+      const result = await applyPageTemplate(req, asTemplate(seed), { title: 'Fale', slug: 'fale' })
+      // O modelo de contato usa 1 das 4 fotos: só ela conta.
+      expect(result.missingPhotos).toBe(1)
+      expect(calls.some((c) => c.op === 'create' && c.args.collection === 'media')).toBe(false)
+      const create = calls.find((c) => c.op === 'create' && c.args.collection === 'pages')!
+      const data = create.args.data as { content: { data: PuckPageData } }
+      expect(data.content.data.content[0].props).toMatchObject({ image: null })
+    } finally {
+      globalThis.fetch = original
+    }
   })
 })
 

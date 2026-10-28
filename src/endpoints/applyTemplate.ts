@@ -79,8 +79,8 @@ export const templatePageEndpoint: Endpoint = {
     const template = await findTemplate(req, 'page')
     if (!template) return fail('Modelo não encontrado.', 404)
     try {
-      const doc = await applyPageTemplate(req, template, { title, slug })
-      return Response.json({ doc: { id: doc.id } })
+      const { doc, missingPhotos } = await applyPageTemplate(req, template, { title, slug })
+      return Response.json({ doc: { id: doc.id }, missingPhotos })
     } catch (error) {
       return failFrom(req, error, 'Não deu para criar a página com o modelo')
     }

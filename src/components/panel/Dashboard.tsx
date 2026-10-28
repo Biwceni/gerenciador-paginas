@@ -44,6 +44,8 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   }
 
   const domain = new URL(getServerURL()).host
+  // Fotos de exemplo que não deu para copiar ao aplicar o modelo (`?fotos=3`, vindo do início guiado).
+  const missingPhotos = searchParams?.pronto ? Math.max(0, Number(searchParams.fotos) || 0) : 0
   const pending = pages.filter((page) => page.status !== 'live')
   const recent = pages.slice(0, 4)
 
@@ -80,6 +82,14 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
               Ver o site
             </a>
           </span>
+        </p>
+      )}
+      {missingPhotos > 0 && (
+        <p className="gp-warnbox" role="status">
+          {missingPhotos === 1
+            ? '1 foto de exemplo não veio do banco de fotos, e o lugar dela ficou vazio.'
+            : `${missingPhotos} fotos de exemplo não vieram do banco de fotos, e os lugares delas ficaram vazios.`}{' '}
+          Escolha fotos suas no editor de cada página.
         </p>
       )}
 

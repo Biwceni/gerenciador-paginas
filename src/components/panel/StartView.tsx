@@ -38,7 +38,7 @@ export async function StartView(props: AdminViewServerProps) {
   }
 
   const access = { overrideAccess: false, user } as const
-  const [templates, pages] = await Promise.all([
+  const [templates, pages, live] = await Promise.all([
     payload.find({
       collection: 'templates',
       where: { kind: { equals: 'site' } },
@@ -48,6 +48,7 @@ export async function StartView(props: AdminViewServerProps) {
       ...access,
     }),
     payload.count({ collection: 'pages', ...access }),
+    payload.count({ collection: 'pages', where: { _status: { equals: 'published' } }, ...access }),
   ])
 
   const list: StartTemplate[] = templates.docs.flatMap((doc) => {
@@ -77,6 +78,7 @@ export async function StartView(props: AdminViewServerProps) {
       adminRoute={adminRoute}
       apiRoute={payload.config.routes.api}
       existingPages={pages.totalDocs}
+      livePages={live.totalDocs}
       templates={list}
     />
   )

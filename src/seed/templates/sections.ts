@@ -45,7 +45,8 @@ export function pageBuilder() {
   let count = 0
   const nextTitle = () => TITLES[title++ % TITLES.length]
   const id = (type: string, wanted?: string) => wanted ?? `${type}-${++count}`
-  const items = <T>(n: number, make: (index: number) => T) => Array.from({ length: n }, (_, i) => make(i))
+  const items = <T>(n: number, make: (index: number) => T) =>
+    Array.from({ length: n }, (_, i) => make(i))
 
   return {
     hero: (o: {

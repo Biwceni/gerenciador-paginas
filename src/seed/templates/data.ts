@@ -41,7 +41,13 @@ type Pack = {
 const pexels = (id: number) =>
   `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1600`
 
-const colors = (primary: string, surface: string, background: string, text: string, footer: string) => ({
+const colors = (
+  primary: string,
+  surface: string,
+  background: string,
+  text: string,
+  footer: string,
+) => ({
   primary,
   surface,
   background,
@@ -765,8 +771,14 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
       const items = page.build(pageBuilder())
       // O banner da primeira página muda com a variação, como no protótipo (`applyHero`).
       const hero = items.find((item) => item.type === 'Hero')
-      if (index === 0 && variant.hero && hero?.type === 'Hero') Object.assign(hero.props, variant.hero)
-      return { title: page.title, slug: page.slug, campaign: Boolean(pack.campaign), content: content(items) }
+      if (index === 0 && variant.hero && hero?.type === 'Hero')
+        Object.assign(hero.props, variant.hero)
+      return {
+        title: page.title,
+        slug: page.slug,
+        campaign: Boolean(pack.campaign),
+        content: content(items),
+      }
     })
     const items = pack.campaign
       ? []
@@ -821,7 +833,13 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
 // Modelos da "Nova página" (`TPLS` do protótipo), com as fotos do ramo "Outro tipo".
 const pagePhotos = packs.find((pack) => pack.key === 'outro')!.photos
 
-const pageModels: { key: string; name: string; description: string; slug: string; build: Pack['pages'][number]['build'] }[] = [
+const pageModels: {
+  key: string
+  name: string
+  description: string
+  slug: string
+  build: Pack['pages'][number]['build']
+}[] = [
   {
     key: 'pagina-promocao',
     name: 'Promoção ou produto',
@@ -869,18 +887,23 @@ const pageModels: { key: string; name: string; description: string; slug: string
 
 export const templateSeeds: TemplateSeed[] = [
   ...packs.flatMap(siteTemplates),
-  ...pageModels.map(
-    (model, index): TemplateSeed => ({
-      key: model.key,
-      name: model.name,
-      description: model.description,
-      kind: 'page',
-      siteType: null,
-      segment: null,
-      order: 1000 + index,
-      pages: [{ title: model.name, slug: model.slug, campaign: false, content: content(model.build(pageBuilder())) }],
-      photos: pagePhotos.map(([id, alt]) => ({ url: pexels(id), alt })),
-      forms: [],
-    }),
-  ),
+  ...pageModels.map((model, index): TemplateSeed => ({
+    key: model.key,
+    name: model.name,
+    description: model.description,
+    kind: 'page',
+    siteType: null,
+    segment: null,
+    order: 1000 + index,
+    pages: [
+      {
+        title: model.name,
+        slug: model.slug,
+        campaign: false,
+        content: content(model.build(pageBuilder())),
+      },
+    ],
+    photos: pagePhotos.map(([id, alt]) => ({ url: pexels(id), alt })),
+    forms: [],
+  })),
 ]

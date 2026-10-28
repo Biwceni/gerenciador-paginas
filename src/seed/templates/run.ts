@@ -26,7 +26,12 @@ for (const seed of templateSeeds) {
     await payload.create({ collection: 'templates', data: seed, overrideAccess: true })
     created++
   } else if (update) {
-    await payload.update({ collection: 'templates', id: docs[0].id, data: seed, overrideAccess: true })
+    await payload.update({
+      collection: 'templates',
+      id: docs[0].id,
+      data: seed,
+      overrideAccess: true,
+    })
     updated++
   }
 }

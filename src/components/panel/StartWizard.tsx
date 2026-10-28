@@ -18,8 +18,10 @@ export type StartTemplate = TemplatePreviewData & { siteType: SiteType; segment:
 type Props = {
   adminRoute: string
   apiRoute: string
-  /** Páginas que o site já tem: elas saem do ar ao aplicar o modelo. */
+  /** Páginas que o site já tem (no ar ou em rascunho). */
   existingPages: number
+  /** Delas, as que estão no ar: saem do ar ao aplicar o modelo. */
+  livePages: number
   templates: StartTemplate[]
 }
 
@@ -69,7 +71,7 @@ function Choices<T extends string>({
   )
 }
 
-export function StartWizard({ adminRoute, apiRoute, existingPages, templates }: Props) {
+export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, templates }: Props) {
   const router = useRouter()
   const [type, setType] = useState<SiteType | null>(null)
   const [segment, setSegment] = useState<Segment | null>(null)
@@ -124,15 +126,21 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, templates }: 
     setBusy(true)
     setError(null)
     try {
-      await request(apiRoute, `/templates/${chosen.id}/aplicar`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          tagline: tagline.trim(),
-          whatsapp: whatsapp.trim(),
-        }),
-      })
-      router.push(`${panelHref(adminRoute, 'dashboard')}?pronto=1`)
+      const { missingPhotos } = await request<{ missingPhotos: number }>(
+        apiRoute,
+        `/templates/${chosen.id}/aplicar`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: name.trim(),
+            tagline: tagline.trim(),
+            whatsapp: whatsapp.trim(),
+          }),
+        },
+      )
+      // O aviso de pronto diz quantas fotos de exemplo não deu para copiar.
+      const photos = missingPhotos > 0 ? `&fotos=${missingPhotos}` : ''
+      router.push(`${panelHref(adminRoute, 'dashboard')}?pronto=1${photos}`)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Tente de novo.')
@@ -327,12 +335,17 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, templates }: 
               {existingPages > 0 && (
                 <div className="gp-warnbox" role="note">
                   <b>
-                    Seu site já tem {existingPages === 1 ? '1 página' : `${existingPages} páginas`}.
+                    {livePages === 0
+                      ? 'Nenhuma página do seu site está no ar hoje.'
+                      : livePages === 1
+                        ? 'Seu site tem 1 página no ar hoje.'
+                        : `Seu site tem ${livePages} páginas no ar hoje.`}
                   </b>
                   <span>
-                    Elas saem do ar e ficam guardadas como rascunho em Páginas. O menu, o rodapé, as
-                    cores e as letras passam a ser os do modelo. O contato e o e-mail continuam os
-                    mesmos.
+                    {livePages > 0 && 'Elas saem do ar. '}
+                    As páginas de hoje continuam guardadas como rascunho em Páginas. O menu, o
+                    rodapé, as cores e as letras passam a ser os do modelo. O contato e o e-mail
+                    continuam os mesmos.
                   </span>
                 </div>
               )}
