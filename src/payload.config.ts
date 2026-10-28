@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
+import { Templates } from './collections/Templates'
 import { Users } from './collections/Users'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -106,6 +107,13 @@ export default buildConfig({
           exact: true,
           meta: { title: 'Configurações' },
         },
+        // Início guiado (fase 4), em tela cheia: tipo de site, modelo e o básico.
+        panelStart: {
+          Component: '/components/panel/StartView#StartView',
+          path: '/comecar',
+          exact: true,
+          meta: { title: 'Começar o site' },
+        },
         // Editor visual das páginas, em tela cheia: /admin/editor/<id>.
         pageEditor: {
           Component: '/components/editor/EditorView#EditorView',
@@ -131,7 +139,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [Pages, Media, Users],
+  collections: [Pages, Media, Users, Templates],
   globals: [Site, Header, Footer],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

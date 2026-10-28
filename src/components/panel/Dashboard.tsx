@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
@@ -20,7 +21,7 @@ const GLOBAL_SCREEN: Record<PendingGlobal['slug'], PanelPath> = {
  * Tela "Meu site" (no lugar do painel inicial do Payload): o que falta publicar, atalhos para o
  * trabalho de todo dia e as páginas mexidas por último. Segue o `vDashboard` do protótipo.
  */
-export async function Dashboard({ initPageResult }: AdminViewServerProps) {
+export async function Dashboard({ initPageResult, searchParams }: AdminViewServerProps) {
   const { req } = initPageResult
   const { payload, user } = req
   if (!user) return null
@@ -31,6 +32,17 @@ export async function Dashboard({ initPageResult }: AdminViewServerProps) {
     loadPendingGlobals(payload, user),
     payload.count({ collection: 'media', overrideAccess: false, user }),
   ])
+  // Site sem nenhuma página: o administrador começa pelo início guiado (fase 4), a não ser que
+  // tenha escolhido montar sozinho ou que não haja modelos gravados.
+  if (!pages.length && user.role === 'admin' && !searchParams?.pular) {
+    const { totalDocs } = await payload.count({
+      collection: 'templates',
+      overrideAccess: false,
+      user,
+    })
+    if (totalDocs) redirect(panelHref(adminRoute, 'start'))
+  }
+
   const domain = new URL(getServerURL()).host
   const pending = pages.filter((page) => page.status !== 'live')
   const recent = pages.slice(0, 4)
@@ -58,6 +70,18 @@ export async function Dashboard({ initPageResult }: AdminViewServerProps) {
           </p>
         </div>
       </header>
+
+      {searchParams?.pronto && (
+        <p className="gp-notice" role="status">
+          <PanelIcon name="check" />
+          <span>
+            Seu site está pronto e já está no ar.{' '}
+            <a href="/" rel="noopener" target="_blank">
+              Ver o site
+            </a>
+          </span>
+        </p>
+      )}
 
       <div className="gp-statusbar">
         <div className="gp-live">

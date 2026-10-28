@@ -56,6 +56,8 @@ type Props = {
   pending: boolean
   /** Cartão "Pessoas com acesso", montado pela tela. */
   people: React.ReactNode
+  /** Só administrador: começar de novo com um modelo (início guiado, fase 4). */
+  canStartOver: boolean
   photos: Media[]
 }
 
@@ -125,6 +127,7 @@ export function SettingsEditor({
   livePages,
   pending,
   people,
+  canStartOver,
   photos: initialPhotos,
 }: Props) {
   const [state, setState] = useState(initial)
@@ -702,6 +705,22 @@ export function SettingsEditor({
         </div>
 
         <div className="gp-grid2__full">{people}</div>
+
+        {canStartOver && (
+          <section className="gp-card gp-grid2__full">
+            <h2>Começar de novo com um modelo</h2>
+            <p className="gp-muted gp-small">
+              Escolha outro tipo de site e um modelo pronto. As páginas de hoje saem do ar e ficam
+              guardadas como rascunho; o menu, o rodapé, as cores e as letras passam a ser os do
+              modelo. Antes de trocar, você vê o modelo e confirma.
+            </p>
+            <div>
+              <Link className="gp-btn" href={panelHref(adminRoute, 'start')}>
+                Ver os modelos
+              </Link>
+            </div>
+          </section>
+        )}
       </div>
 
       <p className="gp-tip">

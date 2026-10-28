@@ -7,6 +7,7 @@ export const PANEL_PATHS = {
   menu: '/menu-e-rodape',
   footer: '/menu-e-rodape',
   settings: '/configuracoes',
+  start: '/comecar',
   // Telas do plugin de formulários (padrão do Payload).
   messages: '/collections/form-submissions',
   forms: '/collections/forms',

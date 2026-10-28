@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import React from 'react'
 
+import { isTemplatePhotoURL } from '@/lib/templates'
 import type { Media } from '@/payload-types'
 
 type Props = {
@@ -16,6 +17,9 @@ type Props = {
 export function Photo({ media, sizes, priority, className, fill }: Props) {
   if (!media.url) return null
 
+  // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado): vai direto, sem o
+  // otimizador de imagens do site, que só aceita o nosso Storage.
+  const unoptimized = isTemplatePhotoURL(media.url)
   const objectPosition =
     media.focalX != null && media.focalY != null ? `${media.focalX}% ${media.focalY}%` : undefined
 
@@ -28,6 +32,7 @@ export function Photo({ media, sizes, priority, className, fill }: Props) {
       sizes={sizes}
       src={media.url}
       style={{ objectFit: 'cover', objectPosition }}
+      unoptimized={unoptimized}
     />
   ) : (
     <Image
@@ -37,6 +42,7 @@ export function Photo({ media, sizes, priority, className, fill }: Props) {
       priority={priority}
       sizes={sizes}
       src={media.url}
+      unoptimized={unoptimized}
       width={media.width ?? 1200}
     />
   )

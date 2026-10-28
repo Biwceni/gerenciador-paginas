@@ -92,6 +92,52 @@ const PATHS = {
   tool: (
     <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />
   ),
+  // Tipos de site e ramos do início guiado (fase 4).
+  bag: (
+    <>
+      <path d="M5 8h14l-1 13H6z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </>
+  ),
+  cup: (
+    <>
+      <path d="M4 8h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z" />
+      <path d="M17 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2" />
+    </>
+  ),
+  heart: <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" />,
+  target: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect height="16" rx="2" width="18" x="3" y="5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  check: <path d="M5 12l5 5 9-10" />,
   users: (
     <>
       <circle cx="9" cy="8" r="3.5" />
