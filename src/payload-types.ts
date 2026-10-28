@@ -70,6 +70,7 @@ export interface Config {
     pages: Page;
     media: Media;
     users: User;
+    templates: Template;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -82,6 +83,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    templates: TemplatesSelect<false> | TemplatesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -187,6 +189,7 @@ export interface Media {
    * Descreva a foto em poucas palavras, como se contasse para alguém que não pode vê-la. Ex.: "Xícara de café sobre a mesa de madeira".
    */
   alt: string;
+  sourceUrl?: string | null;
   prefix?: string | null;
   _objectKey?: string | null;
   updatedAt: string;
@@ -249,6 +252,131 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Modelos de site (início guiado) e de página (Nova página). O conteúdo usa a posição das fotos, páginas e formulários do modelo no lugar dos ids.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates".
+ */
+export interface Template {
+  id: number;
+  key: string;
+  name: string;
+  description?: string | null;
+  kind: 'site' | 'page';
+  siteType?: ('institucional' | 'onepage' | 'landing' | 'evento' | 'pessoal' | 'links' | 'embreve') | null;
+  segment?: ('cafe' | 'saude' | 'servicos' | 'loja' | 'outro') | null;
+  order?: number | null;
+  /**
+   * A primeira vira a página inicial. Modelo de página tem uma só.
+   */
+  pages?:
+    | {
+        title: string;
+        slug: string;
+        campaign?: boolean | null;
+        content:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Endereços do Pexels ou do Unsplash. Ao aplicar o modelo, cada foto é copiada uma vez para a biblioteca.
+   */
+  photos?:
+    | {
+        url: string;
+        alt: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Criados junto com o site, para as seções "Formulário" do modelo.
+   */
+  forms?:
+    | {
+        title: string;
+        submitButtonLabel: string;
+        fields?:
+          | {
+              type: 'text' | 'email' | 'textarea';
+              name: string;
+              label: string;
+              required?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  site?: {
+    /**
+     * Sugestão no início guiado e na prévia.
+     */
+    name?: string | null;
+    /**
+     * Usada se a pessoa deixar a frase em branco.
+     */
+    tagline?: string | null;
+    colors: {
+      primary: string;
+      background: string;
+      surface: string;
+      text: string;
+      footer: string;
+    };
+    fonts?: {
+      headings?: string | null;
+      body?: string | null;
+    };
+    /**
+     * Só entra se as Configurações estiverem sem endereço.
+     */
+    address?: string | null;
+    /**
+     * Só entra se as Configurações estiverem sem horário.
+     */
+    hours?: string | null;
+  };
+  header?: {
+    items?:
+      | {
+          label: string;
+          link: {
+            kind: 'page' | 'section' | 'whatsapp' | 'url';
+            page?: number | null;
+            section?: string | null;
+            url?: string | null;
+          };
+          id?: string | null;
+        }[]
+      | null;
+    button?: {
+      label?: string | null;
+      link?: {
+        kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
+        page?: number | null;
+        section?: string | null;
+        url?: string | null;
+      };
+    };
+  };
+  footer?: {
+    text?: string | null;
+    showMenu?: boolean | null;
+    showContact?: boolean | null;
+    showSocial?: boolean | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Campos dos formulários que aparecem na seção "Formulário" das páginas.
@@ -428,6 +556,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'templates';
+        value: number | Template;
+      } | null)
+    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -504,6 +636,7 @@ export interface PagesSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  sourceUrl?: T;
   prefix?: T;
   _objectKey?: T;
   updatedAt?: T;
@@ -566,6 +699,115 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates_select".
+ */
+export interface TemplatesSelect<T extends boolean = true> {
+  key?: T;
+  name?: T;
+  description?: T;
+  kind?: T;
+  siteType?: T;
+  segment?: T;
+  order?: T;
+  pages?:
+    | T
+    | {
+        title?: T;
+        slug?: T;
+        campaign?: T;
+        content?: T;
+        id?: T;
+      };
+  photos?:
+    | T
+    | {
+        url?: T;
+        alt?: T;
+        id?: T;
+      };
+  forms?:
+    | T
+    | {
+        title?: T;
+        submitButtonLabel?: T;
+        fields?:
+          | T
+          | {
+              type?: T;
+              name?: T;
+              label?: T;
+              required?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  site?:
+    | T
+    | {
+        name?: T;
+        tagline?: T;
+        colors?:
+          | T
+          | {
+              primary?: T;
+              background?: T;
+              surface?: T;
+              text?: T;
+              footer?: T;
+            };
+        fonts?:
+          | T
+          | {
+              headings?: T;
+              body?: T;
+            };
+        address?: T;
+        hours?: T;
+      };
+  header?:
+    | T
+    | {
+        items?:
+          | T
+          | {
+              label?: T;
+              link?:
+                | T
+                | {
+                    kind?: T;
+                    page?: T;
+                    section?: T;
+                    url?: T;
+                  };
+              id?: T;
+            };
+        button?:
+          | T
+          | {
+              label?: T;
+              link?:
+                | T
+                | {
+                    kind?: T;
+                    page?: T;
+                    section?: T;
+                    url?: T;
+                  };
+            };
+      };
+  footer?:
+    | T
+    | {
+        text?: T;
+        showMenu?: T;
+        showContact?: T;
+        showSocial?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

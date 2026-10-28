@@ -1,4 +1,5 @@
 import { OpenEditorButton as OpenEditorButton_44762e7c5fb2e6517a39e772b4650e41 } from '../../../components/admin/OpenEditorButton'
+import { ColorField as ColorField_f18d715b9f5ea63091d1361f9c46fa22 } from '../../../components/admin/ColorField'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -22,7 +23,6 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { ColorField as ColorField_f18d715b9f5ea63091d1361f9c46fa22 } from '../../../components/admin/ColorField'
 import { SectionSelectField as SectionSelectField_300f4572e1f87dc08ee2009c6e3ba873 } from '../../../components/admin/SectionSelectField'
 import { PanelNav as PanelNav_b070b5488cfa3d479c59a6887392bc1f } from '../../../components/panel/PanelNav'
 import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
@@ -35,12 +35,14 @@ import { NewPageView as NewPageView_1d0a38642d637525d244257b6e4edf4a } from '../
 import { PhotosView as PhotosView_b45782ed4be03127f4543c2ffec78e23 } from '../../../components/panel/PhotosView'
 import { MenuView as MenuView_f138c6e65b4ec71794fced2fc63c190a } from '../../../components/panel/MenuView'
 import { SettingsView as SettingsView_558b8145a55436ce2b8bd207b9fa74ac } from '../../../components/panel/SettingsView'
+import { StartView as StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06 } from '../../../components/panel/StartView'
 import { EditorView as EditorView_d87577dd5d0a49997373c51582218ed3 } from '../../../components/editor/EditorView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
   "/components/admin/OpenEditorButton#OpenEditorButton": OpenEditorButton_44762e7c5fb2e6517a39e772b4650e41,
+  "/components/admin/ColorField#ColorField": ColorField_f18d715b9f5ea63091d1361f9c46fa22,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -64,7 +66,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "/components/admin/ColorField#ColorField": ColorField_f18d715b9f5ea63091d1361f9c46fa22,
   "/components/admin/SectionSelectField#SectionSelectField": SectionSelectField_300f4572e1f87dc08ee2009c6e3ba873,
   "/components/panel/PanelNav#PanelNav": PanelNav_b070b5488cfa3d479c59a6887392bc1f,
   "/components/admin/Icon#Icon": Icon_dfe4008080d895d460898c3a6155e9ba,
@@ -77,6 +78,7 @@ export const importMap = {
   "/components/panel/PhotosView#PhotosView": PhotosView_b45782ed4be03127f4543c2ffec78e23,
   "/components/panel/MenuView#MenuView": MenuView_f138c6e65b4ec71794fced2fc63c190a,
   "/components/panel/SettingsView#SettingsView": SettingsView_558b8145a55436ce2b8bd207b9fa74ac,
+  "/components/panel/StartView#StartView": StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06,
   "/components/editor/EditorView#EditorView": EditorView_d87577dd5d0a49997373c51582218ed3,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

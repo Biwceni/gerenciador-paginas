@@ -8,17 +8,21 @@ import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { slugify, uniqueSlug } from '@/lib/slug'
 
-import { blankContent, copyPage, createPage } from './api'
+import { blankContent, copyPage, createPage, createPageFromTemplate } from './api'
 import { PanelIcon } from './PanelIcon'
+
+export type MiniBlock = 'hero' | 'cols' | 'cta' | 'l'
 
 type Props = {
   adminRoute: string
   apiRoute: string
   domain: string
+  /** Modelos de página (coleção Modelos, fase 4). */
+  models: { id: number; title: string; text: string; mini: MiniBlock[] }[]
   pages: { id: number; title: string; slug: string }[]
 }
 
-const STARTS = [
+const STARTS: { key: 'blank' | 'copy'; title: string; text: string; mini: MiniBlock[] }[] = [
   {
     key: 'blank',
     title: 'Em branco',
@@ -31,14 +35,15 @@ const STARTS = [
     text: 'Parte de uma página que já existe, com as seções e os textos dela.',
     mini: ['l', 'l', 'cols', 'l'],
   },
-] as const
+]
 
-type Start = (typeof STARTS)[number]['key']
+/** Um modelo (pelo id), em branco ou cópia. */
+type Start = number | 'blank' | 'copy'
 
 /** Nome da página, jeito de começar e "Criar e começar a editar". Segue o `vNewPage`. */
-export function NewPageForm({ adminRoute, apiRoute, domain, pages }: Props) {
+export function NewPageForm({ adminRoute, apiRoute, domain, models, pages }: Props) {
   const router = useRouter()
-  const [start, setStart] = useState<Start>('blank')
+  const [start, setStart] = useState<Start>(models[0]?.id ?? 'blank')
   const [sourceId, setSourceId] = useState(pages[0]?.id ?? 0)
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -56,9 +61,11 @@ export function NewPageForm({ adminRoute, apiRoute, domain, pages }: Props) {
     setError(null)
     try {
       const { doc } =
-        start === 'copy' && sourceId
-          ? await copyPage(apiRoute, sourceId, title, slug)
-          : await createPage(apiRoute, { title, slug, content: blankContent(title) })
+        typeof start === 'number'
+          ? await createPageFromTemplate(apiRoute, start, { title, slug })
+          : start === 'copy' && sourceId
+            ? await copyPage(apiRoute, sourceId, title, slug)
+            : await createPage(apiRoute, { title, slug, content: blankContent(title) })
       router.push(editorPath(adminRoute, doc.id))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Tente de novo.')
@@ -78,12 +85,18 @@ export function NewPageForm({ adminRoute, apiRoute, domain, pages }: Props) {
             Páginas
           </Link>
           <h1>Nova página</h1>
-          <p>Escolha como começar. Depois é só trocar os textos e as fotos no editor.</p>
+          <p>
+            Escolha um modelo. A estrutura vem pronta, com textos de exemplo (Lorem Ipsum) para você
+            trocar pelos seus.
+          </p>
         </div>
       </header>
 
       <div className="gp-starts" role="radiogroup" aria-label="Como começar">
-        {STARTS.filter((item) => item.key === 'blank' || pages.length > 0).map((item) => (
+        {[
+          ...models.map((model) => ({ ...model, key: model.id as Start })),
+          ...STARTS.filter((item) => item.key === 'blank' || pages.length > 0),
+        ].map((item) => (
           <button
             aria-checked={start === item.key}
             className="gp-start"
@@ -150,7 +163,11 @@ export function NewPageForm({ adminRoute, apiRoute, domain, pages }: Props) {
             disabled={!title || busy}
             type="submit"
           >
-            {busy ? 'Criando…' : 'Criar e começar a editar'}
+            {busy
+              ? typeof start === 'number'
+                ? 'Criando e copiando as fotos…'
+                : 'Criando…'
+              : 'Criar e começar a editar'}
           </button>
         </div>
       </form>

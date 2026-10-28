@@ -41,6 +41,18 @@ export function createPage(
   })
 }
 
+/** Página nova (rascunho) a partir de um modelo de página: o servidor copia as fotos do modelo. */
+export function createPageFromTemplate(
+  apiRoute: string,
+  templateId: number,
+  data: { title: string; slug: string },
+) {
+  return request<DocResponse<Pick<Page, 'id'>>>(apiRoute, `/templates/${templateId}/pagina`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 /** Cópia em rascunho do conteúdo mais recente de outra página (com as mudanças não publicadas). */
 export async function copyPage(apiRoute: string, sourceId: number, title: string, slug: string) {
   const source = await getLatest(apiRoute, sourceId)

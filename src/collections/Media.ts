@@ -37,6 +37,19 @@ export const Media: CollectionConfig = {
           'Descreva a foto em poucas palavras, como se contasse para alguém que não pode vê-la. Ex.: "Xícara de café sobre a mesa de madeira".',
       },
     },
+    {
+      // Endereço de onde a foto de um modelo foi copiada (fase 4): aplicar o modelo de novo, ou
+      // criar outra página com ele, usa a mesma foto em vez de copiar outra vez.
+      // Só a rotina dos modelos (com `overrideAccess`) escreve; pela API o campo é recusado.
+      name: 'sourceUrl',
+      type: 'text',
+      index: true,
+      access: {
+        create: () => false,
+        update: () => false,
+      },
+      admin: { hidden: true },
+    },
   ],
   upload: {
     // Lista fechada: `image/*` aceitaria SVG, que pode carregar script e fica público no bucket.

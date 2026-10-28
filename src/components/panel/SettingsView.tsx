@@ -81,6 +81,7 @@ export async function SettingsView(props: AdminViewServerProps) {
       <SettingsEditor
         adminRoute={adminRoute}
         apiRoute={payload.config.routes.api}
+        canStartOver={user.role === 'admin'}
         domain={new URL(getServerURL()).host}
         fontFaces={site.fontFaces ?? null}
         initial={initial}
