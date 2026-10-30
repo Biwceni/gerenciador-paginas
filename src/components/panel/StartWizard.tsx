@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import { request } from '@/components/editor/api'
 import { normalizeWhatsApp } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
-import { SEGMENTS, type Segment, SITE_TYPES, SITE_TYPES_SOON, type SiteType } from '@/lib/templates'
+import { SEGMENTS, type Segment, SITE_TYPES, type SiteType } from '@/lib/templates'
 
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
@@ -20,12 +20,48 @@ type Props = {
   apiRoute: string
   /** Páginas que o site já tem (no ar ou em rascunho). */
   existingPages: number
+  /** Começar de novo: o nome, a frase e o WhatsApp que estão nas Configurações. */
+  initial: { name: string; tagline: string; whatsapp: string } | null
   /** Delas, as que estão no ar: saem do ar ao aplicar o modelo. */
   livePages: number
   templates: StartTemplate[]
 }
 
 type Step = 'type' | 'segment' | 'model' | 'basics'
+
+// Os quatro passos aparecem na barra desde o começo. O ramo só é perguntado no site da empresa;
+// nos outros tipos, ele é pulado e aparece como feito.
+const STEP_NAMES: [Step, string][] = [
+  ['type', 'Tipo de site'],
+  ['segment', 'Ramo'],
+  ['model', 'Modelo'],
+  ['basics', 'O básico'],
+]
+
+function StepBar({ current }: { current: Step }) {
+  const position = STEP_NAMES.findIndex(([step]) => step === current)
+  const label = STEP_NAMES[position][1]
+  return (
+    <div className="gp-stepbar">
+      <div aria-hidden="true" className="gp-steps">
+        {STEP_NAMES.map(([step], index) => (
+          <span className={index <= position ? 'is-on' : undefined} key={step} />
+        ))}
+      </div>
+      <ol aria-label={`Passos do início: agora, ${label}`} className="gp-stepnames">
+        {STEP_NAMES.map(([step, name], index) => (
+          <li
+            aria-current={index === position ? 'step' : undefined}
+            className={index <= position ? 'is-on' : undefined}
+            key={step}
+          >
+            {name}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
 
 const NAME_LABEL: Partial<Record<SiteType, string>> = {
   pessoal: 'Seu nome',
@@ -71,15 +107,22 @@ function Choices<T extends string>({
   )
 }
 
-export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, templates }: Props) {
+export function StartWizard({
+  adminRoute,
+  apiRoute,
+  existingPages,
+  initial,
+  livePages,
+  templates,
+}: Props) {
   const router = useRouter()
   const [type, setType] = useState<SiteType | null>(null)
   const [segment, setSegment] = useState<Segment | null>(null)
   const [templateId, setTemplateId] = useState<number | null>(null)
   const [step, setStep] = useState(0)
-  const [name, setName] = useState('')
-  const [tagline, setTagline] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
+  const [name, setName] = useState(initial?.name ?? '')
+  const [tagline, setTagline] = useState(initial?.tagline ?? '')
+  const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '')
   const [bigPreview, setBigPreview] = useState<StartTemplate | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -183,17 +226,9 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, te
   return (
     <div className="gp-onboard">
       <div className="gp-ob">
-        <div aria-hidden="true" className="gp-steps">
-          {steps.map((item, index) => (
-            <span className={index <= step ? 'is-on' : undefined} key={item} />
-          ))}
-        </div>
+        <StepBar current={current} />
 
         <div className="gp-obcard">
-          <p className="gp-eyebrow">
-            Passo {step + 1} de {steps.length}
-          </p>
-
           {current === 'type' && (
             <>
               <h1>O que você quer montar?</h1>
@@ -207,7 +242,6 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, te
                 options={availableTypes}
                 value={type}
               />
-              <p className="gp-small gp-muted">{SITE_TYPES_SOON}</p>
             </>
           )}
 
@@ -287,7 +321,8 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, te
             <>
               <h1>Agora, o básico</h1>
               <p className="gp-muted">
-                Usamos esses dados no topo da página, no rodapé e no Google.
+                Usamos esses dados no topo da página, no rodapé e no Google. Dá para mudar tudo
+                depois.
               </p>
               <div className="gp-field">
                 <label htmlFor="ob-name">{(type && NAME_LABEL[type]) || 'Nome do negócio'}</label>
@@ -311,7 +346,10 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, te
                   rows={2}
                   value={tagline}
                 />
-                <span className="gp-hint">Aparece no topo da página e no Google.</span>
+                <span className="gp-hint">
+                  Aparece no topo da página e no Google. Se deixar em branco, dá para escrever
+                  depois em Configurações; o exemplo nunca vai para o site.
+                </span>
               </div>
               <div className="gp-field">
                 <label htmlFor="ob-whatsapp">WhatsApp (se quiser)</label>
@@ -343,7 +381,7 @@ export function StartWizard({ adminRoute, apiRoute, existingPages, livePages, te
                   </b>
                   <span>
                     {livePages > 0 && 'Elas saem do ar. '}
-                    As páginas de hoje continuam guardadas como rascunho em Páginas. O menu, o
+                    As páginas de hoje ficam guardadas em Páginas, no grupo Arquivadas. O menu, o
                     rodapé, as cores e as letras passam a ser os do modelo. O contato e o e-mail
                     continuam os mesmos.
                   </span>
