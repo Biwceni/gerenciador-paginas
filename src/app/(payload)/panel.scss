@@ -189,8 +189,7 @@ html[data-theme] {
 }
 
 @media (min-width: $desktop) {
-  .gp-topbar,
-  .nav .nav__header {
+  .gp-topbar {
     display: none;
   }
 }

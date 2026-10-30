@@ -1,4 +1,4 @@
-import { NavHamburger, NavWrapper } from '@payloadcms/next/client'
+import { NavWrapper } from '@payloadcms/next/client'
 import { getTranslation } from '@payloadcms/translations'
 import type { ServerProps, VisibleEntities } from 'payload'
 import React from 'react'
@@ -14,7 +14,8 @@ type Props = ServerProps & { visibleEntities?: VisibleEntities }
 /**
  * Menu lateral do painel, no lugar do menu padrão do Payload: as telas do dia a dia com nomes
  * simples. O administrador vê também "Avançado", com as telas padrão do Payload. No pé, a pessoa
- * que entrou, com as iniciais no lugar da foto (nenhum e-mail vai para o Gravatar).
+ * que entrou, com as iniciais no lugar da foto (nenhum e-mail vai para o Gravatar). Sem o botão
+ * de fechar do Payload: abaixo de 1024 px, o ☰ da barra de topo (PanelTopBar) abre e fecha o menu.
  */
 export async function PanelNav({ i18n, payload, user, visibleEntities }: Props) {
   if (!payload?.config || !user) return null
@@ -57,11 +58,6 @@ export async function PanelNav({ i18n, payload, user, visibleEntities }: Props) 
           <span>{personLabel(user)}</span>
         </div>
       </nav>
-      <div className="nav__header">
-        <div className="nav__header-content">
-          <NavHamburger baseClass="nav" />
-        </div>
-      </div>
     </NavWrapper>
   )
 }
