@@ -11,7 +11,7 @@ export interface LoginOptions {
 }
 
 /**
- * Logs the user into the admin panel via the login page.
+ * Entra no painel pela tela de entrar nossa (v2).
  */
 export async function login({
   page,
@@ -20,12 +20,11 @@ export async function login({
 }: LoginOptions): Promise<void> {
   await page.goto(`${serverURL}/admin/login`)
 
-  await page.fill('#field-email', user.email)
-  await page.fill('#field-password', user.password)
+  await page.fill('#lg-email', user.email)
+  await page.fill('#lg-pass', user.password)
   await page.click('button[type="submit"]')
 
-  await page.waitForURL(`${serverURL}/admin`)
+  await page.waitForURL(`${serverURL}/admin**`)
 
-  const dashboardArtifact = page.locator('span[title="Painel de Controle"]')
-  await expect(dashboardArtifact).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Menu do painel' })).toBeVisible()
 }

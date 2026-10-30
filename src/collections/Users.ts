@@ -7,6 +7,7 @@ import { APIError } from 'payload'
 
 import { authenticated } from '../access/authenticated'
 import { isAdmin, isAdminField, isAdminOrSelf } from '../access/users'
+import { LOCK_MINUTES, MAX_LOGIN_ATTEMPTS } from '../lib/auth'
 import { resetPasswordEmailHTML, resetPasswordEmailSubject } from '../email/resetPassword'
 import { inviteUser } from '../endpoints/inviteUser'
 
@@ -71,9 +72,10 @@ export const Users: CollectionConfig = {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
     },
-    // Já são os padrões do Payload; ficam explícitos para não mudarem sem a gente ver.
-    maxLoginAttempts: 5,
-    lockTime: 10 * 60 * 1000,
+    // Já são os padrões do Payload; ficam explícitos para não mudarem sem a gente ver. A mensagem de
+    // senha errada da tela de entrar cita os dois números (`src/lib/auth.ts`).
+    maxLoginAttempts: MAX_LOGIN_ATTEMPTS,
+    lockTime: LOCK_MINUTES * 60 * 1000,
     forgotPassword: {
       generateEmailHTML: resetPasswordEmailHTML,
       generateEmailSubject: resetPasswordEmailSubject,

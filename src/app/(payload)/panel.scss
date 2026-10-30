@@ -976,6 +976,112 @@ html[data-theme] {
   }
 }
 
+// ---------- entrar e senha (v2) ----------
+
+// As telas de entrar ficam dentro do modelo mínimo do Payload: o cartão ocupa a tela inteira.
+.template-minimal:has(.gp-auth) {
+  padding: 0;
+  background: var(--gp-bg);
+
+  .template-minimal__wrap {
+    max-width: none;
+  }
+}
+
+.gp-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px max(16px, env(safe-area-inset-right, 0px)) 32px
+    max(16px, env(safe-area-inset-left, 0px));
+  background: var(--gp-bg);
+  color: var(--gp-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+}
+
+.gp-authcard {
+  width: 100%;
+  max-width: 420px;
+  background: var(--gp-surface);
+  border: 1px solid var(--gp-line);
+  border-radius: 18px;
+  padding: 32px;
+  display: grid;
+  gap: 18px;
+  box-shadow: 0 6px 24px rgb(20 30 25 / 8%);
+
+  .gp-brandmark {
+    padding: 0;
+  }
+
+  &__head {
+    display: grid;
+    gap: 4px;
+
+    h1 {
+      font-family: var(--gp-font-display);
+      font-size: 26px;
+      line-height: 1.15;
+      margin: 0;
+      text-wrap: balance;
+    }
+  }
+
+  &__link {
+    justify-self: center;
+    color: var(--gp-accent);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.gp-authform {
+  display: grid;
+  gap: 16px;
+}
+
+.gp-btn--block {
+  justify-content: center;
+  width: 100%;
+}
+
+.gp-pwrules {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 13px;
+
+  li {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--gp-muted);
+
+    &.is-ok {
+      color: var(--gp-ok);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .gp-authcard {
+    padding: 24px 18px;
+  }
+}
+
 // ---------- fotos ----------
 
 .gp-media {

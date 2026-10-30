@@ -30,6 +30,10 @@ import { HomeCrumb as HomeCrumb_580cec3ab720399681829ec037f1b618 } from '../../.
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { PanelFonts as PanelFonts_1518cc1b7035b81b07a381805e936d5e } from '../../../components/panel/PanelFonts'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
+import { LoginView as LoginView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
+import { ForgotView as ForgotView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
+import { FirstUserView as FirstUserView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
+import { NewPasswordView as NewPasswordView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { Dashboard as Dashboard_65e8b0fdc5f8da02b62d337686836a55 } from '../../../components/panel/Dashboard'
 import { PagesView as PagesView_3ab2f2f957837c1342f8d935eb94cb95 } from '../../../components/panel/PagesView'
 import { NewPageView as NewPageView_1d0a38642d637525d244257b6e4edf4a } from '../../../components/panel/NewPageView'
@@ -74,6 +78,10 @@ export const importMap = {
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
   "/components/panel/PanelFonts#PanelFonts": PanelFonts_1518cc1b7035b81b07a381805e936d5e,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
+  "/components/auth/AuthViews#LoginView": LoginView_9cfb307d8750231fb68dc126ba7ee437,
+  "/components/auth/AuthViews#ForgotView": ForgotView_9cfb307d8750231fb68dc126ba7ee437,
+  "/components/auth/AuthViews#FirstUserView": FirstUserView_9cfb307d8750231fb68dc126ba7ee437,
+  "/components/auth/AuthViews#NewPasswordView": NewPasswordView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/panel/Dashboard#Dashboard": Dashboard_65e8b0fdc5f8da02b62d337686836a55,
   "/components/panel/PagesView#PagesView": PagesView_3ab2f2f957837c1342f8d935eb94cb95,
   "/components/panel/NewPageView#NewPageView": NewPageView_1d0a38642d637525d244257b6e4edf4a,

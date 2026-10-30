@@ -1,11 +1,13 @@
-import { getServerURL, PRODUCT_NAME } from '../lib/site'
+import { newPasswordURL } from '../lib/auth'
+import { PRODUCT_NAME } from '../lib/site'
 
 const escapeHTML = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
 
 export const inviteEmailSubject = (siteName: string) =>
   `Convite para cuidar do site ${siteName} | ${PRODUCT_NAME}`
 
-/** Convite para o painel: o link leva para a tela de criar a senha (a mesma de "esqueci a senha"). */
+/** Convite para o painel: o link leva para a tela de criar a senha (a mesma de "esqueci a senha",
+ * com o título de convite). */
 export const inviteEmailHTML = ({
   token,
   siteName,
@@ -15,7 +17,7 @@ export const inviteEmailHTML = ({
   siteName: string
   invitedBy: string
 }) => {
-  const url = `${getServerURL()}/admin/reset/${token}`
+  const url = newPasswordURL(token, 'invite')
 
   return `<!doctype html>
 <html lang="pt-BR">

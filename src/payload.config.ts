@@ -15,6 +15,7 @@ import { Users } from './collections/Users'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Site } from './globals/Site'
+import { LOCKED_MESSAGE, NEW_PASSWORD_PATH, WRONG_LOGIN_MESSAGE } from './lib/auth'
 import { EDITOR_VIEW_PATH } from './lib/editor'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
 import { formsPlugin } from './plugins/forms'
@@ -82,6 +83,26 @@ export default buildConfig({
       header: ['/components/panel/PanelTopBar#PanelTopBar'],
       providers: ['/components/panel/PanelFonts#PanelFonts'],
       views: {
+        // Entrar e senha (v2): telas nossas no lugar das do Payload.
+        login: {
+          Component: '/components/auth/AuthViews#LoginView',
+          meta: { title: 'Entrar' },
+        },
+        forgot: {
+          Component: '/components/auth/AuthViews#ForgotView',
+          meta: { title: 'Criar uma senha nova' },
+        },
+        createFirstUser: {
+          Component: '/components/auth/AuthViews#FirstUserView',
+          meta: { title: 'Crie sua conta' },
+        },
+        // Link dos e-mails de convite e de senha: /admin/nova-senha/<token>. Sem `:token` no
+        // endereço e sem `exact`: só assim o Payload abre a tela para quem ainda não entrou.
+        authNewPassword: {
+          Component: '/components/auth/AuthViews#NewPasswordView',
+          path: NEW_PASSWORD_PATH,
+          meta: { title: 'Criar senha' },
+        },
         dashboard: {
           Component: '/components/panel/Dashboard#Dashboard',
         },
@@ -136,6 +157,11 @@ export default buildConfig({
     supportedLanguages: { pt },
     translations: {
       pt: {
+        error: {
+          // As telas de entrar comparam com estas frases (`src/lib/auth.ts`).
+          emailOrPasswordIncorrect: WRONG_LOGIN_MESSAGE,
+          userLocked: LOCKED_MESSAGE,
+        },
         general: {
           // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
           menu: 'menu',

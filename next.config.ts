@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // Links de senha mandados antes da v2 apontam para a tela do Payload; a nossa é /nova-senha.
+  async redirects() {
+    return [
+      { source: '/admin/reset/:token', destination: '/admin/nova-senha/:token', permanent: false },
+    ]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
