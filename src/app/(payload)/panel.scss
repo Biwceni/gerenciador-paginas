@@ -606,6 +606,36 @@ html[data-theme] {
   .gp-ic {
     margin-top: 2px;
   }
+
+  // Dica verde clara, como a `tip` do protótipo.
+  &--accent {
+    color: var(--gp-ink);
+    background: var(--gp-accent-soft);
+
+    .gp-ic {
+      color: var(--gp-accent);
+    }
+
+    a {
+      color: var(--gp-accent);
+      font-weight: 600;
+    }
+  }
+}
+
+// Grupo "Arquivadas" no fim da lista de páginas.
+.gp-archived {
+  border-top: 1px solid var(--gp-line);
+  padding: 12px 0 4px;
+  display: grid;
+  gap: 8px;
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--gp-muted);
+    font-size: 14px;
+  }
 }
 
 .gp-notice {

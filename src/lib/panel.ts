@@ -90,3 +90,23 @@ export function personLabel(person: Person): string {
   const role = person.role ? ROLE_LABEL[person.role] : null
   return role ? `${personName(person)} · ${role}` : personName(person)
 }
+
+type ListedPage = { id: number; title: string; home: boolean }
+
+/**
+ * Ordem da lista de páginas: a página inicial no topo, depois as do menu na ordem do menu e, por
+ * fim, as que não estão no menu, em ordem alfabética.
+ */
+export function sortPagesForList<T extends ListedPage>(pages: T[], menuOrder: number[]): T[] {
+  const rank = (page: T) => {
+    if (page.home) return -1
+    const index = menuOrder.indexOf(page.id)
+    return index >= 0 ? index : Number.MAX_SAFE_INTEGER
+  }
+  return [...pages].sort(
+    (a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }),
+  )
+}
+
+/** Filtro das páginas que podem ser destino de link: as arquivadas ficam de fora. */
+export const NOT_ARCHIVED = { archived: { not_equals: true } } as const

@@ -151,6 +151,10 @@ export interface Page {
    * Esconde o menu e deixa o rodapé numa linha só, para quem chega por um anúncio não sair da página.
    */
   campaign?: boolean | null;
+  /**
+   * Arquive ou restaure pela tela Páginas.
+   */
+  archived?: boolean | null;
   content:
     | {
         [k: string]: unknown;
@@ -617,6 +621,7 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   campaign?: T;
+  archived?: T;
   content?: T;
   createdBySeed?: T;
   seo?:

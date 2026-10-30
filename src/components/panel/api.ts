@@ -65,10 +65,11 @@ export async function copyPage(apiRoute: string, sourceId: number, title: string
 }
 
 /**
- * Tira do ar: a página volta a ser só rascunho. Envia o rascunho mais recente inteiro, porque o
- * Payload completa o que faltar com a versão publicada e as mudanças não publicadas se perderiam.
+ * Grava o rascunho mais recente inteiro como a versão da página, em rascunho (fora do ar). Vai tudo
+ * porque o Payload completa o que faltar com a versão publicada e as mudanças não publicadas se
+ * perderiam.
  */
-export async function unpublishPage(apiRoute: string, pageId: number) {
+async function saveLatestAsDraft(apiRoute: string, pageId: number, archived: boolean) {
   const latest = await getLatest(apiRoute, pageId)
   return request<DocResponse<Page>>(apiRoute, `/pages/${pageId}`, {
     method: 'PATCH',
@@ -78,9 +79,25 @@ export async function unpublishPage(apiRoute: string, pageId: number) {
       campaign: latest.campaign,
       content: latest.content,
       seo: latest.seo,
+      archived,
       _status: 'draft',
     }),
   })
+}
+
+/** Tira do ar: a página volta a ser só rascunho. */
+export function unpublishPage(apiRoute: string, pageId: number) {
+  return saveLatestAsDraft(apiRoute, pageId, false)
+}
+
+/** Arquiva: a página sai do ar e vai para "Arquivadas". O servidor recusa a inicial e as do menu. */
+export function archivePage(apiRoute: string, pageId: number) {
+  return saveLatestAsDraft(apiRoute, pageId, true)
+}
+
+/** Restaura uma página arquivada: ela volta para a lista como rascunho. */
+export function restorePage(apiRoute: string, pageId: number) {
+  return saveLatestAsDraft(apiRoute, pageId, false)
 }
 
 export function deletePage(apiRoute: string, pageId: number) {

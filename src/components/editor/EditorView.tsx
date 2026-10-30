@@ -55,9 +55,10 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       pagination: false,
       ...access,
     }),
+    // Todas as páginas, com as arquivadas marcadas: o seletor de links deixa elas de fora.
     payload.find({
       collection: 'pages',
-      select: { title: true, slug: true, _status: true, content: true },
+      select: { title: true, slug: true, _status: true, archived: true, content: true },
       depth: 0,
       draft: true,
       limit: 200,

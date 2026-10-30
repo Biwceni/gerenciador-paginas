@@ -7,11 +7,13 @@ export type PageSummary = {
   title: string
   slug: string
   published: boolean
+  /** Arquivada: fica fora das listas de destino de link. */
+  archived?: boolean
   sections: { id: string; label: string }[]
 }
 
 export function pageSummary(
-  doc: { id: number; title: string; slug: string; content?: unknown },
+  doc: { id: number; title: string; slug: string; content?: unknown; archived?: boolean | null },
   published: boolean,
 ): PageSummary {
   const parsed = parsePageContent(doc.content)
@@ -29,6 +31,7 @@ export function pageSummary(
     title: doc.title,
     slug: doc.slug,
     published,
+    archived: Boolean(doc.archived),
     sections: Object.keys(anchors).map((sectionId) => ({
       id: sectionId,
       label: labels[sectionId] || sectionId,

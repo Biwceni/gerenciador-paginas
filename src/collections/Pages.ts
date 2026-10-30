@@ -4,7 +4,7 @@ import { ValidationError } from 'payload'
 import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { slugField } from '../fields/slug'
-import { protectHomepageUnpublish, protectPageDelete } from '../hooks/protectPage'
+import { archiveRules, protectHomepageUnpublish, protectPageDelete } from '../hooks/protectPage'
 import { revalidateOnDelete, revalidateOnPublish } from '../hooks/revalidate'
 import { describeContentError, emptyPageContent, parsePageContent } from '../puck/schema'
 
@@ -58,7 +58,7 @@ export const Pages: CollectionConfig = {
   hooks: {
     afterChange: [revalidateOnPublish],
     afterDelete: [revalidateOnDelete],
-    beforeChange: [protectHomepageUnpublish],
+    beforeChange: [archiveRules, protectHomepageUnpublish],
     beforeDelete: [protectPageDelete],
   },
   fields: [
@@ -90,6 +90,20 @@ export const Pages: CollectionConfig = {
         position: 'sidebar',
         description:
           'Esconde o menu e deixa o rodapé numa linha só, para quem chega por um anúncio não sair da página.',
+      },
+    },
+    {
+      // Página guardada em "Arquivadas": fora do site, do menu e das listas de destino de link.
+      // Muda pelo painel (Páginas → Mais… → Arquivar, e Restaurar); as regras estão em
+      // `archiveRules`.
+      name: 'archived',
+      type: 'checkbox',
+      label: 'Arquivada',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Arquive ou restaure pela tela Páginas.',
       },
     },
     {

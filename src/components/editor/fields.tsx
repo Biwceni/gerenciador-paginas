@@ -180,12 +180,15 @@ export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
         <option value="">Escolha…</option>
         <option value="whatsapp">WhatsApp da empresa</option>
         <optgroup label="Páginas do site">
-          {pages.map((page) => (
-            <option key={page.id} value={`page:${page.id}`}>
-              {page.title}
-              {page.published ? '' : ' (rascunho)'}
-            </option>
-          ))}
+          {/* Arquivada só aparece se for o destino que já estava escolhido. */}
+          {pages
+            .filter((page) => !page.archived || page.id === linkedPage?.id)
+            .map((page) => (
+              <option key={page.id} value={`page:${page.id}`}>
+                {page.title}
+                {page.archived ? ' (arquivada)' : page.published ? '' : ' (rascunho)'}
+              </option>
+            ))}
         </optgroup>
         {currentSections.length > 0 && (
           <optgroup label="Seções desta página">
@@ -197,7 +200,12 @@ export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
           </optgroup>
         )}
         {pages
-          .filter((page) => page.id !== pageId && page.sections.length > 0)
+          .filter(
+            (page) =>
+              page.id !== pageId &&
+              page.sections.length > 0 &&
+              (!page.archived || page.id === linkedPage?.id),
+          )
           .map((page) => (
             <optgroup key={page.id} label={`Seções de ${page.title}`}>
               {page.sections.map((section) => (

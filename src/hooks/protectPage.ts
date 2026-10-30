@@ -10,23 +10,35 @@ import { relationID } from '../lib/relations'
 
 type HeaderLink = NonNullable<Header['items']>[number]['link']
 
-/** Páginas citadas pelo menu e pelo botão do topo, no que está no ar e no rascunho. */
-export async function pagesInMenu(req: PayloadRequest): Promise<Set<number>> {
+/** Páginas que um cabeçalho cita (itens do menu e botão do topo), na ordem do menu. */
+export function headerPageIds(header: Pick<Header, 'items' | 'button'>): number[] {
+  const ids: number[] = []
+  const add = (link: HeaderLink | undefined) => {
+    const id = ['page', 'section'].includes(link?.kind ?? '') ? relationID(link?.page) : null
+    if (id && !ids.includes(id)) ids.push(id)
+  }
+  header.items?.forEach((item) => add(item.link))
+  add(header.button?.link)
+  return ids
+}
+
+/**
+ * Páginas citadas pelo menu e pelo botão do topo, no rascunho mais recente e no que está no ar.
+ * A ordem é a do menu como está na tela "Menu e rodapé" (o rascunho), seguida das que só estão no
+ * menu publicado.
+ */
+export async function menuPageOrder(req: PayloadRequest): Promise<number[]> {
   const versions = await Promise.all(
-    [false, true].map((draft) =>
+    [true, false].map((draft) =>
       req.payload.findGlobal({ slug: 'header', depth: 0, draft, overrideAccess: true, req }),
     ),
   )
-  const ids = new Set<number>()
-  const add = (link: HeaderLink | undefined) => {
-    const id = ['page', 'section'].includes(link?.kind ?? '') ? relationID(link?.page) : null
-    if (id) ids.add(id)
-  }
-  for (const header of versions) {
-    header.items?.forEach((item) => add(item.link))
-    add(header.button?.link)
-  }
-  return ids
+  return [...new Set(versions.flatMap(headerPageIds))]
+}
+
+/** Páginas citadas pelo menu e pelo botão do topo, no que está no ar e no rascunho. */
+export async function pagesInMenu(req: PayloadRequest): Promise<Set<number>> {
+  return new Set(await menuPageOrder(req))
 }
 
 /** Página inicial nas configurações, no que está no ar ou no rascunho. */
@@ -89,6 +101,49 @@ export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
   if ((await homepageIDs(req)).has(pageId)) {
     throw new APIError(
       'A página inicial não pode sair do ar. Escolha outra página inicial antes.',
+      400,
+      null,
+      true,
+    )
+  }
+  return data
+}
+
+/**
+ * Arquivar (fase v2): a página sai do site e da lista, guardada em "Arquivadas". As regras ficam
+ * no servidor:
+ * - página arquivada é sempre rascunho: publicar tira do arquivo;
+ * - a página inicial e as páginas do menu não podem ser arquivadas (o site ficaria sem início ou com
+ *   um item de menu que não leva a lugar nenhum). O "Começar de novo com um modelo" troca a página
+ *   inicial e o menu antes de arquivar as páginas antigas, então passa pelas mesmas regras.
+ */
+export const archiveRules: CollectionBeforeChangeHook = async ({
+  context,
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (data._status === 'published') {
+    data.archived = false
+    return data
+  }
+  if (operation !== 'update' || data.archived !== true || originalDoc?.archived === true) {
+    return data
+  }
+  if (context.seedRecreate) return data
+  const pageId = Number(originalDoc?.id)
+  if ((await homepageIDs(req)).has(pageId)) {
+    throw new APIError(
+      'A página inicial não pode ser arquivada. Escolha outra página inicial antes.',
+      400,
+      null,
+      true,
+    )
+  }
+  if ((await pagesInMenu(req)).has(pageId)) {
+    throw new APIError(
+      'Esta página está no menu do site. Tire ela do menu antes de arquivar.',
       400,
       null,
       true,

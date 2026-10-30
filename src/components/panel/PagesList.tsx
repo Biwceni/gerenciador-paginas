@@ -8,7 +8,7 @@ import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { uniqueSlug } from '@/lib/slug'
 
-import { copyPage, deletePage, setHomepage, unpublishPage } from './api'
+import { archivePage, copyPage, deletePage, restorePage, setHomepage, unpublishPage } from './api'
 import type { PageRow } from './data'
 import { PageRowItem } from './PageRowItem'
 import { PanelDialog } from './PanelDialog'
@@ -17,31 +17,50 @@ import { PanelIcon } from './PanelIcon'
 type Props = {
   adminRoute: string
   apiRoute: string
+  /** Páginas arquivadas, em ordem alfabética. */
+  archived: PageRow[]
   domain: string
   inMenu: number[]
+  /** Páginas da lista, já na ordem do menu (`sortPagesForList`). */
   pages: PageRow[]
 }
 
 type Notice = { text: string; editId?: number }
 
-export function PagesList({ adminRoute, apiRoute, domain, inMenu, pages }: Props) {
+export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, pages }: Props) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [moreId, setMoreId] = useState<number | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
+  const [restoring, setRestoring] = useState<number | null>(null)
+  const [restoreError, setRestoreError] = useState<string | null>(null)
 
   const search = query.trim().toLowerCase()
-  const list = pages.filter(
-    (page) => !search || page.title.toLowerCase().includes(search) || page.path.includes(search),
-  )
+  const matches = (page: PageRow) =>
+    !search || page.title.toLowerCase().includes(search) || page.path.includes(search)
+  const list = pages.filter(matches)
+  const archivedList = archived.filter(matches)
   const live = pages.filter((page) => page.status !== 'draft').length
-  const more = pages.find((page) => page.id === moreId)
+  const more = [...pages, ...archived].find((page) => page.id === moreId)
   const closeMore = useCallback(() => setMoreId(null), [])
 
   const done = (next: Notice) => {
     setMoreId(null)
     setNotice(next)
     router.refresh()
+  }
+
+  const restore = async (page: PageRow) => {
+    setRestoring(page.id)
+    setRestoreError(null)
+    try {
+      await restorePage(apiRoute, page.id)
+      done({ text: `“${page.title}” voltou para a lista, como rascunho.` })
+    } catch (err) {
+      setRestoreError(err instanceof Error ? err.message : 'Tente de novo.')
+    } finally {
+      setRestoring(null)
+    }
   }
 
   return (
@@ -123,13 +142,58 @@ export function PagesList({ adminRoute, apiRoute, domain, inMenu, pages }: Props
             {pages.length ? `Nenhuma página com “${query.trim()}”.` : 'Nenhuma página ainda.'}
           </p>
         )}
+
+        {/* Numa busca, o grupo abre sozinho para mostrar o que achou. */}
+        {archivedList.length > 0 && (
+          <details className="gp-archived" open={search ? true : undefined}>
+            <summary>Arquivadas ({archivedList.length})</summary>
+            <p className="gp-small gp-muted">
+              Não estão no ar nem no menu. Restaure para editar e publicar de novo.
+            </p>
+            {restoreError && (
+              <p className="gp-error" role="alert">
+                Não deu certo: {restoreError}
+              </p>
+            )}
+            <ul className="gp-rows">
+              {archivedList.map((page) => (
+                <PageRowItem
+                  adminRoute={adminRoute}
+                  archived
+                  domain={domain}
+                  key={page.id}
+                  page={page}
+                >
+                  <button
+                    className="gp-btn gp-btn--sm gp-btn--primary"
+                    disabled={restoring !== null}
+                    onClick={() => restore(page)}
+                    type="button"
+                  >
+                    <PanelIcon name="file" size={14} />
+                    {restoring === page.id ? 'Restaurando…' : 'Restaurar'}
+                  </button>
+                  <button
+                    aria-label={`Mais opções de "${page.title}"`}
+                    className="gp-btn gp-btn--sm gp-btn--ghost"
+                    onClick={() => setMoreId(page.id)}
+                    type="button"
+                  >
+                    Mais…
+                  </button>
+                </PageRowItem>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
 
-      <p className="gp-tip">
+      <p className="gp-tip gp-tip--accent">
         <PanelIcon name="help" size={16} />
         <span>
-          A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais…” em outra
-          página.
+          A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais…” em outra página
+          ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>. A ordem aqui
+          segue o menu do site.
         </span>
       </p>
 
@@ -141,7 +205,7 @@ export function PagesList({ adminRoute, apiRoute, domain, inMenu, pages }: Props
           onClose={closeMore}
           onDone={done}
           page={more}
-          takenSlugs={pages.map((page) => page.slug)}
+          takenSlugs={[...pages, ...archived].map((page) => page.slug)}
         />
       )}
     </div>
@@ -157,12 +221,16 @@ type MoreProps = {
   takenSlugs: string[]
 }
 
-/** "Mais…" de uma página: cópia, página inicial, tirar do ar e excluir. Segue o `moreMenu`. */
+/**
+ * "Mais…" de uma página: cópia, página inicial, tirar do ar, arquivar e excluir. Segue o
+ * `moreMenu`. Numa página arquivada, só a cópia e o excluir (restaurar fica na linha dela).
+ */
 function MoreDialog({ apiRoute, inMenu, onClose, onDone, page, takenSlugs }: MoreProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirm, setConfirm] = useState<'unpublish' | 'delete' | null>(null)
+  const [confirm, setConfirm] = useState<'unpublish' | 'archive' | 'delete' | null>(null)
   const live = page.status !== 'draft'
+  const active = !page.archived
 
   const run = async (action: () => Promise<Notice>) => {
     setBusy(true)
@@ -189,7 +257,7 @@ function MoreDialog({ apiRoute, inMenu, onClose, onDone, page, takenSlugs }: Mor
           <PanelIcon name="copy" size={16} />
           Fazer uma cópia desta página
         </button>
-        {!page.home && (
+        {!page.home && active && (
           <button
             className="gp-btn"
             disabled={busy || !live}
@@ -218,23 +286,36 @@ function MoreDialog({ apiRoute, inMenu, onClose, onDone, page, takenSlugs }: Mor
         )}
         {page.home ? (
           <p className="gp-small gp-muted">
-            A página inicial não pode sair do ar nem ser excluída. Escolha outra página inicial
-            antes.
+            A página inicial não pode sair do ar, ser arquivada nem ser excluída. Escolha outra
+            página inicial antes.
           </p>
         ) : inMenu ? (
           <p className="gp-small gp-muted">
-            Esta página está no menu do site. Para excluir, tire ela do menu antes.
+            Esta página está no menu do site. Para arquivar ou excluir, tire ela do menu antes.
           </p>
         ) : (
-          <button
-            className="gp-btn gp-btn--danger"
-            disabled={busy}
-            onClick={() => setConfirm('delete')}
-            type="button"
-          >
-            <PanelIcon name="trash" size={16} />
-            Excluir página
-          </button>
+          <>
+            {active && (
+              <button
+                className="gp-btn"
+                disabled={busy}
+                onClick={() => setConfirm('archive')}
+                type="button"
+              >
+                <PanelIcon name="archive" size={16} />
+                Arquivar (sai do site e da lista)
+              </button>
+            )}
+            <button
+              className="gp-btn gp-btn--danger"
+              disabled={busy}
+              onClick={() => setConfirm('delete')}
+              type="button"
+            >
+              <PanelIcon name="trash" size={16} />
+              Excluir página
+            </button>
+          </>
         )}
 
         {confirm === 'unpublish' && (
@@ -261,6 +342,35 @@ function MoreDialog({ apiRoute, inMenu, onClose, onDone, page, takenSlugs }: Mor
                 type="button"
               >
                 Tirar do ar
+              </button>
+            </div>
+          </div>
+        )}
+        {confirm === 'archive' && (
+          <div className="gp-warnbox" role="alert">
+            <b>Arquivar “{page.title}”?</b>
+            <span>
+              {live &&
+                'Ela sai do ar: quem abrir o endereço dela vai ver “página não encontrada”. '}
+              Ela fica guardada em Arquivadas, no fim desta lista, e pode ser restaurada quando
+              quiser.
+            </span>
+            <div className="gp-actions">
+              <button className="gp-btn gp-btn--sm" onClick={() => setConfirm(null)} type="button">
+                Cancelar
+              </button>
+              <button
+                className="gp-btn gp-btn--sm gp-btn--primary"
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    await archivePage(apiRoute, page.id)
+                    return { text: `“${page.title}” foi para Arquivadas.` }
+                  })
+                }
+                type="button"
+              >
+                Arquivar
               </button>
             </div>
           </div>
