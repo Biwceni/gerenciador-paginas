@@ -1,9 +1,10 @@
-import { getServerURL, PRODUCT_NAME } from '../lib/site'
+import { newPasswordURL } from '../lib/auth'
+import { PRODUCT_NAME } from '../lib/site'
 
 export const resetPasswordEmailSubject = () => `Criar uma nova senha | ${PRODUCT_NAME}`
 
 export const resetPasswordEmailHTML = (args?: { token?: string }) => {
-  const url = `${getServerURL()}/admin/reset/${args?.token}`
+  const url = newPasswordURL(args?.token ?? '', 'forgot')
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -11,7 +12,7 @@ export const resetPasswordEmailHTML = (args?: { token?: string }) => {
     <p>Olá!</p>
     <p>Recebemos um pedido para criar uma nova senha no painel do seu site.</p>
     <p>
-      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #1d4ed8; color: #ffffff; text-decoration: none; border-radius: 6px;">
+      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #0f6b55; color: #ffffff; text-decoration: none; border-radius: 6px;">
         Criar nova senha
       </a>
     </p>

@@ -4,7 +4,7 @@ import React from 'react'
 import { footerContact, footerSocial } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import { populatedMedia, siteLinks } from '@/lib/content'
-import { PANEL_PATHS } from '@/lib/panel'
+import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import { pageSummary } from '@/puck/summary'
 
@@ -21,8 +21,10 @@ export async function MenuView(props: AdminViewServerProps) {
   const [header, footer, latest, live, site] = await Promise.all([
     payload.findGlobal({ slug: 'header', depth: 0, draft: true, ...access }),
     payload.findGlobal({ slug: 'footer', depth: 0, draft: true, ...access }),
+    // Destinos dos links: as páginas arquivadas ficam de fora.
     payload.find({
       collection: 'pages',
+      where: NOT_ARCHIVED,
       select: { title: true, slug: true, content: true },
       depth: 0,
       draft: true,

@@ -62,3 +62,51 @@ export function greeting(date: Date = new Date()): string {
   if (hour < 18) return 'Boa tarde'
   return 'Boa noite'
 }
+
+type Person = { email?: string | null; name?: string | null; role?: string | null }
+
+/** Nome que aparece no pé do menu: o nome da conta ou, sem ele, o começo do e-mail. */
+export function personName(person: Person): string {
+  return person.name?.trim() || person.email?.split('@')[0] || 'Você'
+}
+
+/** "Fábio Ormeni" → "FO"; "ana" → "AN". Aparece no lugar da foto da conta. */
+export function personInitials(person: Person): string {
+  const words = personName(person)
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+  const letters =
+    words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0].slice(0, 2)
+  return letters.toUpperCase()
+}
+
+export const ROLE_LABEL: Record<string, string> = {
+  admin: 'administrador',
+  editor: 'editor',
+}
+
+/** "Fábio · administrador". */
+export function personLabel(person: Person): string {
+  const role = person.role ? ROLE_LABEL[person.role] : null
+  return role ? `${personName(person)} · ${role}` : personName(person)
+}
+
+type ListedPage = { id: number; title: string; home: boolean }
+
+/**
+ * Ordem da lista de páginas: a página inicial no topo, depois as do menu na ordem do menu e, por
+ * fim, as que não estão no menu, em ordem alfabética.
+ */
+export function sortPagesForList<T extends ListedPage>(pages: T[], menuOrder: number[]): T[] {
+  const rank = (page: T) => {
+    if (page.home) return -1
+    const index = menuOrder.indexOf(page.id)
+    return index >= 0 ? index : Number.MAX_SAFE_INTEGER
+  }
+  return [...pages].sort(
+    (a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }),
+  )
+}
+
+/** Filtro das páginas que podem ser destino de link: as arquivadas ficam de fora. */
+export const NOT_ARCHIVED = { archived: { not_equals: true } } as const

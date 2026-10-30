@@ -27,14 +27,16 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   if (!user) return null
   const adminRoute = payload.config.routes.admin
 
-  const [pages, pendingGlobals, photos] = await Promise.all([
+  const [allPages, pendingGlobals, photos] = await Promise.all([
     loadPageRows(payload, user),
     loadPendingGlobals(payload, user),
     payload.count({ collection: 'media', overrideAccess: false, user }),
   ])
+  // As arquivadas ficam só na tela Páginas.
+  const pages = allPages.filter((page) => !page.archived)
   // Site sem nenhuma página: o administrador começa pelo início guiado (fase 4), a não ser que
   // tenha escolhido montar sozinho ou que não haja modelos gravados.
-  if (!pages.length && user.role === 'admin' && !searchParams?.pular) {
+  if (!allPages.length && user.role === 'admin' && !searchParams?.pular) {
     const { totalDocs } = await payload.count({
       collection: 'templates',
       overrideAccess: false,

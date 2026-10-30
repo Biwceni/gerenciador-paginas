@@ -8,6 +8,7 @@ import * as migration_20261025_234228_link_para_secao from './20261025_234228_li
 import * as migration_20261027_003103_formularios from './20261027_003103_formularios';
 import * as migration_20261027_013052_rls_tabelas from './20261027_013052_rls_tabelas';
 import * as migration_20261027_232634_modelos from './20261027_232634_modelos';
+import * as migration_20261030_002210_arquivar_paginas from './20261030_002210_arquivar_paginas';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261027_232634_modelos.up,
     down: migration_20261027_232634_modelos.down,
-    name: '20261027_232634_modelos'
+    name: '20261027_232634_modelos',
+  },
+  {
+    up: migration_20261030_002210_arquivar_paginas.up,
+    down: migration_20261030_002210_arquivar_paginas.down,
+    name: '20261030_002210_arquivar_paginas'
   },
 ];

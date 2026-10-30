@@ -176,7 +176,7 @@ describe('aplicar um modelo de site', () => {
   const seed = templateSeeds.find((item) => item.key === 'cafe-aconchegante')!
   const template = asTemplate({ ...seed, photos: [] })
 
-  it('cria as páginas, publica as configurações e tira do ar as antigas', async () => {
+  it('cria as páginas, publica as configurações e arquiva as antigas', async () => {
     const old = { id: 5, title: 'Antiga', slug: 'inicio', content: {}, seo: {} }
     const { req, calls } = fakeReq({
       pages: [old],
@@ -231,15 +231,50 @@ describe('aplicar um modelo de site', () => {
     }
     expect(header.items[1]).toEqual({ label: 'Sobre nós', link: { kind: 'page', page: 101 } })
 
-    // A antiga sai do ar depois de a página inicial mudar.
-    const unpublish = calls.findIndex((c) => c.op === 'update' && c.args.id === 5)
+    // A antiga vai para "Arquivadas" (fora do ar) depois de a página inicial e o menu mudarem:
+    // as regras do servidor recusam arquivar a página inicial e as do menu.
+    const archive = calls.findIndex((c) => c.op === 'update' && c.args.id === 5)
     const siteUpdate = calls.findIndex((c) => c.op === 'updateGlobal' && c.args.slug === 'site')
-    expect(unpublish).toBeGreaterThan(siteUpdate)
-    expect(calls[unpublish].args.data).toMatchObject({ _status: 'draft', title: 'Antiga' })
+    const headerUpdate = calls.findIndex((c) => c.op === 'updateGlobal' && c.args.slug === 'header')
+    expect(archive).toBeGreaterThan(siteUpdate)
+    expect(archive).toBeGreaterThan(headerUpdate)
+    expect(calls[archive].args.data).toMatchObject({
+      _status: 'draft',
+      archived: true,
+      title: 'Antiga',
+    })
     // Tudo com o usuário da requisição.
     for (const call of calls.filter((c) => c.args.collection === 'pages')) {
       expect(call.args.overrideAccess).toBe(false)
     }
+  })
+
+  it('não arquiva de novo as que já estão arquivadas', async () => {
+    const { req, calls } = fakeReq({
+      pages: [{ id: 6, title: 'Guardada', slug: 'guardada', archived: true, content: {}, seo: {} }],
+    })
+    await applySiteTemplate(req, template, { name: 'Café', tagline: '', whatsapp: '' })
+    expect(calls.some((c) => c.op === 'update' && c.args.id === 6)).toBe(false)
+  })
+
+  it('não leva a frase, o endereço e o horário de exemplo para o site', async () => {
+    expect(template.site?.tagline).toBeTruthy()
+    const { req, calls } = fakeReq({ site: { contact: { email: 'dono@site.com' } } })
+    await applySiteTemplate(req, template, { name: 'Café', tagline: '', whatsapp: '' })
+    const site = calls.find((c) => c.op === 'updateGlobal' && c.args.slug === 'site')!.args
+      .data as { tagline: unknown; contact: Record<string, unknown> }
+    expect(site.tagline).toBeNull()
+    expect(site.contact).toMatchObject({
+      email: 'dono@site.com',
+      address: null,
+      hours: null,
+      whatsapp: null,
+    })
+    // Também a abertura da página inicial fica com o texto do modelo (Lorem Ipsum), não com a
+    // frase de exemplo.
+    const home = calls.find((c) => c.op === 'update' && c.args.id === 100)!
+    const homeData = (home.args.data as { content: { data: PuckPageData } }).content.data
+    expect(JSON.stringify(homeData)).not.toContain(template.site!.tagline!)
   })
 
   it('cria o formulário do modelo e põe o nome do site na página de links', async () => {

@@ -11,11 +11,14 @@ export type PageRow = {
   path: string
   status: PageStatus
   home: boolean
+  /** Guardada em "Arquivadas": fora do site, do menu e da contagem de páginas. */
+  archived: boolean
   updatedAt: string
 }
 
 /**
- * Páginas como o painel mostra: rascunho mais recente (nome e data) e se a página está no ar.
+ * Páginas como o painel mostra: rascunho mais recente (nome e data) e se a página está no ar, da
+ * mais recente para a mais antiga. Inclui as arquivadas (`archived`).
  * Lido com o usuário logado (`overrideAccess: false`), como qualquer tela do painel.
  */
 export async function loadPageRows(payload: Payload, user: TypedUser): Promise<PageRow[]> {
@@ -23,7 +26,7 @@ export async function loadPageRows(payload: Payload, user: TypedUser): Promise<P
   const [latest, live, site] = await Promise.all([
     payload.find({
       collection: 'pages',
-      select: { title: true, slug: true, _status: true, updatedAt: true },
+      select: { title: true, slug: true, _status: true, archived: true, updatedAt: true },
       depth: 0,
       draft: true,
       limit: 500,
@@ -53,6 +56,7 @@ export async function loadPageRows(payload: Payload, user: TypedUser): Promise<P
     path: pageHref(doc, homepageId),
     status: pageStatus(doc._status, liveIds.has(doc.id)),
     home: doc.id === homepageId,
+    archived: Boolean(doc.archived),
     updatedAt: doc.updatedAt,
   }))
 }

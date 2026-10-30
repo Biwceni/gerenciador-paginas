@@ -16,6 +16,29 @@ const SUBMISSION_LABELS: Record<string, string> = {
   submissionData: 'Dados enviados',
 }
 
+// Campos de dentro de "Dados enviados" (sem nome, o Payload mostrava "Field", "Value" e, em cada
+// linha, "Submission Datum").
+const SUBMISSION_DATA_LABELS: Record<string, string> = {
+  field: 'Campo',
+  value: 'Valor',
+}
+
+const translateSubmissionField = (field: Field): Field => {
+  if (!('name' in field) || !SUBMISSION_LABELS[field.name]) return field
+  const label = SUBMISSION_LABELS[field.name]
+  if (field.type !== 'array') return { ...field, label } as Field
+  return {
+    ...field,
+    label,
+    labels: { singular: 'Campo enviado', plural: label },
+    fields: field.fields.map((inner) =>
+      'name' in inner && SUBMISSION_DATA_LABELS[inner.name]
+        ? ({ ...inner, label: SUBMISSION_DATA_LABELS[inner.name] } as Field)
+        : inner,
+    ),
+  }
+}
+
 /** Valida o campo "nome" de um bloco, que o plugin põe dentro de linhas (`row`). */
 const validateNameField = (field: Field): Field => {
   if ('name' in field && field.name === 'name') {
@@ -99,11 +122,7 @@ export const formsPlugin = formBuilderPlugin({
         'Mensagens enviadas pelos formulários do site. Cada uma também chega por e-mail.',
     },
     fields: ({ defaultFields }) => [
-      ...defaultFields.map((field) =>
-        'name' in field && SUBMISSION_LABELS[field.name]
-          ? ({ ...field, label: SUBMISSION_LABELS[field.name] } as Field)
-          : field,
-      ),
+      ...defaultFields.map(translateSubmissionField),
       {
         name: 'consent',
         type: 'checkbox',

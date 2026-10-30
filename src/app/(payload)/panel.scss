@@ -1,6 +1,10 @@
 // Telas do painel do leigo (fase 3), no visual do protótipo (docs/prototipo). Tudo com prefixo
 // `gp-` para não mexer nas telas padrão do Payload, que continuam em "Avançado".
 
+// A partir daqui o menu lateral fica sempre aberto e a barra de topo do celular some. Igual ao
+// `DESKTOP` de PanelNavLinks.tsx.
+$desktop: 1024px;
+
 html[data-theme='light'],
 html:not([data-theme]) {
   --gp-bg: #f2f4f0;
@@ -86,12 +90,107 @@ html[data-theme] {
     flex: none;
     width: 34px;
     height: 34px;
-    border-radius: 10px;
-    background: var(--gp-accent);
-    color: var(--gp-accent-ink);
+    display: grid;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+// Pessoa que entrou, no pé do menu: iniciais no lugar da foto, nome e papel.
+.gp-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--gp-line);
+  font-size: 13px;
+  color: var(--gp-muted);
+  width: 100%;
+  min-width: 0;
+
+  i {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gp-surface-2);
+    color: var(--gp-ink);
     display: grid;
     place-items: center;
-    font-size: 15px;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// ---------- topo ----------
+
+// O ☰ e a foto da conta do Payload saem: o menu abre pelo nosso ☰ (abaixo de 1024 px) e a pessoa
+// aparece no pé do menu.
+.template-default__nav-toggler-wrapper,
+.app-header__mobile-nav-toggler,
+.app-header__account {
+  display: none !important;
+}
+
+// Caminho de volta das telas padrão: "Painel" no lugar do ícone (HomeCrumb).
+.step-nav .step-nav__home {
+  width: auto;
+  height: auto;
+}
+
+.gp-crumb-home {
+  font-weight: 600;
+  color: var(--gp-accent);
+  white-space: nowrap;
+}
+
+// Nas nossas telas o topo do Payload fica vazio: some inteiro.
+.template-default__wrap:has(> .gp-page) > .app-header {
+  display: none;
+}
+
+// Barra de topo do celular e do tablet (PanelTopBar).
+.gp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px
+    max(12px, env(safe-area-inset-left, 0px));
+  background: var(--gp-surface);
+  border-bottom: 1px solid var(--gp-line);
+  color: var(--gp-ink);
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--gp-font-display);
+    font-size: 17px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gp-iconbtn {
+    width: 40px;
+    height: 40px;
+    color: var(--gp-ink);
+  }
+}
+
+@media (min-width: $desktop) {
+  .gp-topbar {
+    display: none;
   }
 }
 
@@ -506,6 +605,36 @@ html[data-theme] {
   .gp-ic {
     margin-top: 2px;
   }
+
+  // Dica verde clara, como a `tip` do protótipo.
+  &--accent {
+    color: var(--gp-ink);
+    background: var(--gp-accent-soft);
+
+    .gp-ic {
+      color: var(--gp-accent);
+    }
+
+    a {
+      color: var(--gp-accent);
+      font-weight: 600;
+    }
+  }
+}
+
+// Grupo "Arquivadas" no fim da lista de páginas.
+.gp-archived {
+  border-top: 1px solid var(--gp-line);
+  padding: 12px 0 4px;
+  display: grid;
+  gap: 8px;
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--gp-muted);
+    font-size: 14px;
+  }
 }
 
 .gp-notice {
@@ -712,6 +841,40 @@ html[data-theme] {
   }
 }
 
+.gp-stepbar {
+  display: grid;
+  gap: 8px;
+}
+
+.gp-stepnames {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gp-muted);
+
+  li {
+    flex: 1;
+    text-align: center;
+
+    &:first-child {
+      text-align: left;
+    }
+
+    &:last-child {
+      text-align: right;
+    }
+
+    &.is-on {
+      color: var(--gp-accent);
+    }
+  }
+}
+
 .gp-steps {
   display: flex;
   gap: 8px;
@@ -873,6 +1036,112 @@ html[data-theme] {
 @media (max-width: 560px) {
   .gp-obcard {
     padding: 20px 16px;
+  }
+}
+
+// ---------- entrar e senha (v2) ----------
+
+// As telas de entrar ficam dentro do modelo mínimo do Payload: o cartão ocupa a tela inteira.
+.template-minimal:has(.gp-auth) {
+  padding: 0;
+  background: var(--gp-bg);
+
+  .template-minimal__wrap {
+    max-width: none;
+  }
+}
+
+.gp-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px max(16px, env(safe-area-inset-right, 0px)) 32px
+    max(16px, env(safe-area-inset-left, 0px));
+  background: var(--gp-bg);
+  color: var(--gp-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+}
+
+.gp-authcard {
+  width: 100%;
+  max-width: 420px;
+  background: var(--gp-surface);
+  border: 1px solid var(--gp-line);
+  border-radius: 18px;
+  padding: 32px;
+  display: grid;
+  gap: 18px;
+  box-shadow: 0 6px 24px rgb(20 30 25 / 8%);
+
+  .gp-brandmark {
+    padding: 0;
+  }
+
+  &__head {
+    display: grid;
+    gap: 4px;
+
+    h1 {
+      font-family: var(--gp-font-display);
+      font-size: 26px;
+      line-height: 1.15;
+      margin: 0;
+      text-wrap: balance;
+    }
+  }
+
+  &__link {
+    justify-self: center;
+    color: var(--gp-accent);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.gp-authform {
+  display: grid;
+  gap: 16px;
+}
+
+.gp-btn--block {
+  justify-content: center;
+  width: 100%;
+}
+
+.gp-pwrules {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  font-size: 13px;
+
+  li {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--gp-muted);
+
+    &.is-ok {
+      color: var(--gp-ok);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .gp-authcard {
+    padding: 24px 18px;
   }
 }
 

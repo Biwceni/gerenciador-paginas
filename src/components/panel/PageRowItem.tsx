@@ -18,11 +18,14 @@ export function StatusChip({ status }: { status: PageRow['status'] }) {
 /** Uma página numa lista do painel: nome, endereço, quando mudou, status e ações. */
 export function PageRowItem({
   adminRoute,
+  archived = false,
   children,
   domain,
   page,
 }: {
   adminRoute: string
+  /** No grupo "Arquivadas": o selo diz "Arquivada" no lugar do status. */
+  archived?: boolean
   children?: React.ReactNode
   domain: string
   page: PageRow
@@ -39,7 +42,11 @@ export function PageRowItem({
           {page.path} · editada {timeAgo(page.updatedAt)}
         </div>
       </div>
-      <StatusChip status={page.status} />
+      {archived ? (
+        <span className="gp-chip gp-chip--draft">Arquivada</span>
+      ) : (
+        <StatusChip status={page.status} />
+      )}
       <div className="gp-row__actions">
         {children ?? (
           <Link className="gp-btn gp-btn--sm" href={editorPath(adminRoute, page.id)}>

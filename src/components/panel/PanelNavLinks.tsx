@@ -1,8 +1,8 @@
 'use client'
 
-import { Link } from '@payloadcms/ui'
+import { Link, useNav } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { panelHref, type PanelPath } from '@/lib/panel'
 
@@ -20,6 +20,22 @@ const MAIN: [PanelPath, PanelIconName, string][] = [
   ['settings', 'gear', 'Configurações'],
 ]
 
+// A partir desta largura o menu lateral fica sempre aberto (o Payload só abre acima de 1440 px).
+// Abaixo dela, ele abre pelo ☰ da barra de topo (PanelTopBar). Igual ao `$desktop` do panel.scss.
+const DESKTOP = '(min-width: 1024px)'
+
+/** Mantém o menu aberto no computador, também quando o Payload tenta fechar ao carregar. */
+function useOpenOnDesktop() {
+  const { hydrated, navOpen, setNavOpen } = useNav()
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP)
+    if (query.matches && !navOpen) setNavOpen(true)
+    const onChange = () => query.matches && setNavOpen(true)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [hydrated, navOpen, setNavOpen])
+}
+
 type Props = {
   adminRoute: string
   advanced: PanelNavLink[]
@@ -28,6 +44,7 @@ type Props = {
 
 export function PanelNavLinks({ adminRoute, advanced, logoutHref }: Props) {
   const pathname = usePathname()
+  useOpenOnDesktop()
   const isCurrent = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
 

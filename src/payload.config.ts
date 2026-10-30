@@ -15,6 +15,7 @@ import { Users } from './collections/Users'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Site } from './globals/Site'
+import { LOCKED_MESSAGE, NEW_PASSWORD_PATH, WRONG_LOGIN_MESSAGE } from './lib/auth'
 import { EDITOR_VIEW_PATH } from './lib/editor'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
 import { formsPlugin } from './plugins/forms'
@@ -58,6 +59,11 @@ export default buildConfig({
   serverURL: getServerURL(),
   admin: {
     user: Users.slug,
+    // Sem Gravatar: nenhum e-mail sai do painel para o gravatar.com. No menu lateral, a pessoa
+    // aparece com as iniciais (PanelNav).
+    avatar: 'default',
+    // Datas das telas padrão (Mensagens, Avançado) no formato brasileiro.
+    dateFormat: "dd/MM/yyyy 'às' HH:mm",
     importMap: {
       baseDir: path.resolve(dirname),
     },
@@ -67,13 +73,36 @@ export default buildConfig({
     },
     components: {
       graphics: {
-        Icon: '/components/admin/Icon#Icon',
+        // O Payload só usa o Icon no começo do caminho de volta das telas padrão.
+        Icon: '/components/admin/HomeCrumb#HomeCrumb',
         Logo: '/components/admin/Logo#Logo',
       },
       // Painel do leigo (fase 3): menu e tela inicial nossos, no visual do protótipo.
       Nav: '/components/panel/PanelNav#PanelNav',
+      // Barra de topo do celular e do tablet (v2): ☰, nome do produto, Mensagens e Ver meu site.
+      header: ['/components/panel/PanelTopBar#PanelTopBar'],
       providers: ['/components/panel/PanelFonts#PanelFonts'],
       views: {
+        // Entrar e senha (v2): telas nossas no lugar das do Payload.
+        login: {
+          Component: '/components/auth/AuthViews#LoginView',
+          meta: { title: 'Entrar' },
+        },
+        forgot: {
+          Component: '/components/auth/AuthViews#ForgotView',
+          meta: { title: 'Criar uma senha nova' },
+        },
+        createFirstUser: {
+          Component: '/components/auth/AuthViews#FirstUserView',
+          meta: { title: 'Crie sua conta' },
+        },
+        // Link dos e-mails de convite e de senha: /admin/nova-senha/<token>. Sem `:token` no
+        // endereço e sem `exact`: só assim o Payload abre a tela para quem ainda não entrou.
+        authNewPassword: {
+          Component: '/components/auth/AuthViews#NewPasswordView',
+          path: NEW_PASSWORD_PATH,
+          meta: { title: 'Criar senha' },
+        },
         dashboard: {
           Component: '/components/panel/Dashboard#Dashboard',
         },
@@ -128,6 +157,19 @@ export default buildConfig({
     supportedLanguages: { pt },
     translations: {
       pt: {
+        error: {
+          // As telas de entrar comparam com estas frases (`src/lib/auth.ts`).
+          emailOrPasswordIncorrect: WRONG_LOGIN_MESSAGE,
+          userLocked: LOCKED_MESSAGE,
+        },
+        general: {
+          // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
+          menu: 'menu',
+          email: 'E-mail',
+          emailAddress: 'Endereço de e-mail',
+          restoring: 'Restaurando…',
+          time: 'Hora',
+        },
         authentication: {
           backToLogin: 'Voltar para a tela de entrar',
           forgotPasswordEmailInstructions:

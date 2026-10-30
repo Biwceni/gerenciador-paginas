@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
-import { panelHref, PANEL_PATHS } from '@/lib/panel'
+import { NOT_ARCHIVED, panelHref, PANEL_PATHS } from '@/lib/panel'
 import { parsePageContent } from '@/puck/schema'
 
 import { PanelTemplate, requireUser } from './PanelTemplate'
@@ -12,7 +12,8 @@ import { StartWizard, type StartTemplate } from './StartWizard'
  * Início guiado (`/admin/comecar`, fase 4): tipo de site, ramo (no site da empresa), modelo com
  * prévia e o básico (nome, frase e WhatsApp). Segue o `vOnboarding` do protótipo, em tela cheia.
  * Abre sozinho quando o site não tem nenhuma página; com páginas, o administrador chega pelas
- * Configurações ("Começar de novo com um modelo").
+ * Configurações ("Começar de novo com um modelo"), e o nome, a frase e o WhatsApp já vêm
+ * preenchidos com o que está lá.
  */
 export async function StartView(props: AdminViewServerProps) {
   const { payload, user, adminRoute } = requireUser(props, PANEL_PATHS.start)
@@ -38,7 +39,7 @@ export async function StartView(props: AdminViewServerProps) {
   }
 
   const access = { overrideAccess: false, user } as const
-  const [templates, pages, live] = await Promise.all([
+  const [templates, pages, live, site] = await Promise.all([
     payload.find({
       collection: 'templates',
       where: { kind: { equals: 'site' } },
@@ -47,8 +48,11 @@ export async function StartView(props: AdminViewServerProps) {
       sort: 'order',
       ...access,
     }),
-    payload.count({ collection: 'pages', ...access }),
+    // As arquivadas não contam: já estão guardadas e fora do ar.
+    payload.count({ collection: 'pages', where: NOT_ARCHIVED, ...access }),
     payload.count({ collection: 'pages', where: { _status: { equals: 'published' } }, ...access }),
+    // O rascunho mais recente, como a tela Configurações mostra.
+    payload.findGlobal({ slug: 'site', depth: 0, draft: true, ...access }),
   ])
 
   const list: StartTemplate[] = templates.docs.flatMap((doc) => {
@@ -78,6 +82,15 @@ export async function StartView(props: AdminViewServerProps) {
       adminRoute={adminRoute}
       apiRoute={payload.config.routes.api}
       existingPages={pages.totalDocs}
+      initial={
+        pages.totalDocs > 0
+          ? {
+              name: site.name ?? '',
+              tagline: site.tagline ?? '',
+              whatsapp: site.contact?.whatsapp ?? '',
+            }
+          : null
+      }
       livePages={live.totalDocs}
       templates={list}
     />

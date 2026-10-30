@@ -1,7 +1,7 @@
 import type { PayloadRequest } from 'payload'
 import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
-import type { Page, Template } from '../payload-types'
+import type { Page, Site, Template } from '../payload-types'
 import { collectReferences } from '../puck/references'
 import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/schema'
 import { relationID } from './relations'
@@ -160,10 +160,43 @@ function headerLink(link: TemplateLink | null | undefined, pageIds: number[]) {
 export type SiteAnswers = { name: string; tagline: string; whatsapp: string }
 
 /**
+ * Configurações do site depois de aplicar um modelo. Do modelo vêm só as cores e as letras: a
+ * frase, o endereço e o horário de exemplo nunca viram dado real (em branco, ficam em branco, e o
+ * painel lembra a pessoa de preencher). O resto vem do que está no ar, e o WhatsApp respondido
+ * troca o de hoje. Vão todos os campos: o Payload completa o que faltar com o último rascunho, e
+ * uma mudança não publicada das Configurações iria para o ar junto.
+ */
+export function templateSiteData(
+  site: Pick<Site, 'logo' | 'social' | 'seoDescription' | 'shareImage' | 'contact'>,
+  sample: Template['site'],
+  answers: SiteAnswers,
+  homepage: number,
+) {
+  return {
+    logo: relationID(site.logo),
+    social: site.social,
+    seoDescription: site.seoDescription,
+    shareImage: relationID(site.shareImage),
+    name: answers.name,
+    tagline: answers.tagline || null,
+    homepage,
+    colors: sample?.colors,
+    fonts: sample?.fonts,
+    contact: {
+      ...site.contact,
+      whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
+      address: site.contact?.address || null,
+      hours: site.contact?.hours || null,
+    },
+    _status: 'published' as const,
+  }
+}
+
+/**
  * Monta o site a partir de um modelo. As páginas do modelo entram como páginas novas, já no ar;
- * as páginas que já existiam saem do ar (viram rascunho, com o conteúdo guardado). Configurações,
- * menu e rodapé são publicados com os valores do modelo. O contato só é completado onde está vazio,
- * e o e-mail (para onde vão os avisos de mensagem) nunca muda.
+ * as páginas que já existiam vão para "Arquivadas" (saem do ar, com o conteúdo guardado).
+ * Configurações, menu e rodapé são publicados com os valores do modelo. O contato de hoje fica, e
+ * o e-mail (para onde vão os avisos de mensagem) nunca muda.
  */
 export async function applySiteTemplate(
   req: PayloadRequest,
@@ -182,15 +215,6 @@ export async function applySiteTemplate(
       collection: 'pages',
       depth: 0,
       draft: true,
-      pagination: false,
-      ...access,
-    })
-    const { docs: live } = await req.payload.find({
-      collection: 'pages',
-      where: { _status: { equals: 'published' } },
-      select: { title: true },
-      depth: 0,
-      draft: false,
       pagination: false,
       ...access,
     })
@@ -234,51 +258,12 @@ export async function applySiteTemplate(
       })
     }
 
-    // Vão todos os campos: o Payload completa o que faltar com o último rascunho, e uma mudança
-    // não publicada das Configurações iria para o ar junto. O resto vem do que está no ar.
     const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access })
-    const sample = template.site
     await req.payload.updateGlobal({
       slug: 'site',
-      data: {
-        logo: relationID(site.logo),
-        social: site.social,
-        seoDescription: site.seoDescription,
-        shareImage: relationID(site.shareImage),
-        name: answers.name,
-        tagline: answers.tagline || sample?.tagline || null,
-        homepage: ids.pages[0],
-        colors: sample?.colors,
-        fonts: sample?.fonts,
-        contact: {
-          ...site.contact,
-          whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
-          address: site.contact?.address || sample?.address || null,
-          hours: site.contact?.hours || sample?.hours || null,
-        },
-        _status: 'published',
-      },
+      data: templateSiteData(site, template.site, answers, ids.pages[0]),
       ...access,
     })
-
-    // A página inicial já é outra, então as antigas podem sair do ar. Vai o rascunho mais recente
-    // inteiro, para as mudanças não publicadas não se perderem (como o "Tirar do ar" do painel).
-    const liveIds = new Set(live.map((page) => page.id))
-    for (const page of existing.filter((doc) => liveIds.has(doc.id))) {
-      await req.payload.update({
-        collection: 'pages',
-        id: page.id,
-        data: {
-          title: page.title,
-          slug: page.slug,
-          campaign: page.campaign,
-          content: page.content,
-          seo: { ...page.seo, image: relationID(page.seo?.image) },
-          _status: 'draft',
-        },
-        ...access,
-      })
-    }
 
     const header = template.header
     await req.payload.updateGlobal({
@@ -307,6 +292,27 @@ export async function applySiteTemplate(
       },
       ...access,
     })
+
+    // A página inicial e o menu já são os novos, então as páginas antigas podem ir para
+    // "Arquivadas" (as regras de `archiveRules` recusam arquivar a inicial e as do menu). Vai o
+    // rascunho mais recente inteiro, para as mudanças não publicadas não se perderem (como o
+    // "Arquivar" do painel).
+    for (const page of existing.filter((doc) => !doc.archived)) {
+      await req.payload.update({
+        collection: 'pages',
+        id: page.id,
+        data: {
+          title: page.title,
+          slug: page.slug,
+          campaign: page.campaign,
+          content: page.content,
+          seo: { ...page.seo, image: relationID(page.seo?.image) },
+          archived: true,
+          _status: 'draft',
+        },
+        ...access,
+      })
+    }
 
     if (shouldCommit) await commitTransaction(req)
     return { homepage: ids.pages[0], pages: ids.pages, missingPhotos }

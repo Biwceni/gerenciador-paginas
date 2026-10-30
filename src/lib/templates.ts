@@ -84,9 +84,6 @@ export const SEGMENTS = [
 
 export type Segment = (typeof SEGMENTS)[number]['value']
 
-/** Tipos que viram "em breve" na tela: precisam de coleções novas (depois da estreia). */
-export const SITE_TYPES_SOON = 'Em breve: blog, portfólio e cardápio digital.'
-
 /**
  * Bancos de fotos de onde vêm as fotos dos modelos. O modelo guarda só o endereço; ao aplicar, a
  * foto é copiada para a biblioteca, e o site nunca depende desses serviços.
