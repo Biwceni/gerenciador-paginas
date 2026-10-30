@@ -25,7 +25,8 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { SectionSelectField as SectionSelectField_300f4572e1f87dc08ee2009c6e3ba873 } from '../../../components/admin/SectionSelectField'
 import { PanelNav as PanelNav_b070b5488cfa3d479c59a6887392bc1f } from '../../../components/panel/PanelNav'
-import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
+import { PanelTopBar as PanelTopBar_48da7817562abc5a67619055101871a9 } from '../../../components/panel/PanelTopBar'
+import { HomeCrumb as HomeCrumb_580cec3ab720399681829ec037f1b618 } from '../../../components/admin/HomeCrumb'
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { PanelFonts as PanelFonts_1518cc1b7035b81b07a381805e936d5e } from '../../../components/panel/PanelFonts'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -68,7 +69,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "/components/admin/SectionSelectField#SectionSelectField": SectionSelectField_300f4572e1f87dc08ee2009c6e3ba873,
   "/components/panel/PanelNav#PanelNav": PanelNav_b070b5488cfa3d479c59a6887392bc1f,
-  "/components/admin/Icon#Icon": Icon_dfe4008080d895d460898c3a6155e9ba,
+  "/components/panel/PanelTopBar#PanelTopBar": PanelTopBar_48da7817562abc5a67619055101871a9,
+  "/components/admin/HomeCrumb#HomeCrumb": HomeCrumb_580cec3ab720399681829ec037f1b618,
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
   "/components/panel/PanelFonts#PanelFonts": PanelFonts_1518cc1b7035b81b07a381805e936d5e,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

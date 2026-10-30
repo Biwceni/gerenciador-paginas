@@ -58,6 +58,11 @@ export default buildConfig({
   serverURL: getServerURL(),
   admin: {
     user: Users.slug,
+    // Sem Gravatar: nenhum e-mail sai do painel para o gravatar.com. No menu lateral, a pessoa
+    // aparece com as iniciais (PanelNav).
+    avatar: 'default',
+    // Datas das telas padrão (Mensagens, Avançado) no formato brasileiro.
+    dateFormat: "dd/MM/yyyy 'às' HH:mm",
     importMap: {
       baseDir: path.resolve(dirname),
     },
@@ -67,11 +72,14 @@ export default buildConfig({
     },
     components: {
       graphics: {
-        Icon: '/components/admin/Icon#Icon',
+        // O Payload só usa o Icon no começo do caminho de volta das telas padrão.
+        Icon: '/components/admin/HomeCrumb#HomeCrumb',
         Logo: '/components/admin/Logo#Logo',
       },
       // Painel do leigo (fase 3): menu e tela inicial nossos, no visual do protótipo.
       Nav: '/components/panel/PanelNav#PanelNav',
+      // Barra de topo do celular e do tablet (v2): ☰, nome do produto, Mensagens e Ver meu site.
+      header: ['/components/panel/PanelTopBar#PanelTopBar'],
       providers: ['/components/panel/PanelFonts#PanelFonts'],
       views: {
         dashboard: {
@@ -128,6 +136,14 @@ export default buildConfig({
     supportedLanguages: { pt },
     translations: {
       pt: {
+        general: {
+          // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
+          menu: 'menu',
+          email: 'E-mail',
+          emailAddress: 'Endereço de e-mail',
+          restoring: 'Restaurando…',
+          time: 'Hora',
+        },
         authentication: {
           backToLogin: 'Voltar para a tela de entrar',
           forgotPasswordEmailInstructions:

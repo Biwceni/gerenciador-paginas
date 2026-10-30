@@ -1,6 +1,10 @@
 // Telas do painel do leigo (fase 3), no visual do protótipo (docs/prototipo). Tudo com prefixo
 // `gp-` para não mexer nas telas padrão do Payload, que continuam em "Avançado".
 
+// A partir daqui o menu lateral fica sempre aberto e a barra de topo do celular some. Igual ao
+// `DESKTOP` de PanelNavLinks.tsx.
+$desktop: 1024px;
+
 html[data-theme='light'],
 html:not([data-theme]) {
   --gp-bg: #f2f4f0;
@@ -86,12 +90,108 @@ html[data-theme] {
     flex: none;
     width: 34px;
     height: 34px;
-    border-radius: 10px;
-    background: var(--gp-accent);
-    color: var(--gp-accent-ink);
+    display: grid;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+// Pessoa que entrou, no pé do menu: iniciais no lugar da foto, nome e papel.
+.gp-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--gp-line);
+  font-size: 13px;
+  color: var(--gp-muted);
+  width: 100%;
+  min-width: 0;
+
+  i {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gp-surface-2);
+    color: var(--gp-ink);
     display: grid;
     place-items: center;
-    font-size: 15px;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// ---------- topo ----------
+
+// O ☰ e a foto da conta do Payload saem: o menu abre pelo nosso ☰ (abaixo de 1024 px) e a pessoa
+// aparece no pé do menu.
+.template-default__nav-toggler-wrapper,
+.app-header__mobile-nav-toggler,
+.app-header__account {
+  display: none !important;
+}
+
+// Caminho de volta das telas padrão: "Painel" no lugar do ícone (HomeCrumb).
+.step-nav .step-nav__home {
+  width: auto;
+  height: auto;
+}
+
+.gp-crumb-home {
+  font-weight: 600;
+  color: var(--gp-accent);
+  white-space: nowrap;
+}
+
+// Nas nossas telas o topo do Payload fica vazio: some inteiro.
+.template-default__wrap:has(> .gp-page) > .app-header {
+  display: none;
+}
+
+// Barra de topo do celular e do tablet (PanelTopBar).
+.gp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px
+    max(12px, env(safe-area-inset-left, 0px));
+  background: var(--gp-surface);
+  border-bottom: 1px solid var(--gp-line);
+  color: var(--gp-ink);
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--gp-font-display);
+    font-size: 17px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gp-iconbtn {
+    width: 40px;
+    height: 40px;
+    color: var(--gp-ink);
+  }
+}
+
+@media (min-width: $desktop) {
+  .gp-topbar,
+  .nav .nav__header {
+    display: none;
   }
 }
 

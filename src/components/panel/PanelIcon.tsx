@@ -145,6 +145,19 @@ const PATHS = {
       <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6" />
     </>
   ),
+  archive: (
+    <>
+      <rect height="4" rx="1" width="18" x="3" y="4" />
+      <path d="M5 8v11h14V8M10 12h4" />
+    </>
+  ),
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  mail: (
+    <>
+      <rect height="14" rx="2" width="18" x="3" y="5" />
+      <path d="M3 7l9 6 9-6" />
+    </>
+  ),
 } as const
 
 export type PanelIconName = keyof typeof PATHS

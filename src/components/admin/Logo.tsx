@@ -3,7 +3,7 @@ import React from 'react'
 import { PRODUCT_NAME } from '../../lib/site'
 import { Icon } from './Icon'
 
-// Aparece na tela de entrar e de recuperar a senha.
+// Marca com o nome do produto (logo das telas padrão do Payload que ainda sobram).
 export function Logo() {
   return (
     <div className="gp-logo">
