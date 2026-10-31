@@ -3,7 +3,7 @@ import type { Payload, TypedUser } from 'payload'
 import { exampleTexts, findExampleSections, isExamplePhoto } from '@/lib/examples'
 import { type FinishInput, NOT_ARCHIVED, pageStatus, type PageStatus } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
-import { collectReferences, pageHref } from '@/puck/references'
+import { pageHref, pagePhotoIds } from '@/puck/references'
 import { parsePageContent } from '@/puck/schema'
 
 export type PageRow = {
@@ -115,10 +115,8 @@ export async function loadFinishInput(
   let examplePhotoPages = 0
   for (const doc of latest.docs) {
     const content = parsePageContent(doc.content)
-    const used = content.success ? collectReferences(content.data.data).mediaIds : []
-    if ([...used, relationID(doc.seo?.image)].some((id) => id && examplePhotos.has(id))) {
-      examplePhotoPages++
-    }
+    const used = pagePhotoIds(content.success ? content.data.data : null, doc.seo?.image)
+    if (used.some((id) => examplePhotos.has(id))) examplePhotoPages++
     if (content.success && findExampleSections(content.data.data, texts).length) {
       withTexts.add(doc.id)
     }

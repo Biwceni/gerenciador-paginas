@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { isExamplePhoto } from '@/lib/examples'
 import type { Media } from '@/payload-types'
-import { collectReferences, usesWhatsApp } from '@/puck/references'
+import { collectReferences, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import type { PuckPageData } from '@/puck/schema'
 
 import { updatePhotoAlt } from './api'
@@ -34,6 +34,8 @@ type Props = {
     path: string
     /** É a página inicial e ainda não está no ar: publicar coloca o site no ar. */
     opensSite: boolean
+    /** Foto escolhida em "Página e Google". */
+    seoImage: Media | number | null | undefined
   }
   /** Nomes das seções que ainda têm texto de exemplo. */
   exampleSections: string[]
@@ -72,7 +74,9 @@ export function PublishDialog({
     const photo = photoById[id]
     return photo && weakAlt(photo.alt) ? [photo] : []
   })
-  const examplePhotos = mediaIds.filter((id) => isExamplePhoto(photoById[id]))
+  const examplePhotos = pagePhotoIds(data, page.seoImage).filter((id) =>
+    isExamplePhoto(photoById[id]),
+  )
   const whatsappWithoutNumber = !whatsappHref && usesWhatsApp(data)
   const draftLinks = pageIds
     .filter((id) => id !== pageId)

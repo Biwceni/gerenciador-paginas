@@ -563,6 +563,7 @@ export function Editor(props: EditorProps) {
                   ),
                   path,
                   opensSite: isHome && !live,
+                  seoImage: settings.seo?.image,
                 }}
               />
             )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { isStaleVersion } from '@/lib/editor'
-import { usesWhatsApp } from '@/puck/references'
+import { pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import type { PageComponent, PuckPageData } from '@/puck/schema'
 import { googleTitle, homeGoogleTitle } from '@/puck/seo'
 import { pageBuilder, whatsapp } from '@/seed/templates/sections'
@@ -52,6 +52,24 @@ describe('título do Google', () => {
 
   it('título próprio em branco conta como automático', () => {
     expect(googleTitle({ ...page, seoTitle: '' }, site, false)).toBe('Sobre | Café Mineiro')
+  })
+})
+
+describe('fotos da página', () => {
+  const data: PuckPageData = {
+    root: { props: {} },
+    content: [pageBuilder().hero({ image: 3 })],
+  }
+
+  it('junta as das seções com a do Google, sem repetir', () => {
+    expect(pagePhotoIds(data, null)).toEqual([3])
+    expect(pagePhotoIds(data, 8)).toEqual([3, 8])
+    expect(pagePhotoIds(data, { id: 8 })).toEqual([3, 8])
+    expect(pagePhotoIds(data, 3)).toEqual([3])
+  })
+
+  it('conteúdo que não deu para ler ainda conta a foto do Google', () => {
+    expect(pagePhotoIds(null, 8)).toEqual([8])
   })
 })
 

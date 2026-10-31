@@ -76,7 +76,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const [{ page, isHome }, site] = await Promise.all([findPage(slug), getSite()])
   const name = site.name || FALLBACK_SITE_NAME
   const titleSite = { name, tagline: site.tagline }
-  if (!page) return { title: { absolute: homeGoogleTitle(titleSite) } }
+  // O aviso "em construção" fica fora do Google até a inicial ir ao ar.
+  if (!page) {
+    return {
+      title: { absolute: homeGoogleTitle(titleSite) },
+      robots: { index: false, follow: false },
+    }
+  }
 
   const data = readPageContent(page)
   const description =
