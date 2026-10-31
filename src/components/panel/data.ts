@@ -1,8 +1,10 @@
 import type { Payload, TypedUser } from 'payload'
 
-import { pageStatus, type PageStatus } from '@/lib/panel'
+import { exampleTexts, findExampleSections, isExamplePhoto } from '@/lib/examples'
+import { type FinishInput, NOT_ARCHIVED, pageStatus, type PageStatus } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
-import { pageHref } from '@/puck/references'
+import { collectReferences, pageHref } from '@/puck/references'
+import { parsePageContent } from '@/puck/schema'
 
 export type PageRow = {
   id: number
@@ -59,6 +61,80 @@ export async function loadPageRows(payload: Payload, user: TypedUser): Promise<P
     archived: Boolean(doc.archived),
     updatedAt: doc.updatedAt,
   }))
+}
+
+/** Textos dos modelos gravados, para achar o que ainda é exemplo. */
+export async function loadExampleTexts(payload: Payload, user: TypedUser): Promise<string[]> {
+  const { docs } = await payload.find({
+    collection: 'templates',
+    select: { pages: true },
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+    user,
+  })
+  return exampleTexts(docs)
+}
+
+/**
+ * O que o cartão "Para terminar seu site" precisa. Vale o que a pessoa está editando (o rascunho
+ * mais recente de cada página fora de "Arquivadas") e as configurações que estão no ar. `pageOrder`
+ * é a ordem da tela Páginas: a primeira com texto de exemplo é a que o botão abre.
+ */
+export async function loadFinishInput(
+  payload: Payload,
+  user: TypedUser,
+  pageOrder: PageRow[],
+): Promise<FinishInput> {
+  const access = { overrideAccess: false, user } as const
+  const [latest, photos, site, texts] = await Promise.all([
+    payload.find({
+      collection: 'pages',
+      where: NOT_ARCHIVED,
+      select: { content: true, seo: true },
+      depth: 0,
+      draft: true,
+      limit: 500,
+      pagination: false,
+      ...access,
+    }),
+    payload.find({
+      collection: 'media',
+      select: { sourceUrl: true },
+      depth: 0,
+      limit: 1000,
+      pagination: false,
+      ...access,
+    }),
+    payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access }),
+    loadExampleTexts(payload, user),
+  ])
+
+  const examplePhotos = new Set(photos.docs.filter(isExamplePhoto).map((photo) => photo.id))
+  const withTexts = new Set<number>()
+  let examplePhotoPages = 0
+  for (const doc of latest.docs) {
+    const content = parsePageContent(doc.content)
+    const used = content.success ? collectReferences(content.data.data).mediaIds : []
+    if ([...used, relationID(doc.seo?.image)].some((id) => id && examplePhotos.has(id))) {
+      examplePhotoPages++
+    }
+    if (content.success && findExampleSections(content.data.data, texts).length) {
+      withTexts.add(doc.id)
+    }
+  }
+
+  const home = pageOrder.find((page) => page.home)
+  return {
+    tagline: site.tagline,
+    whatsapp: site.contact?.whatsapp,
+    email: site.contact?.email,
+    examplePages: pageOrder
+      .filter((page) => withTexts.has(page.id))
+      .map(({ id, title }) => ({ id, title })),
+    examplePhotoPages,
+    home: home ? { id: home.id, live: home.status !== 'draft' } : null,
+  }
 }
 
 export type PendingGlobal = { slug: 'site' | 'header' | 'footer'; label: string }

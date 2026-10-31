@@ -12,6 +12,7 @@ import { request, updatePhotoAlt } from '@/components/editor/api'
 import { thumbnailURL } from '@/components/editor/context'
 import type { PhotoUse } from '@/hooks/protectPhoto'
 import { editorPath } from '@/lib/editor'
+import { isExamplePhoto } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
 
@@ -198,6 +199,9 @@ function PhotoDetail({
     <>
       <img alt="" className="gp-media__preview" src={photo.sizes?.medium?.url || photo.url || ''} />
       <span className="gp-small gp-muted gp-media__file">{photo.filename}</span>
+      {isExamplePhoto(photo) && (
+        <span className="gp-chip gp-chip--warn">Foto de exemplo do modelo</span>
+      )}
 
       <div className="gp-field">
         <label htmlFor="md-alt">O que aparece na foto?</label>

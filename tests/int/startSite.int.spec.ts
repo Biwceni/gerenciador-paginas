@@ -6,7 +6,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { applySiteTemplate } from '@/lib/applyTemplate'
 import config from '@/payload.config'
 import type { Template } from '@/payload-types'
-import { CONTENT_VERSION } from '@/puck/schema'
+import { CONTENT_VERSION, emptyPageContent } from '@/puck/schema'
 import { L_S, pageBuilder } from '@/seed/templates/sections'
 
 // Aplicar um modelo de site (v2, entrega 2a) no banco de TEST_DATABASE_URL.
@@ -133,7 +133,7 @@ describe('aplicar um modelo de site', () => {
     await removePages()
     const old = await payload.create({
       collection: 'pages',
-      data: { title: 'Antiga', slug: 'antiga', _status: 'published' },
+      data: { title: 'Antiga', slug: 'antiga', content: emptyPageContent(), _status: 'published' },
       overrideAccess: true,
     })
     const { pages } = await apply()
