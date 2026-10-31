@@ -72,6 +72,24 @@ export function collectReferences(data: PuckPageData): References {
   }
 }
 
+/** A página tem algum botão (com texto) que leva ao WhatsApp? Sem número, ele não aparece no site. */
+export function usesWhatsApp(data: PuckPageData): boolean {
+  const walk = (value: unknown): boolean => {
+    if (Array.isArray(value)) return value.some(walk)
+    if (!value || typeof value !== 'object') return false
+    const record = value as { label?: unknown; link?: { kind?: unknown } | null }
+    if (
+      typeof record.label === 'string' &&
+      record.label.trim() &&
+      record.link?.kind === 'whatsapp'
+    ) {
+      return true
+    }
+    return Object.values(value).some(walk)
+  }
+  return walk(data.content)
+}
+
 export function pageHref(page: { id: number; slug?: string | null }, homepageId?: number | null) {
   return page.id === homepageId ? '/' : `/${page.slug}`
 }

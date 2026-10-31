@@ -9,23 +9,30 @@ import { slugify, validateSlug } from '@/lib/slug'
 import type { Page } from '@/payload-types'
 import { relationID } from '@/lib/relations'
 
-import { saveDraft } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { Dialog } from './Dialog'
 
 export type PageSettings = Pick<Page, 'title' | 'slug' | 'campaign' | 'seo'>
 
 type Props = {
-  apiRoute: string
   settings: PageSettings
-  /** Título e descrição automáticos, quando os do Google ficam em branco. */
-  automatic: { title: string; description: string }
+  /** Título no Google, com o que está escrito no campo (em branco: o automático). */
+  titleFor: (seoTitle: string) => string
+  /** Descrição automática, quando a do Google fica em branco. */
+  automaticDescription: string
   onClose: () => void
-  onSaved: (settings: PageSettings) => void
+  /** Salva no rascunho; devolve quando terminar (ou lança o erro). */
+  onSave: (settings: PageSettings) => Promise<void>
 }
 
 /** Nome, endereço, página de campanha e como a página aparece no Google. Salva no rascunho. */
-export function PageSettingsDialog({ apiRoute, settings, automatic, onClose, onSaved }: Props) {
+export function PageSettingsDialog({
+  settings,
+  titleFor,
+  automaticDescription,
+  onClose,
+  onSave,
+}: Props) {
   const { pageId, homepageId, photoById, pickPhoto } = useEditor()
   const [title, setTitle] = useState(settings.title)
   const [slug, setSlug] = useState(settings.slug)
@@ -51,8 +58,7 @@ export function PageSettingsDialog({ apiRoute, settings, automatic, onClose, onS
       seo: { title: seoTitle.trim(), description: seoDescription.trim(), image: seoImage },
     }
     try {
-      await saveDraft(apiRoute, pageId, next)
-      onSaved(next)
+      await onSave(next)
       onClose()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Não deu para salvar.')
@@ -126,8 +132,8 @@ export function PageSettingsDialog({ apiRoute, settings, automatic, onClose, onS
             {window.location.host}
             {isHome ? '' : `/${slug}`}
           </span>
-          <span className="ed-serp__title">{seoTitle || automatic.title}</span>
-          <span className="ed-serp__desc">{seoDescription || automatic.description}</span>
+          <span className="ed-serp__title">{titleFor(seoTitle)}</span>
+          <span className="ed-serp__desc">{seoDescription || automaticDescription}</span>
         </div>
         <p className="ed-hint">
           Em branco, usamos o nome da página e o começo do texto dela. Você não precisa preencher.
@@ -138,7 +144,7 @@ export function PageSettingsDialog({ apiRoute, settings, automatic, onClose, onS
             className="ed-input"
             maxLength={70}
             onChange={(event) => setSeoTitle(event.target.value)}
-            placeholder={automatic.title}
+            placeholder={titleFor('')}
             value={seoTitle}
           />
         </label>
@@ -148,7 +154,7 @@ export function PageSettingsDialog({ apiRoute, settings, automatic, onClose, onS
             className="ed-input"
             maxLength={160}
             onChange={(event) => setSeoDescription(event.target.value)}
-            placeholder={automatic.description}
+            placeholder={automaticDescription}
             rows={3}
             value={seoDescription}
           />

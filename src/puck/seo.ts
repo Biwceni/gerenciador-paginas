@@ -78,6 +78,24 @@ export function firstPhotoId(data: PuckPageData): number | null {
   return null
 }
 
+type GoogleTitleSite = { name: string; tagline?: string | null }
+
+/** Página inicial sem título próprio: "Nome do site | primeira frase da apresentação". */
+export function homeGoogleTitle({ name, tagline }: GoogleTitleSite): string {
+  const sentence = firstSentence(tagline)
+  return sentence ? `${name} | ${sentence}` : name
+}
+
+/** O título que a página tem no Google. O site, o Publicar e "Página e Google" usam só este. */
+export function googleTitle(
+  page: { title: string; seoTitle?: string | null },
+  site: GoogleTitleSite,
+  isHome: boolean,
+): string {
+  if (isHome) return page.seoTitle || homeGoogleTitle(site)
+  return `${page.seoTitle || page.title} | ${site.name}`
+}
+
 /** "Café especial. Torrado toda semana." → "Café especial" (para o título da página inicial). */
 export function firstSentence(text: string | null | undefined): string {
   return (text ?? '').split(/[.!?](\s|$)/)[0].trim()

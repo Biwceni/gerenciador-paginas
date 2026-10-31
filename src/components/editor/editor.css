@@ -537,3 +537,11 @@ textarea.ed-input {
 [data-theme='dark'] .ed-serp__title {
   color: #8ab4f8;
 }
+
+/* Resumo da página, no painel da direita, quando nenhuma seção está escolhida. */
+.ed-summary {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 16px;
+}

@@ -5,8 +5,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { isExamplePhoto } from '@/lib/examples'
 import type { Media } from '@/payload-types'
-import { collectReferences } from '@/puck/references'
+import { collectReferences, usesWhatsApp } from '@/puck/references'
 import type { PuckPageData } from '@/puck/schema'
 
 import { updatePhotoAlt } from './api'
@@ -26,7 +27,16 @@ export function weakAlt(alt: string | null | undefined): boolean {
 type Props = {
   apiRoute: string
   data: PuckPageData
-  page: { title: string; seoTitle: string; path: string }
+  page: {
+    title: string
+    /** Como aparece no Google: da mesma função que o site usa. */
+    googleTitle: string
+    path: string
+    /** É a página inicial e ainda não está no ar: publicar coloca o site no ar. */
+    opensSite: boolean
+  }
+  /** Nomes das seções que ainda têm texto de exemplo. */
+  exampleSections: string[]
   onClose: () => void
   /** Publica a página; devolve quando terminar (ou lança o erro). */
   onPublish: () => Promise<void>
@@ -37,8 +47,16 @@ type Props = {
  * Um único botão Publicar, com as checagens do protótipo. Nenhuma bloqueia: elas avisam e, quando
  * dá, oferecem o conserto ali mesmo (descrever a foto, colocar a página no menu).
  */
-export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhotoChanged }: Props) {
-  const { pageId, homepageId, pages, photoById, site } = useEditor()
+export function PublishDialog({
+  apiRoute,
+  data,
+  page,
+  exampleSections,
+  onClose,
+  onPublish,
+  onPhotoChanged,
+}: Props) {
+  const { pageId, homepageId, pages, photoById, whatsappHref } = useEditor()
   const [alts, setAlts] = useState<Record<number, string>>({})
   const [addToMenu, setAddToMenu] = useState(true)
   // A página inicial não precisa estar no menu: o logo já leva até ela.
@@ -54,6 +72,8 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
     const photo = photoById[id]
     return photo && weakAlt(photo.alt) ? [photo] : []
   })
+  const examplePhotos = mediaIds.filter((id) => isExamplePhoto(photoById[id]))
+  const whatsappWithoutNumber = !whatsappHref && usesWhatsApp(data)
   const draftLinks = pageIds
     .filter((id) => id !== pageId)
     .flatMap((id) => {
@@ -70,6 +90,17 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
       active = false
     }
   }, [apiRoute, homepageId, pageId])
+
+  // O que está na tela como aviso. A foto já descrita e o menu marcado se resolvem ao publicar.
+  const hasWarning =
+    data.content.length === 0 ||
+    exampleSections.length > 0 ||
+    examplePhotos.length > 0 ||
+    weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
+    draftLinks.length > 0 ||
+    whatsappWithoutNumber ||
+    menu.kind === 'cannot-add' ||
+    (menu.kind === 'can-add' && !addToMenu)
 
   const publish = async () => {
     setBusy(true)
@@ -142,6 +173,7 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
       description={
         <>
           Vai ficar no ar em <b>{address}</b>
+          {page.opensSite && '. É a página inicial: com ela, o site sai do "em construção".'}
         </>
       }
       footer={
@@ -155,7 +187,7 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
             onClick={publish}
             type="button"
           >
-            {busy ? 'Publicando…' : 'Publicar agora'}
+            {busy ? 'Publicando…' : hasWarning ? 'Publicar mesmo assim' : 'Publicar agora'}
           </button>
         </>
       }
@@ -163,8 +195,32 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
       title={`Publicar “${page.title}”`}
     >
       <ul className="ed-checks">
+        {exampleSections.length ? (
+          <Check
+            title={
+              exampleSections.length === 1
+                ? 'Uma seção ainda tem texto de exemplo'
+                : `${exampleSections.length} seções ainda têm texto de exemplo`
+            }
+          >
+            {exampleSections.join(', ')}. Os visitantes vão ver esse texto.
+          </Check>
+        ) : (
+          <Check ok title="Sem texto de exemplo" />
+        )}
+        {examplePhotos.length > 0 && (
+          <Check
+            title={
+              examplePhotos.length === 1
+                ? 'Uma foto é do modelo'
+                : `${examplePhotos.length} fotos são do modelo`
+            }
+          >
+            Funciona, mas o site fica mais seu com fotos suas.
+          </Check>
+        )}
         <Check ok title="Aparece certinho no Google">
-          “{page.seoTitle || `${page.title} | ${site.name}`}”
+          “{page.googleTitle}”
         </Check>
         <Check ok title="Funciona no celular">
           As seções se ajustam sozinhas à tela.
@@ -204,6 +260,11 @@ export function PublishDialog({ apiRoute, data, page, onClose, onPublish, onPhot
           </Check>
         ) : (
           <Check ok title="Todos os botões levam para páginas no ar" />
+        )}
+        {whatsappWithoutNumber && (
+          <Check title="Botão de WhatsApp sem número">
+            Ele fica escondido até você pôr o número em Configurações.
+          </Check>
         )}
         {menu.kind === 'can-add' && (
           <Check title="Esta página não está no menu">

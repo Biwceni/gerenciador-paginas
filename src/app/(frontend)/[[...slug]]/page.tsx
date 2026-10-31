@@ -23,7 +23,7 @@ import { FALLBACK_SITE_NAME, initials } from '@/lib/site'
 import type { Media, Page } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import { resolveReferences } from '@/puck/references'
-import { extractDescription, firstPhotoId, firstSentence } from '@/puck/seo'
+import { extractDescription, firstPhotoId, googleTitle, homeGoogleTitle } from '@/puck/seo'
 
 // Páginas são estáticas e renovadas ao publicar (hooks em `src/hooks/revalidate.ts`).
 // Página publicada depois do build é gerada no primeiro acesso.
@@ -75,13 +75,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug = [] } = await params
   const [{ page, isHome }, site] = await Promise.all([findPage(slug), getSite()])
   const name = site.name || FALLBACK_SITE_NAME
-  // Página inicial: "Nome do site | primeira frase da apresentação", como no protótipo.
-  const tagline = firstSentence(site.tagline)
-  const homeTitle = tagline ? `${name} | ${tagline}` : name
-  if (!page) return { title: { absolute: homeTitle } }
+  const titleSite = { name, tagline: site.tagline }
+  if (!page) return { title: { absolute: homeGoogleTitle(titleSite) } }
 
   const data = readPageContent(page)
-  const title = page.seo?.title || page.title
   const description =
     page.seo?.description ||
     extractDescription(data) ||
@@ -95,10 +92,10 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     populatedMedia(site.shareImage) ??
     populatedMedia(site.logo)
   const path = isHome ? '/' : `/${page.slug}`
-  const fullTitle = isHome ? page.seo?.title || homeTitle : `${title} | ${name}`
+  const fullTitle = googleTitle({ title: page.title, seoTitle: page.seo?.title }, titleSite, isHome)
 
   return {
-    title: isHome ? { absolute: fullTitle } : title,
+    title: { absolute: fullTitle },
     description,
     alternates: { canonical: path },
     openGraph: {
