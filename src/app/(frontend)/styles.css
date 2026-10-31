@@ -489,6 +489,60 @@
 
   /* Página não encontrada e site em preparação */
 
+  /* Barra de quem está logado no painel: não segue as cores do site, e uma linha só no celular. */
+  .panel-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 16px;
+    background: #1f2421;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .panel-bar a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .panel-bar a:hover,
+  .panel-bar a:focus-visible {
+    text-decoration: underline;
+  }
+
+  /* Site em construção: enquanto a página inicial não está no ar. */
+  .site-soon {
+    min-height: 100vh;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 14px;
+    padding: 60px 20px;
+    text-align: center;
+  }
+
+  .site-soon h1 {
+    font-size: clamp(28px, 5vw, 44px);
+  }
+
+  .site-soon p {
+    max-width: 520px;
+  }
+
+  .site-soon__initials {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+  }
+
+  .site-soon__logo {
+    width: auto;
+    max-width: 160px;
+    max-height: 96px;
+  }
+
   .not-found {
     padding-block: 90px;
     text-align: center;

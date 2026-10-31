@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 
 import { type FormDefinition, toFormDefinition } from '../lib/forms'
+import { relationID } from '../lib/relations'
 import type { Media, Site } from '../payload-types'
 import { sectionAnchors } from './anchors'
 import { type LinkRef, parsePageContent, type PhotoRef, type PuckPageData } from './schema'
@@ -70,6 +71,34 @@ export function collectReferences(data: PuckPageData): References {
     sectionPageIds: [...sectionPageIds],
     formIds: [...formIds],
   }
+}
+
+/** Fotos que a página mostra: as das seções e a escolhida para o Google e o compartilhamento. */
+export function pagePhotoIds(
+  data: PuckPageData | null,
+  seoImage: number | { id: number } | null | undefined,
+): number[] {
+  const sections = data ? collectReferences(data).mediaIds : []
+  const seo = relationID(seoImage)
+  return seo && !sections.includes(seo) ? [...sections, seo] : sections
+}
+
+/** A página tem algum botão (com texto) que leva ao WhatsApp? Sem número, ele não aparece no site. */
+export function usesWhatsApp(data: PuckPageData): boolean {
+  const walk = (value: unknown): boolean => {
+    if (Array.isArray(value)) return value.some(walk)
+    if (!value || typeof value !== 'object') return false
+    const record = value as { label?: unknown; link?: { kind?: unknown } | null }
+    if (
+      typeof record.label === 'string' &&
+      record.label.trim() &&
+      record.link?.kind === 'whatsapp'
+    ) {
+      return true
+    }
+    return Object.values(value).some(walk)
+  }
+  return walk(data.content)
 }
 
 export function pageHref(page: { id: number; slug?: string | null }, homepageId?: number | null) {

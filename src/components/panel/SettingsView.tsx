@@ -1,6 +1,7 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
+import { exampleTagline } from '@/lib/examples'
 import { PANEL_PATHS } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
 import { getServerURL } from '@/lib/site'
@@ -17,7 +18,7 @@ import { SettingsEditor, type SettingsState } from './SettingsEditor'
 export async function SettingsView(props: AdminViewServerProps) {
   const { payload, user, adminRoute } = requireUser(props, PANEL_PATHS.settings)
   const access = { overrideAccess: false, user } as const
-  const [site, live, photos, people] = await Promise.all([
+  const [site, live, photos, people, models] = await Promise.all([
     // O rascunho mais recente: se alguém mexeu pela tela avançada sem publicar, aparece aqui.
     payload.findGlobal({ slug: 'site', depth: 0, draft: true, ...access }),
     payload.find({
@@ -49,13 +50,36 @@ export async function SettingsView(props: AdminViewServerProps) {
       sort: 'email',
       ...access,
     }),
+    payload.find({
+      collection: 'templates',
+      where: { kind: { equals: 'site' } },
+      select: { site: true },
+      depth: 0,
+      pagination: false,
+      sort: 'order',
+      ...access,
+    }),
   ])
+
+  const homepage = relationID(site.homepage)
+  const draftHome =
+    homepage && !live.docs.some((page) => page.id === homepage)
+      ? await payload.findByID({
+          collection: 'pages',
+          id: homepage,
+          select: { title: true },
+          depth: 0,
+          draft: true,
+          disableErrors: true,
+          ...access,
+        })
+      : null
 
   const initial: SettingsState = {
     name: site.name ?? '',
     tagline: site.tagline ?? '',
     logo: relationID(site.logo),
-    homepage: relationID(site.homepage),
+    homepage,
     colors: { ...DEFAULT_COLORS, ...site.colors },
     fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
     contact: {
@@ -85,7 +109,9 @@ export async function SettingsView(props: AdminViewServerProps) {
         domain={new URL(getServerURL()).host}
         fontFaces={site.fontFaces ?? null}
         initial={initial}
+        draftHome={draftHome ? { id: draftHome.id, title: draftHome.title } : null}
         livePages={live.docs.map(({ id, title }) => ({ id, title }))}
+        taglineHint={exampleTagline(site.colors, models.docs)}
         pending={site._status === 'draft'}
         people={
           <PeopleCard

@@ -10,8 +10,11 @@ import { siteInfo, siteLinks } from '@/lib/content'
 import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { toFormDefinition } from '@/lib/forms'
+import { getServerURL } from '@/lib/site'
 import { parsePageContent } from '@/puck/schema'
 import { pageSummary } from '@/puck/summary'
+
+import { loadExampleTexts } from '@/components/panel/data'
 
 import type { EditorPageSummary } from './context'
 import { Editor } from './Editor'
@@ -35,7 +38,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
   if (!Number.isInteger(id) || id <= 0) notFound()
 
   const access = { overrideAccess: false, user } as const
-  const [draft, livePages, pages, photos, site, forms] = await Promise.all([
+  const [draft, livePages, pages, photos, site, forms, exampleTexts] = await Promise.all([
     payload.findByID({
       collection: 'pages',
       id,
@@ -84,6 +87,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       sort: 'title',
       ...access,
     }),
+    loadExampleTexts(payload, user),
   ])
   if (!draft) notFound()
 
@@ -119,6 +123,8 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
         footerAdminHref: panelHref(adminRoute, 'menu'),
       }}
       apiRoute={payload.config.routes.api}
+      domain={new URL(getServerURL()).host}
+      exampleTexts={exampleTexts}
       fontFaces={site.fontFaces ?? null}
       forms={forms.docs.map(toFormDefinition)}
       homepageId={links.homepageId}
@@ -131,10 +137,12 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
         seo: draft.seo,
         live,
         hasChanges: draft._status === 'draft',
+        updatedAt: draft.updatedAt,
       }}
       pages={summaries}
       photos={photos.docs}
       site={siteInfo(site)}
+      tagline={site.tagline ?? null}
       theme={themeStyle(site) as Record<string, string>}
       whatsappHref={links.whatsappHref}
     />

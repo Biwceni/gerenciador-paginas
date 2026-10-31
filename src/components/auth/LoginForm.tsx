@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 
-import { LOCKED_MESSAGE, WRONG_LOGIN_MESSAGE } from '@/lib/auth'
+import { LOCKED_MESSAGE, markPanelLogin, WRONG_LOGIN_MESSAGE } from '@/lib/auth'
 
 import { AuthCard, AuthLink, LockedCard } from './AuthCard'
 import { authRequest } from './authApi'
@@ -28,6 +28,7 @@ export function LoginForm({ apiRoute, forgotHref, loginHref, redirectTo }: Props
     setError(null)
     const result = await authRequest(apiRoute, '/login', { email: email.trim(), password })
     if (result.ok) {
+      markPanelLogin()
       // Recarrega inteiro: o painel abre já com a sessão nova.
       window.location.assign(redirectTo)
       return

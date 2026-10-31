@@ -26,5 +26,8 @@ export async function login({
 
   await page.waitForURL(`${serverURL}/admin**`)
 
-  await expect(page.getByRole('navigation', { name: 'Menu do painel' })).toBeVisible()
+  // O servidor de desenvolvimento compila o painel na primeira vez que ele abre.
+  await expect(page.getByRole('navigation', { name: 'Menu do painel' })).toBeVisible({
+    timeout: 90_000,
+  })
 }

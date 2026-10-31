@@ -618,6 +618,7 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
               page.sections.map((section) => (
                 <option key={`${page.id}:${section.id}`} value={`section:${page.id}:${section.id}`}>
                   {page.title} › {section.label}
+                  {page.published ? '' : ' (rascunho)'}
                 </option>
               )),
             )}

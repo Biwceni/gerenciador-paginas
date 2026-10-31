@@ -1,8 +1,15 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
 import { protectPhotoDelete } from '../hooks/protectPhoto'
 import { revalidateOnChange, revalidateOnDelete } from '../hooks/revalidate'
+
+// Trocar o arquivo pela tela Fotos ("Trocar em todo o site"): a foto passa a ser da pessoa, deixa de
+// ser foto de exemplo, e aplicar o modelo de novo não pode reaproveitar esta como se fosse a dele.
+const forgetTemplateSource: CollectionBeforeChangeHook = ({ data, operation, req }) => {
+  if (operation === 'update' && req.file) data.sourceUrl = null
+  return data
+}
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -24,6 +31,7 @@ export const Media: CollectionConfig = {
   hooks: {
     afterChange: [revalidateOnChange],
     afterDelete: [revalidateOnDelete],
+    beforeChange: [forgetTemplateSource],
     beforeDelete: [protectPhotoDelete],
   },
   fields: [

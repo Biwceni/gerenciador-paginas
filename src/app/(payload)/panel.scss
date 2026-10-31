@@ -1763,3 +1763,83 @@ textarea.gp-input {
     transition: none !important;
   }
 }
+
+// Painel: site ainda fora do ar e cartão "Para terminar seu site" (v2, entrega 2a).
+.gp-statusbar--draft .gp-live__dot {
+  background: var(--gp-warn);
+  box-shadow: 0 0 0 4px var(--gp-warn-soft);
+}
+
+.gp-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gp-line);
+  overflow: hidden;
+
+  i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--gp-accent);
+  }
+}
+
+.gp-todo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+
+  li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding-block: 12px;
+    border-top: 1px solid var(--gp-line);
+  }
+
+  li:first-child {
+    border-top: 0;
+  }
+
+  &__mark {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--gp-line);
+    color: var(--gp-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .is-done &__mark {
+    background: var(--gp-ok-soft);
+    color: var(--gp-ok);
+  }
+
+  .is-done b {
+    color: var(--gp-muted);
+    font-weight: 500;
+    text-decoration: line-through;
+  }
+}
+
+@media (max-width: 560px) {
+  .gp-todo li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .gp-todo .gp-btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

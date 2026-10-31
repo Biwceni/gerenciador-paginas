@@ -19,15 +19,16 @@ import React, {
 import type { z } from 'zod'
 
 import type { FormDefinition } from '@/lib/forms'
+import { findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
 import { COLUMN_PIECES } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
 import { type ContentMetadata, mainHeadingID, type SiteInfo } from '@/puck/references'
 import { CONTENT_VERSION, parsePageContent, type PuckPageData } from '@/puck/schema'
-import { extractDescription } from '@/puck/seo'
+import { extractDescription, googleTitle } from '@/puck/seo'
 
-import { publishPage, saveDraft } from './api'
+import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
@@ -40,13 +41,18 @@ import { VersionsDialog } from './VersionsDialog'
 export type EditorProps = {
   apiRoute: string
   adminRoute: string
-  page: PageSettings & { id: number; live: boolean; hasChanges: boolean }
+  page: PageSettings & { id: number; live: boolean; hasChanges: boolean; updatedAt: string }
   initialData: PuckPageData
   photos: Media[]
   forms: FormDefinition[]
   pages: EditorPageSummary[]
   homepageId: number | null
   site: SiteInfo
+  /** Frase de apresentação: entra no título da página inicial no Google. */
+  tagline: string | null
+  domain: string
+  /** Textos dos modelos: seção que ainda tem um deles aparece como texto de exemplo. */
+  exampleTexts: string[]
   whatsappHref: string | null
   theme: Record<string, string>
   fontFaces: string | null
@@ -94,6 +100,8 @@ type Chrome = {
   canPublish: boolean
   livePath: string | null
   backHref: string
+  /** Resumo que aparece no painel da direita quando nenhuma seção está escolhida. */
+  summary: { sections: number; address: string; exampleSections: number }
   open: (dialog: DialogName) => void
   leave: () => Promise<void>
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
@@ -178,8 +186,43 @@ function EditorHeader() {
   )
 }
 
+/** Painel da direita (override do Puck): sem seção escolhida, o resumo da página. */
+function EditorFields({
+  children,
+  itemSelector,
+}: {
+  children: React.ReactNode
+  itemSelector?: unknown
+}) {
+  const chrome = useContext(ChromeContext)
+  if (itemSelector || !chrome) return <>{children}</>
+  const { sections, address, exampleSections } = chrome.summary
+
+  return (
+    <>
+      <div className="ed-summary">
+        <b>Esta página</b>
+        <span className="ed-hint">
+          {sections === 1 ? '1 seção' : `${sections} seções`} · {address}
+        </span>
+        {exampleSections > 0 && (
+          <span className="ed-hint ed-hint--warn">
+            {exampleSections === 1
+              ? '1 seção ainda tem texto de exemplo.'
+              : `${exampleSections} seções ainda têm texto de exemplo.`}
+          </span>
+        )}
+        <button className="ed-btn ed-btn--sm" onClick={() => chrome.open('settings')} type="button">
+          Página e Google
+        </button>
+      </div>
+      {children}
+    </>
+  )
+}
+
 export function Editor(props: EditorProps) {
-  const { apiRoute, adminRoute, initialData, homepageId, site, whatsappHref } = props
+  const { apiRoute, adminRoute, initialData, homepageId, site, tagline, whatsappHref } = props
   const pageId = props.page.id
 
   const [settings, setSettings] = useState<PageSettings>({
@@ -192,6 +235,7 @@ export function Editor(props: EditorProps) {
   const [hasChanges, setHasChanges] = useState(props.page.hasChanges)
   const [save, setSave] = useState<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
+  const [conflict, setConflict] = useState(false)
   const [photos, setPhotos] = useState(props.photos)
   const [forms, setForms] = useState(props.forms)
   const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
@@ -201,6 +245,9 @@ export function Editor(props: EditorProps) {
   const lastSaved = useRef(JSON.stringify(initialData))
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saving = useRef<Promise<void>>(Promise.resolve())
+  // Versão em que este editor está trabalhando: a que abriu e, depois, a de cada salvamento dele.
+  const baseUpdatedAt = useRef(props.page.updatedAt)
+  const stopped = useRef(false)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
   const connect = useCallback((value: GetPuck) => {
@@ -229,11 +276,32 @@ export function Editor(props: EditorProps) {
     [],
   )
 
-  // Salva o que está na tela, se mudou desde o último salvamento. Um salvamento por vez.
+  // Um envio por vez: cada um sai com a data que o anterior devolveu, senão o editor se acusaria
+  // de conflito com o próprio salvamento.
+  const send = useCallback(<T,>(task: () => Promise<T>): Promise<T> => {
+    const run = saving.current.then(task)
+    saving.current = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }, [])
+
+  // A página mudou em outro lugar: para de salvar aqui até a pessoa recarregar.
+  const stopIfConflict = useCallback((caught: unknown) => {
+    if (!(caught instanceof RequestError) || caught.status !== 409) return false
+    stopped.current = true
+    setConflict(true)
+    setDialog(null)
+    return true
+  }, [])
+
+  // Salva o que está na tela, se mudou desde o último salvamento.
   const flush = useCallback((): Promise<void> => {
     if (timer.current) clearTimeout(timer.current)
     timer.current = null
-    saving.current = saving.current.then(async () => {
+    return send(async () => {
+      if (stopped.current) return
       const current = latest.current
       const json = JSON.stringify(current)
       if (json === lastSaved.current) return
@@ -241,7 +309,13 @@ export function Editor(props: EditorProps) {
       if (!parsed.success) return setSave({ state: 'error', message: friendlyError(parsed.error) })
       setSave({ state: 'saving' })
       try {
-        await saveDraft(apiRoute, pageId, { content: parsed.data })
+        const { doc } = await saveDraft(
+          apiRoute,
+          pageId,
+          { content: parsed.data },
+          baseUpdatedAt.current,
+        )
+        baseUpdatedAt.current = doc.updatedAt
         lastSaved.current = json
         setHasChanges(true)
         setSave(
@@ -250,14 +324,14 @@ export function Editor(props: EditorProps) {
             : { state: 'pending' },
         )
       } catch (caught) {
+        if (stopIfConflict(caught)) return
         setSave({
           state: 'error',
           message: caught instanceof Error ? caught.message : 'sem conexão com o servidor',
         })
       }
     })
-    return saving.current
-  }, [apiRoute, pageId])
+  }, [apiRoute, pageId, send, stopIfConflict])
 
   const onChange = useCallback(
     (next: Data) => {
@@ -275,7 +349,9 @@ export function Editor(props: EditorProps) {
   // Fechar a aba com mudança ainda não salva: o navegador pergunta antes.
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (JSON.stringify(latest.current) !== lastSaved.current) event.preventDefault()
+      if (!stopped.current && JSON.stringify(latest.current) !== lastSaved.current) {
+        event.preventDefault()
+      }
     }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
@@ -297,26 +373,57 @@ export function Editor(props: EditorProps) {
 
   const publish = useCallback(async () => {
     await flush()
-    // Guardado antes do envio: o que mudar enquanto publica continua contando como não salvo.
-    const json = JSON.stringify(latest.current)
-    const parsed = parsePageContent({ version: CONTENT_VERSION, data: latest.current })
-    if (!parsed.success) throw new Error(friendlyError(parsed.error))
-    await publishPage(apiRoute, pageId, parsed.data)
-    lastSaved.current = json
-    setLive(true)
-    const changedMeanwhile = JSON.stringify(latest.current) !== json
-    setHasChanges(changedMeanwhile)
-    setSave(changedMeanwhile ? { state: 'pending' } : { state: 'saved', at: new Date() })
-    if (changedMeanwhile) void flush()
-  }, [apiRoute, flush, pageId])
+    await send(async () => {
+      if (stopped.current) throw new Error('a página mudou em outro lugar')
+      // Guardado antes do envio: o que mudar enquanto publica continua contando como não salvo.
+      const json = JSON.stringify(latest.current)
+      const parsed = parsePageContent({ version: CONTENT_VERSION, data: latest.current })
+      if (!parsed.success) throw new Error(friendlyError(parsed.error))
+      try {
+        const { doc } = await publishPage(apiRoute, pageId, parsed.data, baseUpdatedAt.current)
+        baseUpdatedAt.current = doc.updatedAt
+      } catch (caught) {
+        stopIfConflict(caught)
+        throw caught
+      }
+      lastSaved.current = json
+      setLive(true)
+      const changedMeanwhile = JSON.stringify(latest.current) !== json
+      setHasChanges(changedMeanwhile)
+      setSave(changedMeanwhile ? { state: 'pending' } : { state: 'saved', at: new Date() })
+      if (changedMeanwhile) void flush()
+    })
+  }, [apiRoute, flush, pageId, send, stopIfConflict])
+
+  const saveSettings = useCallback(
+    (next: PageSettings) =>
+      send(async () => {
+        if (stopped.current) throw new Error('a página mudou em outro lugar')
+        try {
+          const { doc } = await saveDraft(apiRoute, pageId, next, baseUpdatedAt.current)
+          baseUpdatedAt.current = doc.updatedAt
+        } catch (caught) {
+          stopIfConflict(caught)
+          throw caught
+        }
+        setSettings(next)
+        setHasChanges(true)
+      }),
+    [apiRoute, pageId, send, stopIfConflict],
+  )
 
   const isHome = pageId === homepageId
   const path = isHome ? '/' : `/${settings.slug}`
   const unsaved = save.state === 'pending' || save.state === 'saving'
   const savedAt = save.state === 'saved' ? save.at : undefined
 
-  const status =
-    save.state === 'saving'
+  const knownTexts = props.exampleTexts
+  const exampleSections = useMemo(() => findExampleSections(data, knownTexts), [data, knownTexts])
+  const googleSite = { name: site.name, tagline }
+
+  const status = conflict
+    ? 'Salvamento parado: a página mudou em outro lugar'
+    : save.state === 'saving'
       ? 'Salvando…'
       : save.state === 'pending'
         ? 'Salvando em instantes…'
@@ -331,10 +438,15 @@ export function Editor(props: EditorProps) {
   const chrome: Chrome = {
     title: settings.title,
     status,
-    statusTone: save.state === 'error' ? 'warn' : live && !hasChanges ? 'ok' : 'muted',
+    statusTone: conflict || save.state === 'error' ? 'warn' : live && !hasChanges ? 'ok' : 'muted',
     canPublish: !live || hasChanges || unsaved || save.state === 'error',
     livePath: live ? path : null,
     backHref: panelHref(adminRoute, 'pages'),
+    summary: {
+      sections: data.content.length,
+      address: `${props.domain}${path === '/' ? '' : path}`,
+      exampleSections: exampleSections.length,
+    },
     open: setDialog,
     leave: flush,
     connect,
@@ -415,7 +527,7 @@ export function Editor(props: EditorProps) {
                 metadata={metadata}
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
-                overrides={{ header: EditorHeader, iframe: EditorFrame }}
+                overrides={{ header: EditorHeader, iframe: EditorFrame, fields: EditorFields }}
                 viewports={viewports}
               />
             </div>
@@ -439,7 +551,20 @@ export function Editor(props: EditorProps) {
                 onClose={() => setDialog(null)}
                 onPhotoChanged={addPhoto}
                 onPublish={publish}
-                page={{ title: settings.title, seoTitle: settings.seo?.title ?? '', path }}
+                exampleSections={exampleSections.map(
+                  (section) => editorConfig.components[section.type]?.label ?? section.type,
+                )}
+                page={{
+                  title: settings.title,
+                  googleTitle: googleTitle(
+                    { title: settings.title, seoTitle: settings.seo?.title },
+                    googleSite,
+                    isHome,
+                  ),
+                  path,
+                  opensSite: isHome && !live,
+                  seoImage: settings.seo?.image,
+                }}
               />
             )}
 
@@ -458,18 +583,50 @@ export function Editor(props: EditorProps) {
 
             {dialog === 'settings' && (
               <PageSettingsDialog
-                apiRoute={apiRoute}
-                automatic={{
-                  title: `${settings.title} | ${site.name}`,
-                  description: extractDescription(data) ?? '',
-                }}
+                automaticDescription={extractDescription(data) ?? ''}
                 onClose={() => setDialog(null)}
-                onSaved={(next) => {
-                  setSettings(next)
-                  setHasChanges(true)
-                }}
+                onSave={saveSettings}
                 settings={settings}
+                titleFor={(seoTitle) =>
+                  googleTitle({ title: settings.title, seoTitle }, googleSite, isHome)
+                }
               />
+            )}
+
+            {/* Sem fechar: voltar a editar aqui apagaria o que foi salvo no outro lugar. */}
+            {conflict && (
+              <div className="ed-overlay">
+                <div
+                  aria-describedby="ed-conflict-text"
+                  aria-labelledby="ed-conflict-title"
+                  aria-modal="true"
+                  className="ed-dialog"
+                  role="alertdialog"
+                >
+                  <div className="ed-dialog__head">
+                    <h2 id="ed-conflict-title">
+                      Esta página mudou em outra aba ou por outra pessoa
+                    </h2>
+                  </div>
+                  <div className="ed-dialog__body">
+                    <p id="ed-conflict-text">
+                      Para não apagar o trabalho de ninguém, paramos de salvar aqui. Carregue a
+                      versão nova para continuar. O que você mudou nesta aba depois do último
+                      salvamento não foi guardado.
+                    </p>
+                  </div>
+                  <div className="ed-dialog__foot">
+                    <button
+                      autoFocus
+                      className="ed-btn ed-btn--primary"
+                      onClick={() => window.location.reload()}
+                      type="button"
+                    >
+                      Carregar a versão nova
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </ChromeContext.Provider>
         </SitePreviewProvider>

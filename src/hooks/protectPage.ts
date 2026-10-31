@@ -6,6 +6,7 @@ import type {
 import { APIError } from 'payload'
 
 import type { Header } from '../payload-types'
+import { isStaleVersion, PAGE_VERSION_HEADER } from '../lib/editor'
 import { relationID } from '../lib/relations'
 
 type HeaderLink = NonNullable<Header['items']>[number]['link']
@@ -102,6 +103,30 @@ export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
     throw new APIError(
       'A página inicial não pode sair do ar. Escolha outra página inicial antes.',
       400,
+      null,
+      true,
+    )
+  }
+  return data
+}
+
+/**
+ * O Payload não recusa um salvamento sobre uma versão mais nova: o editor de outra aba, ou de outra
+ * pessoa, apagaria o que foi salvo aqui. O editor manda a data da versão em que está trabalhando, e
+ * o `originalDoc` é sempre a versão mais recente, rascunho incluído (a mesma data que o Payload
+ * devolve ao salvar). Quem não manda a data (o painel padrão, os scripts) segue como antes.
+ */
+export const rejectStaleSave: CollectionBeforeChangeHook = ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  const base = req.headers?.get(PAGE_VERSION_HEADER)
+  if (operation === 'update' && base && isStaleVersion(base, originalDoc?.updatedAt)) {
+    throw new APIError(
+      'Esta página mudou em outra aba ou por outra pessoa. Recarregue para continuar.',
+      409,
       null,
       true,
     )
