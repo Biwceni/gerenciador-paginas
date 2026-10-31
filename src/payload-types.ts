@@ -984,7 +984,7 @@ export interface Site {
    */
   logo?: (number | null) | Media;
   /**
-   * A página que abre quando alguém entra no endereço do site. Precisa estar publicada.
+   * A página que abre quando alguém entra no endereço do site. Enquanto ela não estiver publicada, o site mostra o aviso "em construção".
    */
   homepage?: (number | null) | Page;
   /**
