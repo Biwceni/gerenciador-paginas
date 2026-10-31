@@ -193,10 +193,12 @@ export function templateSiteData(
 }
 
 /**
- * Monta o site a partir de um modelo. As páginas do modelo entram como páginas novas, já no ar;
- * as páginas que já existiam vão para "Arquivadas" (saem do ar, com o conteúdo guardado).
- * Configurações, menu e rodapé são publicados com os valores do modelo. O contato de hoje fica, e
- * o e-mail (para onde vão os avisos de mensagem) nunca muda.
+ * Monta o site a partir de um modelo. No primeiro início guiado (nenhuma página fora de
+ * "Arquivadas"), as páginas nascem como rascunho e o site só entra no ar quando a pessoa publicar a
+ * inicial. No "Começar de novo", as páginas novas entram já no ar e as que já existiam vão para
+ * "Arquivadas" (saem do ar, com o conteúdo guardado). Nos dois casos, configurações, menu e rodapé
+ * são publicados com os valores do modelo. O contato de hoje fica, e o e-mail (para onde vão os
+ * avisos de mensagem) nunca muda.
  */
 export async function applySiteTemplate(
   req: PayloadRequest,
@@ -219,8 +221,9 @@ export async function applySiteTemplate(
       ...access,
     })
     const taken = existing.map((page) => page.slug)
+    const firstSite = existing.every((page) => page.archived)
 
-    // Primeiro cria todas (os links entre elas precisam dos ids), depois põe o conteúdo e publica.
+    // Primeiro cria todas (os links entre elas precisam dos ids), depois põe o conteúdo.
     const created: Page[] = []
     for (const page of template.pages ?? []) {
       const slug = uniqueSlug(page.slug, taken)
@@ -253,7 +256,11 @@ export async function applySiteTemplate(
       await req.payload.update({
         collection: 'pages',
         id: ids.pages[index],
-        data: { content: { version: emptyPageContent().version, data }, _status: 'published' },
+        data: {
+          content: { version: emptyPageContent().version, data },
+          _status: firstSite ? 'draft' : 'published',
+        },
+        draft: firstSite,
         ...access,
       })
     }
