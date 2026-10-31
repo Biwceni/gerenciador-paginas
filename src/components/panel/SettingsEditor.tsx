@@ -53,6 +53,10 @@ type Props = {
   fontFaces: string | null
   initial: SettingsState
   livePages: { id: number; title: string }[]
+  /** Página inicial escolhida que ainda não está no ar (o site novo nasce assim). */
+  draftHome: { id: number; title: string } | null
+  /** Frase do modelo, só como dica no campo vazio: nunca vai para o site. */
+  taglineHint: string
   pending: boolean
   /** Cartão "Pessoas com acesso", montado pela tela. */
   people: React.ReactNode
@@ -125,6 +129,8 @@ export function SettingsEditor({
   fontFaces,
   initial,
   livePages,
+  draftHome,
+  taglineHint,
   pending,
   people,
   canStartOver,
@@ -241,7 +247,7 @@ export function SettingsEditor({
   const text = (
     key: 'name' | 'tagline' | 'seoDescription',
     label: string,
-    options: { multiline?: boolean; max: number; hint?: string },
+    options: { multiline?: boolean; max: number; hint?: string; placeholder?: string },
   ) => {
     const Tag = options.multiline ? 'textarea' : 'input'
     return (
@@ -255,6 +261,7 @@ export function SettingsEditor({
           onChange={(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             update({ [key]: event.target.value })
           }
+          placeholder={options.placeholder}
           rows={options.multiline ? 3 : undefined}
           value={state[key]}
         />
@@ -293,6 +300,8 @@ export function SettingsEditor({
     </div>
   )
 
+  const homeLive = livePages.some((page) => page.id === state.homepage)
+  const homeInList = homeLive || draftHome?.id === state.homepage
   const logo = photo(state.logo)
   const shareImage = photo(state.shareImage)
 
@@ -336,6 +345,7 @@ export function SettingsEditor({
             multiline: true,
             max: 200,
             hint: 'Uma frase curta sobre o negócio. Também vai no título da página inicial no Google.',
+            placeholder: `Ex.: ${taglineHint}`,
           })}
           <div className="gp-field">
             <span className="gp-label">Logo</span>
@@ -387,16 +397,19 @@ export function SettingsEditor({
                 onChange={(event) => update({ homepage: Number(event.target.value) || null })}
                 value={state.homepage ?? ''}
               >
-                {!livePages.some((page) => page.id === state.homepage) && (
-                  <option value="">Escolha uma página</option>
-                )}
+                {!homeInList && <option value="">Escolha uma página</option>}
+                {draftHome && <option value={draftHome.id}>{draftHome.title} (rascunho)</option>}
                 {livePages.map((page) => (
                   <option key={page.id} value={page.id}>
                     {page.title}
                   </option>
                 ))}
               </select>
-              <span className="gp-hint">Só aparecem páginas que já estão no ar.</span>
+              <span className="gp-hint">
+                {homeLive
+                  ? 'Só aparecem páginas que já estão no ar.'
+                  : `Enquanto a página inicial não estiver no ar, quem abre ${domain} vê só o nome do site e o aviso "Site em construção. Volte em breve.", com o botão do WhatsApp se ele estiver preenchido.`}
+              </span>
             </div>
           </section>
           <section className="gp-card">

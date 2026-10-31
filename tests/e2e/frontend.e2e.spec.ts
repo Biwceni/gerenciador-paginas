@@ -6,7 +6,7 @@ test.describe('Frontend', () => {
     const response = await page.goto('http://localhost:3000')
 
     expect(response?.status()).toBe(200)
-    await expect(page.locator('h1').first()).toHaveText('Site em preparação')
+    await expect(page.getByText('Site em construção. Volte em breve.')).toBeVisible()
   })
 
   test('endereço que não existe mostra a página de erro do site', async ({ page }) => {

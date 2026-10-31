@@ -3,8 +3,11 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import React, { cache } from 'react'
 
+import { PanelBar } from '@/components/site/PanelBar'
+import { Photo } from '@/components/site/Photo'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
+import { SiteLink } from '@/components/site/SiteLink'
 import {
   getHomepage,
   getPageBySlug,
@@ -16,7 +19,7 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
-import { FALLBACK_SITE_NAME } from '@/lib/site'
+import { FALLBACK_SITE_NAME, initials } from '@/lib/site'
 import type { Media, Page } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import { resolveReferences } from '@/puck/references'
@@ -113,24 +116,38 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function SitePage({ params }: { params: Promise<Params> }) {
   const { slug = [] } = await params
   const { page, isHome } = await findPage(slug)
+  const [payload, site] = await Promise.all([getPayloadClient(), getSite()])
+  const { admin: adminRoute, api: apiRoute } = payload.config.routes
 
-  // Sem página inicial publicada, o endereço principal mostra um aviso em vez de erro 404.
+  // Sem página inicial publicada, o endereço principal mostra um aviso em vez de erro 404. Só o
+  // nome e o contato: o menu ainda leva a lugar nenhum.
   if (!page) {
+    const name = site.name || FALLBACK_SITE_NAME
+    const logo = populatedMedia(site.logo)
+    const { whatsappHref, homepageId } = siteLinks(site)
     return (
       <>
-        <SiteHeader />
-        <main className="not-found" id="conteudo">
-          <div className="container">
-            <h1>Site em preparação</h1>
-            <p>Este site está sendo montado. Volte em breve.</p>
-          </div>
+        <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={homepageId} />
+        <main className="site-soon" id="conteudo">
+          {logo ? (
+            <Photo className="site-soon__logo" media={logo} sizes="160px" />
+          ) : (
+            <span aria-hidden="true" className="site-header__initials site-soon__initials">
+              {initials(name)}
+            </span>
+          )}
+          <h1>{name}</h1>
+          <p>Site em construção. Volte em breve.</p>
+          {whatsappHref && (
+            <SiteLink className="button" href={whatsappHref}>
+              Falar no WhatsApp
+            </SiteLink>
+          )}
         </main>
-        <SiteFooter />
       </>
     )
   }
 
-  const [payload, site] = await Promise.all([getPayloadClient(), getSite()])
   const data = readPageContent(page)
   const metadata = await resolveReferences(
     payload,
@@ -142,6 +159,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
 
   return (
     <>
+      <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={page.id} />
       <SiteHeader campaign={campaign} currentPageId={page.id} />
       <main id="conteudo">
         {!metadata.mainHeadingId && (

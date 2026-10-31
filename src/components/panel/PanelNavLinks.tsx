@@ -4,6 +4,7 @@ import { Link, useNav } from '@payloadcms/ui'
 import { usePathname } from 'next/navigation'
 import React, { useEffect } from 'react'
 
+import { clearPanelLogin, markPanelLogin } from '@/lib/auth'
 import { panelHref, type PanelPath } from '@/lib/panel'
 
 import { PanelIcon, type PanelIconName } from './PanelIcon'
@@ -45,6 +46,8 @@ type Props = {
 export function PanelNavLinks({ adminRoute, advanced, logoutHref }: Props) {
   const pathname = usePathname()
   useOpenOnDesktop()
+  // Quem entrou por outro caminho (primeiro usuário, senha nova, sessão de antes do cookie existir).
+  useEffect(() => markPanelLogin(), [])
   const isCurrent = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
 
@@ -103,7 +106,12 @@ export function PanelNavLinks({ adminRoute, advanced, logoutHref }: Props) {
           </a>
         </li>
         <li>
-          <Link className="gp-nav__link" href={logoutHref} prefetch={false}>
+          <Link
+            className="gp-nav__link"
+            href={logoutHref}
+            onClick={() => clearPanelLogin()}
+            prefetch={false}
+          >
             <PanelIcon name="out" />
             Sair
           </Link>
