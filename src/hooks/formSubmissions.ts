@@ -2,13 +2,23 @@ import type {
   CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   CollectionBeforeDeleteHook,
+  CollectionBeforeValidateHook,
 } from 'payload'
 import { APIError, ValidationError } from 'payload'
 
-import { checkSubmission, CONSENT_TEXT, HONEYPOT_FIELD, toFormDefinition } from '../lib/forms'
+import {
+  assignFieldNames,
+  checkSubmission,
+  CONSENT_TEXT,
+  EMAIL,
+  formNotifyEmail,
+  HONEYPOT_FIELD,
+  notifyTarget,
+  toFormDefinition,
+} from '../lib/forms'
+import { loadFormUsage } from '../lib/formUsage'
+import { panelHref } from '../lib/panel'
 import { relationID } from '../lib/relations'
-import { collectReferences } from '../puck/references'
-import { parsePageContent } from '../puck/schema'
 import { FALLBACK_SITE_NAME, getServerURL, PRODUCT_NAME } from '../lib/site'
 
 // Limite de mensagens no site todo. Cada uma manda um e-mail, e a cota do Resend é a mesma da
@@ -82,36 +92,55 @@ export const checkFormSubmission: CollectionBeforeChangeHook = async ({ data, op
 }
 
 /**
+ * Antes de guardar um formulário: nome técnico que nasce uma vez só (`assignFieldNames`), largura
+ * sempre 100 e e-mail do aviso conferido.
+ */
+export const prepareForm: CollectionBeforeValidateHook = ({ data, originalDoc, req }) => {
+  if (!data) return data
+  if (Array.isArray(data.fields)) {
+    data.fields = assignFieldNames(data.fields, originalDoc?.fields).map((field) => ({
+      ...field,
+      width: 100,
+    }))
+  }
+  const email = formNotifyEmail(data)
+  if (email && !EMAIL.test(email)) {
+    throw new ValidationError({
+      collection: 'forms',
+      errors: [{ path: 'emails', message: 'Confira o e-mail do aviso. Ex.: maria@seunegocio.com' }],
+      req,
+    })
+  }
+  return data
+}
+
+/**
  * Formulário que está numa seção de página (rascunho mais recente ou no ar) não pode ser excluído:
- * a seção ficaria sem campos e sem aviso no site.
+ * a seção ficaria sem campos e sem aviso no site. Com mensagens guardadas, também não: elas apontam
+ * para o formulário e perderiam os rótulos.
  */
 export const protectFormDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
   const formId = Number(id)
-  const query = {
-    collection: 'pages',
-    select: { title: true, content: true },
-    depth: 0,
-    limit: 500,
-    pagination: false,
-    overrideAccess: true,
-    req,
-  } as const
-  const [latest, live] = await Promise.all([
-    req.payload.find({ ...query, draft: true }),
-    req.payload.find({ ...query, draft: false }),
-  ])
-  const titles = new Map(latest.docs.map((doc) => [doc.id, doc.title]))
-  const using = new Set<number>()
-  for (const doc of [...latest.docs, ...live.docs]) {
-    const content = parsePageContent(doc.content)
-    if (content.success && collectReferences(content.data.data).formIds.includes(formId)) {
-      using.add(doc.id)
-    }
-  }
-  if (using.size) {
-    const names = [...using].map((pageId) => `“${titles.get(pageId) ?? pageId}”`).join(', ')
+  const usage = await loadFormUsage(req.payload, { overrideAccess: true, req })
+  const using = usage.get(formId)
+  if (using?.length) {
+    const names = using.map((page) => `“${page.title}”`).join(', ')
     throw new APIError(
       `Este formulário está na página ${names}. Tire a seção de lá antes de excluir.`,
+      400,
+      null,
+      true,
+    )
+  }
+  const { totalDocs } = await req.payload.count({
+    collection: 'form-submissions',
+    where: { form: { equals: formId } },
+    overrideAccess: true,
+    req,
+  })
+  if (totalDocs) {
+    throw new APIError(
+      `Este formulário tem ${totalDocs === 1 ? '1 mensagem guardada' : `${totalDocs} mensagens guardadas`}. Exclua em Mensagens antes.`,
       400,
       null,
       true,
@@ -122,15 +151,28 @@ export const protectFormDelete: CollectionBeforeDeleteHook = async ({ id, req })
 const escapeHTML = (text: string) => text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`)
 
 /**
- * Aviso de mensagem nova por e-mail, para o e-mail de contato das Configurações (ou, sem ele, para
- * os administradores). Se o e-mail falhar, a mensagem já está guardada na lista do painel.
+ * Aviso de mensagem nova por e-mail: para o e-mail do formulário ou, vazio, para o das
+ * Configurações (sem nenhum dos dois, para os administradores). Se o e-mail falhar, a mensagem já
+ * está guardada na lista do painel.
  */
 export const notifyNewMessage: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create') return doc
   try {
     const { payload } = req
     const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true, req })
-    let to = site.contact?.email ? [site.contact.email] : []
+    const formId = relationID(doc.form)
+    const form = formId
+      ? await payload.findByID({
+          collection: 'forms',
+          id: formId,
+          depth: 0,
+          disableErrors: true,
+          overrideAccess: true,
+          req,
+        })
+      : null
+    const target = notifyTarget(form, site.contact?.email)
+    let to = target ? [target] : []
     if (!to.length) {
       const admins = await payload.find({
         collection: 'users',
@@ -146,17 +188,6 @@ export const notifyNewMessage: CollectionAfterChangeHook = async ({ doc, operati
     }
     if (!to.length) return doc
 
-    const formId = relationID(doc.form)
-    const form = formId
-      ? await payload.findByID({
-          collection: 'forms',
-          id: formId,
-          depth: 0,
-          disableErrors: true,
-          overrideAccess: true,
-          req,
-        })
-      : null
     const definition = form ? toFormDefinition(form) : null
     const label = (name: string) =>
       definition?.fields.find((field) => field.name === name)?.label ?? name
@@ -170,7 +201,7 @@ export const notifyNewMessage: CollectionAfterChangeHook = async ({ doc, operati
       (item) => definition?.fields.find((field) => field.name === item.field)?.type === 'email',
     )?.value
     const siteName = site.name || FALLBACK_SITE_NAME
-    const listURL = `${getServerURL()}/admin/collections/form-submissions/${doc.id}`
+    const listURL = `${getServerURL()}${panelHref(payload.config.routes.admin, 'messages')}?mensagem=${doc.id}`
 
     await payload.sendEmail({
       to,

@@ -2,17 +2,33 @@
 
 import React, { useId, useState } from 'react'
 
-import { CONSENT_INPUT, CONSENT_TEXT, type FormDefinition, HONEYPOT_FIELD } from '@/lib/forms'
+import {
+  CONSENT_INPUT,
+  CONSENT_TEXT,
+  type FormDefinition,
+  type FormFieldType,
+  HONEYPOT_FIELD,
+  validatePhone,
+} from '@/lib/forms'
 
 type Props = {
   form: FormDefinition
   pageId?: number
+  /** Frase da seção, de antes da tela de Formulários: vale se o formulário não tiver a dele. */
   successMessage: string
   /** Prévia do editor: campos desligados, nada é enviado. */
   preview?: boolean
 }
 
 type Status = { state: 'idle' | 'sending' | 'sent' } | { state: 'error'; message: string }
+
+const INPUT_TYPES: Partial<Record<FormFieldType, string>> = { email: 'email', phone: 'tel' }
+
+/** O navegador segura o envio enquanto o número não servir. O servidor confere de novo. */
+const checkPhone = ({ target }: React.ChangeEvent<HTMLInputElement>) => {
+  const result = target.value.trim() ? validatePhone(target.value.trim()) : true
+  target.setCustomValidity(result === true ? '' : result)
+}
 
 type PayloadError = { errors?: { message?: string; data?: { errors?: { message?: string }[] } }[] }
 
@@ -27,7 +43,9 @@ export function SiteForm({ form, pageId, successMessage, preview }: Props) {
   if (status.state === 'sent') {
     return (
       <p className="site-form__sent" role="status">
-        {successMessage.trim() || 'Recebemos sua mensagem! Respondemos em breve.'}
+        {form.successMessage ||
+          successMessage.trim() ||
+          'Recebemos sua mensagem! Respondemos em breve.'}
       </p>
     )
   }
@@ -118,14 +136,17 @@ export function SiteForm({ form, pageId, successMessage, preview }: Props) {
               </select>
             ) : (
               <input
-                autoComplete={field.type === 'email' ? 'email' : undefined}
+                autoComplete={
+                  field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : undefined
+                }
                 disabled={preview}
                 id={id(field.name)}
                 maxLength={500}
                 name={field.name}
+                onChange={field.type === 'phone' ? checkPhone : undefined}
                 placeholder={field.placeholder}
                 required={field.required}
-                type={field.type === 'email' ? 'email' : 'text'}
+                type={INPUT_TYPES[field.type] ?? 'text'}
               />
             )}
           </div>

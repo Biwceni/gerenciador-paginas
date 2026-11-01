@@ -136,6 +136,23 @@ export default buildConfig({
           exact: true,
           meta: { title: 'Configurações' },
         },
+        panelMessages: {
+          Component: '/components/panel/MessagesView#MessagesView',
+          path: '/mensagens',
+          exact: true,
+          meta: { title: 'Mensagens' },
+        },
+        panelForms: {
+          Component: '/components/panel/FormsView#FormsView',
+          path: '/formularios',
+          exact: true,
+          meta: { title: 'Formulários' },
+        },
+        panelFormEditor: {
+          Component: '/components/panel/FormEditView#FormEditView',
+          path: '/formularios/:id',
+          meta: { title: 'Formulário' },
+        },
         // Início guiado (fase 4), em tela cheia: tipo de site, modelo e o básico.
         panelStart: {
           Component: '/components/panel/StartView#StartView',

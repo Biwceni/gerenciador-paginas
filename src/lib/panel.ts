@@ -8,9 +8,8 @@ export const PANEL_PATHS = {
   footer: '/menu-e-rodape',
   settings: '/configuracoes',
   start: '/comecar',
-  // Telas do plugin de formulários (padrão do Payload).
-  messages: '/collections/form-submissions',
-  forms: '/collections/forms',
+  messages: '/mensagens',
+  forms: '/formularios',
 } as const
 
 export type PanelPath = keyof typeof PANEL_PATHS

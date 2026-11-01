@@ -1,13 +1,21 @@
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
-import type { Field } from 'payload'
+import type { FieldConfig } from '@payloadcms/plugin-form-builder/types'
+import type { Block, Field } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
-import { checkFormSubmission, notifyNewMessage, protectFormDelete } from '../hooks/formSubmissions'
+import { spreadsheetEndpoint } from '../endpoints/messagesSpreadsheet'
+import {
+  checkFormSubmission,
+  notifyNewMessage,
+  prepareForm,
+  protectFormDelete,
+} from '../hooks/formSubmissions'
+import { revalidateOnChange, revalidateOnDelete } from '../hooks/revalidate'
 import { validateFieldName } from '../lib/forms'
 
-// Partes do formulário do plugin que o leigo não usa: e-mails com modelo (o aviso de mensagem nova
-// é nosso, para o e-mail das Configurações), redirecionamento e mensagem de confirmação em texto
-// rico (a frase de "enviado" fica na seção da página).
+// Partes do formulário do plugin que só a tela nossa (Formulários) usa: `emails` guarda o e-mail do
+// aviso e `confirmationMessage`, a frase depois do envio. Na tela padrão, ficam escondidas, junto
+// com o redirecionamento, que não usamos.
 const HIDDEN_FORM_FIELDS = ['emails', 'redirect', 'confirmationType', 'confirmationMessage']
 
 // Nomes em português para os campos que o plugin cria nas mensagens.
@@ -23,13 +31,17 @@ const SUBMISSION_DATA_LABELS: Record<string, string> = {
   value: 'Valor',
 }
 
+// Depois de guardada, a mensagem só muda no campo `read`.
+const locked = { update: () => false }
+
 const translateSubmissionField = (field: Field): Field => {
   if (!('name' in field) || !SUBMISSION_LABELS[field.name]) return field
   const label = SUBMISSION_LABELS[field.name]
-  if (field.type !== 'array') return { ...field, label } as Field
+  if (field.type !== 'array') return { ...field, label, access: locked } as Field
   return {
     ...field,
     label,
+    access: locked,
     labels: { singular: 'Campo enviado', plural: label },
     fields: field.fields.map((inner) =>
       'name' in inner && SUBMISSION_DATA_LABELS[inner.name]
@@ -67,15 +79,31 @@ const hideTechnical = (fields: Field[]): Field[] =>
       : checkFieldNames(field),
   )
 
+/** Tipo "WhatsApp ou telefone" (v2): como o texto curto, com o número conferido no envio. */
+const phoneBlock: Block = {
+  slug: 'phone',
+  labels: { singular: 'WhatsApp ou telefone', plural: 'WhatsApp ou telefone' },
+  fields: [
+    { name: 'name', type: 'text', label: 'Nome do campo', required: true },
+    { name: 'label', type: 'text', label: 'Pergunta' },
+    { name: 'width', type: 'number', label: 'Largura' },
+    { name: 'required', type: 'checkbox', label: 'Obrigatório' },
+  ],
+}
+
 /**
  * Formulários do site (plugin oficial). Formulários: o leigo monta os campos. Mensagens: cada envio
  * do site, guardado no painel e avisado por e-mail. Decisão de 26/10/2026: lista e e-mail, com a
  * caixa de "Concordo" obrigatória.
  */
 export const formsPlugin = formBuilderPlugin({
+  // O aviso é o `notifyNewMessage`. Sem isto, o plugin mandaria um segundo e-mail, vazio, para quem
+  // está em `emails`.
+  beforeEmail: () => [],
   fields: {
     text: true,
     email: true,
+    phone: phoneBlock as unknown as FieldConfig,
     textarea: true,
     select: true,
     checkbox: true,
@@ -103,7 +131,11 @@ export const formsPlugin = formBuilderPlugin({
     },
     fields: ({ defaultFields }) => hideTechnical(defaultFields),
     hooks: {
+      beforeValidate: [prepareForm],
       beforeDelete: [protectFormDelete],
+      // O site é estático e desenha os campos e a frase do formulário.
+      afterChange: [revalidateOnChange],
+      afterDelete: [revalidateOnDelete],
     },
   },
   formSubmissionOverrides: {
@@ -112,7 +144,8 @@ export const formsPlugin = formBuilderPlugin({
       // Qualquer visitante envia; as regras do envio ficam em `checkFormSubmission`.
       create: anyone,
       read: authenticated,
-      update: () => false,
+      // Só para marcar como lida ou não lida: todos os outros campos estão fechados (`locked`).
+      update: authenticated,
       delete: authenticated,
     },
     admin: {
@@ -121,6 +154,7 @@ export const formsPlugin = formBuilderPlugin({
       description:
         'Mensagens enviadas pelos formulários do site. Cada uma também chega por e-mail.',
     },
+    endpoints: [spreadsheetEndpoint],
     fields: ({ defaultFields }) => [
       ...defaultFields.map(translateSubmissionField),
       {
@@ -128,6 +162,7 @@ export const formsPlugin = formBuilderPlugin({
         type: 'checkbox',
         label: 'Concordou com o uso dos dados',
         defaultValue: false,
+        access: locked,
         admin: { readOnly: true },
       },
       {
@@ -135,6 +170,7 @@ export const formsPlugin = formBuilderPlugin({
         name: 'consentText',
         type: 'text',
         label: 'Frase aceita',
+        access: locked,
         admin: { readOnly: true },
       },
       {
@@ -142,7 +178,17 @@ export const formsPlugin = formBuilderPlugin({
         type: 'relationship',
         relationTo: 'pages',
         label: 'Enviada pela página',
+        access: locked,
         admin: { readOnly: true },
+      },
+      {
+        // Quem envia pelo site não escolhe: toda mensagem nasce não lida.
+        name: 'read',
+        type: 'checkbox',
+        label: 'Lida',
+        defaultValue: false,
+        index: true,
+        access: { create: () => false, update: authenticated },
       },
     ],
     hooks: {

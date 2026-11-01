@@ -36,9 +36,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="pt-BR">
       <head>
         {/* CSS montado pelo servidor ao publicar as configurações, com as fontes no nosso Storage. */}
-        {site.fontFaces && (
+        {/* Sem fontes copiadas, o texto é vazio: um "" solto aqui quebraria a hidratação da página. */}
+        {site.fontFaces ? (
           <style dangerouslySetInnerHTML={{ __html: safeStyleText(site.fontFaces) }} />
-        )}
+        ) : null}
       </head>
       <body className="site" style={themeStyle(site)}>
         <a className="skip-link" href="#conteudo">

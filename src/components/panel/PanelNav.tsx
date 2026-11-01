@@ -7,6 +7,7 @@ import { Icon } from '@/components/admin/Icon'
 import { personInitials, personLabel } from '@/lib/panel'
 import { PRODUCT_NAME } from '@/lib/site'
 
+import { countUnreadMessages } from './data'
 import { PanelNavLinks, type PanelNavLink } from './PanelNavLinks'
 
 type Props = ServerProps & { visibleEntities?: VisibleEntities }
@@ -52,6 +53,7 @@ export async function PanelNav({ i18n, payload, user, visibleEntities }: Props) 
           adminRoute={adminRoute}
           advanced={advanced}
           logoutHref={`${adminRoute}${payload.config.admin.routes.logout}`}
+          unread={await countUnreadMessages(payload, user)}
         />
         <div className="gp-who">
           <i aria-hidden="true">{personInitials(user)}</i>

@@ -16,7 +16,7 @@ const MAIN: [PanelPath, PanelIconName, string][] = [
   ['pages', 'file', 'Páginas'],
   ['photos', 'image', 'Fotos'],
   ['menu', 'layout', 'Menu e rodapé'],
-  ['messages', 'inbox', 'Mensagens'],
+  ['messages', 'mail', 'Mensagens'],
   ['forms', 'form', 'Formulários'],
   ['settings', 'gear', 'Configurações'],
 ]
@@ -41,9 +41,11 @@ type Props = {
   adminRoute: string
   advanced: PanelNavLink[]
   logoutHref: string
+  /** Mensagens não lidas: o número ao lado de Mensagens. */
+  unread: number
 }
 
-export function PanelNavLinks({ adminRoute, advanced, logoutHref }: Props) {
+export function PanelNavLinks({ adminRoute, advanced, logoutHref, unread }: Props) {
   const pathname = usePathname()
   useOpenOnDesktop()
   // Quem entrou por outro caminho (primeiro usuário, senha nova, sessão de antes do cookie existir).
@@ -67,6 +69,12 @@ export function PanelNavLinks({ adminRoute, advanced, logoutHref }: Props) {
               >
                 <PanelIcon name={icon} />
                 {label}
+                {path === 'messages' && unread > 0 && (
+                  <span className="gp-count">
+                    {unread}
+                    <span className="gp-sr"> não lidas</span>
+                  </span>
+                )}
               </Link>
             </li>
           )

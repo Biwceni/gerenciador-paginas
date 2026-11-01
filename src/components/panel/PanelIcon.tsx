@@ -88,6 +88,7 @@ const PATHS = {
   up: <path d="M12 19V5M6 11l6-6 6 6" />,
   down: <path d="M12 5v14M6 13l6 6 6-6" />,
   upload: <path d="M12 16V4M6 10l6-6 6 6M4 20h16" />,
+  download: <path d="M12 4v12M6 10l6 6 6-6M4 20h16" />,
   trash: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />,
   tool: (
     <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />

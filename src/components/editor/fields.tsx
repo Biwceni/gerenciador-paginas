@@ -9,6 +9,7 @@ import React, { useState } from 'react'
 
 import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
+import { panelHref } from '@/lib/panel'
 import { youtubeID } from '@/lib/youtube'
 import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 
@@ -404,8 +405,12 @@ export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
       {selected ? (
         <p className="ed-hint">
           Campos: {selected.fields.map((field) => field.label).join(', ') || 'nenhum'}.{' '}
-          <a href={`${adminRoute}/collections/forms/${selected.id}`} rel="noopener" target="_blank">
-            Mudar os campos
+          <a
+            href={`${panelHref(adminRoute, 'forms')}/${selected.id}`}
+            rel="noopener"
+            target="_blank"
+          >
+            Mudar as perguntas
           </a>
         </p>
       ) : (
@@ -419,8 +424,8 @@ export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
         </button>
       )}
       <p className="ed-hint">
-        As mensagens ficam em Mensagens, no painel, e chegam no e-mail das Configurações. Quem envia
-        precisa marcar que concorda com o uso dos dados.
+        As mensagens ficam em Mensagens, no painel, e chegam por e-mail. Quem envia precisa marcar
+        que concorda com o uso dos dados.
       </p>
     </div>
   )
