@@ -17,6 +17,11 @@
   --ed-warn-soft: var(--theme-warning-100, #fff4dc);
   --ed-ok-soft: var(--theme-success-100, #e3f2ec);
   font-family: var(--font-body, system-ui, sans-serif);
+  /* Cores do Puck (barra de ícones, listas, escolhas) no verde do painel. */
+  --puck-color-interactive: var(--ed-accent);
+  --puck-color-interactive-soft: var(--ed-ok-soft);
+  --puck-color-interactive-subtle: var(--ed-ok-soft);
+  --puck-color-interactive-soft-hover: var(--ed-ok-soft);
 }
 
 /* As janelas ficam fora de `.ed-root`, por isso as cores valem para as duas. */
@@ -125,6 +130,19 @@
   height: 38px;
   flex: none;
   font-size: 18px;
+}
+
+.ed-icon-btn--sm {
+  width: 30px;
+  height: 30px;
+  border-color: transparent;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.ed-icon-btn--sm[aria-pressed='true'] {
+  background: var(--ed-ok-soft);
+  color: var(--ed-accent);
 }
 
 .ed-btn:hover,
@@ -536,6 +554,90 @@ textarea.ed-input {
 
 [data-theme='dark'] .ed-serp__title {
   color: #8ab4f8;
+}
+
+/*
+ * Áreas do Puck. O Puck gera os nomes das classes com um código no fim, por isso a busca é pelo
+ * começo do nome. A versão do Puck é travada: ao atualizar, conferir estas regras.
+ */
+
+/* Faixa acima da prévia: computador ou celular. */
+.ed-root [class*='PuckCanvas_'] {
+  padding-top: 56px !important;
+}
+
+.ed-canvasbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--ed-soft);
+  color: var(--ed-muted);
+  font-size: 12.5px;
+}
+
+.ed-canvasbar__group {
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  background: var(--ed-bg);
+}
+
+/* Botão das opções, no pé da barra de ícones. */
+.ed-root [class*='PuckLayout-nav'] nav {
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ed-rail-btn {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--puck-color-text-secondary, var(--ed-muted));
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ed-rail-btn[aria-pressed='true'],
+.ed-rail-btn:hover {
+  color: var(--ed-accent);
+}
+
+.ed-rail-btn:focus-visible {
+  outline: 3px solid var(--ed-accent);
+  outline-offset: -3px;
+}
+
+/* Celular: a prévia usa a tela inteira e a barra de ícones fica embaixo. */
+@media (max-width: 637px) {
+  .ed-root [class*='PuckCanvas_'] {
+    padding: 0 !important;
+  }
+
+  .ed-canvasbar,
+  .ed-rail-btn {
+    display: none;
+  }
+
+  .ed-root [class*='PuckLayout-nav'] nav {
+    flex-direction: row;
+  }
 }
 
 /* Resumo da página, no painel da direita, quando nenhuma seção está escolhida. */

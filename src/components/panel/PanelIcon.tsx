@@ -158,6 +158,67 @@ const PATHS = {
       <path d="M3 7l9 6 9-6" />
     </>
   ),
+  desktop: (
+    <>
+      <rect height="13" rx="2" width="20" x="2" y="4" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect height="20" rx="2" width="10" x="7" y="2" />
+      <path d="M11 18h2" />
+    </>
+  ),
+  sliders: (
+    <>
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="18" cy="18" r="2" />
+    </>
+  ),
+  layers: (
+    <>
+      <path d="M12 3l9 5-9 5-9-5z" />
+      <path d="M3 13l9 5 9-5" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M9 14L4 9l5-5" />
+      <path d="M4 9h11a5 5 0 0 1 0 10h-3" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="M15 14l5-5-5-5" />
+      <path d="M20 9H9a5 5 0 0 0 0 10h3" />
+    </>
+  ),
+  history: (
+    <>
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5M12 7v5l3 2" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="19" cy="12" r="1.5" />
+    </>
+  ),
+  grip: (
+    <>
+      <circle cx="9" cy="6" r="1" />
+      <circle cx="15" cy="6" r="1" />
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="9" cy="18" r="1" />
+      <circle cx="15" cy="18" r="1" />
+    </>
+  ),
 } as const
 
 export type PanelIconName = keyof typeof PATHS

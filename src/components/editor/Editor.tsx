@@ -4,7 +4,7 @@ import '@puckeditor/core/no-external.css'
 import '@/app/(frontend)/styles.css'
 import './editor.css'
 
-import { createUsePuck, type Data, Puck, useGetPuck, type Viewports } from '@puckeditor/core'
+import { type Data, Puck, useGetPuck, type UiState } from '@puckeditor/core'
 import { toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import React, {
@@ -34,7 +34,9 @@ import { dictionary } from './dictionary'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
+import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
+import { type GetPuck, usePuck } from './puck'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
 
@@ -69,12 +71,10 @@ type DialogName = 'publish' | 'versions' | 'settings' | null
 const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
 
-const viewports: Viewports = [
-  { width: 1280, height: 'auto', label: 'Computador', icon: 'Monitor' },
-  { width: 390, height: 'auto', label: 'Celular', icon: 'Smartphone' },
-]
-
-const usePuck = createUsePuck()
+// Prévia em tamanho real: ocupa o espaço que sobra e nunca é encolhida. Sem os controles de zoom.
+const initialUi: Partial<UiState> = {
+  viewports: { current: { width: '100%', height: 'auto' }, controlsVisible: false, options: [] },
+}
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
@@ -107,8 +107,6 @@ type Chrome = {
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
   connect: (getPuck: GetPuck) => void
 }
-
-type GetPuck = ReturnType<typeof useGetPuck>
 
 const ChromeContext = createContext<Chrome | null>(null)
 
@@ -182,6 +180,7 @@ function EditorHeader() {
           {chrome.canPublish ? 'Publicar' : 'Publicada'}
         </button>
       </div>
+      <PreviewTools />
     </header>
   )
 }
@@ -528,7 +527,7 @@ export function Editor(props: EditorProps) {
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
                 overrides={{ header: EditorHeader, iframe: EditorFrame, fields: EditorFields }}
-                viewports={viewports}
+                ui={initialUi}
               />
             </div>
 
