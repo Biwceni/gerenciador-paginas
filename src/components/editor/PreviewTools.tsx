@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
@@ -9,6 +9,16 @@ import { MOBILE_WIDTH, ONE_PANEL_WIDTH, usePuck } from './puck'
 
 /** Largura real da tela do visitante de celular, sem zoom. */
 const PHONE_WIDTH = 390
+
+const noSubscription = () => () => {}
+
+/** Elemento da tela do Puck, que só existe no navegador e depois de ele desenhar. */
+const useElement = (selector: string) =>
+  useSyncExternalStore(
+    noSubscription,
+    () => document.querySelector(selector),
+    () => null,
+  )
 
 /**
  * Prévia sempre em tamanho real: em vez de encolher a página, recolhe um painel. Com pouca largura,
@@ -54,16 +64,10 @@ export function PreviewTools() {
   const dispatch = usePuck((s) => s.dispatch)
   const viewports = usePuck((s) => s.appState.ui.viewports)
   const optionsOpen = usePuck((s) => s.appState.ui.rightSideBarVisible)
-  const [targets, setTargets] = useState<{ rail: Element; canvas: Element } | null>(null)
+  const rail = useElement('.ed-root nav')
+  const canvas = useElement('.ed-root [class*="PuckCanvas_"]')
 
-  useEffect(() => {
-    const root = document.querySelector('.ed-root')
-    const rail = root?.querySelector('nav')
-    const canvas = root?.querySelector('[class*="PuckCanvas_"]')
-    if (rail && canvas) setTargets({ rail, canvas })
-  }, [])
-
-  if (!targets) return null
+  if (!rail || !canvas) return null
 
   const onPhone = viewports.current.width === PHONE_WIDTH
   const showAs = (width: number | '100%') =>
@@ -101,7 +105,7 @@ export function PreviewTools() {
           </div>
           <span>Tamanho real, sem zoom</span>
         </div>,
-        targets.canvas,
+        canvas,
       )}
       {createPortal(
         <button
@@ -120,7 +124,7 @@ export function PreviewTools() {
           <PanelIcon name="sliders" size={20} />
           Opções
         </button>,
-        targets.rail,
+        rail,
       )}
     </>
   )

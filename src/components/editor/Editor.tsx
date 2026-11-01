@@ -138,6 +138,8 @@ type Chrome = {
   summary: { sections: number; address: string; exampleSections: number }
   open: (dialog: DialogName) => void
   leave: () => Promise<void>
+  /** Abre o menu do celular, sabendo se dá para desfazer e refazer. */
+  openMore: (history: { canUndo: boolean; canRedo: boolean }) => void
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
   connect: (getPuck: GetPuck) => void
 }
@@ -216,7 +218,7 @@ function EditorHeader() {
         <button
           aria-label="Mais opções do editor"
           className="ed-icon-btn ed-show-sm"
-          onClick={() => chrome.open('more')}
+          onClick={() => chrome.openMore({ canUndo: history.hasPast, canRedo: history.hasFuture })}
           title="Mais opções"
           type="button"
         >
@@ -284,6 +286,7 @@ export function Editor(props: EditorProps) {
   const [hasChanges, setHasChanges] = useState(props.page.hasChanges)
   const [save, setSave] = useState<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
+  const [undoState, setUndoState] = useState({ canUndo: false, canRedo: false })
   const [conflict, setConflict] = useState(false)
   const [photos, setPhotos] = useState(props.photos)
   const [forms, setForms] = useState(props.forms)
@@ -508,6 +511,10 @@ export function Editor(props: EditorProps) {
       exampleSections: exampleSections.length,
     },
     open: setDialog,
+    openMore: (history) => {
+      setUndoState(history)
+      setDialog('more')
+    },
     leave: flush,
     connect,
   }
@@ -643,7 +650,7 @@ export function Editor(props: EditorProps) {
                 <div className="ed-more">
                   <button
                     className="ed-btn"
-                    disabled={!getPuck.current?.().history.hasPast}
+                    disabled={!undoState.canUndo}
                     onClick={() => {
                       getPuck.current?.().history.back()
                       setDialog(null)
@@ -654,7 +661,7 @@ export function Editor(props: EditorProps) {
                   </button>
                   <button
                     className="ed-btn"
-                    disabled={!getPuck.current?.().history.hasFuture}
+                    disabled={!undoState.canRedo}
                     onClick={() => {
                       getPuck.current?.().history.forward()
                       setDialog(null)
@@ -669,8 +676,8 @@ export function Editor(props: EditorProps) {
                   <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
                     <PanelIcon name="sliders" size={16} /> Página e Google
                   </button>
-                  {chrome.livePath && (
-                    <a className="ed-btn" href={chrome.livePath} rel="noopener" target="_blank">
+                  {live && (
+                    <a className="ed-btn" href={path} rel="noopener" target="_blank">
                       <PanelIcon name="eye" size={16} /> Ver no site
                     </a>
                   )}

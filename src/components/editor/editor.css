@@ -857,7 +857,7 @@ textarea.ed-input {
     padding: 0 !important;
   }
 
-  .ed-root [class*='NavItem-link'] {
+  .ed-root [class*='NavItem-link_'] {
     width: 100%;
     font-size: 12px;
     font-weight: 600;
