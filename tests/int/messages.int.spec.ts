@@ -50,6 +50,16 @@ const send = async (formId: number, phone = '(35) 99876-5432') => {
   return doc
 }
 
+/** Num banco novo ainda não há Configurações, e o nome do negócio é obrigatório ao publicar. */
+const setSiteEmail = async (email: string | null) => {
+  const { name } = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true })
+  await payload.updateGlobal({
+    slug: 'site',
+    data: { name: name || 'Site de teste', contact: { email }, _status: 'published' },
+    overrideAccess: true,
+  })
+}
+
 describe('mensagens', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
@@ -70,11 +80,7 @@ describe('mensagens', () => {
   })
 
   afterAll(async () => {
-    await payload.updateGlobal({
-      slug: 'site',
-      data: { contact: { email: null }, _status: 'published' },
-      overrideAccess: true,
-    })
+    await setSiteEmail(null)
     for (const id of messages) {
       await payload
         .delete({ collection: 'form-submissions', id, overrideAccess: true })
@@ -176,11 +182,7 @@ describe('mensagens', () => {
   })
 
   it('aviso: e-mail do formulário e, vazio, o das Configurações, um só por mensagem', async () => {
-    await payload.updateGlobal({
-      slug: 'site',
-      data: { contact: { email: 'site@exemplo.com' }, _status: 'published' },
-      overrideAccess: true,
-    })
+    await setSiteEmail('site@exemplo.com')
     const sendEmail = vi.spyOn(payload, 'sendEmail').mockResolvedValue(undefined)
 
     await send(form.id)
