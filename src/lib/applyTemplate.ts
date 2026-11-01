@@ -5,6 +5,7 @@ import type { Page, Site, Template } from '../payload-types'
 import { collectReferences } from '../puck/references'
 import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/schema'
 import { templateBlockType } from './forms'
+import { PRIVACY_TEMPLATE_KEY } from './privacy'
 import { relationID } from './relations'
 import { slugify, uniqueSlug } from './slug'
 import { isTemplatePhotoURL, remapTemplateContent, type TemplateIds } from './templates'
@@ -175,6 +176,8 @@ export function templateSiteData(
 ) {
   return {
     logo: relationID(site.logo),
+    // A página de privacidade de antes vai para "Arquivadas" com as outras, e a nova se cria depois.
+    privacyPage: null,
     social: site.social,
     seoDescription: site.seoDescription,
     shareImage: relationID(site.shareImage),
@@ -331,6 +334,39 @@ export async function applySiteTemplate(
 }
 
 /**
+ * Preenche "Página de privacidade" nas Configurações. No ar, vão todos os campos do que está
+ * publicado (ver `templateSiteData`), para uma mudança pendente não ir junto. Publicar passaria por
+ * cima dela, então a mudança pendente é gravada de novo por último, com o campo. Sem nome do negócio,
+ * publicar seria recusado: fica só como rascunho, que as Configurações mostram e publicam na próxima
+ * mudança.
+ */
+async function setPrivacyPage(req: PayloadRequest, pageId: number) {
+  const access = { overrideAccess: false, req } as const
+  const read = async (draft: boolean) => {
+    const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft, ...access })
+    const { createdAt: _createdAt, id: _id, updatedAt: _updatedAt, ...data } = site
+    return { ...data, privacyPage: pageId }
+  }
+  const [live, latest] = [await read(false), await read(true)]
+
+  if (live.name) {
+    await req.payload.updateGlobal({
+      slug: 'site',
+      data: { ...live, _status: 'published' },
+      ...access,
+    })
+  }
+  if (!live.name || latest._status === 'draft') {
+    await req.payload.updateGlobal({
+      slug: 'site',
+      data: { ...latest, _status: 'draft' },
+      draft: true,
+      ...access,
+    })
+  }
+}
+
+/**
  * Página nova (rascunho) a partir de um modelo de página. O título da abertura vira o nome da
  * página; botões que levariam a outra página do modelo levam ao WhatsApp.
  */
@@ -361,6 +397,7 @@ export async function applyPageTemplate(
       overrideAccess: false,
       req,
     })
+    if (template.key === PRIVACY_TEMPLATE_KEY) await setPrivacyPage(req, doc.id)
     if (shouldCommit) await commitTransaction(req)
     return { doc, missingPhotos }
   } catch (error) {

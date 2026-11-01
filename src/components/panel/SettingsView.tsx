@@ -61,12 +61,12 @@ export async function SettingsView(props: AdminViewServerProps) {
     }),
   ])
 
-  const homepage = relationID(site.homepage)
-  const draftHome =
-    homepage && !live.docs.some((page) => page.id === homepage)
-      ? await payload.findByID({
+  // Página escolhida que ainda não está no ar: não vem na lista das publicadas.
+  const draftPage = (id: number | null) =>
+    id && !live.docs.some((page) => page.id === id)
+      ? payload.findByID({
           collection: 'pages',
-          id: homepage,
+          id,
           select: { title: true },
           depth: 0,
           draft: true,
@@ -75,11 +75,16 @@ export async function SettingsView(props: AdminViewServerProps) {
         })
       : null
 
+  const homepage = relationID(site.homepage)
+  const privacyPage = relationID(site.privacyPage)
+  const [draftHome, draftPrivacy] = await Promise.all([draftPage(homepage), draftPage(privacyPage)])
+
   const initial: SettingsState = {
     name: site.name ?? '',
     tagline: site.tagline ?? '',
     logo: relationID(site.logo),
     homepage,
+    privacyPage,
     colors: { ...DEFAULT_COLORS, ...site.colors },
     fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
     contact: {
@@ -110,6 +115,7 @@ export async function SettingsView(props: AdminViewServerProps) {
         fontFaces={site.fontFaces ?? null}
         initial={initial}
         draftHome={draftHome ? { id: draftHome.id, title: draftHome.title } : null}
+        draftPrivacy={draftPrivacy ? { id: draftPrivacy.id, title: draftPrivacy.title } : null}
         livePages={live.docs.map(({ id, title }) => ({ id, title }))}
         taglineHint={exampleTagline(site.colors, models.docs)}
         pending={site._status === 'draft'}

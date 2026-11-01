@@ -13,6 +13,7 @@ import {
   VideoField,
 } from '@/components/editor/fields'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
+import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
 import type { ButtonValue, LinkRef, PhotoRef } from './schema'
@@ -435,6 +436,20 @@ const sections: { [K in keyof Components]: Section<K> } = {
       successMessage: 'Recebemos sua mensagem! Respondemos em breve.',
       style: 'soft',
     },
+  },
+  Privacy: {
+    fields: {
+      title: text('Título'),
+      // Campo que não guarda nada: só o aviso de onde vêm os dados.
+      ...({
+        notice: notice(
+          'O texto é um modelo pronto. O nome, o e-mail e o endereço vêm das Configurações do site e mudam sozinhos aqui.',
+        ),
+      } as object),
+      style: sectionStyle,
+      menuLabel,
+    },
+    defaultProps: { menuLabel: '', title: PRIVACY_TITLE, style: 'light' },
   },
   ColumnText: {
     fields: { title: text('Título'), text: textarea('Texto') },

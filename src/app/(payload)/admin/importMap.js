@@ -43,6 +43,7 @@ import { SettingsView as SettingsView_558b8145a55436ce2b8bd207b9fa74ac } from '.
 import { MessagesView as MessagesView_23ffc7532486e93622cbc250a3166341 } from '../../../components/panel/MessagesView'
 import { FormsView as FormsView_d1c72a9c709d78d477e9d1394cad2f26 } from '../../../components/panel/FormsView'
 import { FormEditView as FormEditView_e314191d98a5a2a1b5833224dec39b36 } from '../../../components/panel/FormEditView'
+import { AdvancedView as AdvancedView_ce4a6dfea9b683a2239e04c0a7b450d5 } from '../../../components/panel/AdvancedView'
 import { StartView as StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06 } from '../../../components/panel/StartView'
 import { EditorView as EditorView_d87577dd5d0a49997373c51582218ed3 } from '../../../components/editor/EditorView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
@@ -94,6 +95,7 @@ export const importMap = {
   "/components/panel/MessagesView#MessagesView": MessagesView_23ffc7532486e93622cbc250a3166341,
   "/components/panel/FormsView#FormsView": FormsView_d1c72a9c709d78d477e9d1394cad2f26,
   "/components/panel/FormEditView#FormEditView": FormEditView_e314191d98a5a2a1b5833224dec39b36,
+  "/components/panel/AdvancedView#AdvancedView": AdvancedView_ce4a6dfea9b683a2239e04c0a7b450d5,
   "/components/panel/StartView#StartView": StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06,
   "/components/editor/EditorView#EditorView": EditorView_d87577dd5d0a49997373c51582218ed3,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1

@@ -37,6 +37,7 @@ function sectionText(item: PageComponent): string {
       return columnPieces(item).find((piece) => piece.type === 'ColumnText')?.props.text ?? ''
     case 'Testimonials':
     case 'Gallery':
+    case 'Privacy':
       return ''
   }
 }

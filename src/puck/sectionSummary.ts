@@ -47,5 +47,7 @@ export function sectionSummary(item: PageComponent): string {
       return item.props.title || item.props.text
     case 'Video':
       return item.props.title || item.props.caption
+    case 'Privacy':
+      return item.props.title
   }
 }

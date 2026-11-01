@@ -1,5 +1,6 @@
 import type { Template } from '../../payload-types'
 import { CONTENT_VERSION, type PageComponent } from '../../puck/schema'
+import { PRIVACY_TEMPLATE_KEY, PRIVACY_TITLE } from '../../lib/privacy'
 import type { Segment, SiteType } from '../../lib/templates'
 import { L_S, pageBuilder, toPage, toSection, whatsapp } from './sections'
 
@@ -882,6 +883,13 @@ const pageModels: {
     description: 'Telefone, endereço e horário, sempre atualizados',
     slug: 'contato',
     build: (b) => [b.hero({ image: 1, button: 'Chamar no WhatsApp', style: 'soft' }), b.contact()],
+  },
+  {
+    key: PRIVACY_TEMPLATE_KEY,
+    name: PRIVACY_TITLE,
+    description: 'Já preenchida com os dados do seu site (LGPD)',
+    slug: 'politica-de-privacidade',
+    build: (b) => [b.privacy()],
   },
 ]
 

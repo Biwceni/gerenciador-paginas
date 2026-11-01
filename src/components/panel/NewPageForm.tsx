@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 
 import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
+import { PRIVACY_TEMPLATE_KEY, PRIVACY_TITLE } from '@/lib/privacy'
 import { slugify, uniqueSlug } from '@/lib/slug'
 
 import { blankContent, copyPage, createPage, createPageFromTemplate } from './api'
@@ -17,8 +18,10 @@ type Props = {
   adminRoute: string
   apiRoute: string
   domain: string
+  /** Identificador do modelo que já vem escolhido (`?modelo=`), como o "Criar agora" dos formulários. */
+  initialModel: string | null
   /** Modelos de página (coleção Modelos, fase 4). */
-  models: { id: number; title: string; text: string; mini: MiniBlock[] }[]
+  models: { id: number; key: string; title: string; text: string; mini: MiniBlock[] }[]
   pages: { id: number; title: string; slug: string }[]
 }
 
@@ -41,11 +44,14 @@ const STARTS: { key: 'blank' | 'copy'; title: string; text: string; mini: MiniBl
 type Start = number | 'blank' | 'copy'
 
 /** Nome da página, jeito de começar e "Criar e começar a editar". Segue o `vNewPage`. */
-export function NewPageForm({ adminRoute, apiRoute, domain, models, pages }: Props) {
+export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models, pages }: Props) {
   const router = useRouter()
-  const [start, setStart] = useState<Start>(models[0]?.id ?? 'blank')
+  const privacyModel = models.find((model) => model.key === PRIVACY_TEMPLATE_KEY)
+  const asked = models.find((model) => model.key === initialModel)
+  const [start, setStart] = useState<Start>(asked?.id ?? models[0]?.id ?? 'blank')
   const [sourceId, setSourceId] = useState(pages[0]?.id ?? 0)
-  const [name, setName] = useState('')
+  // A política já tem um bom nome: a pessoa só confirma.
+  const [name, setName] = useState(asked && asked === privacyModel ? PRIVACY_TITLE : '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -101,7 +107,10 @@ export function NewPageForm({ adminRoute, apiRoute, domain, models, pages }: Pro
             aria-checked={start === item.key}
             className="gp-start"
             key={item.key}
-            onClick={() => setStart(item.key)}
+            onClick={() => {
+              setStart(item.key)
+              if (item.key === privacyModel?.id && !name.trim()) setName(PRIVACY_TITLE)
+            }}
             role="radio"
             type="button"
           >

@@ -3,6 +3,7 @@ import React from 'react'
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
 import { whatsAppURL } from '@/lib/links'
+import { privacyBlocks } from '@/lib/privacy'
 import { initials } from '@/lib/site'
 
 import { type ContentMetadata, getHref, getPhoto } from '../references'
@@ -20,6 +21,7 @@ import type {
   GalleryProps,
   HeroProps,
   LinkListProps,
+  PrivacyProps,
   RichTextProps,
   TestimonialsProps,
   TextImageProps,
@@ -346,6 +348,41 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
   )
 }
 
+/** Política de privacidade: o texto sai das configurações na hora de mostrar (`lib/privacy.ts`). */
+export function Privacy({ id, title, style, metadata }: WithMetadata<PrivacyProps>) {
+  const Heading = metadata.mainHeadingId === id ? 'h1' : 'h2'
+
+  return (
+    <Section id={id} metadata={metadata} style={style}>
+      <div className="container rich-text">
+        {filled(title) && <Heading className="section-title">{title}</Heading>}
+        <div>
+          {privacyBlocks(metadata.site).map((block, index) => (
+            <React.Fragment key={index}>
+              {block.heading && <h3>{block.heading}</h3>}
+              <p>{block.text}</p>
+              {block.details && block.details.length > 0 && (
+                <ul>
+                  {block.details.map((detail) => (
+                    <li key={detail.label}>
+                      {detail.label}:{' '}
+                      {detail.href && !metadata.editing ? (
+                        <SiteLink href={detail.href}>{detail.value}</SiteLink>
+                      ) : (
+                        detail.value
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 /** Formulário: título e frase de um lado, os campos do formulário escolhido do outro. */
 export function Form(props: WithMetadata<FormProps>) {
   const { id, title, text, form, successMessage, style, metadata } = props
@@ -363,6 +400,7 @@ export function Form(props: WithMetadata<FormProps>) {
             form={definition}
             pageId={metadata.pageId}
             preview={metadata.editing}
+            privacyHref={metadata.site.privacyHref}
             successMessage={successMessage}
           />
         ) : (

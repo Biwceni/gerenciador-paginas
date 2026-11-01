@@ -135,6 +135,14 @@ export const contactPropsSchema = z.object({
   style: sectionStyle,
 })
 
+/** O texto é montado na hora, com os dados das configurações (`lib/privacy.ts`). */
+export const privacyPropsSchema = z.object({
+  id: componentId,
+  menuLabel,
+  title,
+  style: sectionStyle,
+})
+
 export const linkListPropsSchema = z.object({
   id: componentId,
   title,
@@ -242,6 +250,8 @@ const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Video'), props: videoPropsSchema }),
   // Seção nova (fase 3): só acrescenta um tipo, as outras não mudam, então a versão continua a 2.
   z.object({ type: z.literal('Form'), props: formPropsSchema }),
+  // Seção nova (v2): idem.
+  z.object({ type: z.literal('Privacy'), props: privacyPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -272,6 +282,7 @@ export type FaqProps = z.infer<typeof faqPropsSchema>
 export type GalleryProps = z.infer<typeof galleryPropsSchema>
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>
+export type PrivacyProps = z.infer<typeof privacyPropsSchema>
 export type LinkListProps = z.infer<typeof linkListPropsSchema>
 export type RichTextProps = z.infer<typeof richTextPropsSchema>
 export type VideoProps = z.infer<typeof videoPropsSchema>

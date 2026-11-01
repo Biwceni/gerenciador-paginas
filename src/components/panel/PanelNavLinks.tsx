@@ -9,8 +9,6 @@ import { panelHref, type PanelPath } from '@/lib/panel'
 
 import { PanelIcon, type PanelIconName } from './PanelIcon'
 
-export type PanelNavLink = { href: string; label: string }
-
 const MAIN: [PanelPath, PanelIconName, string][] = [
   ['dashboard', 'home', 'Painel'],
   ['pages', 'file', 'Páginas'],
@@ -39,13 +37,14 @@ function useOpenOnDesktop() {
 
 type Props = {
   adminRoute: string
-  advanced: PanelNavLink[]
+  /** Administrador vê também "Avançado". */
+  isAdmin: boolean
   logoutHref: string
   /** Mensagens não lidas: o número ao lado de Mensagens. */
   unread: number
 }
 
-export function PanelNavLinks({ adminRoute, advanced, logoutHref, unread }: Props) {
+export function PanelNavLinks({ adminRoute, isAdmin, logoutHref, unread }: Props) {
   const pathname = usePathname()
   useOpenOnDesktop()
   // Quem entrou por outro caminho (primeiro usuário, senha nova, sessão de antes do cookie existir).
@@ -81,32 +80,20 @@ export function PanelNavLinks({ adminRoute, advanced, logoutHref, unread }: Prop
         })}
       </ul>
       <div className="gp-nav__spacer" />
-      {advanced.length > 0 && (
-        <details
-          className="gp-nav__advanced"
-          open={advanced.some(({ href }) => isCurrent(href, false))}
-        >
-          <summary className="gp-nav__link">
-            <PanelIcon name="tool" />
-            Avançado
-          </summary>
-          <ul className="gp-nav__list gp-nav__list--sub">
-            {advanced.map(({ href, label }) => (
-              <li key={href}>
-                <Link
-                  aria-current={isCurrent(href, false) ? 'page' : undefined}
-                  className="gp-nav__link"
-                  href={href}
-                  prefetch={false}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
       <ul className="gp-nav__list">
+        {isAdmin && (
+          <li>
+            <Link
+              aria-current={isCurrent(panelHref(adminRoute, 'advanced'), true) ? 'page' : undefined}
+              className="gp-nav__link"
+              href={panelHref(adminRoute, 'advanced')}
+              prefetch={false}
+            >
+              <PanelIcon name="tool" />
+              Avançado
+            </Link>
+          </li>
+        )}
         <li>
           <a className="gp-nav__link" href="/" rel="noopener" target="_blank">
             <PanelIcon name="eye" />

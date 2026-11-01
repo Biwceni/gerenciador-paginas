@@ -14,9 +14,12 @@ import type { PhotoUse } from '@/hooks/protectPhoto'
 import { editorPath } from '@/lib/editor'
 import { isExamplePhoto } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
+import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
+import { PhotoDrop, UploadTiles } from './PhotoUploadParts'
+import { usePhotoUploads } from './usePhotoUploads'
 
 type Props = {
   adminRoute: string
@@ -36,10 +39,24 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [UploadDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
-    collectionSlug: 'media',
+  // Fotos que acabaram de chegar: aparecem na hora, antes de a tela ser relida do servidor.
+  const [arrived, setArrived] = useState<Media[]>([])
+  const uploads = usePhotoUploads({
+    onUploaded: (photo) => setArrived((list) => [photo, ...list]),
+    onFinished: ({ uploaded }) => {
+      if (!uploaded.length) return
+      if (uploaded.length === 1) setSelectedId(uploaded[0].id)
+      setNotice(
+        uploaded.length === 1
+          ? 'Foto enviada. Escreva ao lado o que aparece nela.'
+          : `${uploaded.length} fotos enviadas. Clique em cada uma para escrever a descrição.`,
+      )
+      router.refresh()
+    },
   })
-  const selected = photos.find((photo) => photo.id === selectedId)
+  const known = new Set(photos.map((photo) => photo.id))
+  const library = [...arrived.filter((photo) => !known.has(photo.id)), ...photos]
+  const selected = library.find((photo) => photo.id === selectedId)
 
   return (
     <div className="gp-page">
@@ -48,11 +65,13 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
           <h1>Fotos</h1>
           <p>Troque uma foto aqui e ela muda em todas as páginas que a usam.</p>
         </div>
-        <button className="gp-btn gp-btn--primary gp-btn--lg" onClick={openDrawer} type="button">
+        <button className="gp-btn gp-btn--primary gp-btn--lg" onClick={uploads.open} type="button">
           <PanelIcon name="upload" />
-          Enviar foto
+          Enviar fotos
         </button>
       </header>
+
+      <PhotoDrop uploads={uploads} />
 
       <div aria-live="polite">
         {notice && (
@@ -71,9 +90,10 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
       </div>
 
       <div className="gp-media">
-        {photos.length ? (
+        {library.length || uploads.items.length ? (
           <ul className="gp-media__grid">
-            {photos.map((photo) => (
+            <UploadTiles uploads={uploads} />
+            {library.map((photo) => (
               <li key={photo.id}>
                 <button
                   aria-pressed={photo.id === selectedId}
@@ -82,8 +102,12 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
                   type="button"
                 >
                   <img alt="" src={thumbnailURL(photo)} />
-                  <span className="gp-media__name">{photo.alt}</span>
-                  <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
+                  <span className="gp-media__name">{photoLabel(photo)}</span>
+                  {photo.alt?.trim() ? (
+                    <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
+                  ) : (
+                    <span className="gp-media__noalt">Sem descrição</span>
+                  )}
                 </button>
               </li>
             ))}
@@ -119,18 +143,6 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
           )}
         </aside>
       </div>
-
-      <UploadDrawer
-        // Sem isso, depois de criar a foto o Payload leva para a tela padrão dela.
-        redirectAfterCreate={false}
-        onSave={({ doc, operation }) => {
-          if (operation !== 'create') return
-          closeDrawer()
-          setSelectedId((doc as Media).id)
-          setNotice('Foto enviada.')
-          router.refresh()
-        }}
-      />
     </div>
   )
 }
@@ -157,11 +169,11 @@ function PhotoDetail({
   photo,
   uses,
 }: DetailProps) {
-  const [alt, setAlt] = useState(photo.alt)
+  const [alt, setAlt] = useState(photo.alt ?? '')
   const [save, setSave] = useState<SaveState>('idle')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const saved = useRef(photo.alt)
+  const saved = useRef(photo.alt ?? '')
   const [ReplaceDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
     collectionSlug: 'media',
     id: photo.id,
@@ -170,7 +182,7 @@ function PhotoDetail({
   // Salva a descrição um pouco depois de a pessoa parar de digitar.
   useEffect(() => {
     const text = alt.trim()
-    if (!text || text === saved.current) return
+    if (text === saved.current) return
     const timer = setTimeout(async () => {
       setSave('saving')
       try {

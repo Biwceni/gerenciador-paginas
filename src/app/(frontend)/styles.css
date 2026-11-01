@@ -350,6 +350,11 @@
     opacity: 0.75;
   }
 
+  .site-footer a.site-footer__privacy {
+    display: inline;
+    padding: 0;
+  }
+
   .site-footer--campaign {
     padding-block: 20px;
   }

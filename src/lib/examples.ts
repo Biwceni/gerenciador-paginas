@@ -15,7 +15,7 @@ export function isExamplePhoto(photo: Pick<Media, 'sourceUrl'> | null | undefine
 const TEXT_KEYS = new Set(['title', 'text', 'quote', 'name', 'question', 'answer', 'caption'])
 
 // Títulos legíveis dos modelos, bons para manter: não contam como exemplo.
-const KEEPABLE_TEXTS = new Set(['perguntas frequentes'])
+const KEEPABLE_TEXTS = new Set(['perguntas frequentes', 'política de privacidade'])
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()
 

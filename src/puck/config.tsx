@@ -14,6 +14,7 @@ import {
   Gallery,
   Hero,
   LinkList,
+  Privacy,
   RichText,
   Testimonials,
   TextImage,
@@ -33,6 +34,7 @@ import type {
   GalleryProps,
   HeroProps,
   LinkListProps,
+  PrivacyProps,
   RichTextProps,
   TestimonialsProps,
   TextImageProps,
@@ -59,6 +61,7 @@ export type Components = {
   RichText: Props<RichTextProps>
   Video: Props<VideoProps>
   Form: Props<FormProps>
+  Privacy: Props<PrivacyProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
   ColumnButton: Props<ColumnButtonProps>
@@ -79,6 +82,7 @@ export const SECTION_LABELS = {
   RichText: 'Texto simples',
   Video: 'Vídeo do YouTube',
   Form: 'Formulário',
+  Privacy: 'Política de privacidade',
 } as const
 
 export const COLUMN_PIECES = ['ColumnText', 'ColumnImage', 'ColumnButton'] as const
@@ -164,6 +168,10 @@ export const renderConfig: Config<Components> = {
     Form: {
       label: SECTION_LABELS.Form,
       render: ({ puck, ...props }) => <Form {...props} metadata={meta(puck)} />,
+    },
+    Privacy: {
+      label: SECTION_LABELS.Privacy,
+      render: ({ puck, ...props }) => <Privacy {...props} metadata={meta(puck)} />,
     },
     ColumnText: {
       label: PIECE_LABELS.ColumnText,

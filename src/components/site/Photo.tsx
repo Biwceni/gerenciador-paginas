@@ -17,6 +17,9 @@ type Props = {
 export function Photo({ media, sizes, priority, className, fill }: Props) {
   if (!media.url) return null
 
+  // Sem descrição: `alt=""`, e o leitor de tela pula a foto em vez de ler o nome do arquivo.
+  const alt = media.alt ?? ''
+
   // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado): vai direto, sem o
   // otimizador de imagens do site, que só aceita o nosso Storage.
   const unoptimized = isTemplatePhotoURL(media.url)
@@ -25,7 +28,7 @@ export function Photo({ media, sizes, priority, className, fill }: Props) {
 
   return fill ? (
     <Image
-      alt={media.alt}
+      alt={alt}
       className={className}
       fill
       priority={priority}
@@ -36,7 +39,7 @@ export function Photo({ media, sizes, priority, className, fill }: Props) {
     />
   ) : (
     <Image
-      alt={media.alt}
+      alt={alt}
       className={className}
       height={media.height ?? 800}
       priority={priority}

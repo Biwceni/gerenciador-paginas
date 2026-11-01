@@ -1,6 +1,5 @@
 import { NavWrapper } from '@payloadcms/next/client'
-import { getTranslation } from '@payloadcms/translations'
-import type { ServerProps, VisibleEntities } from 'payload'
+import type { ServerProps } from 'payload'
 import React from 'react'
 
 import { Icon } from '@/components/admin/Icon'
@@ -8,37 +7,18 @@ import { personInitials, personLabel } from '@/lib/panel'
 import { PRODUCT_NAME } from '@/lib/site'
 
 import { countUnreadMessages } from './data'
-import { PanelNavLinks, type PanelNavLink } from './PanelNavLinks'
-
-type Props = ServerProps & { visibleEntities?: VisibleEntities }
+import { PanelNavLinks } from './PanelNavLinks'
 
 /**
  * Menu lateral do painel, no lugar do menu padrão do Payload: as telas do dia a dia com nomes
- * simples. O administrador vê também "Avançado", com as telas padrão do Payload. No pé, a pessoa
- * que entrou, com as iniciais no lugar da foto (nenhum e-mail vai para o Gravatar). Sem o botão
- * de fechar do Payload: abaixo de 1024 px, o ☰ da barra de topo (PanelTopBar) abre e fecha o menu.
+ * simples. O administrador vê também "Avançado", a tela com os links para as telas padrão do
+ * Payload. No pé, a pessoa que entrou, com as iniciais no lugar da foto (nenhum e-mail vai para o
+ * Gravatar). Sem o botão de fechar do Payload: abaixo de 1024 px, o ☰ da barra de topo (PanelTopBar)
+ * abre e fecha o menu.
  */
-export async function PanelNav({ i18n, payload, user, visibleEntities }: Props) {
+export async function PanelNav({ payload, user }: ServerProps) {
   if (!payload?.config || !user) return null
   const adminRoute = payload.config.routes.admin
-
-  const advanced: PanelNavLink[] =
-    user.role === 'admin' && visibleEntities
-      ? [
-          ...payload.config.collections
-            .filter(({ slug }) => visibleEntities.collections.includes(slug))
-            .map(({ labels, slug }) => ({
-              href: `${adminRoute}/collections/${slug}`,
-              label: getTranslation(labels.plural, i18n),
-            })),
-          ...payload.config.globals
-            .filter(({ slug }) => visibleEntities.globals.includes(slug))
-            .map(({ label, slug }) => ({
-              href: `${adminRoute}/globals/${slug}`,
-              label: getTranslation(label ?? slug, i18n),
-            })),
-        ]
-      : []
 
   return (
     <NavWrapper baseClass="nav">
@@ -51,7 +31,7 @@ export async function PanelNav({ i18n, payload, user, visibleEntities }: Props) 
         </div>
         <PanelNavLinks
           adminRoute={adminRoute}
-          advanced={advanced}
+          isAdmin={user.role === 'admin'}
           logoutHref={`${adminRoute}${payload.config.admin.routes.logout}`}
           unread={await countUnreadMessages(payload, user)}
         />

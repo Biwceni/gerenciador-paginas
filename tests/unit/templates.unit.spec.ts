@@ -26,7 +26,7 @@ describe('modelos da estreia', () => {
     for (const segment of SEGMENTS) {
       expect(sites.filter((seed) => seed.segment === segment.value)).toHaveLength(2)
     }
-    expect(templateSeeds.filter((seed) => seed.kind === 'page')).toHaveLength(4)
+    expect(templateSeeds.filter((seed) => seed.kind === 'page')).toHaveLength(5)
     expect(new Set(templateSeeds.map((seed) => seed.key)).size).toBe(templateSeeds.length)
   })
 

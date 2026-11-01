@@ -3,6 +3,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { anyone, authenticated } from '../access/authenticated'
 import { protectPhotoDelete } from '../hooks/protectPhoto'
 import { revalidateOnChange, revalidateOnDelete } from '../hooks/revalidate'
+import { PHOTO_MIME_TYPES } from '../lib/photos'
 
 // Trocar o arquivo pela tela Fotos ("Trocar em todo o site"): a foto passa a ser da pessoa, deixa de
 // ser foto de exemplo, e aplicar o modelo de novo não pode reaproveitar esta como se fosse a dele.
@@ -39,7 +40,8 @@ export const Media: CollectionConfig = {
       name: 'alt',
       type: 'text',
       label: 'Texto alternativo',
-      required: true,
+      // Opcional: as fotos são enviadas de várias de uma vez e a descrição vem depois, em cada uma.
+      // O Publicar avisa quando falta.
       admin: {
         description:
           'Descreva a foto em poucas palavras, como se contasse para alguém que não pode vê-la. Ex.: "Xícara de café sobre a mesa de madeira".',
@@ -60,8 +62,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    // Lista fechada: `image/*` aceitaria SVG, que pode carregar script e fica público no bucket.
-    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'],
+    mimeTypes: [...PHOTO_MIME_TYPES],
     focalPoint: true,
     imageSizes: [
       { name: 'thumbnail', width: 400 },

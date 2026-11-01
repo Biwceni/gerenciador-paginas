@@ -18,6 +18,8 @@ type Props = {
   successMessage: string
   /** Prévia do editor: campos desligados, nada é enviado. */
   preview?: boolean
+  /** Página de privacidade no ar: o "Concordo" leva até ela. */
+  privacyHref?: string | null
 }
 
 type Status = { state: 'idle' | 'sending' | 'sent' } | { state: 'error'; message: string }
@@ -36,7 +38,7 @@ type PayloadError = { errors?: { message?: string; data?: { errors?: { message?:
  * Formulário da seção "Formulário". Envia para a coleção de mensagens do plugin, que confere tudo
  * de novo no servidor (campos, e-mail, "Concordo" e a armadilha contra robôs).
  */
-export function SiteForm({ form, pageId, successMessage, preview }: Props) {
+export function SiteForm({ form, pageId, successMessage, preview, privacyHref }: Props) {
   const prefix = useId()
   const [status, setStatus] = useState<Status>({ state: 'idle' })
 
@@ -167,7 +169,22 @@ export function SiteForm({ form, pageId, successMessage, preview }: Props) {
 
       <label className="site-form__check">
         <input disabled={preview} name={CONSENT_INPUT} required type="checkbox" />
-        <span>{CONSENT_TEXT}</span>
+        <span>
+          {CONSENT_TEXT}
+          {privacyHref && (
+            <>
+              {' '}
+              {preview ? (
+                'Leia a política de privacidade.'
+              ) : (
+                // Em outra aba, para o que já foi preenchido não se perder.
+                <a href={privacyHref} rel="noopener" target="_blank">
+                  Leia a política de privacidade.
+                </a>
+              )}
+            </>
+          )}
+        </span>
       </label>
 
       {status.state === 'error' && (
