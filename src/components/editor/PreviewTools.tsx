@@ -53,6 +53,18 @@ function usePanelRules() {
     }
     if (ui) dispatch({ type: 'setUi', ui, recordHistory: false })
   }, [dispatch, left, plugin, right, selected])
+
+  // A janela encolheu com os dois painéis abertos (por exemplo, encaixada na metade da tela).
+  useEffect(() => {
+    if (!left || !right) return
+    const onResize = () => {
+      const width = window.innerWidth
+      if (width < MOBILE_WIDTH || width >= ONE_PANEL_WIDTH) return
+      dispatch({ type: 'setUi', ui: { leftSideBarVisible: false }, recordHistory: false })
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [dispatch, left, right])
 }
 
 /**

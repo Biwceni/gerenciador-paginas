@@ -319,6 +319,33 @@ test.describe.serial('editor: seções', () => {
     await expect.poll(() => order(page)).toEqual(INITIAL)
   })
 
+  test('o Desfazer do aviso some na mudança seguinte, sem desfazer outra coisa', async ({
+    page,
+  }) => {
+    const actions = page.locator('.ed-section-actions:visible')
+    await selectSection(page, 1)
+    await actions.getByRole('button', { name: 'Remover' }).click()
+    const left = [INITIAL[0], ...INITIAL.slice(2)]
+    await expect.poll(() => order(page)).toEqual(left)
+    const undo = page.locator('[data-sonner-toast]').getByRole('button', { name: 'Desfazer' })
+    await expect(undo).toBeVisible()
+
+    await selectSection(page, 0)
+    await page.getByRole('textbox', { name: 'Título' }).first().fill('Título novo')
+    await expect(undo).toHaveCount(0)
+    expect(await order(page)).toEqual(left)
+  })
+
+  test('encolher a janela com os dois painéis abertos recolhe um deles', async ({ page }) => {
+    const left = page.locator('.ed-root [class*="Sidebar--left"]')
+    await expect(left).toHaveClass(/isVisible/)
+    await page.setViewportSize({ width: 1024, height: 768 })
+    await expect(left).not.toHaveClass(/isVisible/)
+    await expect(page.locator('.ed-root [class*="Sidebar--right"]')).toHaveClass(/isVisible/)
+    // A faixa da prévia continua igual: nada encolhe por escala.
+    await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBeGreaterThan(600)
+  })
+
   test('aba Ordem: resumo do texto, setas e arrastar a linha', async ({ page }) => {
     await page.locator('nav li').getByText('Ordem', { exact: true }).click()
     const rows = page.locator('.ed-order__item')

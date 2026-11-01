@@ -6,6 +6,7 @@ import { whatsAppURL } from '@/lib/links'
 import { initials } from '@/lib/site'
 
 import { type ContentMetadata, getHref, getPhoto } from '../references'
+import { COLUMN_COUNT } from '../schema'
 import type {
   CallToActionProps,
   ColumnButtonProps,
@@ -414,13 +415,6 @@ export function LinkList({ id, title, text, items, style, metadata }: WithMetada
       </div>
     </Section>
   )
-}
-
-const COLUMN_COUNT: Record<ColumnsProps['layout'], number> = {
-  half: 2,
-  thirds: 3,
-  'wide-left': 2,
-  'wide-right': 2,
 }
 
 /** Colunas em modelos fixos. As peças de cada coluna chegam já desenhadas pelo Puck. */

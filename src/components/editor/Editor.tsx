@@ -48,7 +48,7 @@ import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
-import { type GetPuck, usePuck } from './puck'
+import { type GetPuck, ROOT_ZONE, usePuck } from './puck'
 import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
@@ -84,6 +84,7 @@ type DialogName = 'publish' | 'versions' | 'settings' | 'more' | null
 
 const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
+const UI_ONLY_ACTIONS: readonly string[] = ['setUi', 'registerZone', 'unregisterZone']
 
 // Prévia em tamanho real: ocupa o espaço que sobra e nunca é encolhida. Sem os controles de zoom.
 const initialUi: Partial<UiState> = {
@@ -301,6 +302,7 @@ export function Editor(props: EditorProps) {
   const stopped = useRef(false)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
+  const removedToast = useRef<string | number | null>(null)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
   }, [])
@@ -411,12 +413,18 @@ export function Editor(props: EditorProps) {
   // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
   const onAction = useCallback(
     (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
+      // O Desfazer do aviso volta a última mudança: depois de outra, ela já não seria a remoção.
+      if (!UI_ONLY_ACTIONS.includes(action.type) && removedToast.current !== null) {
+        toast.dismiss(removedToast.current)
+        removedToast.current = null
+      }
       if (action.type === 'remove') {
+        const message = action.zone === ROOT_ZONE ? 'Seção removida.' : 'Peça removida.'
         // O Puck deixaria a seção de baixo escolhida, e a pessoa não pediu para mexer nela.
         setTimeout(() => {
           const puck = getPuck.current?.()
           puck?.dispatch({ type: 'setUi', ui: { itemSelector: null }, recordHistory: false })
-          toast.info('Seção removida.', {
+          removedToast.current = toast.info(message, {
             action: { label: 'Desfazer', onClick: () => getPuck.current?.().history.back() },
           })
         })

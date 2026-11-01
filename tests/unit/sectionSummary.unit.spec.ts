@@ -58,11 +58,29 @@ describe('sectionSummary', () => {
   it('colunas: junta o texto das peças', () => {
     const summary = sectionSummary(
       section('Columns', {
+        layout: 'thirds',
         column1: [{ type: 'ColumnText', props: { id: 'a', title: 'Primeira', text: '' } }],
         column2: [{ type: 'ColumnButton', props: { id: 'b', button: { label: 'Comprar' } } }],
         column3: [{ type: 'ColumnImage', props: { id: 'c', image: null, caption: 'Foto' } }],
       }),
     )
     expect(summary).toBe('Primeira, Comprar…')
+  })
+
+  it('colunas: o modelo de duas ignora a terceira, que não aparece na página', () => {
+    const text = (id: string, title: string) => [
+      { type: 'ColumnText', props: { id, title, text: '' } },
+    ]
+    const props = {
+      column1: text('a', 'Primeira'),
+      column2: text('b', 'Segunda'),
+      column3: text('c', 'Terceira'),
+    }
+    expect(sectionSummary(section('Columns', { layout: 'half', ...props }))).toBe(
+      'Primeira, Segunda',
+    )
+    expect(sectionSummary(section('Columns', { layout: 'thirds', ...props }))).toBe(
+      'Primeira, Segunda…',
+    )
   })
 })
