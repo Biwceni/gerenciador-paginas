@@ -4,7 +4,16 @@ import '@puckeditor/core/no-external.css'
 import '@/app/(frontend)/styles.css'
 import './editor.css'
 
-import { createUsePuck, type Data, Puck, useGetPuck, type Viewports } from '@puckeditor/core'
+import {
+  blocksPlugin,
+  type Data,
+  fieldsPlugin,
+  Puck,
+  type PuckAction,
+  type Plugin,
+  useGetPuck,
+  type UiState,
+} from '@puckeditor/core'
 import { toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import React, {
@@ -18,6 +27,7 @@ import React, {
 } from 'react'
 import type { z } from 'zod'
 
+import { PanelIcon } from '@/components/panel/PanelIcon'
 import type { FormDefinition } from '@/lib/forms'
 import { findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
@@ -31,10 +41,16 @@ import { extractDescription, googleTitle } from '@/puck/seo'
 import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
+import { Dialog } from './Dialog'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
+import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
+import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
+import { type GetPuck, ROOT_ZONE, usePuck } from './puck'
+import { EditorActionBar, SectionActionsPanel } from './SectionActions'
+import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
 
@@ -64,17 +80,35 @@ type SaveState =
   | { state: 'pending' | 'saving' }
   | { state: 'error'; message: string }
 
-type DialogName = 'publish' | 'versions' | 'settings' | null
+type DialogName = 'publish' | 'versions' | 'settings' | 'more' | null
 
 const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
+const UI_ONLY_ACTIONS: readonly string[] = ['setUi', 'registerZone', 'unregisterZone']
 
-const viewports: Viewports = [
-  { width: 1280, height: 'auto', label: 'Computador', icon: 'Monitor' },
-  { width: 390, height: 'auto', label: 'Celular', icon: 'Smartphone' },
+// Prévia em tamanho real: ocupa o espaço que sobra e nunca é encolhida. Sem os controles de zoom.
+const initialUi: Partial<UiState> = {
+  viewports: { current: { width: '100%', height: 'auto' }, controlsVisible: false, options: [] },
+}
+
+// Barra de ícones: o Puck escreve o nome como veio, por isso dá para esconder a palavra no celular.
+const plugins: Plugin[] = [
+  blocksPlugin({
+    icon: <PanelIcon name="plus" size={20} />,
+    label: (
+      <>
+        Adicionar<span className="ed-hide-phone"> seção</span>
+      </>
+    ) as unknown as string,
+  }),
+  {
+    name: 'outline',
+    label: 'Ordem',
+    icon: <PanelIcon name="layers" size={20} />,
+    render: OrderPanel,
+  },
+  fieldsPlugin({ icon: <PanelIcon name="sliders" size={20} />, label: 'Opções' }),
 ]
-
-const usePuck = createUsePuck()
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
@@ -104,11 +138,11 @@ type Chrome = {
   summary: { sections: number; address: string; exampleSections: number }
   open: (dialog: DialogName) => void
   leave: () => Promise<void>
+  /** Abre o menu do celular, sabendo se dá para desfazer e refazer. */
+  openMore: (history: { canUndo: boolean; canRedo: boolean }) => void
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
   connect: (getPuck: GetPuck) => void
 }
-
-type GetPuck = ReturnType<typeof useGetPuck>
 
 const ChromeContext = createContext<Chrome | null>(null)
 
@@ -144,7 +178,7 @@ function EditorHeader() {
       <div className="ed-top__actions">
         <button
           aria-label="Desfazer"
-          className="ed-icon-btn"
+          className="ed-icon-btn ed-hide-sm"
           disabled={!history.hasPast}
           onClick={history.back}
           title="Desfazer"
@@ -154,7 +188,7 @@ function EditorHeader() {
         </button>
         <button
           aria-label="Refazer"
-          className="ed-icon-btn"
+          className="ed-icon-btn ed-hide-sm"
           disabled={!history.hasFuture}
           onClick={history.forward}
           title="Refazer"
@@ -181,7 +215,17 @@ function EditorHeader() {
         >
           {chrome.canPublish ? 'Publicar' : 'Publicada'}
         </button>
+        <button
+          aria-label="Mais opções do editor"
+          className="ed-icon-btn ed-show-sm"
+          onClick={() => chrome.openMore({ canUndo: history.hasPast, canRedo: history.hasFuture })}
+          title="Mais opções"
+          type="button"
+        >
+          <PanelIcon name="more" />
+        </button>
       </div>
+      <PreviewTools />
     </header>
   )
 }
@@ -195,7 +239,14 @@ function EditorFields({
   itemSelector?: unknown
 }) {
   const chrome = useContext(ChromeContext)
-  if (itemSelector || !chrome) return <>{children}</>
+  if (itemSelector || !chrome) {
+    return (
+      <>
+        {children}
+        <SectionActionsPanel />
+      </>
+    )
+  }
   const { sections, address, exampleSections } = chrome.summary
 
   return (
@@ -235,6 +286,7 @@ export function Editor(props: EditorProps) {
   const [hasChanges, setHasChanges] = useState(props.page.hasChanges)
   const [save, setSave] = useState<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
+  const [undoState, setUndoState] = useState({ canUndo: false, canRedo: false })
   const [conflict, setConflict] = useState(false)
   const [photos, setPhotos] = useState(props.photos)
   const [forms, setForms] = useState(props.forms)
@@ -250,6 +302,7 @@ export function Editor(props: EditorProps) {
   const stopped = useRef(false)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
+  const removedToast = useRef<string | number | null>(null)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
   }, [])
@@ -359,7 +412,24 @@ export function Editor(props: EditorProps) {
 
   // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
   const onAction = useCallback(
-    (_action: unknown, next: { data: Data }, previous: { data: Data }) => {
+    (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
+      // O Desfazer do aviso volta a última mudança: depois de outra, ela já não seria a remoção.
+      if (!UI_ONLY_ACTIONS.includes(action.type) && removedToast.current !== null) {
+        toast.dismiss(removedToast.current)
+        removedToast.current = null
+      }
+      if (action.type === 'remove') {
+        const message = action.zone === ROOT_ZONE ? 'Seção removida.' : 'Peça removida.'
+        // O Puck deixaria a seção de baixo escolhida, e a pessoa não pediu para mexer nela.
+        setTimeout(() => {
+          const puck = getPuck.current?.()
+          puck?.dispatch({ type: 'setUi', ui: { itemSelector: null }, recordHistory: false })
+          removedToast.current = toast.info(message, {
+            action: { label: 'Desfazer', onClick: () => getPuck.current?.().history.back() },
+          })
+        })
+        return
+      }
       if (!next.data.content.some((item) => PIECES.includes(item.type))) return
       setTimeout(() => {
         getPuck.current?.().dispatch({ type: 'setData', data: previous.data })
@@ -448,6 +518,10 @@ export function Editor(props: EditorProps) {
       exampleSections: exampleSections.length,
     },
     open: setDialog,
+    openMore: (history) => {
+      setUndoState(history)
+      setDialog('more')
+    },
     leave: flush,
     connect,
   }
@@ -527,8 +601,16 @@ export function Editor(props: EditorProps) {
                 metadata={metadata}
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
-                overrides={{ header: EditorHeader, iframe: EditorFrame, fields: EditorFields }}
-                viewports={viewports}
+                overrides={{
+                  header: EditorHeader,
+                  iframe: EditorFrame,
+                  fields: EditorFields,
+                  drawer: EditorDrawer,
+                  drawerItem: EditorDrawerItem,
+                  actionBar: EditorActionBar,
+                }}
+                plugins={plugins}
+                ui={initialUi}
               />
             </div>
 
@@ -566,6 +648,46 @@ export function Editor(props: EditorProps) {
                   seoImage: settings.seo?.image,
                 }}
               />
+            )}
+
+            {dialog === 'more' && (
+              <Dialog onClose={() => setDialog(null)} title={settings.title}>
+                <div className="ed-more">
+                  <button
+                    className="ed-btn"
+                    disabled={!undoState.canUndo}
+                    onClick={() => {
+                      getPuck.current?.().history.back()
+                      setDialog(null)
+                    }}
+                    type="button"
+                  >
+                    <PanelIcon name="undo" size={16} /> Desfazer
+                  </button>
+                  <button
+                    className="ed-btn"
+                    disabled={!undoState.canRedo}
+                    onClick={() => {
+                      getPuck.current?.().history.forward()
+                      setDialog(null)
+                    }}
+                    type="button"
+                  >
+                    <PanelIcon name="redo" size={16} /> Refazer
+                  </button>
+                  <button className="ed-btn" onClick={() => setDialog('versions')} type="button">
+                    <PanelIcon name="history" size={16} /> Versões
+                  </button>
+                  <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
+                    <PanelIcon name="sliders" size={16} /> Página e Google
+                  </button>
+                  {live && (
+                    <a className="ed-btn" href={path} rel="noopener" target="_blank">
+                      <PanelIcon name="eye" size={16} /> Ver no site
+                    </a>
+                  )}
+                </div>
+              </Dialog>
             )}
 
             {dialog === 'versions' && (

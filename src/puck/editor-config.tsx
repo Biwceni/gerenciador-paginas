@@ -462,7 +462,7 @@ export const editorConfig: Config<Components> = {
     fields: {
       ...({
         notice: notice(
-          'Clique numa seção da página para ver as opções dela. Para mudar um texto, clique nele e digite. Nome, endereço e Google ficam em "Página e Google", lá em cima.',
+          'Clique numa seção da página para ver as opções dela. Para mudar um texto, clique nele e digite. Nome, endereço e Google ficam em "Página e Google".',
         ),
       } as object),
     },

@@ -1106,6 +1106,22 @@
     color: var(--color-background);
   }
 
+  /* Página sem seções, na prévia do editor. */
+  & .editor-empty {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 64px 20px;
+    text-align: center;
+  }
+
+  & .editor-empty button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
   & [contenteditable]:empty::before {
     content: 'Clique para escrever';
     opacity: 0.5;

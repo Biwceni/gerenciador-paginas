@@ -209,6 +209,14 @@ const column = z.array(columnPieceSchema).max(6)
 /** Modelos fixos de colunas (nada de grade de 1 a 12). `thirds` usa as três; os outros, duas. */
 export const COLUMN_LAYOUTS = ['half', 'thirds', 'wide-left', 'wide-right'] as const
 
+/** Quantas colunas cada modelo mostra na página. */
+export const COLUMN_COUNT: Record<(typeof COLUMN_LAYOUTS)[number], number> = {
+  half: 2,
+  thirds: 3,
+  'wide-left': 2,
+  'wide-right': 2,
+}
+
 export const columnsPropsSchema = z.object({
   id: componentId,
   menuLabel,

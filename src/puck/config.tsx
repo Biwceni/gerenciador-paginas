@@ -64,7 +64,7 @@ export type Components = {
   ColumnButton: Props<ColumnButtonProps>
 }
 
-/** Nomes das seções, na ordem da lista "Adicionar bloco". */
+/** Nomes das seções, na ordem da lista "Adicionar seção". */
 export const SECTION_LABELS = {
   Hero: 'Banner principal',
   TextImage: 'Texto com foto',
