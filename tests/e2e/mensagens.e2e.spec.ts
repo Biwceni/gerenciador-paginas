@@ -94,7 +94,6 @@ test.describe.serial('mensagens e formulários', () => {
 
     await page.getByRole('button', { name: 'Adicionar pergunta' }).click()
     await expect(page.getByText('Falta completar')).toBeVisible()
-    await page.getByRole('combobox', { name: 'Tipo de resposta' }).last().selectOption('select')
     // Pela metade e parada no campo: nada é salvo, e o nome técnico não nasce daqui.
     await question.last().fill('Como nos')
     await expect(page.getByText('A pergunta é salva quando você sair do campo')).toBeVisible()
@@ -104,6 +103,7 @@ test.describe.serial('mensagens e formulários', () => {
     ).findByID({ collection: 'forms', id: formId, depth: 0, overrideAccess: true })
     expect(halfway.fields).toHaveLength(4)
     await question.last().fill('Como nos achou?')
+    await page.getByRole('combobox', { name: 'Tipo de resposta' }).last().selectOption('select')
     await expect(page.getByText('Escreva ao menos uma opção')).toBeVisible()
     await page.getByLabel('Opções, uma por linha').fill('Google\nAmigos')
     await expect(page.getByText('Tudo salvo')).toBeVisible({ timeout: 15_000 })
