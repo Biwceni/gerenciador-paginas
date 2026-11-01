@@ -4,7 +4,15 @@ import '@puckeditor/core/no-external.css'
 import '@/app/(frontend)/styles.css'
 import './editor.css'
 
-import { type Data, Puck, useGetPuck, type UiState } from '@puckeditor/core'
+import {
+  blocksPlugin,
+  type Data,
+  fieldsPlugin,
+  Puck,
+  type Plugin,
+  useGetPuck,
+  type UiState,
+} from '@puckeditor/core'
 import { toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import React, {
@@ -18,6 +26,7 @@ import React, {
 } from 'react'
 import type { z } from 'zod'
 
+import { PanelIcon } from '@/components/panel/PanelIcon'
 import type { FormDefinition } from '@/lib/forms'
 import { findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
@@ -32,11 +41,13 @@ import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
+import { InsertProvider } from './insert'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
 import { type GetPuck, usePuck } from './puck'
+import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
 
@@ -75,6 +86,19 @@ const PIECES: readonly string[] = COLUMN_PIECES
 const initialUi: Partial<UiState> = {
   viewports: { current: { width: '100%', height: 'auto' }, controlsVisible: false, options: [] },
 }
+
+// Barra de ícones: o Puck escreve o nome como veio, por isso dá para esconder a palavra no celular.
+const plugins: Plugin[] = [
+  blocksPlugin({
+    icon: <PanelIcon name="plus" size={20} />,
+    label: (
+      <>
+        Adicionar<span className="ed-hide-phone"> seção</span>
+      </>
+    ) as unknown as string,
+  }),
+  fieldsPlugin({ icon: <PanelIcon name="sliders" size={20} />, label: 'Opções' }),
+]
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
@@ -517,18 +541,27 @@ export function Editor(props: EditorProps) {
         <SitePreviewProvider value={preview}>
           <ChromeContext.Provider value={chrome}>
             <div className="ed-root">
-              <Puck<typeof editorConfig>
-                config={editorConfig}
-                data={initialData}
-                dictionary={dictionary}
-                height="100%"
-                iframe={{ enabled: true, syncHostStyles: false }}
-                metadata={metadata}
-                onAction={(action, next, previous) => onAction(action, next, previous)}
-                onChange={onChange}
-                overrides={{ header: EditorHeader, iframe: EditorFrame, fields: EditorFields }}
-                ui={initialUi}
-              />
+              <InsertProvider>
+                <Puck<typeof editorConfig>
+                  config={editorConfig}
+                  data={initialData}
+                  dictionary={dictionary}
+                  height="100%"
+                  iframe={{ enabled: true, syncHostStyles: false }}
+                  metadata={metadata}
+                  onAction={(action, next, previous) => onAction(action, next, previous)}
+                  onChange={onChange}
+                  overrides={{
+                    header: EditorHeader,
+                    iframe: EditorFrame,
+                    fields: EditorFields,
+                    drawer: EditorDrawer,
+                    drawerItem: EditorDrawerItem,
+                    }}
+                  plugins={plugins}
+                  ui={initialUi}
+                />
+              </InsertProvider>
             </div>
 
             {picking && (
