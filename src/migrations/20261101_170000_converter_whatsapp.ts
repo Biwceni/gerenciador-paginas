@@ -2,8 +2,7 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 // v2, entrega 3a: os campos de texto chamados `whatsapp` viram "WhatsApp ou telefone", com o mesmo
 // nome técnico, id e posição. O código de antes desta entrega não lê a tabela nova e deixa de mostrar
-// o campo. Por isso esta migração NÃO roda no computador durante a revisão (o banco é único): ela
-// fica para o build de produção do merge. Não mexe na estrutura do banco.
+// o campo até o merge. Não mexe na estrutura do banco.
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
