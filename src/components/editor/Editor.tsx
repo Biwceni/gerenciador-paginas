@@ -41,6 +41,7 @@ import { extractDescription, googleTitle } from '@/puck/seo'
 import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
+import { Dialog } from './Dialog'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { InsertProvider } from './insert'
 import { OrderPanel } from './OrderPanel'
@@ -80,7 +81,7 @@ type SaveState =
   | { state: 'pending' | 'saving' }
   | { state: 'error'; message: string }
 
-type DialogName = 'publish' | 'versions' | 'settings' | null
+type DialogName = 'publish' | 'versions' | 'settings' | 'more' | null
 
 const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
@@ -175,7 +176,7 @@ function EditorHeader() {
       <div className="ed-top__actions">
         <button
           aria-label="Desfazer"
-          className="ed-icon-btn"
+          className="ed-icon-btn ed-hide-sm"
           disabled={!history.hasPast}
           onClick={history.back}
           title="Desfazer"
@@ -185,7 +186,7 @@ function EditorHeader() {
         </button>
         <button
           aria-label="Refazer"
-          className="ed-icon-btn"
+          className="ed-icon-btn ed-hide-sm"
           disabled={!history.hasFuture}
           onClick={history.forward}
           title="Refazer"
@@ -211,6 +212,15 @@ function EditorHeader() {
           type="button"
         >
           {chrome.canPublish ? 'Publicar' : 'Publicada'}
+        </button>
+        <button
+          aria-label="Mais opções do editor"
+          className="ed-icon-btn ed-show-sm"
+          onClick={() => chrome.open('more')}
+          title="Mais opções"
+          type="button"
+        >
+          <PanelIcon name="more" />
         </button>
       </div>
       <PreviewTools />
@@ -626,6 +636,46 @@ export function Editor(props: EditorProps) {
                   seoImage: settings.seo?.image,
                 }}
               />
+            )}
+
+            {dialog === 'more' && (
+              <Dialog onClose={() => setDialog(null)} title={settings.title}>
+                <div className="ed-more">
+                  <button
+                    className="ed-btn"
+                    disabled={!getPuck.current?.().history.hasPast}
+                    onClick={() => {
+                      getPuck.current?.().history.back()
+                      setDialog(null)
+                    }}
+                    type="button"
+                  >
+                    <PanelIcon name="undo" size={16} /> Desfazer
+                  </button>
+                  <button
+                    className="ed-btn"
+                    disabled={!getPuck.current?.().history.hasFuture}
+                    onClick={() => {
+                      getPuck.current?.().history.forward()
+                      setDialog(null)
+                    }}
+                    type="button"
+                  >
+                    <PanelIcon name="redo" size={16} /> Refazer
+                  </button>
+                  <button className="ed-btn" onClick={() => setDialog('versions')} type="button">
+                    <PanelIcon name="history" size={16} /> Versões
+                  </button>
+                  <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
+                    <PanelIcon name="sliders" size={16} /> Página e Google
+                  </button>
+                  {chrome.livePath && (
+                    <a className="ed-btn" href={chrome.livePath} rel="noopener" target="_blank">
+                      <PanelIcon name="eye" size={16} /> Ver no site
+                    </a>
+                  )}
+                </div>
+              </Dialog>
             )}
 
             {dialog === 'versions' && (

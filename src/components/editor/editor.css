@@ -571,6 +571,16 @@ textarea.ed-input {
   color: #8ab4f8;
 }
 
+/* Menu ⋯ do celular. */
+.ed-more {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-more .ed-btn {
+  justify-content: flex-start;
+}
+
 /*
  * Áreas do Puck. O Puck gera os nomes das classes com um código no fim, por isso a busca é pelo
  * começo do nome. A versão do Puck é travada: ao atualizar, conferir estas regras.
@@ -704,11 +714,13 @@ textarea.ed-input {
 }
 
 .ed-order__name span span {
+  display: -webkit-box;
   overflow: hidden;
   color: var(--ed-muted);
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .ed-order__item .ed-icon-btn:disabled {
@@ -764,6 +776,8 @@ textarea.ed-input {
   height: 100%;
   flex-direction: column;
   justify-content: space-between;
+  /* Acima do selo do Next, que aparece nesse canto em desenvolvimento. */
+  padding-bottom: 48px;
 }
 
 .ed-rail-btn {
@@ -793,6 +807,11 @@ textarea.ed-input {
 
 /* Celular: a prévia usa a tela inteira e a barra de ícones fica embaixo. */
 @media (max-width: 637px) {
+  .ed-top {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
   .ed-root [class*='PuckCanvas_'] {
     padding: 0 !important;
   }
@@ -804,7 +823,9 @@ textarea.ed-input {
 
   .ed-root [class*='PuckLayout-nav'] nav {
     flex-direction: row;
+    padding-bottom: 0;
   }
+
 }
 
 /* Resumo da página, no painel da direita, quando nenhuma seção está escolhida. */
