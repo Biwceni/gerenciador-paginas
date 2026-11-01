@@ -52,6 +52,11 @@ type Question = {
   optionValues: Record<string, string>
   /** O que veio de outra tela e o editor não mostra (texto de exemplo, valor inicial). */
   extra: Record<string, unknown>
+  /**
+   * Pergunta nova, com a pessoa ainda escrevendo. Só é salva ao sair do campo: o nome técnico nasce
+   * no primeiro salvamento e nunca muda, então não pode nascer de uma pergunta pela metade.
+   */
+  writing?: boolean
 }
 
 type SaveState = 'saved' | 'waiting' | 'saving' | 'error'
@@ -121,6 +126,7 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
   const [deleteError, setDeleteError] = useState<string | null>(null)
   // Um salvamento por vez, na ordem: duas gravações cruzadas poderiam deixar a mais velha por último.
   const queue = useRef<Promise<unknown>>(Promise.resolve())
+  const pendingSave = useRef<(() => void) | null>(null)
 
   const formsHref = panelHref(adminRoute, 'forms')
 
@@ -158,6 +164,7 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
         optionsText: '',
         optionValues: {},
         extra: {},
+        writing: true,
       },
     ])
     changed()
@@ -174,11 +181,14 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
         (question.blockType === 'select' && !optionLines(question.optionsText).length),
     )
 
+  const writing = questions.some((question) => question.writing)
+
   // Salva sozinho, um pouco depois da última mudança, quando está tudo preenchido.
   useEffect(() => {
-    if (!version) return
-    if (incomplete) return
-    const timer = setTimeout(() => {
+    pendingSave.current = null
+    if (!version || incomplete || writing) return
+    const run = () => {
+      pendingSave.current = null
       setSave('saving')
       const data = {
         title: title.trim(),
@@ -197,11 +207,16 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
           setSaveError(error instanceof Error ? error.message : 'Tente de novo.')
         }
       })
-    }, 1200)
+    }
+    pendingSave.current = run
+    const timer = setTimeout(run, 1200)
     return () => clearTimeout(timer)
     // Só a contagem de mudanças dispara: o estado lido é o desta mudança.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version, incomplete])
+  }, [version, incomplete, writing])
+
+  // Saiu da tela com a espera ainda correndo: grava agora, para a última mudança não se perder.
+  useEffect(() => () => pendingSave.current?.(), [])
 
   // Aviso ao fechar a aba com mudança ainda não guardada.
   useEffect(() => {
@@ -240,11 +255,13 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
         <p aria-live="polite" className="gp-small gp-muted gp-savestate">
           {incomplete
             ? 'Falta completar o que está marcado'
-            : save === 'saved'
-              ? 'Tudo salvo'
-              : save === 'error'
-                ? ''
-                : 'Salvando…'}
+            : writing
+              ? 'A pergunta é salva quando você sair do campo'
+              : save === 'saved'
+                ? 'Tudo salvo'
+                : save === 'error'
+                  ? ''
+                  : 'Salvando…'}
         </p>
       </header>
 
@@ -288,6 +305,11 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
                   aria-label="Pergunta"
                   className="gp-input"
                   maxLength={200}
+                  onBlur={() => {
+                    if (question.writing && question.label.trim()) {
+                      changeQuestion(question.id, { writing: false })
+                    }
+                  }}
                   onChange={(event) => changeQuestion(question.id, { label: event.target.value })}
                   placeholder="Escreva a pergunta"
                   value={question.label}

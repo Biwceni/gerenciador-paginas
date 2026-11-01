@@ -95,6 +95,14 @@ test.describe.serial('mensagens e formulários', () => {
     await page.getByRole('button', { name: 'Adicionar pergunta' }).click()
     await expect(page.getByText('Falta completar')).toBeVisible()
     await page.getByRole('combobox', { name: 'Tipo de resposta' }).last().selectOption('select')
+    // Pela metade e parada no campo: nada é salvo, e o nome técnico não nasce daqui.
+    await question.last().fill('Como nos')
+    await expect(page.getByText('A pergunta é salva quando você sair do campo')).toBeVisible()
+    await page.waitForTimeout(2500)
+    const halfway = await (
+      await panel()
+    ).findByID({ collection: 'forms', id: formId, depth: 0, overrideAccess: true })
+    expect(halfway.fields).toHaveLength(4)
     await question.last().fill('Como nos achou?')
     await expect(page.getByText('Escreva ao menos uma opção')).toBeVisible()
     await page.getByLabel('Opções, uma por linha').fill('Google\nAmigos')
@@ -109,6 +117,39 @@ test.describe.serial('mensagens e formulários', () => {
       overrideAccess: true,
     })
     expect(form.fields?.[4]).toMatchObject({ name: 'como_nos_achou', blockType: 'select' })
+  })
+
+  test('a mudança feita logo antes de sair da tela não se perde', async () => {
+    const question = page.getByRole('textbox', { name: 'Pergunta' })
+    await page.getByRole('button', { name: 'Adicionar pergunta' }).click()
+    await question.last().fill('Pergunta da saída')
+    await page.getByRole('link', { name: 'Formulários', exact: true }).first().click()
+    await page.waitForURL(/\/admin\/formularios$/)
+    await expect
+      .poll(
+        async () =>
+          (
+            await (
+              await panel()
+            ).findByID({ collection: 'forms', id: formId, depth: 0, overrideAccess: true })
+          ).fields?.at(-1)?.name,
+      )
+      .toBe('pergunta_da_saida')
+
+    // Volta ao que os próximos testes esperam.
+    const payload = await panel()
+    const form = await payload.findByID({
+      collection: 'forms',
+      id: formId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'forms',
+      id: formId,
+      data: { fields: form.fields?.slice(0, -1) },
+      overrideAccess: true,
+    })
   })
 
   test('no site: telefone errado é barrado e o envio mostra a frase do formulário', async () => {
