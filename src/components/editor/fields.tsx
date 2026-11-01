@@ -10,6 +10,7 @@ import React, { useState } from 'react'
 import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
+import { photoLabel } from '@/lib/photos'
 import { youtubeID } from '@/lib/youtube'
 import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 
@@ -60,7 +61,7 @@ export function PhotoField({ value, onChange, readOnly }: FieldProps<PhotoRef>) 
             Tirar foto
           </button>
         )}
-        {photo && <span className="ed-hint">{photo.alt}</span>}
+        {photo && <span className="ed-hint">{photo.alt?.trim() || 'Sem descrição'}</span>}
       </div>
     </div>
   )
@@ -91,7 +92,9 @@ export function PhotoListField({
             ) : (
               <span className="ed-thumb ed-thumb--sm ed-thumb--empty">Apagada</span>
             )}
-            <span className="ed-photo-list__name">{photo?.alt ?? 'Foto apagada'}</span>
+            <span className="ed-photo-list__name">
+              {photo ? photoLabel(photo) : 'Foto apagada'}
+            </span>
             <button
               aria-label="Subir foto"
               className="ed-icon-btn"

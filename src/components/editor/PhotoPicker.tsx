@@ -3,9 +3,11 @@
 // Miniaturas prontas do Storage (400 px): o otimizador de imagens do Next não ajuda no painel.
 /* eslint-disable @next/next/no-img-element */
 
-import { useDocumentDrawer } from '@payloadcms/ui'
 import React, { useState } from 'react'
 
+import { PhotoDrop, UploadTiles } from '@/components/panel/PhotoUploadParts'
+import { usePhotoUploads } from '@/components/panel/usePhotoUploads'
+import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 
 import { thumbnailURL } from './context'
@@ -19,18 +21,21 @@ type Props = {
 }
 
 /**
- * Biblioteca de fotos. "Enviar foto" abre a gaveta de envio do próprio Payload, que manda o arquivo
- * direto do navegador para o Storage e pede o texto alternativo.
+ * Biblioteca de fotos, com o mesmo envio da tela Fotos (direto do navegador para o Storage). Enviou
+ * uma só e deu certo: ela já é a escolhida. Enviou várias: elas aparecem na lista, para escolher.
  */
 export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
   const [query, setQuery] = useState('')
-  const [UploadDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
-    collectionSlug: 'media',
+  const uploads = usePhotoUploads({
+    onUploaded,
+    onFinished: ({ uploaded, problems }) => {
+      if (uploaded.length === 1 && !problems) onPick(uploaded[0])
+    },
   })
   const search = query.trim().toLowerCase()
   const shown = search
     ? photos.filter((photo) =>
-        `${photo.alt} ${photo.filename ?? ''}`.toLowerCase().includes(search),
+        `${photo.alt ?? ''} ${photo.filename ?? ''}`.toLowerCase().includes(search),
       )
     : photos
 
@@ -41,11 +46,9 @@ export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
       title="Escolha uma foto"
       wide
     >
-      <div className="ed-picker-bar">
-        <button className="ed-btn ed-btn--primary" onClick={openDrawer} type="button">
-          Enviar foto do computador ou celular
-        </button>
-        {photos.length > 8 && (
+      <PhotoDrop uploads={uploads} />
+      {photos.length > 8 && (
+        <div className="ed-picker-bar">
           <input
             aria-label="Procurar foto"
             className="ed-input"
@@ -54,8 +57,14 @@ export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
             type="search"
             value={query}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {uploads.items.length > 0 && (
+        <ul className="gp-media__grid">
+          <UploadTiles uploads={uploads} />
+        </ul>
+      )}
 
       {shown.length ? (
         <div className="ed-media-grid">
@@ -67,7 +76,8 @@ export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
               type="button"
             >
               <img alt="" src={thumbnailURL(photo)} />
-              <span>{photo.alt}</span>
+              <span>{photoLabel(photo)}</span>
+              {!photo.alt?.trim() && <span className="gp-media__noalt">Sem descrição</span>}
             </button>
           ))}
         </div>
@@ -78,17 +88,6 @@ export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
             : 'Ainda não há fotos. Envie a primeira.'}
         </p>
       )}
-
-      <UploadDrawer
-        // Sem isso, depois de criar a foto o Payload leva para a tela padrão dela e sai do editor.
-        redirectAfterCreate={false}
-        onSave={({ doc, operation }) => {
-          if (operation !== 'create') return
-          closeDrawer()
-          onUploaded(doc as Media)
-          onPick(doc as Media)
-        }}
-      />
     </Dialog>
   )
 }

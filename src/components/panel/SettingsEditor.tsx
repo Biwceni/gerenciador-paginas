@@ -751,12 +751,10 @@ export function SettingsEditor({
         <PhotoChooser
           onClose={() => setChoosing(null)}
           onPick={(picked) => {
-            setPhotos((current) =>
-              current.some((item) => item.id === picked.id) ? current : [picked, ...current],
-            )
             update({ [choosing]: picked.id })
             setChoosing(null)
           }}
+          onUploaded={(uploaded) => setPhotos((current) => [uploaded, ...current])}
           photos={photos}
           title={choosing === 'logo' ? 'Escolha o logo' : 'Escolha a foto ao compartilhar'}
         />

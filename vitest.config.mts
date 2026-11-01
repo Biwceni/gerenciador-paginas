@@ -7,12 +7,12 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // Funções puras: não usam banco e rodam em qualquer computador.
+        // Fun????es puras: n??o usam banco e rodam em qualquer computador.
         extends: true,
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['tests/unit/**/*.unit.spec.ts'],
+          include: ['tests/unit/**/*.unit.spec.{ts,tsx}'],
         },
       },
       {

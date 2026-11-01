@@ -111,7 +111,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       siteName: name,
       locale: 'pt_BR',
       type: 'website',
-      images: image?.url ? [{ url: image.url, alt: image.alt }] : undefined,
+      images: image?.url ? [{ url: image.url, alt: image.alt ?? undefined }] : undefined,
     },
   }
 }

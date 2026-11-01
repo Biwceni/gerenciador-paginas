@@ -428,6 +428,12 @@ textarea.ed-input {
   margin-bottom: 14px;
 }
 
+/* Área de envio de fotos (`PhotoDrop`) e fotos a caminho, acima da biblioteca. */
+.gp-drop + *,
+.gp-media__grid + .ed-media-grid {
+  margin-top: 14px;
+}
+
 .ed-picker-bar .ed-input {
   flex: 1;
   min-width: 180px;

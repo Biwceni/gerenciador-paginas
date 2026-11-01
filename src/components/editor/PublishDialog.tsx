@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { isExamplePhoto } from '@/lib/examples'
+import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 import { collectReferences, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import type { PuckPageData } from '@/puck/schema'
@@ -235,9 +236,13 @@ export function PublishDialog({
         {weakPhotos.length ? (
           <Check
             title={
-              weakPhotos.length === 1
-                ? 'Uma foto tem uma descrição fraca'
-                : `${weakPhotos.length} fotos têm descrições fracas`
+              weakPhotos.every((photo) => !photo.alt?.trim())
+                ? weakPhotos.length === 1
+                  ? 'Uma foto está sem descrição'
+                  : `${weakPhotos.length} fotos estão sem descrição`
+                : weakPhotos.length === 1
+                  ? 'Uma foto tem uma descrição fraca'
+                  : `${weakPhotos.length} fotos têm descrições fracas`
             }
           >
             Escreva em poucas palavras o que aparece. É opcional, mas ajuda no Google e em leitores
@@ -246,10 +251,14 @@ export function PublishDialog({
               <span className="ed-alt-row" key={photo.id}>
                 <img alt="" className="ed-thumb ed-thumb--sm" src={thumbnailURL(photo)} />
                 <input
-                  aria-label={`Nova descrição para a foto "${photo.alt}"`}
+                  aria-label={`Nova descrição para a foto "${photoLabel(photo)}"`}
                   className="ed-input"
                   onChange={(event) => setAlts({ ...alts, [photo.id]: event.target.value })}
-                  placeholder={`Hoje: "${photo.alt}". Ex.: xícara de café vista de cima`}
+                  placeholder={
+                    photo.alt?.trim()
+                      ? `Hoje: "${photo.alt}". Ex.: xícara de café vista de cima`
+                      : 'Ex.: xícara de café vista de cima'
+                  }
                   value={alts[photo.id] ?? ''}
                 />
               </span>
