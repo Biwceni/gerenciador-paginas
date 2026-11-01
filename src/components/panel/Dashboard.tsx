@@ -15,7 +15,13 @@ import {
 } from '@/lib/panel'
 import { getServerURL } from '@/lib/site'
 
-import { loadFinishInput, loadPageRows, loadPendingGlobals, type PendingGlobal } from './data'
+import {
+  loadFinishInput,
+  loadPageRows,
+  loadPendingGlobals,
+  loadUnreadMessages,
+  type PendingGlobal,
+} from './data'
 import { PageRowItem, StatusChip } from './PageRowItem'
 import { PanelIcon, type PanelIconName } from './PanelIcon'
 
@@ -35,10 +41,11 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   if (!user) return null
   const adminRoute = payload.config.routes.admin
 
-  const [allPages, pendingGlobals, photos] = await Promise.all([
+  const [allPages, pendingGlobals, photos, unread] = await Promise.all([
     loadPageRows(payload, user),
     loadPendingGlobals(payload, user),
     payload.count({ collection: 'media', overrideAccess: false, user }),
+    loadUnreadMessages(payload, user),
   ])
   // As arquivadas ficam só na tela Páginas.
   const pages = allPages.filter((page) => !page.archived)
@@ -66,6 +73,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
       ? editorPath(adminRoute, step.target.page)
       : panelHref(adminRoute, step.target.screen)
 
+  const messagesHref = panelHref(adminRoute, 'messages')
   const domain = new URL(getServerURL()).host
   // Fotos de exemplo que não deu para copiar ao aplicar o modelo (`?fotos=3`, vindo do início guiado).
   const missingPhotos = searchParams?.pronto ? Math.max(0, Number(searchParams.fotos) || 0) : 0
@@ -148,6 +156,39 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             Ver como está ficando
           </Link>
         </div>
+      )}
+
+      {unread.total > 0 && (
+        <section className="gp-card">
+          <div className="gp-card__head">
+            <h2>{unread.total === 1 ? '1 mensagem nova' : `${unread.total} mensagens novas`}</h2>
+            <Link className="gp-btn gp-btn--sm" href={messagesHref}>
+              Abrir Mensagens
+            </Link>
+          </div>
+          <ul className="gp-rows">
+            {unread.messages.map((message) => (
+              <li className="gp-row gp-row--form" key={message.id}>
+                <div>
+                  <div className="gp-row__title">{message.sender}</div>
+                  <div className="gp-row__sub">
+                    {message.preview && `${message.preview} · `}
+                    {message.ago}
+                  </div>
+                </div>
+                <div className="gp-row__actions">
+                  <Link
+                    aria-label={`Ler a mensagem de ${message.sender}`}
+                    className="gp-btn gp-btn--sm"
+                    href={`${messagesHref}?mensagem=${message.id}`}
+                  >
+                    Ler
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {finishDone < finish.length && (
