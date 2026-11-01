@@ -154,6 +154,12 @@ export default buildConfig({
           path: '/formularios/:id',
           meta: { title: 'Formulário' },
         },
+        panelAdvanced: {
+          Component: '/components/panel/AdvancedView#AdvancedView',
+          path: '/avancado',
+          exact: true,
+          meta: { title: 'Avançado' },
+        },
         // Início guiado (fase 4), em tela cheia: tipo de site, modelo e o básico.
         panelStart: {
           Component: '/components/panel/StartView#StartView',

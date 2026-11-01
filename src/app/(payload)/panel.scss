@@ -231,18 +231,6 @@ html[data-theme] {
   min-height: 24px;
 }
 
-.gp-nav__advanced {
-  width: 100%;
-
-  summary {
-    list-style: none;
-
-    &::-webkit-details-marker {
-      display: none;
-    }
-  }
-}
-
 // ---------- telas ----------
 
 .gp-page {

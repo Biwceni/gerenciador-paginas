@@ -10,6 +10,7 @@ export const PANEL_PATHS = {
   start: '/comecar',
   messages: '/mensagens',
   forms: '/formularios',
+  advanced: '/avancado',
 } as const
 
 export type PanelPath = keyof typeof PANEL_PATHS
@@ -17,6 +18,24 @@ export type PanelPath = keyof typeof PANEL_PATHS
 export function panelHref(adminRoute: string, path: PanelPath): string {
   return `${adminRoute.replace(/\/$/, '')}${PANEL_PATHS[path]}` || '/'
 }
+
+/**
+ * Telas padrão do Payload que a tela Avançado mostra. O resto já tem tela nossa. O filtro é aqui, e
+ * não com `admin.hidden` nas coleções, porque isso fecharia também as telas e gavetas que as nossas
+ * telas usam por baixo.
+ */
+export const ADVANCED_SCREENS = [
+  {
+    slug: 'users',
+    title: 'Usuários',
+    text: 'Lista completa das contas, com a data do último acesso. Para convidar, use Configurações, em “Pessoas com acesso”.',
+  },
+  {
+    slug: 'media',
+    title: 'Fotos (coleção)',
+    text: 'Dados técnicos das fotos: tamanho, formato e endereço no Storage.',
+  },
+] as const
 
 /**
  * Status de uma página como o leigo entende. O rascunho mais recente diz se há mudança salva e não
