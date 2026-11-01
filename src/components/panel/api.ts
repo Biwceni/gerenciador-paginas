@@ -1,7 +1,8 @@
 'use client'
 
 import { request } from '@/components/editor/api'
-import type { Footer, Header, Page, Site } from '@/payload-types'
+import { FORM_STARTERS } from '@/lib/forms'
+import type { Footer, Form, Header, Page, Site } from '@/payload-types'
 import { emptyPageContent, type PageContent } from '@/puck/schema'
 
 // Ações da lista de páginas, pela API do Payload com a sessão do painel. As permissões e as regras
@@ -119,6 +120,42 @@ export async function setHomepage(apiRoute: string, pageId: number) {
     method: 'POST',
     body: JSON.stringify({ homepage: pageId, _status: 'published' }),
   })
+}
+
+/** Marca uma mensagem como lida ou não lida. O servidor só deixa mudar este campo. */
+export function setMessageRead(apiRoute: string, id: number, read: boolean) {
+  return request(apiRoute, `/form-submissions/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ read }),
+  })
+}
+
+export function deleteMessage(apiRoute: string, id: number) {
+  return request(apiRoute, `/form-submissions/${id}`, { method: 'DELETE' })
+}
+
+/** Formulário novo a partir de um pronto. Os nomes técnicos nascem no servidor. */
+export function createFormFromStarter(apiRoute: string, key: string) {
+  const starter = FORM_STARTERS.find((item) => item.key === key)
+  if (!starter) throw new Error('Este formulário pronto não existe.')
+  return request<DocResponse<Pick<Form, 'id'>>>(apiRoute, '/forms', {
+    method: 'POST',
+    body: JSON.stringify({
+      title: starter.title,
+      submitButtonLabel: 'Enviar',
+      confirmationType: 'message',
+      fields: starter.fields.map((field) => ({ ...field, width: 100 })),
+    }),
+  })
+}
+
+export function saveForm(apiRoute: string, id: number, data: Record<string, unknown>) {
+  return request(apiRoute, `/forms/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+/** O servidor recusa formulário em uso numa página ou com mensagens guardadas. */
+export function deleteForm(apiRoute: string, id: number) {
+  return request(apiRoute, `/forms/${id}`, { method: 'DELETE' })
 }
 
 export type HeaderData = Pick<Header, 'items' | 'button'>
