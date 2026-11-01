@@ -9,6 +9,9 @@ import * as migration_20261027_003103_formularios from './20261027_003103_formul
 import * as migration_20261027_013052_rls_tabelas from './20261027_013052_rls_tabelas';
 import * as migration_20261027_232634_modelos from './20261027_232634_modelos';
 import * as migration_20261030_002210_arquivar_paginas from './20261030_002210_arquivar_paginas';
+import * as migration_20261101_165917_mensagens_lidas from './20261101_165917_mensagens_lidas';
+import * as migration_20261101_165921_campo_telefone from './20261101_165921_campo_telefone';
+import * as migration_20261101_170000_converter_whatsapp from './20261101_170000_converter_whatsapp';
 
 export const migrations = [
   {
@@ -64,6 +67,21 @@ export const migrations = [
   {
     up: migration_20261030_002210_arquivar_paginas.up,
     down: migration_20261030_002210_arquivar_paginas.down,
-    name: '20261030_002210_arquivar_paginas'
+    name: '20261030_002210_arquivar_paginas',
+  },
+  {
+    up: migration_20261101_165917_mensagens_lidas.up,
+    down: migration_20261101_165917_mensagens_lidas.down,
+    name: '20261101_165917_mensagens_lidas',
+  },
+  {
+    up: migration_20261101_165921_campo_telefone.up,
+    down: migration_20261101_165921_campo_telefone.down,
+    name: '20261101_165921_campo_telefone',
+  },
+  {
+    up: migration_20261101_170000_converter_whatsapp.up,
+    down: migration_20261101_170000_converter_whatsapp.down,
+    name: '20261101_170000_converter_whatsapp'
   },
 ];

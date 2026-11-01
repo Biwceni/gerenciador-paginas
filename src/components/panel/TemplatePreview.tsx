@@ -70,6 +70,7 @@ export function TemplatePreview({
         {
           id: index + 1,
           title: form.title,
+          successMessage: '',
           submitLabel: form.submitButtonLabel,
           fields: (form.fields ?? []).map((field) => ({
             type: field.type,

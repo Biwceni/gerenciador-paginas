@@ -450,6 +450,15 @@ export interface Form {
             blockName?: string | null;
             blockType: 'textarea';
           }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'phone';
+          }
       )[]
     | null;
   submitButtonLabel?: string | null;
@@ -520,6 +529,7 @@ export interface FormSubmission {
   consent?: boolean | null;
   consentText?: string | null;
   page?: (number | null) | Page;
+  read?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -885,6 +895,16 @@ export interface FormsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        phone?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   submitButtonLabel?: T;
   confirmationType?: T;
@@ -925,6 +945,7 @@ export interface FormSubmissionsSelect<T extends boolean = true> {
   consent?: T;
   consentText?: T;
   page?: T;
+  read?: T;
   updatedAt?: T;
   createdAt?: T;
 }

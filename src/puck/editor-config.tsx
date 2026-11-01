@@ -421,7 +421,9 @@ const sections: { [K in keyof Components]: Section<K> } = {
           </FieldLabel>
         ),
       },
-      successMessage: { type: 'textarea', label: 'Frase depois de enviar' },
+      // A frase agora se escreve na tela de Formulários. A desta seção continua valendo para os
+      // formulários que não têm a dele, mas sem campo aqui.
+      successMessage: { type: 'custom', render: () => <></> },
       style: sectionStyle,
       menuLabel,
     },

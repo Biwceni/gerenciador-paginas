@@ -151,7 +151,7 @@ export async function resolveReferences(
       ? payload.find({
           collection: 'forms',
           where: { id: { in: formIds } },
-          select: { title: true, submitButtonLabel: true, fields: true },
+          select: { title: true, submitButtonLabel: true, confirmationMessage: true, fields: true },
           depth: 0,
           limit: formIds.length,
           pagination: false,

@@ -80,7 +80,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
     payload.findGlobal({ slug: 'site', depth: 1, draft: false, ...access }),
     payload.find({
       collection: 'forms',
-      select: { title: true, submitButtonLabel: true, fields: true },
+      select: { title: true, submitButtonLabel: true, confirmationMessage: true, fields: true },
       depth: 0,
       limit: 100,
       pagination: false,

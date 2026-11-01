@@ -4,6 +4,7 @@ import { commitTransaction, initTransaction, killTransaction } from 'payload'
 import type { Page, Site, Template } from '../payload-types'
 import { collectReferences } from '../puck/references'
 import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/schema'
+import { templateBlockType } from './forms'
 import { relationID } from './relations'
 import { slugify, uniqueSlug } from './slug'
 import { isTemplatePhotoURL, remapTemplateContent, type TemplateIds } from './templates'
@@ -106,7 +107,7 @@ async function createTemplateForms(req: PayloadRequest, template: Template): Pro
         title: form.title,
         submitButtonLabel: form.submitButtonLabel,
         fields: (form.fields ?? []).map((field) => ({
-          blockType: field.type,
+          blockType: templateBlockType(field.type, field.name),
           name: field.name,
           label: field.label,
           required: Boolean(field.required),
