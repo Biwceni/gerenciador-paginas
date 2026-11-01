@@ -43,6 +43,7 @@ import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { InsertProvider } from './insert'
+import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
@@ -99,6 +100,12 @@ const plugins: Plugin[] = [
       </>
     ) as unknown as string,
   }),
+  {
+    name: 'outline',
+    label: 'Ordem',
+    icon: <PanelIcon name="layers" size={20} />,
+    render: OrderPanel,
+  },
   fieldsPlugin({ icon: <PanelIcon name="sliders" size={20} />, label: 'Opções' }),
 ]
 
