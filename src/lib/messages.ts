@@ -112,17 +112,29 @@ export type SpreadsheetMessage = {
   consentText: string
 }
 
+/** Respostas por coluna. Duas perguntas com o mesmo texto viram "Telefone" e "Telefone (2)". */
+function spreadsheetAnswers(fields: SpreadsheetMessage['fields']): Map<string, string> {
+  const answers = new Map<string, string>()
+  for (const { label, value } of fields) {
+    let column = label
+    for (let n = 2; answers.has(column); n++) column = `${label} (${n})`
+    answers.set(column, value)
+  }
+  return answers
+}
+
 /**
  * Planilha com uma linha por mensagem e uma coluna por pergunta (mesma pergunta em formulários
  * diferentes cai na mesma coluna). Separador `;` e UTF-8 com BOM, para abrir certo no Excel em
  * português. Quem chama garante que só as mensagens do filtro chegam aqui.
  */
 export function messagesCsv(messages: SpreadsheetMessage[]): string {
-  const questions = [...new Set(messages.flatMap(({ fields }) => fields.map((f) => f.label)))]
+  const answersOf = messages.map(({ fields }) => spreadsheetAnswers(fields))
+  const questions = [...new Set(answersOf.flatMap((answers) => [...answers.keys()]))]
   const rows = [
     ['Data', 'Formulário', 'Página', ...questions, 'Frase aceita'],
-    ...messages.map((message) => {
-      const answers = new Map(message.fields.map(({ label, value }) => [label, value]))
+    ...messages.map((message, index) => {
+      const answers = answersOf[index]
       return [
         messageDate(message.createdAt),
         message.formTitle,

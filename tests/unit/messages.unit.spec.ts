@@ -90,6 +90,24 @@ describe('mensagem na caixa de entrada', () => {
 })
 
 describe('planilha', () => {
+  it('perguntas com o mesmo texto não perdem resposta', () => {
+    const csv = messagesCsv([
+      {
+        createdAt: '2026-10-27T18:04:00.000Z',
+        formTitle: 'F',
+        pageTitle: '',
+        fields: [
+          { label: 'Telefone', value: '111' },
+          { label: 'Telefone', value: '222' },
+        ],
+        consentText: '',
+      },
+    ])
+    const [head, row] = csv.slice(1).split('\r\n')
+    expect(head).toContain('"Telefone";"Telefone (2)"')
+    expect(row).toContain('"111";"222"')
+  })
+
   it('neutraliza fórmulas com um apóstrofo', () => {
     for (const value of ['=1+1', '+5535', '-2', '@soma']) {
       expect(csvCell(value)).toBe(`"'${value}"`)
