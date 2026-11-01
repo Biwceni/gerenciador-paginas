@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext } from 'react'
 
+import { InsertPoints } from './InsertPoints'
+
 /** Topo e rodapé do site, já desenhados pelo servidor (normal e de página de campanha). */
 export type SiteChrome = {
   header: React.ReactNode
@@ -46,7 +48,10 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
       >
         {preview.campaign ? preview.headerCampaign : preview.header}
       </Locked>
-      <main id="conteudo">{children}</main>
+      <main className="editor-main" id="conteudo">
+        {children}
+        <InsertPoints />
+      </main>
       <Locked
         href={preview.footerAdminHref}
         tip="Rodapé do site: é igual em todas as páginas. Clique para mudar em Menu e rodapé."
