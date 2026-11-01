@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // Fun????es puras: n??o usam banco e rodam em qualquer computador.
+        // Funções puras: não usam banco e rodam em qualquer computador.
         extends: true,
         test: {
           name: 'unit',
