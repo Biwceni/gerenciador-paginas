@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 
@@ -50,6 +50,15 @@ export function InsertPoints() {
       observer.disconnect()
     }
   }, [ids])
+
+  // No celular a lista cobre metade da tela: deixa à vista o lugar marcado.
+  useEffect(() => {
+    if (marked !== null) {
+      layer.current
+        ?.querySelector('.editor-insert--marked')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [marked])
 
   const count = ids ? ids.split(' ').length : 0
   const click = (at: number | null) => (event: React.MouseEvent) => {

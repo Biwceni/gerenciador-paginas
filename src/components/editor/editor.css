@@ -835,6 +835,48 @@ textarea.ed-input {
     padding-bottom: 0;
   }
 
+  /* Adicionar, Ordem e Opções: nomes inteiros, em partes iguais. */
+  .ed-root [class*='Nav-list'] {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    overflow: visible;
+  }
+
+  .ed-root [class*='NavItem_'] {
+    padding: 0 !important;
+  }
+
+  .ed-root [class*='NavItem-link'] {
+    width: 100%;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .ed-root [class*='NavItem-linkIcon'] {
+    width: 22px;
+    height: 22px;
+  }
+
+  .ed-root [class*='Nav-mobileActions'] {
+    display: none;
+  }
+
+  /* O painel aberto divide a tela com a prévia, sem esconder o topo (o Puck esconde). */
+  .ed-root [class*='PuckLayout--leftSideBarVisible'] [class*='PuckLayout-inner'] {
+    grid-template-rows: min-content minmax(0, 1fr) 55% 0 auto !important;
+  }
+
+  .ed-panel > div:first-of-type {
+    padding-right: 46px;
+  }
+
+  .ed-panel__close {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    display: inline-flex;
+  }
 }
 
 /* Resumo da página, no painel da direita, quando nenhuma seção está escolhida. */
