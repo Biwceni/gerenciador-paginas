@@ -35,6 +35,8 @@ export type SiteInfo = {
   name: string
   logo: Media | null
   contact: NonNullable<Site['contact']>
+  /** Endereço da página de privacidade, só quando ela está no ar. */
+  privacyHref?: string | null
 }
 
 type References = {
@@ -105,10 +107,12 @@ export function pageHref(page: { id: number; slug?: string | null }, homepageId?
   return page.id === homepageId ? '/' : `/${page.slug}`
 }
 
-/** Primeira seção que pode ter o título principal da página: banner ou lista de links. */
+/** Primeira seção que pode ter o título principal da página: banner, lista de links ou política. */
 export function mainHeadingID(data: PuckPageData): string | undefined {
   const first = data.content[0]
-  return first?.type === 'Hero' || first?.type === 'LinkList' ? first.props.id : undefined
+  return first?.type === 'Hero' || first?.type === 'LinkList' || first?.type === 'Privacy'
+    ? first.props.id
+    : undefined
 }
 
 /**

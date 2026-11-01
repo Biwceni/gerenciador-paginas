@@ -120,6 +120,12 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar f={ACCENT} h={9} r={4} w={40} x={10} y={25} />
     </>
   ),
+  Privacy: (
+    <>
+      <path d="M30 5l9 3.5v7c0 5-4 8.5-9 10-5-1.5-9-5-9-10v-7z" fill={ACCENT} />
+      <Bar h={3} r={1.5} w={44} x={8} y={30} />
+    </>
+  ),
   ColumnText: (
     <>
       <Bar f={ACCENT} h={5} w={30} x={8} y={9} />
@@ -146,6 +152,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   RichText: 'Um título e parágrafos, sem foto',
   Video: 'Um vídeo do YouTube na página',
   Form: 'Um dos seus formulários, para o visitante preencher',
+  Privacy: 'Como você cuida dos dados, com o contato das Configurações',
   ColumnText: 'Título e parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',
   ColumnButton: 'Um botão, dentro de uma coluna',

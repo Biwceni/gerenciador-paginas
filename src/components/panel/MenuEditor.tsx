@@ -45,6 +45,7 @@ type Props = {
     contact: FooterContact
     social: FooterSocial[]
     whatsappHref: string | null
+    privacyHref: string | null
     theme: Record<string, string>
     fontFaces: string | null
   }
@@ -491,6 +492,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                 contact={site.contact}
                 menu={footer.showMenu ? previewItems : []}
                 name={site.name}
+                privacyHref={site.privacyHref}
                 showContact={footer.showContact}
                 social={footer.showSocial ? site.social : []}
                 text={footer.text || null}

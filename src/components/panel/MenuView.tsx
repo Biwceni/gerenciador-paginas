@@ -3,7 +3,7 @@ import React from 'react'
 
 import { footerContact, footerSocial } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
-import { populatedMedia, siteLinks } from '@/lib/content'
+import { populatedMedia, privacyHref, siteLinks } from '@/lib/content'
 import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import { pageSummary } from '@/puck/summary'
@@ -69,6 +69,7 @@ export async function MenuView(props: AdminViewServerProps) {
           contact: footerContact(site),
           social: footerSocial(site),
           whatsappHref: siteLinks(site).whatsappHref,
+          privacyHref: privacyHref(site),
           theme: themeStyle(site) as Record<string, string>,
           fontFaces: site.fontFaces ?? null,
         }}

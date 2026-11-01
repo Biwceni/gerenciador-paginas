@@ -38,6 +38,7 @@ export type SettingsState = {
   tagline: string
   logo: number | null
   homepage: number | null
+  privacyPage: number | null
   colors: SiteColors
   fonts: { headings: string; body: string }
   contact: { whatsapp: string; phone: string; email: string; address: string; hours: string }
@@ -55,6 +56,8 @@ type Props = {
   livePages: { id: number; title: string }[]
   /** Página inicial escolhida que ainda não está no ar (o site novo nasce assim). */
   draftHome: { id: number; title: string } | null
+  /** Página de privacidade escolhida que ainda não está no ar. */
+  draftPrivacy: { id: number; title: string } | null
   /** Frase do modelo, só como dica no campo vazio: nunca vai para o site. */
   taglineHint: string
   pending: boolean
@@ -98,6 +101,7 @@ function toSiteData(state: SettingsState) {
     tagline: orNull(state.tagline),
     logo: state.logo,
     homepage: state.homepage,
+    privacyPage: state.privacyPage,
     colors: state.colors,
     fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
     contact: {
@@ -130,6 +134,7 @@ export function SettingsEditor({
   initial,
   livePages,
   draftHome,
+  draftPrivacy,
   taglineHint,
   pending,
   people,
@@ -409,6 +414,31 @@ export function SettingsEditor({
                 {homeLive
                   ? 'Só aparecem páginas que já estão no ar.'
                   : `Enquanto a página inicial não estiver no ar, quem abre ${domain} vê só o nome do site e o aviso "Site em construção. Volte em breve.", com o botão do WhatsApp se ele estiver preenchido.`}
+              </span>
+            </div>
+          </section>
+          <section className="gp-card">
+            <h2>Página de privacidade</h2>
+            <div className="gp-field">
+              <label htmlFor="st-privacy">Qual página explica como você cuida dos dados?</label>
+              <select
+                className="gp-input"
+                id="st-privacy"
+                onChange={(event) => update({ privacyPage: Number(event.target.value) || null })}
+                value={state.privacyPage ?? ''}
+              >
+                <option value="">Nenhuma</option>
+                {draftPrivacy && (
+                  <option value={draftPrivacy.id}>{draftPrivacy.title} (rascunho)</option>
+                )}
+                {livePages.map((page) => (
+                  <option key={page.id} value={page.id}>
+                    {page.title}
+                  </option>
+                ))}
+              </select>
+              <span className="gp-hint">
+                Quando ela estiver no ar, o link “Privacidade” aparece no rodapé e nos formulários.
               </span>
             </div>
           </section>

@@ -123,6 +123,8 @@ type FooterProps = {
   showContact: boolean
   social: FooterSocial[]
   campaign?: boolean
+  /** Página de privacidade, só quando está no ar. */
+  privacyHref?: string | null
 }
 
 export function SiteFooterView({
@@ -133,8 +135,17 @@ export function SiteFooterView({
   showContact,
   social,
   campaign,
+  privacyHref,
 }: FooterProps) {
   const year = new Date().getFullYear()
+  const privacy = privacyHref && (
+    <>
+      {' · '}
+      <SiteLink className="site-footer__privacy" href={privacyHref}>
+        Privacidade
+      </SiteLink>
+    </>
+  )
 
   // Página de campanha: uma linha só, com o WhatsApp para quem quiser falar.
   if (campaign) {
@@ -143,6 +154,7 @@ export function SiteFooterView({
         <div className="container site-footer__copy">
           <span>
             © {year} {name}
+            {privacy}
           </span>
           {contact.whatsappHref && (
             <SiteLink href={contact.whatsappHref}>WhatsApp {contact.whatsapp}</SiteLink>
@@ -210,6 +222,7 @@ export function SiteFooterView({
         <div className="site-footer__copy">
           <span>
             © {year} {name}
+            {privacy}
           </span>
           {contact.hours && <span>{contact.hours}</span>}
         </div>

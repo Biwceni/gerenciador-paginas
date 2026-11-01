@@ -98,13 +98,19 @@ export function siteLinks(site: Partial<Site>): SiteLinks {
   }
 }
 
-/** O que as seções mostram das configurações: nome, logo e contato. */
+/** O que as seções mostram das configurações: nome, logo, contato e a página de privacidade. */
 export function siteInfo(site: Partial<Site>): SiteInfo {
   return {
     name: site.name || FALLBACK_SITE_NAME,
     logo: populatedMedia(site.logo),
     contact: site.contact ?? {},
+    privacyHref: privacyHref(site),
   }
+}
+
+/** Endereço da página de privacidade, só com ela publicada. Precisa do site lido com depth 1. */
+export function privacyHref(site: Partial<Site>): string | null {
+  return resolveLink({ kind: 'page', page: site.privacyPage }, siteLinks(site))
 }
 
 type LinkValue = {

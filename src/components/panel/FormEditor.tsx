@@ -14,6 +14,7 @@ import {
   plainToRichText,
 } from '@/lib/forms'
 import { panelHref } from '@/lib/panel'
+import { PRIVACY_TEMPLATE_KEY } from '@/lib/privacy'
 import type { Form } from '@/payload-types'
 
 import { deleteForm, saveForm } from './api'
@@ -34,6 +35,8 @@ type Props = {
   messages: number
   /** Páginas que usam o formulário. */
   pages: { id: number; title: string }[]
+  /** Como está a página de privacidade do site. */
+  privacy: { state: 'live' } | { state: 'draft'; pageId: number } | { state: 'none' }
   siteEmail: string
 }
 
@@ -112,7 +115,15 @@ function toBlock(question: Question) {
   }
 }
 
-export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEmail }: Props) {
+export function FormEditor({
+  adminRoute,
+  apiRoute,
+  form,
+  messages,
+  pages,
+  privacy,
+  siteEmail,
+}: Props) {
   const router = useRouter()
   const [title, setTitle] = useState(form.title)
   const [questions, setQuestions] = useState<Question[]>(() => form.fields.map(toQuestion))
@@ -455,6 +466,33 @@ export function FormEditor({ adminRoute, apiRoute, form, messages, pages, siteEm
             Todo formulário pede que a pessoa concorde com o uso dos dados.
           </p>
           <p className="gp-small gp-muted">A frase é: “{CONSENT_TEXT}”</p>
+          {privacy.state === 'live' ? (
+            <p className="gp-small gp-muted">O aviso aponta para a sua página de privacidade.</p>
+          ) : privacy.state === 'draft' ? (
+            <div className="gp-warnbox">
+              <span>
+                Sua página de privacidade ainda não está no ar. Publique para o aviso apontar para
+                ela.
+              </span>
+              <div>
+                <Link className="gp-btn gp-btn--sm" href={editorPath(adminRoute, privacy.pageId)}>
+                  Abrir a página
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="gp-warnbox">
+              <span>Seu site ainda não tem página de privacidade (LGPD).</span>
+              <div>
+                <Link
+                  className="gp-btn gp-btn--sm"
+                  href={`${panelHref(adminRoute, 'newPage')}?modelo=${PRIVACY_TEMPLATE_KEY}`}
+                >
+                  Criar agora
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="gp-field">
             <span className="gp-label">Usado em</span>
             {inUse ? (

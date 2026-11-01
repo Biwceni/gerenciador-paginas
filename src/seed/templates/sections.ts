@@ -1,3 +1,4 @@
+import { PRIVACY_TITLE } from '../../lib/privacy'
 import type { ButtonValue, LinkRef, PageComponent } from '../../puck/schema'
 
 // Montadores das seções dos modelos, com Lorem Ipsum no conteúdo (como o `loremize` do protótipo).
@@ -137,6 +138,16 @@ export function pageBuilder() {
         menuLabel: o.menu ?? '',
         title: nextTitle(),
         text: L_S,
+        style: o.style ?? 'light',
+      },
+    }),
+    // Sem Lorem Ipsum: o texto sai das Configurações, na hora de mostrar (`lib/privacy.ts`).
+    privacy: (o: Common = {}): PageComponent => ({
+      type: 'Privacy',
+      props: {
+        id: id('Privacy', o.id),
+        menuLabel: o.menu ?? '',
+        title: PRIVACY_TITLE,
         style: o.style ?? 'light',
       },
     }),
