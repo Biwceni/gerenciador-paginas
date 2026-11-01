@@ -19,9 +19,19 @@
   font-family: var(--font-body, system-ui, sans-serif);
   /* Cores do Puck (barra de ícones, listas, escolhas) no verde do painel. */
   --puck-color-interactive: var(--ed-accent);
+  --puck-color-interactive-hover: var(--ed-accent);
+  --puck-color-interactive-active: var(--ed-accent);
   --puck-color-interactive-soft: var(--ed-ok-soft);
   --puck-color-interactive-subtle: var(--ed-ok-soft);
   --puck-color-interactive-soft-hover: var(--ed-ok-soft);
+  --puck-color-focus-ring: var(--ed-accent);
+  --puck-color-azure-03: var(--ed-accent);
+  --puck-color-azure-04: var(--ed-accent);
+  --puck-color-azure-05: var(--ed-accent);
+  --puck-color-azure-09: var(--ed-ok-soft);
+  --puck-color-azure-10: var(--ed-ok-soft);
+  --puck-color-azure-11: var(--ed-ok-soft);
+  --puck-color-azure-12: var(--ed-ok-soft);
 }
 
 /* As janelas ficam fora de `.ed-root`, por isso as cores valem para as duas. */

@@ -53,6 +53,19 @@ export function siteCSS(): string {
   return parts.join('\n')
 }
 
+/** Moldura e barra da seção escolhida no verde do painel, como fora da prévia. */
+const PUCK_COLORS = `:root {
+  --puck-color-azure-03: #0f6b55;
+  --puck-color-azure-04: #0f6b55;
+  --puck-color-azure-05: #0f6b55;
+  --puck-color-azure-06: #0f6b55;
+  --puck-color-azure-08: #a9d2c5;
+  --puck-color-azure-09: #cde5dd;
+  --puck-color-azure-10: #e3f2ec;
+  --puck-color-interactive: #0f6b55;
+  --puck-color-focus-ring: #0f6b55;
+}`
+
 /**
  * Dentro do iframe da prévia. O Puck não copia os estilos do painel (`syncHostStyles: false`), que
  * mudariam o visual do site; aqui entram só o CSS do site, as cores e as fontes.
@@ -79,6 +92,7 @@ export function EditorFrame({
       added.push(frame.head.appendChild(style))
     }
     addStyle(siteCSS())
+    addStyle(PUCK_COLORS)
     if (fontFaces) addStyle(safeStyleText(fontFaces))
     return () => added.forEach((element) => element.remove())
   }, [frame, theme, fontFaces])
