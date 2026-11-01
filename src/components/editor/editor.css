@@ -636,6 +636,19 @@ textarea.ed-input {
   line-height: 1.3;
 }
 
+/* Ações da seção, no fim do painel de opções. */
+.ed-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 16px 20px;
+  border-top: 1px solid var(--ed-line);
+}
+
+.ed-btn--danger {
+  color: var(--theme-error-500, #b42318);
+}
+
 /* Faixa acima da prévia: computador ou celular. */
 .ed-root [class*='PuckCanvas_'] {
   padding-top: 56px !important;

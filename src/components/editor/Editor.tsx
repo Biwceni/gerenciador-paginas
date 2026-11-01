@@ -9,6 +9,7 @@ import {
   type Data,
   fieldsPlugin,
   Puck,
+  type PuckAction,
   type Plugin,
   useGetPuck,
   type UiState,
@@ -47,6 +48,7 @@ import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
 import { type GetPuck, usePuck } from './puck'
+import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
@@ -218,7 +220,14 @@ function EditorFields({
   itemSelector?: unknown
 }) {
   const chrome = useContext(ChromeContext)
-  if (itemSelector || !chrome) return <>{children}</>
+  if (itemSelector || !chrome) {
+    return (
+      <>
+        {children}
+        <SectionActionsPanel />
+      </>
+    )
+  }
   const { sections, address, exampleSections } = chrome.summary
 
   return (
@@ -382,7 +391,18 @@ export function Editor(props: EditorProps) {
 
   // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
   const onAction = useCallback(
-    (_action: unknown, next: { data: Data }, previous: { data: Data }) => {
+    (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
+      if (action.type === 'remove') {
+        // O Puck deixaria a seção de baixo escolhida, e a pessoa não pediu para mexer nela.
+        setTimeout(() => {
+          const puck = getPuck.current?.()
+          puck?.dispatch({ type: 'setUi', ui: { itemSelector: null }, recordHistory: false })
+          toast.info('Seção removida.', {
+            action: { label: 'Desfazer', onClick: () => getPuck.current?.().history.back() },
+          })
+        })
+        return
+      }
       if (!next.data.content.some((item) => PIECES.includes(item.type))) return
       setTimeout(() => {
         getPuck.current?.().dispatch({ type: 'setData', data: previous.data })
@@ -557,7 +577,8 @@ export function Editor(props: EditorProps) {
                     fields: EditorFields,
                     drawer: EditorDrawer,
                     drawerItem: EditorDrawerItem,
-                    }}
+                    actionBar: EditorActionBar,
+                  }}
                   plugins={plugins}
                   ui={initialUi}
                 />
