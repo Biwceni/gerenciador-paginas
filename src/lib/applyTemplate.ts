@@ -334,20 +334,36 @@ export async function applySiteTemplate(
 }
 
 /**
- * Preenche "Página de privacidade" nas Configurações. Vão todos os campos do que está no ar (ver
- * `templateSiteData`). Sem nome do negócio, publicar seria recusado: fica como rascunho, que as
- * Configurações mostram e publicam na próxima mudança.
+ * Preenche "Página de privacidade" nas Configurações. No ar, vão todos os campos do que está
+ * publicado (ver `templateSiteData`), para uma mudança pendente não ir junto. Publicar passaria por
+ * cima dela, então a mudança pendente é gravada de novo por último, com o campo. Sem nome do negócio,
+ * publicar seria recusado: fica só como rascunho, que as Configurações mostram e publicam na próxima
+ * mudança.
  */
 async function setPrivacyPage(req: PayloadRequest, pageId: number) {
   const access = { overrideAccess: false, req } as const
-  const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access })
-  const { createdAt: _createdAt, id: _id, updatedAt: _updatedAt, ...data } = site
-  await req.payload.updateGlobal({
-    slug: 'site',
-    data: { ...data, privacyPage: pageId, _status: site.name ? 'published' : 'draft' },
-    draft: !site.name,
-    ...access,
-  })
+  const read = async (draft: boolean) => {
+    const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft, ...access })
+    const { createdAt: _createdAt, id: _id, updatedAt: _updatedAt, ...data } = site
+    return { ...data, privacyPage: pageId }
+  }
+  const [live, latest] = [await read(false), await read(true)]
+
+  if (live.name) {
+    await req.payload.updateGlobal({
+      slug: 'site',
+      data: { ...live, _status: 'published' },
+      ...access,
+    })
+  }
+  if (!live.name || latest._status === 'draft') {
+    await req.payload.updateGlobal({
+      slug: 'site',
+      data: { ...latest, _status: 'draft' },
+      draft: true,
+      ...access,
+    })
+  }
 }
 
 /**

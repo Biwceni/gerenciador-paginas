@@ -140,6 +140,41 @@ describe('página de privacidade', () => {
     expect(site.contact?.email).toBe('oi@cafe.com.br')
   })
 
+  it('mudança pendente das Configurações continua pendente, sem ir para o ar', async () => {
+    await payload.updateGlobal({
+      slug: 'site',
+      data: { name: 'Café Teste', tagline: 'publicada', _status: 'published' },
+      overrideAccess: true,
+    })
+    await payload.updateGlobal({
+      slug: 'site',
+      data: { tagline: 'RASCUNHO PENDENTE', _status: 'draft' },
+      draft: true,
+      overrideAccess: true,
+    })
+
+    const { doc } = await create(PRIVACY_TEMPLATE_KEY, 'politica-de-privacidade')
+
+    const pending = await payload.findGlobal({
+      slug: 'site',
+      depth: 0,
+      draft: true,
+      overrideAccess: true,
+    })
+    expect(pending.tagline).toBe('RASCUNHO PENDENTE')
+    expect(pending._status).toBe('draft')
+    expect(pending.privacyPage).toBe(doc.id)
+
+    const live = await payload.findGlobal({
+      slug: 'site',
+      depth: 0,
+      draft: false,
+      overrideAccess: true,
+    })
+    expect(live.tagline).toBe('publicada')
+    expect(live.privacyPage).toBe(doc.id)
+  })
+
   it('outro modelo de página não mexe no campo', async () => {
     await create('pagina-sobre', 'sobre')
     const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true })
