@@ -22,7 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: name,
       locale: 'pt_BR',
       type: 'website',
-      images: shareImage?.url ? [{ url: shareImage.url, alt: shareImage.alt ?? undefined }] : undefined,
+      images: shareImage?.url
+        ? [{ url: shareImage.url, alt: shareImage.alt ?? undefined }]
+        : undefined,
     },
   }
 }
