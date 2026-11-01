@@ -210,33 +210,52 @@ test.describe.serial('editor: seções', () => {
     )
   })
 
-  test('o "+" entre as seções coloca naquele lugar', async ({ page }) => {
-    const plus = inPreview(page).getByRole('button', { name: 'Adicionar seção aqui' })
-    await expect(plus).toHaveCount(INITIAL.length - 1)
-    await plus.nth(1).click()
-
-    await expect(page.getByText('Clique numa seção para colocar no lugar marcado.')).toBeVisible()
-    // O clique no "+" não escolhe nenhuma seção nem muda a página.
-    expect(await order(page)).toEqual(INITIAL)
-    await expect(inPreview(page).locator('.editor-insert--marked')).toHaveCount(1)
+  test('com uma seção selecionada, a lista coloca abaixo dela', async ({ page }) => {
+    await expect(page.getByText('Clique para colocar no fim da página')).toBeVisible()
+    await selectSection(page, 1)
+    await expect(page.getByText('Clique para colocar abaixo de “Destaques”')).toBeVisible()
 
     await listItem(page, 'Texto simples').click()
-    const expected = [INITIAL[0], INITIAL[1], 'RichText', ...INITIAL.slice(2)]
-    await expect.poll(() => order(page)).toEqual(expected)
-    await expect.poll(savedOrder).toEqual(expected)
+    const first = [INITIAL[0], INITIAL[1], 'RichText', ...INITIAL.slice(2)]
+    await expect.poll(() => order(page)).toEqual(first)
+    await expect.poll(savedOrder).toEqual(first)
 
-    // Marcou uma vez só: o próximo clique volta a colocar no fim.
-    await expect(inPreview(page).locator('.editor-insert--marked')).toHaveCount(0)
+    // A nova fica selecionada: a seguinte entra abaixo dela, na ordem em que foram escolhidas.
+    await expect(page.getByText('Clique para colocar abaixo de “Texto simples”')).toBeVisible()
     await listItem(page, 'Galeria de fotos').click()
-    await expect.poll(() => order(page)).toEqual([...expected, 'Gallery'])
+    await expect
+      .poll(() => order(page))
+      .toEqual([INITIAL[0], INITIAL[1], 'RichText', 'Gallery', ...INITIAL.slice(2)])
   })
 
-  test('"Adicionar seção no fim" abre a lista', async ({ page }) => {
+  test('sem o "+" entre as seções', async ({ page }) => {
+    await expect(sectionsIn(page)).toHaveCount(INITIAL.length)
+    await expect(inPreview(page).getByRole('button', { name: /Adicionar seção/ })).toHaveCount(0)
+  })
+
+  test('página vazia: a lista aberta orienta, e fechada tem botão', async ({ page }) => {
+    const payload = await getPayload({ config })
+    const empty = { ...initialContent, data: { ...initialContent.data, content: [] } }
+    await payload.update({
+      collection: 'pages',
+      id: pageId,
+      data: { content: empty },
+      draft: true,
+      overrideAccess: true,
+    })
+    await page.reload()
+    const preview = inPreview(page)
+    await expect(preview.getByText('Escolha uma seção na lista para começar.')).toBeVisible({
+      timeout: 60_000,
+    })
+    await expect(preview.getByRole('button', { name: 'Adicionar seção' })).toHaveCount(0)
+
     await page.locator('nav li').getByText('Ordem', { exact: true }).click()
-    await inPreview(page).getByRole('button', { name: 'Adicionar seção no fim' }).click()
-    await expect(page.getByText('Clique para colocar no fim da página')).toBeVisible()
-    await listItem(page, 'Formulário').click()
-    await expect.poll(() => order(page)).toEqual([...INITIAL, 'Form'])
+    await page.locator('nav li').getByText('Ordem', { exact: true }).click()
+    await preview.getByRole('button', { name: 'Adicionar seção' }).click()
+    await listItem(page, 'Banner principal').click()
+    await expect.poll(async () => (await order(page)).length).toBe(1)
+    await expect(preview.getByText('Página vazia')).toHaveCount(0)
   })
 
   test('subir, descer, duplicar e remover na barra da seção', async ({ page }) => {

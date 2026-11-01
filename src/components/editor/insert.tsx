@@ -1,9 +1,11 @@
 'use client'
 
 import { useGetPuck } from '@puckeditor/core'
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback } from 'react'
 
-import { MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
+import { insertIndex } from '@/puck/insertPosition'
+
+import { MOBILE_WIDTH, ROOT_ZONE } from './puck'
 
 /** Prévia do editor (o `id` é o que o Puck dá ao iframe). */
 export const previewDocument = (): Document | null =>
@@ -20,50 +22,25 @@ export function scrollToSection(id: string) {
   )
 }
 
-/** Lugar marcado pelo "+" entre as seções e quantas seções a página tinha naquela hora. */
-type Mark = { at: number; size: number }
-
-type InsertPoint = {
-  /** Sem lugar marcado, a seção vai para o fim da página. */
-  mark: Mark | null
-  setMark: (mark: Mark | null) => void
-}
-
-const InsertContext = createContext<InsertPoint>({ mark: null, setMark: () => {} })
-
-export function InsertProvider({ children }: { children: React.ReactNode }) {
-  const [mark, setMark] = useState<Mark | null>(null)
-  const value = useMemo(() => ({ mark, setMark }), [mark])
-  return <InsertContext.Provider value={value}>{children}</InsertContext.Provider>
-}
-
-/** Abre a lista de seções, com ou sem um lugar marcado. */
+/** Abre a lista de seções. */
 export function useOpenSectionList() {
-  const { setMark } = useContext(InsertContext)
   const getPuck = useGetPuck()
-  return useCallback(
-    (at: number | null) => {
-      const { appState, dispatch } = getPuck()
-      setMark(at === null ? null : { at, size: appState.data.content.length })
-      dispatch({
-        type: 'setUi',
-        ui: { plugin: { current: 'blocks' }, leftSideBarVisible: true },
-        recordHistory: false,
-      })
-    },
-    [getPuck, setMark],
-  )
+  return useCallback(() => {
+    getPuck().dispatch({
+      type: 'setUi',
+      ui: { plugin: { current: 'blocks' }, leftSideBarVisible: true },
+      recordHistory: false,
+    })
+  }, [getPuck])
 }
 
-/** Coloca uma seção no lugar marcado ou no fim da página e deixa ela escolhida e à vista. */
+/** Coloca uma seção abaixo da selecionada ou no fim da página e deixa ela selecionada e à vista. */
 export function useAddSection() {
-  const { mark, setMark } = useContext(InsertContext)
   const getPuck = useGetPuck()
   return useCallback(
     (componentType: string) => {
       const { appState, dispatch } = getPuck()
-      const size = appState.data.content.length
-      const index = mark ? Math.min(mark.at, size) : size
+      const index = insertIndex(appState.data.content, appState.ui.itemSelector)
       dispatch({
         type: 'insert',
         componentType,
@@ -81,26 +58,9 @@ export function useAddSection() {
         },
         recordHistory: false,
       })
-      setMark(null)
       const added = getPuck().getItemBySelector(selection)
       if (added) scrollToSection(added.props.id)
     },
-    [getPuck, mark, setMark],
+    [getPuck],
   )
-}
-
-/** Lugar marcado na prévia. Some ao fechar a lista ou quando a página muda de outro jeito. */
-export function useInsertPoint(): number | null {
-  const { mark, setMark } = useContext(InsertContext)
-  const listOpen = usePuck(
-    (s) => s.appState.ui.leftSideBarVisible && s.appState.ui.plugin.current === 'blocks',
-  )
-  const size = usePuck((s) => s.appState.data.content.length)
-  const stale = mark !== null && (!listOpen || size !== mark.size)
-
-  useEffect(() => {
-    if (stale) setMark(null)
-  }, [setMark, stale])
-
-  return stale ? null : (mark?.at ?? null)
 }

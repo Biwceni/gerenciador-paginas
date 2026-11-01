@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext } from 'react'
 
-import { InsertPoints } from './InsertPoints'
+import { EmptyPage } from './EmptyPage'
 
 /** Topo e rodapé do site, já desenhados pelo servidor (normal e de página de campanha). */
 export type SiteChrome = {
@@ -48,9 +48,9 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
       >
         {preview.campaign ? preview.headerCampaign : preview.header}
       </Locked>
-      <main className="editor-main" id="conteudo">
+      <main id="conteudo">
         {children}
-        <InsertPoints />
+        <EmptyPage />
       </main>
       <Locked
         href={preview.footerAdminHref}

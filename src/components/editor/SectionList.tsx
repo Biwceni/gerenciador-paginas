@@ -5,8 +5,9 @@ import React from 'react'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { type Components, COLUMN_PIECES, PIECE_LABELS, SECTION_LABELS } from '@/puck/config'
+import { insertIndex } from '@/puck/insertPosition'
 
-import { useAddSection, useInsertPoint } from './insert'
+import { useAddSection } from './insert'
 import { usePuck } from './puck'
 import { SECTION_DESCRIPTIONS, SectionThumb } from './SectionThumb'
 
@@ -32,16 +33,16 @@ export function ClosePanel() {
 
 /** Painel "Adicionar seção" (override do Puck), em volta das listas de seções e de peças. */
 export function EditorDrawer({ children }: { children?: React.ReactNode }) {
-  const at = useInsertPoint()
-  const size = usePuck((s) => s.appState.data.content.length)
-  const hint =
-    at === null
-      ? 'Clique para colocar no fim da página, ou arraste até o lugar.'
-      : at === 0
-        ? 'Clique numa seção para colocar no começo da página.'
-        : at >= size
-          ? 'Clique numa seção para colocar no fim da página.'
-          : 'Clique numa seção para colocar no lugar marcado.'
+  // A seção que a nova vai seguir: a frase diz o que o clique vai fazer antes de clicar.
+  const above = usePuck((s) => {
+    const { itemSelector } = s.appState.ui
+    if (!itemSelector) return null
+    const { content } = s.appState.data
+    return content[insertIndex(content, itemSelector) - 1]?.type ?? null
+  })
+  const hint = above
+    ? `Clique para colocar abaixo de “${LABELS[above] ?? above}”, ou arraste até o lugar.`
+    : 'Clique para colocar no fim da página, ou arraste até o lugar.'
 
   return (
     <div className="ed-panel">

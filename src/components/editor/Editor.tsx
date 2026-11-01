@@ -43,7 +43,6 @@ import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
-import { InsertProvider } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
@@ -585,28 +584,26 @@ export function Editor(props: EditorProps) {
         <SitePreviewProvider value={preview}>
           <ChromeContext.Provider value={chrome}>
             <div className="ed-root">
-              <InsertProvider>
-                <Puck<typeof editorConfig>
-                  config={editorConfig}
-                  data={initialData}
-                  dictionary={dictionary}
-                  height="100%"
-                  iframe={{ enabled: true, syncHostStyles: false }}
-                  metadata={metadata}
-                  onAction={(action, next, previous) => onAction(action, next, previous)}
-                  onChange={onChange}
-                  overrides={{
-                    header: EditorHeader,
-                    iframe: EditorFrame,
-                    fields: EditorFields,
-                    drawer: EditorDrawer,
-                    drawerItem: EditorDrawerItem,
-                    actionBar: EditorActionBar,
-                  }}
-                  plugins={plugins}
-                  ui={initialUi}
-                />
-              </InsertProvider>
+              <Puck<typeof editorConfig>
+                config={editorConfig}
+                data={initialData}
+                dictionary={dictionary}
+                height="100%"
+                iframe={{ enabled: true, syncHostStyles: false }}
+                metadata={metadata}
+                onAction={(action, next, previous) => onAction(action, next, previous)}
+                onChange={onChange}
+                overrides={{
+                  header: EditorHeader,
+                  iframe: EditorFrame,
+                  fields: EditorFields,
+                  drawer: EditorDrawer,
+                  drawerItem: EditorDrawerItem,
+                  actionBar: EditorActionBar,
+                }}
+                plugins={plugins}
+                ui={initialUi}
+              />
             </div>
 
             {picking && (
