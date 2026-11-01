@@ -12,6 +12,7 @@
   --ed-soft: var(--theme-elevation-50, #f4f5f6);
   /* Verde do protótipo do painel. */
   --ed-accent: #0f6b55;
+  --ed-accent-soft: #e3f2ec;
   --ed-on-accent: #fff;
   --ed-warn: var(--theme-warning-700, #8a5a00);
   --ed-warn-soft: var(--theme-warning-100, #fff4dc);
@@ -21,23 +22,24 @@
   --puck-color-interactive: var(--ed-accent);
   --puck-color-interactive-hover: var(--ed-accent);
   --puck-color-interactive-active: var(--ed-accent);
-  --puck-color-interactive-soft: var(--ed-ok-soft);
-  --puck-color-interactive-subtle: var(--ed-ok-soft);
-  --puck-color-interactive-soft-hover: var(--ed-ok-soft);
+  --puck-color-interactive-soft: var(--ed-accent-soft);
+  --puck-color-interactive-subtle: var(--ed-accent-soft);
+  --puck-color-interactive-soft-hover: var(--ed-accent-soft);
   --puck-color-focus-ring: var(--ed-accent);
   --puck-color-azure-03: var(--ed-accent);
   --puck-color-azure-04: var(--ed-accent);
   --puck-color-azure-05: var(--ed-accent);
-  --puck-color-azure-09: var(--ed-ok-soft);
-  --puck-color-azure-10: var(--ed-ok-soft);
-  --puck-color-azure-11: var(--ed-ok-soft);
-  --puck-color-azure-12: var(--ed-ok-soft);
+  --puck-color-azure-09: var(--ed-accent-soft);
+  --puck-color-azure-10: var(--ed-accent-soft);
+  --puck-color-azure-11: var(--ed-accent-soft);
+  --puck-color-azure-12: var(--ed-accent-soft);
 }
 
 /* As janelas ficam fora de `.ed-root`, por isso as cores valem para as duas. */
 [data-theme='dark'] .ed-root,
 [data-theme='dark'] .ed-overlay {
   --ed-accent: #4fb592;
+  --ed-accent-soft: #17352c;
   --ed-on-accent: #0b1f19;
 }
 
@@ -145,7 +147,7 @@
 }
 
 .ed-icon-btn--sm[aria-pressed='true'] {
-  background: var(--ed-ok-soft);
+  background: var(--ed-accent-soft);
   color: var(--ed-accent);
 }
 
@@ -629,7 +631,7 @@ textarea.ed-input {
 
 .ed-palitem:hover {
   border-color: var(--ed-accent);
-  background: var(--ed-ok-soft);
+  background: var(--ed-accent-soft);
 }
 
 .ed-palitem:focus-visible {
@@ -684,7 +686,7 @@ textarea.ed-input {
 
 .ed-order__item--on {
   border-color: var(--ed-accent);
-  background: var(--ed-ok-soft);
+  background: var(--ed-accent-soft);
 }
 
 .ed-order__item--over {
