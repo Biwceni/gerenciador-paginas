@@ -192,7 +192,7 @@ export interface Media {
   /**
    * Descreva a foto em poucas palavras, como se contasse para alguém que não pode vê-la. Ex.: "Xícara de café sobre a mesa de madeira".
    */
-  alt: string;
+  alt?: string | null;
   sourceUrl?: string | null;
   prefix?: string | null;
   _objectKey?: string | null;
@@ -1009,6 +1009,10 @@ export interface Site {
    */
   homepage?: (number | null) | Page;
   /**
+   * Quando ela estiver publicada, o link "Privacidade" aparece no rodapé e nos formulários.
+   */
+  privacyPage?: (number | null) | Page;
+  /**
    * A cor do texto dos botões e do rodapé é escolhida sozinha, para ficar fácil de ler.
    */
   colors: {
@@ -1144,6 +1148,7 @@ export interface SiteSelect<T extends boolean = true> {
   tagline?: T;
   logo?: T;
   homepage?: T;
+  privacyPage?: T;
   colors?:
     | T
     | {

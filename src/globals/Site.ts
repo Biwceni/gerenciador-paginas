@@ -144,6 +144,16 @@ export const Site: GlobalConfig = {
                   'A página que abre quando alguém entra no endereço do site. Enquanto ela não estiver publicada, o site mostra o aviso "em construção".',
               },
             },
+            {
+              name: 'privacyPage',
+              type: 'relationship',
+              relationTo: 'pages',
+              label: 'Página de privacidade',
+              admin: {
+                description:
+                  'Quando ela estiver publicada, o link "Privacidade" aparece no rodapé e nos formulários.',
+              },
+            },
           ],
         },
         {

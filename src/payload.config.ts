@@ -17,6 +17,7 @@ import { Header } from './globals/Header'
 import { Site } from './globals/Site'
 import { LOCKED_MESSAGE, NEW_PASSWORD_PATH, WRONG_LOGIN_MESSAGE } from './lib/auth'
 import { EDITOR_VIEW_PATH } from './lib/editor'
+import { PHOTO_MAX_BYTES } from './lib/photos'
 import { getServerURL, PRODUCT_NAME } from './lib/site'
 import { formsPlugin } from './plugins/forms'
 
@@ -226,7 +227,7 @@ export default buildConfig({
   // Com envio direto ao Storage, este é o único limite que o servidor confere antes de assinar o envio.
   upload: {
     limits: {
-      fileSize: 10_000_000,
+      fileSize: PHOTO_MAX_BYTES,
     },
   },
   plugins: [
