@@ -39,5 +39,7 @@ export function createQueue<Item, Result>(handlers: Handlers<Item, Result>) {
       waiting.push(...items)
       pump()
     },
+    /** Nada subindo nem esperando. */
+    idle: () => !running && !waiting.length,
   }
 }

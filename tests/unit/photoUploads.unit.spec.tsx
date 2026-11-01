@@ -9,13 +9,18 @@ import { usePhotoUploads } from '@/components/panel/usePhotoUploads'
 import { Photo } from '@/components/site/Photo'
 import type { Media } from '@/payload-types'
 
-const handlers = vi.hoisted(() => ({ registered: false }))
+const handlers = vi.hoisted(() => {
+  const state = {
+    registered: false,
+    // Estável, como o de verdade: o efeito que cria a fila depende dele.
+    getUploadHandler: () => (state.registered ? () => {} : undefined),
+  }
+  return state
+})
 
 vi.mock('@payloadcms/ui', () => ({
   useConfig: () => ({ config: { routes: { api: '/api' } } }),
-  useUploadHandlers: () => ({
-    getUploadHandler: () => (handlers.registered ? () => {} : undefined),
-  }),
+  useUploadHandlers: () => ({ getUploadHandler: handlers.getUploadHandler }),
 }))
 
 const file = (name: string, type = 'image/jpeg') => new File(['foto'], name, { type })
@@ -196,6 +201,88 @@ describe('usePhotoUploads', () => {
     await waitFor(() => expect(onFinished).toHaveBeenCalledTimes(2))
     expect(onUploaded).toHaveBeenCalledTimes(3)
     expect(result.current.items.map((item) => item.file.name)).toEqual(['nota.pdf'])
+  })
+})
+
+describe('contagem de problemas do envio', () => {
+  /** XHR que só responde quando o teste manda, para controlar a ordem dos envios. */
+  function manualXHR() {
+    const pending = new Map<string, FakeRequest>()
+    class FakeRequest {
+      upload = {}
+      status = 200
+      responseText = JSON.stringify({ doc: { id: 5 } })
+      onload?: () => void
+      onerror?: () => void
+      open() {}
+      setRequestHeader() {}
+      send(body: FormData) {
+        pending.set((body.get('file') as File).name, this)
+      }
+    }
+    vi.stubGlobal('XMLHttpRequest', FakeRequest)
+    return {
+      answer: (name: string, ok: boolean) => {
+        const request = pending.get(name)!
+        pending.delete(name)
+        if (ok) request.onload?.()
+        else request.onerror?.()
+      },
+      sent: (name: string) => pending.has(name),
+    }
+  }
+
+  it('a que falhou e deu certo no "Tentar de novo" não conta como problema', async () => {
+    const xhr = manualXHR()
+    const onFinished = vi.fn()
+    const { result } = renderHook(() => usePhotoUploads({ onFinished }))
+
+    act(() => result.current.addFiles([file('a.jpg'), file('b.jpg')]))
+    // "a" falha enquanto "b" ainda está subindo, e a pessoa tenta de novo.
+    await act(async () => xhr.answer('a.jpg', false))
+    await waitFor(() =>
+      expect(result.current.items.find((item) => item.file.name === 'a.jpg')?.state).toBe('failed'),
+    )
+    act(() => result.current.retry(result.current.items.find((i) => i.file.name === 'a.jpg')!))
+    await waitFor(() => expect(xhr.sent('a.jpg')).toBe(true))
+
+    await act(async () => xhr.answer('a.jpg', true))
+    await act(async () => xhr.answer('b.jpg', true))
+    await waitFor(() => expect(onFinished).toHaveBeenCalledTimes(1))
+    expect(onFinished.mock.calls[0][0].uploaded).toHaveLength(2)
+    expect(onFinished.mock.calls[0][0].problems).toBe(0)
+  })
+
+  it('só arquivos recusados não passam a conta para o próximo envio', async () => {
+    const xhr = manualXHR()
+    const onFinished = vi.fn()
+    const { result } = renderHook(() => usePhotoUploads({ onFinished }))
+
+    act(() => result.current.addFiles([file('nota.pdf', 'application/pdf')]))
+    expect(onFinished).not.toHaveBeenCalled()
+
+    act(() => result.current.addFiles([file('foto.jpg')]))
+    await waitFor(() => expect(xhr.sent('foto.jpg')).toBe(true))
+    await act(async () => xhr.answer('foto.jpg', true))
+    await waitFor(() => expect(onFinished).toHaveBeenCalledTimes(1))
+    expect(onFinished.mock.calls[0][0]).toMatchObject({ problems: 0 })
+    expect(onFinished.mock.calls[0][0].uploaded).toHaveLength(1)
+  })
+
+  it('tirar da lista a que falhou também não conta', async () => {
+    const xhr = manualXHR()
+    const onFinished = vi.fn()
+    const { result } = renderHook(() => usePhotoUploads({ onFinished }))
+
+    act(() => result.current.addFiles([file('a.jpg'), file('b.jpg')]))
+    await act(async () => xhr.answer('a.jpg', false))
+    await waitFor(() =>
+      expect(result.current.items.find((item) => item.file.name === 'a.jpg')?.state).toBe('failed'),
+    )
+    act(() => result.current.dismiss(result.current.items.find((i) => i.file.name === 'a.jpg')!))
+    await act(async () => xhr.answer('b.jpg', true))
+    await waitFor(() => expect(onFinished).toHaveBeenCalledTimes(1))
+    expect(onFinished.mock.calls[0][0].problems).toBe(0)
   })
 })
 

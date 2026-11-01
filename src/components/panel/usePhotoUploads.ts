@@ -43,7 +43,8 @@ export function usePhotoUploads(options: Options = {}) {
 
   const [items, setItems] = useState<PhotoUpload[]>([])
   const inputId = useId()
-  const round = useRef<{ uploaded: Media[]; problems: number }>({ uploaded: [], problems: 0 })
+  // O que aconteceu desde que a fila esvaziou pela última vez.
+  const round = useRef({ uploaded: [] as Media[], problems: new Set<number>() })
   const latest = useRef(options)
   useEffect(() => {
     latest.current = options
@@ -71,13 +72,13 @@ export function usePhotoUploads(options: Options = {}) {
         latest.current.onUploaded?.(photo)
       },
       onFail: (upload) => {
-        round.current.problems++
+        round.current.problems.add(upload.id)
         change(upload.id, { state: 'failed' })
       },
       onIdle: () => {
-        const result = round.current
-        round.current = { uploaded: [], problems: 0 }
-        latest.current.onFinished?.(result)
+        const { uploaded, problems } = round.current
+        round.current = { uploaded: [], problems: new Set() }
+        latest.current.onFinished?.({ uploaded, problems: problems.size })
       },
     })
   }, [apiRoute, getUploadHandler])
@@ -94,12 +95,18 @@ export function usePhotoUploads(options: Options = {}) {
         problem,
       }
     })
-    round.current.problems += added.filter((item) => item.state === 'refused').length
+    const queued = added.filter((item) => item.state === 'waiting')
+    // Só recusados, com a fila parada: ela não vai esvaziar de novo, e a conta iria para o próximo
+    // envio. A recusa já está à vista na lista.
+    if (queued.length || !queue.current?.idle()) {
+      for (const item of added) if (item.state === 'refused') round.current.problems.add(item.id)
+    }
     setItems((list) => [...added, ...list])
-    queue.current?.add(added.filter((item) => item.state === 'waiting'))
+    queue.current?.add(queued)
   }
 
   const retry = (upload: PhotoUpload) => {
+    round.current.problems.delete(upload.id)
     setItems((list) =>
       list.map((item) =>
         item.id === upload.id ? { ...item, state: 'waiting', progress: 0 } : item,
@@ -119,7 +126,10 @@ export function usePhotoUploads(options: Options = {}) {
 
   return {
     addFiles,
-    dismiss: (upload: PhotoUpload) => forget(upload, setItems),
+    dismiss: (upload: PhotoUpload) => {
+      round.current.problems.delete(upload.id)
+      forget(upload, setItems)
+    },
     inputId,
     items,
     open: () => document.getElementById(inputId)?.click(),
