@@ -816,6 +816,15 @@ textarea.ed-input {
     padding: 0 !important;
   }
 
+  .ed-root [class*='PuckCanvas-inner'] {
+    min-width: 0;
+  }
+
+  .ed-root [class*='PuckCanvas-root'] {
+    min-width: 0;
+    outline: 0;
+  }
+
   .ed-canvasbar,
   .ed-rail-btn {
     display: none;
