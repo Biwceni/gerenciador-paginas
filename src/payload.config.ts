@@ -107,6 +107,11 @@ export default buildConfig({
         dashboard: {
           Component: '/components/panel/Dashboard#Dashboard',
         },
+        // Minha conta nossa: sem idioma, "Forçar desbloqueio" nem termos técnicos, com o tema.
+        account: {
+          Component: '/components/panel/AccountView#AccountView',
+          meta: { title: 'Minha conta' },
+        },
         panelPages: {
           Component: '/components/panel/PagesView#PagesView',
           path: '/paginas',

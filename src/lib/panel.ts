@@ -11,6 +11,8 @@ export const PANEL_PATHS = {
   messages: '/mensagens',
   forms: '/formularios',
   advanced: '/avancado',
+  // Endereço padrão do Payload (`admin.routes.account`), com a tela nossa.
+  account: '/account',
 } as const
 
 export type PanelPath = keyof typeof PANEL_PATHS
