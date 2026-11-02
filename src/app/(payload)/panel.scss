@@ -645,28 +645,22 @@ html[data-theme] {
   font-size: var(--gp-fs-help);
 }
 
+// A dica do painel e do editor (componente Tip), como a `tip` do protótipo.
 .gp-tip {
   align-items: flex-start;
-  color: var(--gp-muted);
-  background: var(--gp-surface-2);
+  margin: 0;
+  color: var(--gp-ink);
+  background: var(--gp-accent-soft);
+  line-height: 1.45;
 
   .gp-ic {
-    margin-top: 2px;
+    margin-top: 1px;
+    color: var(--gp-accent);
   }
 
-  // Dica verde clara, como a `tip` do protótipo.
-  &--accent {
-    color: var(--gp-ink);
-    background: var(--gp-accent-soft);
-
-    .gp-ic {
-      color: var(--gp-accent);
-    }
-
-    a {
-      color: var(--gp-accent);
-      font-weight: 600;
-    }
+  a {
+    color: var(--gp-accent);
+    font-weight: 600;
   }
 }
 

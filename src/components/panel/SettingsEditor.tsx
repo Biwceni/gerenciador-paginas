@@ -34,6 +34,7 @@ import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
 import { SiteFrame } from './SiteFrame'
+import { Tip } from './Tip'
 
 export type SettingsState = {
   name: string
@@ -403,13 +404,10 @@ export function SettingsEditor({
       </div>
 
       {pending && !touched && (
-        <p className="gp-tip">
-          <PanelIcon name="help" size={16} />
-          <span>
-            Há mudanças feitas pela tela avançada que ainda não estão no ar. Elas vão junto na
-            próxima mudança que você fizer aqui.
-          </span>
-        </p>
+        <Tip>
+          Há mudanças feitas pela tela avançada que ainda não estão no ar. Elas vão junto na próxima
+          mudança que você fizer aqui.
+        </Tip>
       )}
 
       <div className="gp-grid2">
@@ -815,16 +813,13 @@ export function SettingsEditor({
         )}
       </div>
 
-      <p className="gp-tip">
-        <PanelIcon name="help" size={16} />
-        <span>
-          O menu e o rodapé ficam em{' '}
-          <Link className="gp-link" href={panelHref(adminRoute, 'menu')}>
-            Menu e rodapé
-          </Link>
-          .
-        </span>
-      </p>
+      <Tip>
+        O menu e o rodapé ficam em{' '}
+        <Link className="gp-link" href={panelHref(adminRoute, 'menu')}>
+          Menu e rodapé
+        </Link>
+        .
+      </Tip>
 
       {fullPreview && (
         <PanelDialog

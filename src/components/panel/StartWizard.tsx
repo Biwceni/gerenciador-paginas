@@ -11,6 +11,7 @@ import { SEGMENTS, type Segment, SITE_TYPES, type SiteType } from '@/lib/templat
 
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { Tip } from './Tip'
 import { TemplatePreview, type TemplatePreviewData } from './TemplatePreview'
 
 export type StartTemplate = TemplatePreviewData & { siteType: SiteType; segment: Segment | null }
@@ -307,13 +308,10 @@ export function StartWizard({
                   </div>
                 ))}
               </div>
-              <p className="gp-tip">
-                <PanelIcon name="help" size={16} />
-                <span>
-                  As cores e as letras do modelo são só um começo. Em Configurações você escolhe
-                  quaisquer outras.
-                </span>
-              </p>
+              <Tip>
+                As cores e as letras do modelo são só um começo. Em Configurações você escolhe
+                quaisquer outras.
+              </Tip>
             </>
           )}
 

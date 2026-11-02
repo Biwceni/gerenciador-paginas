@@ -13,6 +13,7 @@ import type { PageRow } from './data'
 import { PageRowItem } from './PageRowItem'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { Tip } from './Tip'
 
 type Props = {
   adminRoute: string
@@ -179,14 +180,11 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
         )}
       </section>
 
-      <p className="gp-tip gp-tip--accent">
-        <PanelIcon name="help" size={16} />
-        <span>
-          A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais opções” (⋯) em
-          outra página ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>.
-          A ordem aqui segue o menu do site.
-        </span>
-      </p>
+      <Tip>
+        A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais opções” (⋯) em
+        outra página ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>. A
+        ordem aqui segue o menu do site.
+      </Tip>
 
       {more && (
         <MoreDialog

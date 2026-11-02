@@ -266,15 +266,6 @@ textarea.ed-input {
   font-size: var(--gp-fs-help);
 }
 
-.ed-notice {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--ed-ok-soft);
-  font-size: var(--gp-fs-help);
-  line-height: 1.45;
-}
-
 .ed-row {
   display: flex;
   flex-wrap: wrap;
