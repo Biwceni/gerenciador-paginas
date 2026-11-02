@@ -69,6 +69,11 @@ export function timeAgo(date: Date | string, now: number = Date.now()): string {
   return days === 1 ? 'há 1 dia' : `há ${days} dias`
 }
 
+/** Aviso do painel: "1 página com mudanças fora do ar", "3 páginas com mudanças fora do ar". */
+export function pendingPagesText(count: number): string {
+  return `${count} ${count === 1 ? 'página' : 'páginas'} com mudanças fora do ar`
+}
+
 /** "Bom dia", "Boa tarde" ou "Boa noite", no horário de Brasília. */
 export function greeting(date: Date = new Date()): string {
   const hour = Number(

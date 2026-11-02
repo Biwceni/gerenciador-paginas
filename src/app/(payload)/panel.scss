@@ -699,6 +699,16 @@ html[data-theme] {
   }
 }
 
+// Aviso de uma linha com o botão na ponta ("1 página com mudanças fora do ar").
+.gp-notice--warn {
+  flex-wrap: wrap;
+  background: var(--gp-warn-soft);
+}
+
+.gp-notice__action {
+  margin-left: auto;
+}
+
 .gp-warnbox {
   display: grid;
   gap: 10px;
@@ -2031,7 +2041,24 @@ textarea.gp-input {
   .is-done b {
     color: var(--gp-muted);
     font-weight: 500;
-    text-decoration: line-through;
+  }
+}
+
+// Tudo feito: a lista recolhe numa linha, que abre se a pessoa quiser ver.
+.gp-finished {
+  padding-block: 14px;
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .gp-todo__mark {
+    background: var(--gp-ok-soft);
+    color: var(--gp-ok);
   }
 }
 
