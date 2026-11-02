@@ -122,6 +122,42 @@
     color: var(--color-on-primary);
   }
 
+  /*
+   * Seção com o mesmo fundo da anterior: o espaço de cima diminui, para não somar dois espaços
+   * inteiros (~176 px). Não vale para o banner com foto. A segunda linha de cada regra é a da
+   * prévia do editor, em que o Puck põe cada seção dentro de um elemento seu.
+   */
+  /* Uma regra por seletor: em lista, o Next junta tudo num :is() e a prévia não copia. */
+  .section--light:not(.hero--side) + .section--light:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--light:not(.hero--side))
+    + [data-puck-component]
+    > .section--light:not(.hero) {
+    padding-top: 24px;
+  }
+
+  .section--soft:not(.hero--side) + .section--soft:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--soft:not(.hero--side))
+    + [data-puck-component]
+    > .section--soft:not(.hero) {
+    padding-top: 24px;
+  }
+
+  .section--brand:not(.hero--side) + .section--brand:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--brand:not(.hero--side))
+    + [data-puck-component]
+    > .section--brand:not(.hero) {
+    padding-top: 24px;
+  }
+
   .section-title {
     margin-bottom: 28px;
     font-size: var(--fs-h2);
