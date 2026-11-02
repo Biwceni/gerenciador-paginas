@@ -28,6 +28,7 @@ import type {
   VideoProps,
 } from '../schema'
 import { SectionButton } from './Button'
+import { FeatureIcon } from './FeatureIcon'
 import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
 
@@ -187,29 +188,43 @@ export function TextImage({
   )
 }
 
-/** Destaques numerados, até três por linha. */
-export function Features({ id, title, items, style, metadata }: WithMetadata<FeaturesProps>) {
+/**
+ * Destaques, até três por linha, sem caixa. Marcador: nenhum (padrão), um ícone por item ou
+ * números (passo a passo, e só então uma lista numerada).
+ */
+export function Features({
+  id,
+  title,
+  items,
+  marker = 'none',
+  style,
+  metadata,
+}: WithMetadata<FeaturesProps>) {
   const shown = metadata.editing
     ? items
     : items.filter((item) => filled(item.title) || filled(item.text))
   if (!shown.length) return null
   const two = shown.length % 2 === 0 && shown.length < 6
+  const List = marker === 'number' ? 'ol' : 'ul'
 
   return (
     <Section id={id} metadata={metadata} style={style}>
       <div className="container">
         <SectionTitle title={title} />
-        <ol className={`cards features${two ? ' cards--two' : ''}`}>
+        <List className={`features${two ? ' features--two' : ''}`}>
           {shown.map((item, index) => (
-            <li className="card" key={index}>
-              <span aria-hidden="true" className="features__number">
-                {index + 1}
-              </span>
+            <li className="features__item" key={index}>
+              {marker === 'number' && (
+                <span aria-hidden="true" className="features__number">
+                  {index + 1}
+                </span>
+              )}
+              {marker === 'icon' && <FeatureIcon name={item.icon ?? 'check'} />}
               {filled(item.title) && <h3>{item.title}</h3>}
               <Paragraphs text={item.text} />
             </li>
           ))}
-        </ol>
+        </List>
       </div>
     </Section>
   )
@@ -229,17 +244,32 @@ export function Testimonials({
     <Section id={id} metadata={metadata} style={style}>
       <div className="container">
         <SectionTitle title={title} />
-        <ul className="cards cards--two testimonials">
-          {shown.map((item, index) => (
-            <li className="card" key={index}>
-              <figure>
-                <blockquote>
-                  <p>{item.quote}</p>
-                </blockquote>
-                {filled(item.name) && <figcaption>{item.name}</figcaption>}
-              </figure>
-            </li>
-          ))}
+        <ul className="testimonials">
+          {shown.map((item, index) => {
+            const photo = getPhoto(metadata, item.photo ?? null)
+            return (
+              <li key={index}>
+                <figure>
+                  <span aria-hidden="true" className="testimonials__mark">
+                    “
+                  </span>
+                  <blockquote>
+                    <p>{item.quote}</p>
+                  </blockquote>
+                  {(filled(item.name) || photo) && (
+                    <figcaption>
+                      {photo && (
+                        <span className="testimonials__photo">
+                          <Photo fill media={photo} sizes="48px" />
+                        </span>
+                      )}
+                      {item.name}
+                    </figcaption>
+                  )}
+                </figure>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </Section>
@@ -258,8 +288,24 @@ export function Faq({ id, title, items, style, metadata }: WithMetadata<FaqProps
         <div className="faq">
           {shown.map((item, index) => (
             // No editor as respostas ficam abertas, para dar para escrever nelas.
-            <details className="card" key={index} open={metadata.editing || undefined}>
-              <summary>{item.question}</summary>
+            <details className="faq__item" key={index} open={metadata.editing || undefined}>
+              <summary>
+                <span>{item.question}</span>
+                <svg
+                  aria-hidden="true"
+                  className="faq__arrow"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </summary>
               <div className="faq__answer">
                 <Paragraphs text={item.answer} />
               </div>
@@ -281,7 +327,7 @@ export function Gallery({ id, title, images, style, metadata }: WithMetadata<Gal
       <div className="container">
         <SectionTitle title={title} />
         {photos.length ? (
-          <ul className="gallery">
+          <ul className={`gallery${photos.length % 2 ? ' gallery--odd' : ''}`}>
             {photos.map((photo, index) => (
               <li key={`${photo.id}-${index}`}>
                 <Photo fill media={photo} sizes="(max-width: 720px) 50vw, 340px" />

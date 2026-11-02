@@ -77,23 +77,62 @@ export const textImagePropsSchema = z.object({
   style: sectionStyle,
 })
 
+/** Ícones dos Destaques (desenhos em `components/FeatureIcon.tsx`). */
+export const FEATURE_ICONS = [
+  'tooth',
+  'smile',
+  'clock',
+  'calendar',
+  'card',
+  'shield',
+  'heart',
+  'star',
+  'phone',
+  'pin',
+  'leaf',
+  'check',
+  'cup',
+  'tool',
+  'bag',
+  'home',
+] as const
+
+/**
+ * Destaques. `marker` e `icon` são opções novas com valor padrão (sem marcador, ícone "certo"):
+ * páginas salvas antes delas continuam válidas e iguais, sem mudar a versão do conteúdo.
+ */
 export const featuresPropsSchema = z.object({
   id: componentId,
   menuLabel,
   title,
+  // `number`: passo a passo (lista numerada). `icon`: cada item com um ícone.
+  marker: z.enum(['none', 'icon', 'number']).default('none'),
   items: z
-    .array(z.object({ title: z.string().max(80), text: z.string().max(300) }))
+    .array(
+      z.object({
+        title: z.string().max(80),
+        text: z.string().max(300),
+        icon: z.enum(FEATURE_ICONS).default('check'),
+      }),
+    )
     .min(1)
     .max(6),
   style: sectionStyle,
 })
 
+/** Depoimentos. A foto é opcional e nova, com padrão "sem foto". */
 export const testimonialsPropsSchema = z.object({
   id: componentId,
   menuLabel,
   title,
   items: z
-    .array(z.object({ quote: z.string().max(500), name: z.string().max(80) }))
+    .array(
+      z.object({
+        quote: z.string().max(500),
+        name: z.string().max(80),
+        photo: photoRefSchema.default(null),
+      }),
+    )
     .min(1)
     .max(8),
   style: sectionStyle,
@@ -278,6 +317,7 @@ export type ButtonValue = z.infer<typeof buttonSchema>
 export type HeroProps = z.infer<typeof heroPropsSchema>
 export type TextImageProps = z.infer<typeof textImagePropsSchema>
 export type FeaturesProps = z.infer<typeof featuresPropsSchema>
+export type FeatureIconName = (typeof FEATURE_ICONS)[number]
 export type TestimonialsProps = z.infer<typeof testimonialsPropsSchema>
 export type FaqProps = z.infer<typeof faqPropsSchema>
 export type GalleryProps = z.infer<typeof galleryPropsSchema>

@@ -15,8 +15,9 @@ import {
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
+import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
-import type { ButtonValue, LinkRef, PhotoRef } from './schema'
+import { type ButtonValue, FEATURE_ICONS, type LinkRef, type PhotoRef } from './schema'
 
 // Configuração do editor: a mesma de desenhar (`renderConfig`), mais os campos que o leigo mexe e
 // o conteúdo inicial de cada seção (ficha das seções). Textos se editam na própria página
@@ -72,6 +73,40 @@ const button: Field = {
   label: 'Botão',
   objectFields: { label: text('Texto do botão (vazio: sem botão)'), link },
 }
+
+const featureMarker: Field = {
+  type: 'radio',
+  label: 'Marcador',
+  options: [
+    { label: 'Nenhum', value: 'none' },
+    { label: 'Ícone', value: 'icon' },
+    { label: 'Números (passo a passo)', value: 'number' },
+  ],
+}
+
+const featureIcon: Field = {
+  type: 'select',
+  label: 'Ícone',
+  options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
+}
+
+const featureItems = (withIcon: boolean): Field => ({
+  type: 'array',
+  label: 'Destaques',
+  min: 1,
+  max: 6,
+  arrayFields: {
+    title: text('Título'),
+    text: textarea('Texto'),
+    ...(withIcon ? { icon: featureIcon } : {}),
+  },
+  defaultItemProps: {
+    title: 'Novo destaque',
+    text: 'Explique em uma ou duas frases.',
+    icon: 'check',
+  },
+  getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
+})
 
 const notice = (message: string): CustomField<undefined> => ({
   type: 'custom',
@@ -151,27 +186,27 @@ const sections: { [K in keyof Components]: Section<K> } = {
   Features: {
     fields: {
       title: text('Título'),
-      items: {
-        type: 'array',
-        label: 'Destaques',
-        min: 1,
-        max: 6,
-        arrayFields: { title: text('Título'), text: textarea('Texto') },
-        defaultItemProps: { title: 'Novo destaque', text: 'Explique em uma ou duas frases.' },
-        getItemSummary: (item) => item.title || 'Destaque',
-      },
+      marker: featureMarker,
+      items: featureItems(false),
       style: sectionStyle,
       menuLabel,
     },
     defaultProps: {
       menuLabel: '',
       title: 'Por que escolher a gente',
+      marker: 'none',
       items: ['Primeiro', 'Segundo', 'Terceiro'].map((name) => ({
         title: `${name} destaque`,
         text: 'Explique em uma ou duas frases.',
+        icon: 'check' as const,
       })),
       style: 'light',
     },
+    // A escolha do ícone de cada item só aparece com o marcador "Ícone".
+    resolveFields: ({ props }, { fields }) => ({
+      ...fields,
+      items: featureItems(props.marker === 'icon'),
+    }),
   },
   Testimonials: {
     fields: {
@@ -181,8 +216,16 @@ const sections: { [K in keyof Components]: Section<K> } = {
         label: 'Depoimentos',
         min: 1,
         max: 8,
-        arrayFields: { quote: textarea('O que o cliente disse'), name: text('Nome') },
-        defaultItemProps: { quote: 'Escreva aqui o que o cliente disse.', name: 'Nome do cliente' },
+        arrayFields: {
+          quote: textarea('O que o cliente disse'),
+          name: text('Nome'),
+          photo: photo('Foto do cliente (opcional)'),
+        },
+        defaultItemProps: {
+          quote: 'Escreva aqui o que o cliente disse.',
+          name: 'Nome do cliente',
+          photo: null,
+        },
         getItemSummary: (item) => item.name || 'Depoimento',
       },
       style: sectionStyle,
@@ -195,10 +238,12 @@ const sections: { [K in keyof Components]: Section<K> } = {
         {
           quote: 'Atendimento excelente do começo ao fim. Recomendo para todo mundo.',
           name: 'Nome do cliente',
+          photo: null,
         },
         {
           quote: 'Fui muito bem recebido desde o primeiro contato. Voltarei com certeza.',
           name: 'Nome do cliente',
+          photo: null,
         },
       ],
       style: 'soft',

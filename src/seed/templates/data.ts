@@ -83,7 +83,7 @@ const packs: Pack[] = [
         slug: 'inicio',
         build: (b) => [
           b.hero({ image: 5, button: 'Conheça nossos cafés', link: toPage(3), style: 'side' }),
-          b.features(),
+          b.features({ icons: ['cup', 'leaf', 'heart'] }),
           b.textImage({ image: 3, style: 'soft' }),
           b.testimonials({ style: 'light' }),
           b.cta({ button: 'Pedir pelo WhatsApp' }),
@@ -104,7 +104,7 @@ const packs: Pack[] = [
         slug: 'nossos-cafes',
         build: (b) => [
           b.hero({ image: 1, button: 'Pedir pelo WhatsApp', style: 'brand', align: 'center' }),
-          b.features(),
+          b.features({ icons: ['cup', 'star', 'bag'] }),
           b.faq({ style: 'soft' }),
         ],
       },
@@ -159,7 +159,7 @@ const packs: Pack[] = [
         slug: 'inicio',
         build: (b) => [
           b.hero({ image: 1, button: 'Agendar avaliação', style: 'side' }),
-          b.features(),
+          b.features({ icons: ['tooth', 'smile', 'calendar'] }),
           b.textImage({ image: 4, style: 'soft' }),
           b.testimonials({ style: 'light' }),
           b.cta({ button: 'Agendar pelo WhatsApp' }),
@@ -170,7 +170,7 @@ const packs: Pack[] = [
         slug: 'tratamentos',
         build: (b) => [
           b.hero({ image: 2, button: 'Agendar avaliação', style: 'brand', align: 'center' }),
-          b.features(),
+          b.features({ icons: ['shield', 'clock', 'card'] }),
           b.faq({ style: 'soft' }),
         ],
       },
@@ -234,7 +234,7 @@ const packs: Pack[] = [
         slug: 'inicio',
         build: (b) => [
           b.hero({ image: 2, button: 'Pedir orçamento', style: 'side' }),
-          b.features(),
+          b.features({ icons: ['tool', 'shield', 'clock'] }),
           b.textImage({ image: 1, style: 'soft' }),
           b.testimonials({ style: 'light' }),
           b.cta({ button: 'Pedir orçamento' }),
@@ -245,7 +245,7 @@ const packs: Pack[] = [
         slug: 'servicos',
         build: (b) => [
           b.hero({ image: 1, button: 'Pedir orçamento', style: 'brand', align: 'center' }),
-          b.features(),
+          b.features({ icons: ['tool', 'check', 'card'] }),
           b.faq({ style: 'soft' }),
         ],
       },
@@ -254,6 +254,7 @@ const packs: Pack[] = [
         slug: 'como-trabalhamos',
         build: (b) => [
           b.hero({ image: 4, button: 'Fale com a gente' }),
+          b.features({ steps: true }),
           b.textImage({ image: 4, side: 'left' }),
           b.gallery({ images: [2, 3, 1] }),
         ],
@@ -310,7 +311,7 @@ const packs: Pack[] = [
         build: (b) => [
           b.hero({ image: 2, button: 'Ver produtos', link: toPage(2), style: 'side' }),
           b.gallery({ images: [2, 1, 3] }),
-          b.features({ style: 'soft' }),
+          b.features({ style: 'soft', icons: ['heart', 'bag', 'star'] }),
           b.testimonials({ style: 'light' }),
           b.cta({ button: 'Encomendar pelo WhatsApp' }),
         ],
@@ -384,7 +385,7 @@ const packs: Pack[] = [
         slug: 'inicio',
         build: (b) => [
           b.hero({ image: 1, button: 'Fale com a gente', style: 'side' }),
-          b.features(),
+          b.features({ icons: ['star', 'heart', 'check'] }),
           b.textImage({ image: 2, style: 'soft' }),
           b.cta({ button: 'Chamar no WhatsApp' }),
         ],
@@ -454,7 +455,12 @@ const packs: Pack[] = [
             style: 'side',
           }),
           b.textImage({ id: 'sobre', menu: 'Sobre', image: 3 }),
-          b.features({ id: 'servicos', menu: 'Serviços', style: 'soft' }),
+          b.features({
+            id: 'servicos',
+            menu: 'Serviços',
+            style: 'soft',
+            icons: ['home', 'pin', 'star'],
+          }),
           b.gallery({ id: 'projetos', menu: 'Projetos', images: [1, 2, 4] }),
           b.testimonials(),
           b.contact({ id: 'contato', menu: 'Contato' }),
@@ -513,7 +519,7 @@ const packs: Pack[] = [
             link: toSection(1, 'inscricao'),
             style: 'side',
           }),
-          b.features(),
+          b.features({ icons: ['check', 'card', 'calendar'] }),
           b.textImage({ image: 2, side: 'left', style: 'soft' }),
           b.testimonials({ style: 'light' }),
           b.form({ id: 'inscricao', form: 1 }),
@@ -576,7 +582,11 @@ const packs: Pack[] = [
             link: toSection(1, 'inscricao'),
             style: 'side',
           }),
-          b.features({ id: 'programacao', menu: 'Programação' }),
+          b.features({
+            id: 'programacao',
+            menu: 'Programação',
+            icons: ['calendar', 'clock', 'pin'],
+          }),
           b.gallery({ images: [2, 3, 4], style: 'soft' }),
           b.contact({ id: 'local', menu: 'Local' }),
           b.form({ id: 'inscricao', menu: 'Inscrição', form: 1 }),
@@ -647,7 +657,7 @@ const packs: Pack[] = [
           }),
           b.textImage({ id: 'sobre', menu: 'Sobre', image: 1 }),
           b.gallery({ id: 'trabalhos', menu: 'Trabalhos', images: [2, 3, 4], style: 'soft' }),
-          b.features({ id: 'experiencia', menu: 'Experiência' }),
+          b.features({ id: 'experiencia', menu: 'Experiência', icons: ['star', 'check', 'heart'] }),
           b.contact({ id: 'contato', menu: 'Contato', style: 'soft' }),
         ],
       },
@@ -868,7 +878,7 @@ const pageModels: {
     slug: 'promocao',
     build: (b) => [
       b.hero({ image: 1, button: 'Quero aproveitar' }),
-      b.features(),
+      b.features({ icons: ['star', 'check', 'card'] }),
       b.gallery({ images: [2, 3, 4], style: 'soft' }),
       b.testimonials({ style: 'light' }),
       b.cta({ button: 'Pedir agora' }),

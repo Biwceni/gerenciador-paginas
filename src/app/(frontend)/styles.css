@@ -659,6 +659,12 @@
     .gallery {
       grid-template-columns: 1fr 1fr;
     }
+
+    /* Número ímpar de fotos: a última ocupa as duas colunas, em vez de ficar sozinha. */
+    .gallery--odd li:last-child {
+      grid-column: 1 / -1;
+      aspect-ratio: 2;
+    }
   }
 
   /* Âncoras do menu: a seção não fica colada no topo da tela ao chegar por um link. */
@@ -666,60 +672,94 @@
     scroll-margin-top: 12px;
   }
 
-  /* Cartões (destaques, depoimentos, perguntas): sempre sobre o fundo do site, em qualquer fundo. */
+  /*
+   * Destaques, depoimentos e perguntas não usam caixas: cada um tem a sua cara. Cartão com borda
+   * fica só onde separa algo clicável ou independente (como a Lista de links).
+   */
 
-  .cards {
+  /* Destaques: sem cartão. Marcador opcional: ícone em linha ou número (passo a passo). */
+
+  .features {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(28px, 4vw, 44px);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .cards--two {
-    grid-template-columns: repeat(2, 1fr);
+  .features--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .card {
+  .features__item {
     display: grid;
     align-content: start;
+    justify-items: start;
     gap: 8px;
-    padding: 22px;
-    border: 1px solid var(--color-line);
-    border-radius: 16px;
-    background: var(--color-background);
-    color: var(--color-text);
   }
 
-  .card a:focus-visible {
-    outline-color: var(--color-primary);
+  .features__icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 4px;
+    color: var(--color-primary);
   }
-
-  /* Destaques */
 
   .features__number {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 4px;
     border-radius: 50%;
-    background: var(--color-surface);
-    color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
     font-family: var(--font-headings);
     font-weight: 700;
+  }
+
+  .section--brand .features__icon {
+    color: var(--color-on-primary);
+  }
+
+  .section--brand .features__number {
+    background: var(--color-on-primary);
+    color: var(--color-primary);
   }
 
   .features h3 {
     font-size: var(--fs-h3);
   }
 
-  /* Depoimentos */
+  /* Depoimentos: sem caixa, aspas grandes na cor principal e o nome embaixo. */
+
+  .testimonials {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(28px, 5vw, 56px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 
   .testimonials figure {
     display: grid;
-    gap: 12px;
+    gap: 14px;
     margin: 0;
+  }
+
+  .testimonials__mark {
+    height: 0.55em;
+    font-family: var(--font-headings);
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+  }
+
+  .section--brand .testimonials__mark {
+    color: var(--color-on-primary);
   }
 
   .testimonials blockquote {
@@ -730,27 +770,45 @@
   }
 
   .testimonials figcaption {
-    font-weight: 600;
-    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
   }
 
-  /* Perguntas frequentes */
+  .testimonials__photo {
+    position: relative;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 50%;
+  }
+
+  /* Perguntas frequentes: linhas com divisória, a seta nossa à direita, que gira ao abrir. */
 
   .faq {
     display: grid;
-    gap: 10px;
-    max-width: 760px;
+    border-top: 1px solid var(--color-line);
   }
 
-  .faq .card {
-    display: block;
-    padding: 14px 18px;
-    border-radius: 12px;
+  .faq__item {
+    border-bottom: 1px solid var(--color-line);
   }
 
   .faq summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
     font-weight: 600;
+    list-style: none;
     cursor: pointer;
+  }
+
+  .faq summary::-webkit-details-marker {
+    display: none;
   }
 
   .faq summary:focus-visible {
@@ -758,11 +816,33 @@
     outline-offset: 3px;
   }
 
+  /* Alinhada à primeira linha da pergunta, nunca sozinha numa linha. */
+  .faq__arrow {
+    flex: none;
+    margin-top: calc((1lh - 20px) / 2);
+    color: var(--color-primary);
+    transition: transform 0.2s;
+  }
+
+  .section--brand .faq__arrow {
+    color: var(--color-on-primary);
+  }
+
+  .faq__item[open] .faq__arrow {
+    transform: rotate(180deg);
+  }
+
   .faq__answer {
     display: grid;
     gap: 10px;
-    margin-top: 8px;
-    opacity: 0.8;
+    padding-bottom: 18px;
+    opacity: 0.85;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .faq__arrow {
+      transition: none;
+    }
   }
 
   /* Contato e endereço */
@@ -1023,8 +1103,9 @@
   }
 
   @media (max-width: 720px) {
-    .cards,
-    .cards--two,
+    .features,
+    .features--two,
+    .testimonials,
     .contact,
     .columns {
       grid-template-columns: 1fr;

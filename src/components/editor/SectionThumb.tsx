@@ -31,34 +31,44 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar f={ACCENT} h={28} o={0.45} r={3} w={23} x={33} y={6} />
     </>
   ),
+  // Sem caixas: ícone em linha, título e texto de cada destaque.
   Features: (
     <>
-      <Bar h={24} r={3} w={16} x={3} y={8} />
-      <Bar h={24} r={3} w={16} x={22} y={8} />
-      <Bar h={24} r={3} w={16} x={41} y={8} />
-      <circle cx={11} cy={15} r={3} style={{ fill: ACCENT }} />
-      <circle cx={30} cy={15} r={3} style={{ fill: ACCENT }} />
-      <circle cx={49} cy={15} r={3} style={{ fill: ACCENT }} />
+      {[4, 23, 42].map((x) => (
+        <React.Fragment key={x}>
+          <circle cx={x + 4} cy={11} fill="none" r={3.5} style={{ stroke: ACCENT }} />
+          <Bar f={ACCENT} h={3} r={1.5} w={12} x={x} y={19} />
+          <Bar h={2.5} r={1.25} w={14} x={x} y={25} />
+          <Bar h={2.5} r={1.25} w={10} x={x} y={30} />
+        </React.Fragment>
+      ))}
     </>
   ),
+  // Aspas grandes, o texto e o nome embaixo, sem caixa.
   Testimonials: (
     <>
-      <Bar h={24} r={3} w={25} x={3} y={8} />
-      <Bar h={24} r={3} w={25} x={32} y={8} />
-      <text fontSize={14} style={{ fill: ACCENT }} x={7} y={22}>
-        “
-      </text>
-      <text fontSize={14} style={{ fill: ACCENT }} x={36} y={22}>
-        “
-      </text>
+      {[4, 33].map((x) => (
+        <React.Fragment key={x}>
+          <text fontSize={18} fontWeight={700} style={{ fill: ACCENT }} x={x} y={17}>
+            “
+          </text>
+          <Bar h={3} r={1.5} w={22} x={x} y={19} />
+          <Bar h={3} r={1.5} w={18} x={x} y={25} />
+          <Bar f={ACCENT} h={3} r={1.5} w={10} x={x} y={32} />
+        </React.Fragment>
+      ))}
     </>
   ),
+  // Linhas com divisória e a seta à direita.
   Faq: (
     <>
-      <Bar h={7} w={48} x={6} y={7} />
-      <Bar h={7} w={48} x={6} y={17} />
-      <Bar h={7} w={48} x={6} y={27} />
-      <path d="M49 9l2 2 2-2" fill="none" style={{ stroke: ACCENT }} />
+      {[8, 19, 30].map((y) => (
+        <React.Fragment key={y}>
+          <Bar h={3} r={1.5} w={34} x={6} y={y} />
+          <path d={`M48 ${y}l2.5 2.5 2.5-2.5`} fill="none" style={{ stroke: ACCENT }} />
+          <Bar h={0.8} r={0} w={48} x={6} y={y + 6} />
+        </React.Fragment>
+      ))}
     </>
   ),
   Gallery: (
