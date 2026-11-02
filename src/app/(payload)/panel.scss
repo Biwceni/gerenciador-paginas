@@ -822,39 +822,62 @@ html[data-theme] {
   }
 }
 
+// Miniatura do cartão: uma folha com as seções do modelo, de cima para baixo. O que não cabe
+// fica cortado embaixo, como uma página que continua.
 .gp-mini {
-  background: var(--gp-surface-2);
-  border-radius: 10px;
-  padding: 8px;
   display: grid;
-  gap: 4px;
-  height: 110px;
-  align-content: start;
+  justify-items: center;
+  height: 132px;
+  padding: 10px 10px 0;
   overflow: hidden;
+  border-radius: 10px;
+  background: var(--gp-surface-2);
 
-  i {
+  &__sheet {
+    display: grid;
+    align-content: start;
+    gap: 3px;
+    width: 96px;
+    min-height: 100%;
+    padding: 6px 6px 0;
+    border-radius: 6px 6px 0 0;
+    background: var(--gp-surface);
+    box-shadow: 0 0 0 1px var(--gp-line);
+  }
+
+  &__section {
     display: block;
-    border-radius: 4px;
-    background: var(--gp-line);
-    height: 12px;
+    width: 84px;
+    height: 56px;
   }
 
-  .hero {
-    height: 42px;
+  &__title {
+    display: block;
+    width: 60%;
+    height: 8px;
+    margin: 6px 0 8px;
+    border-radius: 3px;
     background: var(--gp-accent);
-    opacity: 0.75;
   }
 
-  .cols {
-    height: 22px;
-    background: repeating-linear-gradient(90deg, var(--gp-line) 0 30%, transparent 30% 35%);
+  &__add {
+    display: grid;
+    place-items: center;
+    height: 48px;
+    border: 2px dashed var(--gp-line-strong);
+    border-radius: 6px;
+    color: var(--gp-muted);
   }
 
-  .cta {
-    height: 16px;
-    background: var(--gp-accent);
-    opacity: 0.45;
+  &--icon {
+    place-items: center;
+    padding: 0;
+    color: var(--gp-accent);
   }
+}
+
+.gp-btn--fit {
+  justify-self: start;
 }
 
 // ---------- início guiado (fase 4) ----------

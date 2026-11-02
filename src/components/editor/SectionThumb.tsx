@@ -2,13 +2,15 @@ import React from 'react'
 
 import type { Components } from '@/puck/config'
 
-const ACCENT = '#0f6b55'
-const LINE = '#c9cfc6'
+// Cores do painel (claro ou escuro). Pelo `style`, que aceita variáveis do CSS.
+const ACCENT = 'var(--gp-accent)'
+const LINE = 'var(--gp-line)'
+const ON_ACCENT = 'var(--gp-accent-ink)'
 
 type BarProps = { x: number; y: number; w: number; h: number; r?: number; f?: string; o?: number }
 
 const Bar = ({ x, y, w, h, r = 2, f = LINE, o }: BarProps) => (
-  <rect fill={f} height={h} opacity={o} rx={r} width={w} x={x} y={y} />
+  <rect height={h} opacity={o} rx={r} style={{ fill: f }} width={w} x={x} y={y} />
 )
 
 /** Desenho de cada seção na lista "Adicionar seção" (os mesmos do protótipo). */
@@ -16,9 +18,9 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
   Hero: (
     <>
       <Bar f={ACCENT} h={36} o={0.8} r={3} w={56} x={2} y={2} />
-      <Bar f="#fff" h={4} w={26} x={8} y={12} />
-      <Bar f="#fff" h={3} o={0.8} r={1.5} w={18} x={8} y={20} />
-      <Bar f="#fff" h={5} r={2.5} w={12} x={8} y={27} />
+      <Bar f={ON_ACCENT} h={4} w={26} x={8} y={12} />
+      <Bar f={ON_ACCENT} h={3} o={0.8} r={1.5} w={18} x={8} y={20} />
+      <Bar f={ON_ACCENT} h={5} r={2.5} w={12} x={8} y={27} />
     </>
   ),
   TextImage: (
@@ -34,19 +36,19 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar h={24} r={3} w={16} x={3} y={8} />
       <Bar h={24} r={3} w={16} x={22} y={8} />
       <Bar h={24} r={3} w={16} x={41} y={8} />
-      <circle cx={11} cy={15} fill={ACCENT} r={3} />
-      <circle cx={30} cy={15} fill={ACCENT} r={3} />
-      <circle cx={49} cy={15} fill={ACCENT} r={3} />
+      <circle cx={11} cy={15} r={3} style={{ fill: ACCENT }} />
+      <circle cx={30} cy={15} r={3} style={{ fill: ACCENT }} />
+      <circle cx={49} cy={15} r={3} style={{ fill: ACCENT }} />
     </>
   ),
   Testimonials: (
     <>
       <Bar h={24} r={3} w={25} x={3} y={8} />
       <Bar h={24} r={3} w={25} x={32} y={8} />
-      <text fill={ACCENT} fontSize={14} x={7} y={22}>
+      <text fontSize={14} style={{ fill: ACCENT }} x={7} y={22}>
         “
       </text>
-      <text fill={ACCENT} fontSize={14} x={36} y={22}>
+      <text fontSize={14} style={{ fill: ACCENT }} x={36} y={22}>
         “
       </text>
     </>
@@ -56,7 +58,7 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar h={7} w={48} x={6} y={7} />
       <Bar h={7} w={48} x={6} y={17} />
       <Bar h={7} w={48} x={6} y={27} />
-      <path d="M49 9l2 2 2-2" fill="none" stroke={ACCENT} />
+      <path d="M49 9l2 2 2-2" fill="none" style={{ stroke: ACCENT }} />
     </>
   ),
   Gallery: (
@@ -69,8 +71,8 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
   CallToAction: (
     <>
       <Bar f={ACCENT} h={24} r={3} w={56} x={2} y={8} />
-      <Bar f="#fff" h={4} w={24} x={18} y={13} />
-      <Bar f="#fff" h={5} r={2.5} w={14} x={23} y={22} />
+      <Bar f={ON_ACCENT} h={4} w={24} x={18} y={13} />
+      <Bar f={ON_ACCENT} h={5} r={2.5} w={14} x={23} y={22} />
     </>
   ),
   Contact: (
@@ -79,12 +81,12 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar h={3} r={1.5} w={16} x={4} y={16} />
       <Bar h={3} r={1.5} w={18} x={4} y={22} />
       <Bar h={28} r={3} w={25} x={31} y={6} />
-      <circle cx={43} cy={18} fill={ACCENT} r={4} />
+      <circle cx={43} cy={18} r={4} style={{ fill: ACCENT }} />
     </>
   ),
   LinkList: (
     <>
-      <circle cx={30} cy={8} fill={ACCENT} r={5} />
+      <circle cx={30} cy={8} r={5} style={{ fill: ACCENT }} />
       <Bar f={ACCENT} h={6} o={0.7} r={3} w={36} x={12} y={16} />
       <Bar f={ACCENT} h={6} o={0.7} r={3} w={36} x={12} y={25} />
       <Bar f={ACCENT} h={5} o={0.7} r={2.5} w={36} x={12} y={34} />
@@ -122,7 +124,7 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
   ),
   Privacy: (
     <>
-      <path d="M30 5l9 3.5v7c0 5-4 8.5-9 10-5-1.5-9-5-9-10v-7z" fill={ACCENT} />
+      <path d="M30 5l9 3.5v7c0 5-4 8.5-9 10-5-1.5-9-5-9-10v-7z" style={{ fill: ACCENT }} />
       <Bar h={3} r={1.5} w={44} x={8} y={30} />
     </>
   ),
@@ -158,15 +160,15 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   ColumnButton: 'Um botão, dentro de uma coluna',
 }
 
-export function SectionThumb({ type }: { type: keyof Components }) {
+export function SectionThumb({
+  className = 'ed-palitem__thumb',
+  type,
+}: {
+  className?: string
+  type: keyof Components
+}) {
   return (
-    <svg
-      aria-hidden="true"
-      className="ed-palitem__thumb"
-      height="40"
-      viewBox="0 0 60 40"
-      width="60"
-    >
+    <svg aria-hidden="true" className={className} height="40" viewBox="0 0 60 40" width="60">
       {DRAWINGS[type]}
     </svg>
   )

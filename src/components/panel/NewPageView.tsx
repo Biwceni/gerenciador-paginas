@@ -6,19 +6,11 @@ import { getServerURL } from '@/lib/site'
 import { parsePageContent, type PuckPageData } from '@/puck/schema'
 
 import { loadPageRows } from './data'
-import { type MiniBlock, NewPageForm } from './NewPageForm'
+import { NewPageForm } from './NewPageForm'
 import { PanelTemplate, requireUser } from './PanelTemplate'
 
-/** Desenho em blocos da página, para o cartão do modelo (como o `mini` do protótipo). */
-function miniBlocks(data: PuckPageData): MiniBlock[] {
-  return data.content.slice(0, 5).map((item) => {
-    if (item.type === 'Hero') return 'hero'
-    if (item.type === 'Features' || item.type === 'Gallery' || item.type === 'Columns')
-      return 'cols'
-    if (item.type === 'CallToAction') return 'cta'
-    return 'l'
-  })
-}
+/** Seções que o modelo cria, de cima para baixo: o cartão desenha cada uma. */
+const sectionTypes = (data: PuckPageData) => data.content.map((item) => item.type)
 
 /**
  * Tela "Nova página" (`/admin/paginas/nova`): um modelo de página (fase 4), em branco ou cópia de
@@ -58,7 +50,7 @@ export async function NewPageView(props: AdminViewServerProps) {
               key: doc.key,
               title: doc.name,
               text: doc.description ?? '',
-              mini: miniBlocks(parsed.data.data),
+              sections: sectionTypes(parsed.data.data),
             },
           ]
         })}
