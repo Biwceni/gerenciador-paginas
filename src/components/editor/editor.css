@@ -5,18 +5,36 @@
 
 .ed-root,
 .ed-overlay {
-  --ed-bg: var(--theme-bg, #fff);
-  --ed-text: var(--theme-text, #1b1b1b);
-  --ed-muted: var(--theme-elevation-600, #5f6368);
-  --ed-line: var(--theme-elevation-150, #dfe1e5);
-  --ed-soft: var(--theme-elevation-50, #f4f5f6);
-  /* Verde do protótipo do painel. */
-  --ed-accent: #0f6b55;
-  --ed-accent-soft: #e3f2ec;
-  --ed-on-accent: #fff;
-  --ed-warn: var(--theme-warning-700, #8a5a00);
-  --ed-warn-soft: var(--theme-warning-100, #fff4dc);
-  --ed-ok-soft: var(--theme-success-100, #e3f2ec);
+  /*
+   * Cores do tema do painel (claro ou escuro, como a pessoa escolheu em Minha conta). O Payload
+   * troca os `--theme-*` e o panel.scss troca os `--gp-*` junto com o `data-theme`.
+   */
+  --ed-bg: var(--theme-elevation-0);
+  --ed-text: var(--theme-text);
+  --ed-muted: var(--theme-elevation-600);
+  --ed-line: var(--theme-elevation-150);
+  --ed-line-strong: var(--gp-line-strong);
+  --ed-soft: var(--theme-elevation-50);
+  /* Verde do painel. */
+  --ed-accent: var(--gp-accent);
+  --ed-accent-soft: var(--gp-accent-soft);
+  --ed-on-accent: var(--gp-accent-ink);
+  --ed-warn: var(--gp-warn);
+  --ed-warn-soft: var(--gp-warn-soft);
+  --ed-ok-soft: var(--gp-ok-soft);
+  /* Laterais, campos e janelas do Puck com as mesmas cores. */
+  --puck-color-surface: var(--ed-bg);
+  --puck-color-surface-muted: var(--ed-soft);
+  --puck-color-surface-subtle: var(--ed-soft);
+  --puck-color-border: var(--ed-line);
+  --puck-color-border-muted: var(--ed-line);
+  --puck-color-border-hover: var(--ed-line-strong);
+  --puck-color-text: var(--ed-text);
+  --puck-color-text-secondary: var(--ed-muted);
+  --puck-color-text-muted: var(--ed-muted);
+  --puck-color-text-subtle: var(--ed-muted);
+  --puck-color-interactive-neutral-hover: var(--ed-soft);
+  --puck-field-color-border: var(--ed-line-strong);
   font-family: var(--font-body, system-ui, sans-serif);
   font-size: var(--gp-fs-text);
   /*
@@ -50,14 +68,6 @@
   --puck-color-azure-10: var(--ed-accent-soft);
   --puck-color-azure-11: var(--ed-accent-soft);
   --puck-color-azure-12: var(--ed-accent-soft);
-}
-
-/* As janelas ficam fora de `.ed-root`, por isso as cores valem para as duas. */
-[data-theme='dark'] .ed-root,
-[data-theme='dark'] .ed-overlay {
-  --ed-accent: #4fb592;
-  --ed-accent-soft: #17352c;
-  --ed-on-accent: #0b1f19;
 }
 
 .ed-root {
@@ -126,7 +136,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid var(--ed-line);
+  border: 1px solid var(--ed-line-strong);
   border-radius: 10px;
   background: var(--ed-bg);
   color: var(--ed-text);
@@ -227,7 +237,7 @@
   width: 100%;
   min-height: 38px;
   padding: 7px 10px;
-  border: 1px solid var(--ed-line);
+  border: 1px solid var(--ed-line-strong);
   border-radius: 8px;
   background: var(--ed-bg);
   color: var(--ed-text);
@@ -779,7 +789,7 @@ textarea.ed-input {
 }
 
 .ed-btn--danger {
-  color: var(--theme-error-500, #b42318);
+  color: var(--gp-danger);
 }
 
 /* Faixa acima da prévia: computador ou celular. */
@@ -808,7 +818,7 @@ textarea.ed-input {
   display: flex;
   gap: 4px;
   padding: 2px;
-  border: 1px solid var(--ed-line);
+  border: 1px solid var(--ed-line-strong);
   border-radius: 10px;
   background: var(--ed-bg);
 }
