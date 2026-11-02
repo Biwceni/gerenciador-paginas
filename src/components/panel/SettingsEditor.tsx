@@ -29,6 +29,8 @@ import {
 import { FONT_NAME_PATTERN } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
+import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
+import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
 import { SiteFrame } from './SiteFrame'
@@ -123,6 +125,22 @@ function toSiteData(state: SettingsState) {
   }
 }
 
+const PRESET_FONTS_URL = googleFontsURL(
+  FONT_PRESETS.flatMap((preset) => [preset.headings, preset.body]),
+  `Aa${FONT_PRESETS.map((preset) => preset.name).join('')}`,
+)
+
+/** Amostra embaixo do campo de fonte, assim que o Google acha a fonte digitada. */
+function FontSampleLine({ name, text }: { name: string; text: string }) {
+  const sample = useFontSample(name, text)
+  if (sample !== 'found') return null
+  return (
+    <span className="gp-fontsample" style={{ fontFamily: fontStack(normalizeFontName(name)) }}>
+      {text}
+    </span>
+  )
+}
+
 const googleFontCSS = (name: string) =>
   `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g, '+')}&display=swap`
 
@@ -151,6 +169,7 @@ export function SettingsEditor({
   const [hexText, setHexText] = useState<SiteColors>(initial.colors)
   const [photos, setPhotos] = useState(initialPhotos)
   const [choosing, setChoosing] = useState<'logo' | 'shareImage' | null>(null)
+  const [fullPreview, setFullPreview] = useState(false)
 
   const errors = validate(state)
   const photo = (id: number | null) => photos.find((item) => item.id === id) ?? null
@@ -309,6 +328,57 @@ export function SettingsEditor({
   const homeInList = homeLive || draftHome?.id === state.homepage
   const logo = photo(state.logo)
   const shareImage = photo(state.shareImage)
+
+  // Site de mentira da prévia: na miniatura e, em tamanho real, na janela.
+  const preview = (
+    <>
+      <SiteHeaderView
+        button={{ label: 'Fale conosco', href: '/' }}
+        items={['Início', 'Sobre', 'Contato'].map((label) => ({
+          id: label,
+          label,
+          href: '/',
+          current: label === 'Início',
+        }))}
+        logo={logo}
+        name={state.name || 'Meu site'}
+      />
+      <section className="section section--light">
+        <div className="container">
+          <h2 className="section-title">
+            {state.tagline.split('.')[0] || 'Assim fica o seu site'}
+          </h2>
+          <p>Assim ficam os textos do seu site, com as letras e as cores que você escolheu.</p>
+          <p style={{ marginTop: 20 }}>
+            <span className="button">Conheça</span>
+          </p>
+        </div>
+      </section>
+      <section className="section section--soft" style={{ paddingBlock: 28 }}>
+        <div className="container">Faixa com o fundo suave</div>
+      </section>
+      <section className="section section--brand" style={{ paddingBlock: 28 }}>
+        <div className="container">
+          <b>Faixa com a cor principal</b>
+        </div>
+      </section>
+      <SiteFooterView
+        contact={{
+          whatsapp: state.contact.whatsapp || null,
+          whatsappHref: whatsAppURL(state.contact.whatsapp),
+          email: state.contact.email || null,
+          address: state.contact.address || null,
+          hours: state.contact.hours || null,
+        }}
+        menu={[]}
+        name={state.name || 'Meu site'}
+        showContact
+        social={footerSocial({ social: state.social } as Partial<Site>)}
+        text={null}
+      />
+    </>
+  )
+  const sampleText = state.tagline.trim() || 'Venha conhecer o nosso trabalho'
 
   return (
     <div className="gp-page">
@@ -543,17 +613,28 @@ export function SettingsEditor({
                   Use qualquer fonte do Google Fonts: escolha da lista ou digite o nome. As
                   combinações abaixo são só atalhos.
                 </span>
-                <div className="gp-seg" role="group" aria-label="Combinações de letras">
+                {/* Só as fontes dos atalhos e só as letras que aparecem neles. */}
+                <link href={PRESET_FONTS_URL} precedence="default" rel="stylesheet" />
+                <div className="gp-fontpresets" role="group" aria-label="Combinações de letras">
                   {FONT_PRESETS.map((preset) => (
                     <button
                       aria-pressed={
                         state.fonts.headings === preset.headings && state.fonts.body === preset.body
                       }
+                      className="gp-fontpreset"
                       key={preset.name}
                       onClick={() => applyFonts({ headings: preset.headings, body: preset.body })}
+                      title={`${preset.headings} e ${preset.body}`}
                       type="button"
                     >
-                      {preset.name}
+                      <span
+                        aria-hidden="true"
+                        className="gp-fontpreset__aa"
+                        style={{ fontFamily: fontStack(preset.headings) }}
+                      >
+                        Aa
+                      </span>
+                      <span style={{ fontFamily: fontStack(preset.body) }}>{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -584,8 +665,10 @@ export function SettingsEditor({
                         spellCheck={false}
                         value={fontText[role]}
                       />
-                      {fontError[role] && (
+                      {fontError[role] ? (
                         <span className="gp-hint gp-hint--error">{fontError[role]}</span>
+                      ) : (
+                        <FontSampleLine name={fontText[role]} text={sampleText} />
                       )}
                     </div>
                   ))}
@@ -603,7 +686,17 @@ export function SettingsEditor({
             </div>
 
             <div className="gp-style__preview">
-              <span className="gp-label">Prévia</span>
+              <div className="gp-previewbox__cap">
+                <span className="gp-label">Prévia</span>
+                <button
+                  className="gp-btn gp-btn--sm"
+                  onClick={() => setFullPreview(true)}
+                  type="button"
+                >
+                  <PanelIcon name="eye" size={14} />
+                  Ver em tamanho real
+                </button>
+              </div>
               <div className="gp-previewbox__frame">
                 <SiteFrame
                   fontFaces={fontFaces}
@@ -612,53 +705,7 @@ export function SettingsEditor({
                   title="Prévia das cores e letras"
                   width={1100}
                 >
-                  <SiteHeaderView
-                    button={{ label: 'Fale conosco', href: '/' }}
-                    items={['Início', 'Sobre', 'Contato'].map((label) => ({
-                      id: label,
-                      label,
-                      href: '/',
-                      current: label === 'Início',
-                    }))}
-                    logo={logo}
-                    name={state.name || 'Meu site'}
-                  />
-                  <section className="section section--light">
-                    <div className="container">
-                      <h2 className="section-title">
-                        {state.tagline.split('.')[0] || 'Assim fica o seu site'}
-                      </h2>
-                      <p>
-                        Assim ficam os textos do seu site, com as letras e as cores que você
-                        escolheu.
-                      </p>
-                      <p style={{ marginTop: 20 }}>
-                        <span className="button">Conheça</span>
-                      </p>
-                    </div>
-                  </section>
-                  <section className="section section--soft" style={{ paddingBlock: 28 }}>
-                    <div className="container">Faixa com o fundo suave</div>
-                  </section>
-                  <section className="section section--brand" style={{ paddingBlock: 28 }}>
-                    <div className="container">
-                      <b>Faixa com a cor principal</b>
-                    </div>
-                  </section>
-                  <SiteFooterView
-                    contact={{
-                      whatsapp: state.contact.whatsapp || null,
-                      whatsappHref: whatsAppURL(state.contact.whatsapp),
-                      email: state.contact.email || null,
-                      address: state.contact.address || null,
-                      hours: state.contact.hours || null,
-                    }}
-                    menu={[]}
-                    name={state.name || 'Meu site'}
-                    showContact
-                    social={footerSocial({ social: state.social } as Partial<Site>)}
-                    text={null}
-                  />
+                  {preview}
                 </SiteFrame>
               </div>
             </div>
@@ -684,7 +731,7 @@ export function SettingsEditor({
           {group('contact', 'hours', 'Horário de funcionamento', 'Ex.: Seg a sáb, das 7h às 19h.')}
         </section>
 
-        <div className="gp-col">
+        <div>
           <section className="gp-card">
             <div>
               <h2>Redes sociais</h2>
@@ -696,9 +743,11 @@ export function SettingsEditor({
             {group('social', 'tiktok', 'TikTok')}
             {group('social', 'linkedin', 'LinkedIn')}
           </section>
+        </div>
 
-          <section className="gp-card">
-            <h2>Google e compartilhamento</h2>
+        <section className="gp-card gp-grid2__full">
+          <h2>Google e compartilhamento</h2>
+          <div className="gp-grid2">
             {text('seoDescription', 'Descrição do site no Google', {
               multiline: true,
               max: 160,
@@ -740,12 +789,12 @@ export function SettingsEditor({
                 pode ter a sua.
               </span>
             </div>
-            <ul className="gp-checklist">
-              <li>Mapa do site enviado ao Google, atualizado sozinho a cada publicação.</li>
-              <li>Páginas em rascunho ficam escondidas: o Google só vê o que está no ar.</li>
-            </ul>
-          </section>
-        </div>
+          </div>
+          <ul className="gp-checklist">
+            <li>Mapa do site enviado ao Google, atualizado sozinho a cada publicação.</li>
+            <li>Páginas em rascunho ficam escondidas: o Google só vê o que está no ar.</li>
+          </ul>
+        </section>
 
         <div className="gp-grid2__full">{people}</div>
 
@@ -776,6 +825,26 @@ export function SettingsEditor({
           .
         </span>
       </p>
+
+      {fullPreview && (
+        <PanelDialog
+          onClose={() => setFullPreview(false)}
+          size="full"
+          title="Prévia em tamanho real"
+        >
+          <div className="gp-previewbox__frame">
+            <SiteFrame
+              fontFaces={fontFaces}
+              stylesheets={previewFonts.map(googleFontCSS)}
+              theme={themeStyle(previewSite) as Record<string, string>}
+              title="Prévia das cores e letras em tamanho real"
+              width={1100}
+            >
+              {preview}
+            </SiteFrame>
+          </div>
+        </PanelDialog>
+      )}
 
       {choosing && (
         <PhotoChooser
