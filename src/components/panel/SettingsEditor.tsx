@@ -15,7 +15,6 @@ import { themeStyle } from '@/components/site/theme'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram, whatsAppURL } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
-import { initials } from '@/lib/site'
 import {
   COLOR_FIELDS,
   COLOR_PRESETS,
@@ -426,12 +425,8 @@ export function SettingsEditor({
               {logo ? (
                 <img alt="Logo" className="gp-thumb gp-thumb--logo" src={thumbnailURL(logo)} />
               ) : (
-                <span
-                  aria-hidden="true"
-                  className="gp-thumb gp-thumb--initials"
-                  style={themeStyle(previewSite) as React.CSSProperties}
-                >
-                  {initials(state.name || 'Meu site')}
+                <span aria-hidden="true" className="gp-thumb gp-thumb--empty">
+                  <PanelIcon name="image" />
                 </span>
               )}
               <div className="gp-stack">
@@ -449,10 +444,12 @@ export function SettingsEditor({
                     onClick={() => update({ logo: null })}
                     type="button"
                   >
-                    Usar as iniciais
+                    Tirar o logo
                   </button>
                 ) : (
-                  <span className="gp-small gp-muted">Sem logo, o site usa as iniciais.</span>
+                  <span className="gp-small gp-muted">
+                    Sem logo, o topo do site mostra só o nome.
+                  </span>
                 )}
               </div>
             </div>

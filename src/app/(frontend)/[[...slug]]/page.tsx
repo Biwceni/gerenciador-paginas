@@ -19,7 +19,7 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
-import { FALLBACK_SITE_NAME, initials } from '@/lib/site'
+import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Media, Page } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import { resolveReferences } from '@/puck/references'
@@ -132,13 +132,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
       <>
         <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={homepageId} />
         <main className="site-soon" id="conteudo">
-          {logo ? (
-            <Photo className="site-soon__logo" media={logo} sizes="160px" />
-          ) : (
-            <span aria-hidden="true" className="site-header__initials site-soon__initials">
-              {initials(name)}
-            </span>
-          )}
+          {logo && <Photo className="site-soon__logo" media={logo} sizes="160px" />}
           <h1>{name}</h1>
           <p>Site em construção. Volte em breve.</p>
           {whatsappHref && (

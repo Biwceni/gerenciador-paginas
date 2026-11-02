@@ -179,27 +179,24 @@
     padding-block: 14px;
   }
 
+  /* Sem logo, só o nome do site, na fonte dos títulos. */
   .site-header__brand {
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
     font-family: var(--font-headings);
-    font-size: 19px;
+    font-size: 21px;
     font-weight: 700;
+    line-height: 1.2;
     text-decoration: none;
   }
 
-  .site-header__initials {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-size: 14px;
+  /* No computador o nome fica numa linha: o topo mede se ele e o menu cabem (HeaderMenu). */
+  @media (min-width: 721px) {
+    .site-header__brand span {
+      white-space: nowrap;
+    }
   }
 
   .site-header__logo {
@@ -218,6 +215,29 @@
     padding: 0;
     list-style: none;
     font-size: 15px;
+  }
+
+  /* O botão do topo nunca quebra em duas linhas. */
+  .site-header__nav .button {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Não coube numa linha: menu escondido (mas ainda medido) e o ☰ no lugar. */
+  .site-header--compact .site-header__nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .site-header--compact .site-header__burger {
+    display: grid;
+  }
+
+  .site-header--compact .site-header__mobile:not([hidden]) {
+    display: grid;
   }
 
   .site-header__nav ul a,
@@ -246,8 +266,43 @@
     cursor: pointer;
   }
 
+  /* Menu do ☰, embaixo do topo: no celular e quando o topo não cabe numa linha. */
   .site-header__mobile {
     display: none;
+  }
+
+  .site-header__mobile:not([hidden]) {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    gap: 4px;
+    padding: 8px clamp(18px, 5vw, 48px) 16px;
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .site-header__mobile ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-header__mobile ul a {
+    display: block;
+    padding: 10px 0;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .site-header__mobile ul a[aria-current='page'] {
+    color: var(--color-primary);
+  }
+
+  .site-header__mobile .button {
+    justify-content: center;
+    margin-top: 8px;
   }
 
   @media (max-width: 720px) {
@@ -256,7 +311,7 @@
     }
 
     .site-header__brand {
-      font-size: 17px;
+      font-size: 19px;
     }
 
     .site-header__nav {
@@ -268,38 +323,7 @@
     }
 
     .site-header__mobile:not([hidden]) {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      z-index: 5;
       display: grid;
-      gap: 4px;
-      padding: 8px 18px 16px;
-      background: var(--color-background);
-      border-bottom: 1px solid var(--color-line);
-    }
-
-    .site-header__mobile ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .site-header__mobile ul a {
-      display: block;
-      padding: 10px 0;
-      font-weight: 600;
-      border-bottom: 1px solid var(--color-line);
-    }
-
-    .site-header__mobile ul a[aria-current='page'] {
-      color: var(--color-primary);
-    }
-
-    .site-header__mobile .button {
-      justify-content: center;
-      margin-top: 8px;
     }
   }
 
@@ -551,12 +575,6 @@
 
   .site-soon p {
     max-width: 520px;
-  }
-
-  .site-soon__initials {
-    width: 64px;
-    height: 64px;
-    font-size: 24px;
   }
 
   .site-soon__logo {
