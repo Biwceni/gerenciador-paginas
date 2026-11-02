@@ -86,9 +86,9 @@ describe('Destaques: marcador', () => {
 
   it('os modelos usam ícone, e números só no passo a passo', () => {
     const markers = templateSeeds
-      .flatMap((seed) => seed.pages)
+      .flatMap((seed) => seed.pages ?? [])
       .flatMap((page) =>
-        page.content.data.content.flatMap((item) =>
+        (parsePageContent(page.content).data?.data.content ?? []).flatMap((item) =>
           item.type === 'Features' ? [{ slug: page.slug, marker: item.props.marker }] : [],
         ),
       )
