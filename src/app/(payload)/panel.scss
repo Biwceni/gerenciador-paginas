@@ -84,6 +84,14 @@ html[data-theme] {
   }
 }
 
+// Na gaveta do celular o nome do produto já está na barra do topo: a marca só aparece no
+// computador (e nas telas de entrar).
+@media (max-width: #{$desktop - 1px}) {
+  .gp-nav .gp-brandmark {
+    display: none;
+  }
+}
+
 .gp-brandmark {
   display: flex;
   align-items: center;
@@ -718,6 +726,11 @@ html[data-theme] {
   font-size: var(--gp-fs-help);
 }
 
+.gp-warnbox--field {
+  margin: 0;
+  padding: 8px 12px;
+}
+
 .gp-error {
   color: var(--gp-danger);
   font-weight: 600;
@@ -1177,15 +1190,17 @@ html[data-theme] {
     }
   }
 
+  // Sublinhado, como no protótipo: tem cara de link.
   &__link {
     justify-self: center;
     color: var(--gp-accent);
     font-weight: 600;
     font-size: var(--gp-fs-help);
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 
     &:hover {
-      text-decoration: underline;
+      text-decoration-thickness: 2px;
     }
   }
 }

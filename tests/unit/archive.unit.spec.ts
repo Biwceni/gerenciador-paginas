@@ -107,7 +107,11 @@ describe('arquivar', () => {
 describe('pessoa no pé do menu', () => {
   it('mostra iniciais, nome e papel, sem foto', () => {
     expect(personInitials({ name: 'Fábio Ormeni' })).toBe('FO')
-    expect(personInitials({ name: 'Ana' })).toBe('AN')
+    expect(personInitials({ name: 'Ana' })).toBe('A')
+    // Sem acento e em maiúscula (antes, "Fábio" virava "FÁ").
+    expect(personInitials({ name: 'Fábio' })).toBe('F')
+    expect(personInitials({ name: 'érica são joão' })).toBe('EJ')
+    expect(personInitials({ name: 'Ítalo Çarvalho' })).toBe('IC')
     expect(personInitials({ email: 'maria.silva@cafe.com' })).toBe('MS')
     expect(personLabel({ name: 'Fábio', role: 'admin' })).toBe('Fábio · administrador')
     expect(personLabel({ email: 'ana@cafe.com', role: 'editor' })).toBe('ana · editor')

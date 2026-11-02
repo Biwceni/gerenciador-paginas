@@ -95,13 +95,17 @@ export function personName(person: Person): string {
   return person.name?.trim() || person.email?.split('@')[0] || 'Você'
 }
 
-/** "Fábio Ormeni" → "FO"; "ana" → "AN". Aparece no lugar da foto da conta. */
+/**
+ * "Fábio Ormeni" → "FO"; "Fábio" → "F"; "érica" → "E". Aparece no lugar da foto da conta: sempre
+ * sem acento e em maiúscula.
+ */
 export function personInitials(person: Person): string {
   const words = personName(person)
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '')
     .split(/[\s._-]+/)
     .filter(Boolean)
-  const letters =
-    words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0].slice(0, 2)
+  const letters = words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0][0]
   return letters.toUpperCase()
 }
 
