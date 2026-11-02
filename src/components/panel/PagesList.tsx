@@ -118,9 +118,17 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
                   Editar
                 </Link>
                 {page.status !== 'draft' && (
-                  <a className="gp-btn gp-btn--sm" href={page.path} rel="noopener" target="_blank">
+                  <a
+                    aria-label={`Ver ${page.title} no site`}
+                    className="gp-btn gp-btn--sm gp-btn--icon-sm"
+                    href={page.path}
+                    rel="noopener"
+                    target="_blank"
+                  >
                     <PanelIcon name="eye" size={14} />
-                    Ver
+                    <span aria-hidden="true" className="gp-btn__label">
+                      Ver
+                    </span>
                   </a>
                 )}
                 <MoreButton onClick={() => setMoreId(page.id)} title={page.title} />

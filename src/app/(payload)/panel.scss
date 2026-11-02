@@ -1969,6 +1969,39 @@ textarea.gp-input {
   }
 }
 
+// Linha de página (Páginas e Páginas recentes).
+.gp-row--page .gp-row__chip--inline {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .gp-row--page {
+    gap: 8px;
+
+    .gp-row__chip--inline {
+      display: inline-flex;
+    }
+
+    .gp-row__chip--column,
+    .gp-row__domain {
+      display: none;
+    }
+
+    .gp-row__actions {
+      flex-wrap: nowrap;
+    }
+  }
+
+  // "Ver" só com o ícone (o nome fica no aria-label).
+  .gp-btn--icon-sm {
+    padding-inline: 8px;
+
+    .gp-btn__label {
+      display: none;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gp-page *,
   .gp-nav * {
