@@ -64,6 +64,8 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
     await loadFinishInput(payload, user, sortPagesForList(pages, await menuPageOrder(req))),
   )
   const finishDone = finish.filter((step) => step.done).length
+  // Um botão verde cheio por tela: o da próxima coisa a fazer.
+  const nextStep = finish.find((step) => !step.done)
   const home = pages.find((page) => page.home)
   const siteLive = Boolean(home && home.status !== 'draft')
   // Sem página inicial publicada: o que dá para mostrar de como está ficando é o editor dela.
@@ -137,7 +139,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             <span aria-hidden="true" className="gp-live__dot" />
             Seu site está no ar em <span className="gp-accent">{domain}</span>
           </div>
-          <a className="gp-btn gp-btn--primary" href="/" rel="noopener" target="_blank">
+          <a className="gp-btn" href="/" rel="noopener" target="_blank">
             <PanelIcon name="eye" size={16} />
             Ver meu site
           </a>
@@ -216,7 +218,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
                 </div>
                 {!step.done && (
                   <Link
-                    className={`gp-btn gp-btn--sm${'page' in step.target ? ' gp-btn--primary' : ''}`}
+                    className={`gp-btn gp-btn--sm${step === nextStep ? ' gp-btn--primary' : ''}`}
                     href={stepHref(step)}
                   >
                     {step.action}
@@ -237,10 +239,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
           <ul className="gp-rows">
             {pending.map((page) => (
               <PageRowItem adminRoute={adminRoute} domain={domain} key={page.id} page={page}>
-                <Link
-                  className="gp-btn gp-btn--sm gp-btn--primary"
-                  href={editorPath(adminRoute, page.id)}
-                >
+                <Link className="gp-btn gp-btn--sm" href={editorPath(adminRoute, page.id)}>
                   Continuar
                 </Link>
               </PageRowItem>
@@ -251,7 +250,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
                 <StatusChip status="changed" />
                 <div className="gp-row__actions">
                   <Link
-                    className="gp-btn gp-btn--sm gp-btn--primary"
+                    className="gp-btn gp-btn--sm"
                     href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
                   >
                     Continuar

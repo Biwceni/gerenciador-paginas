@@ -34,7 +34,13 @@ export function PageRowItem({
     <li className="gp-row">
       <div>
         <div className="gp-row__title">
-          {page.title}
+          {archived ? (
+            page.title
+          ) : (
+            <Link className="gp-row__link" href={editorPath(adminRoute, page.id)}>
+              {page.title}
+            </Link>
+          )}
           {page.home && <span className="gp-chip gp-chip--home">Página inicial</span>}
         </div>
         <div className="gp-row__sub">
