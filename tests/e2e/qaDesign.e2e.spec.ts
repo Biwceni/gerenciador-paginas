@@ -412,4 +412,45 @@ test.describe.serial('QA visual e revisão de design', () => {
     const gallery = await page.locator('.gallery').boundingBox()
     expect(Math.round(last!.width)).toBe(Math.round(gallery!.width))
   })
+
+  test('antes do JavaScript, nome e menu do topo não se sobrepõem em 740 px', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 740, height: 900 },
+    })
+    const visitor = await context.newPage()
+    await visitor.goto(`${BASE}/`)
+    // Sem JavaScript, o topo fica com o ☰: o menu inteiro não aparece por cima do nome.
+    await expect(visitor.locator('.site-header__nav')).toBeHidden()
+    await expect(visitor.locator('.site-header__burger')).toBeVisible()
+    await context.close()
+  })
+
+  test('no celular, cada link do rodapé tem 44 px e não invade o de baixo', async () => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await open(page, '/')
+    const links = await page.locator('.site-footer li > a').evaluateAll((elements) =>
+      elements.map((element) => {
+        element.scrollIntoView({ block: 'center' })
+        const box = element.getBoundingClientRect()
+        // A borda de baixo ainda é deste link, e o ponto logo abaixo já não é. (Sem função com
+        // nome aqui dentro: o tsx a embrulharia num `__name`, que não existe no navegador.)
+        const bottom = document.elementFromPoint(box.left + 4, box.bottom - 1)
+        const below = document.elementFromPoint(box.left + 4, box.bottom + 1)
+        return {
+          height: Math.round(box.height),
+          ownBottom: bottom === element || element.contains(bottom),
+          nextIsOther: below !== element && !element.contains(below),
+        }
+      }),
+    )
+    expect(links.length).toBeGreaterThan(2)
+    for (const link of links) {
+      expect(link.height).toBeGreaterThanOrEqual(44)
+      expect(link.ownBottom).toBe(true)
+      expect(link.nextIsOther).toBe(true)
+    }
+  })
 })

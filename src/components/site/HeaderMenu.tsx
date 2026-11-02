@@ -6,7 +6,8 @@ import React, { useEffect, useRef, useState } from 'react'
  * Topo que não cabe numa linha (menu comprido, botão com texto longo) passa a usar o ☰, como no
  * celular: assim nada quebra em duas linhas nem passa da largura. Mede o nome do site e o menu
  * inteiros e compara com a largura do topo, sempre que algum deles muda de tamanho (inclusive
- * quando a fonte termina de carregar). Abaixo de 720 px o ☰ já vem do CSS.
+ * quando a fonte termina de carregar). Até 1023 px o ☰ já vem do CSS (antes do JavaScript, nome e
+ * menu não se sobrepõem); entre 721 e 1023 px, o `--full` devolve o menu inteiro quando ele cabe.
  */
 function useCompactHeader(button: React.RefObject<HTMLButtonElement | null>) {
   const [compact, setCompact] = useState(false)
@@ -24,7 +25,9 @@ function useCompactHeader(button: React.RefObject<HTMLButtonElement | null>) {
       const gap = parseFloat(view.getComputedStyle(bar).columnGap) || 0
       const width = bar.clientWidth - parseFloat(view.getComputedStyle(bar).paddingLeft) * 2
       const next = brand.scrollWidth + gap + nav.scrollWidth > width
+      // As duas classes: entre 721 e 1023 px o CSS já começa com o ☰ e espera o `--full`.
       header.classList.toggle('site-header--compact', next)
+      header.classList.toggle('site-header--full', !next)
       setCompact(next)
     }
     const observer = new view.ResizeObserver(check)

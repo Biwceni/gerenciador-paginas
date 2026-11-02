@@ -259,7 +259,12 @@
     white-space: nowrap;
   }
 
-  /* Não coube numa linha: menu escondido (mas ainda medido) e o ☰ no lugar. */
+  /*
+   * Não coube numa linha: menu escondido (mas ainda medido) e o ☰ no lugar. Quem mede é o
+   * HeaderMenu, depois que a página carrega. Entre 721 e 1023 px o topo já nasce com o ☰ e só passa
+   * ao menu inteiro quando ele cabe (classe --full); acima disso, nasce com o menu e passa ao ☰ se
+   * não couber (classe --compact). Assim nome e menu nunca se sobrepõem, nem antes do JavaScript.
+   */
   .site-header--compact .site-header__nav {
     position: absolute;
     top: 0;
@@ -274,6 +279,24 @@
 
   .site-header--compact .site-header__mobile:not([hidden]) {
     display: grid;
+  }
+
+  @media (min-width: 721px) and (max-width: 1023px) {
+    .site-header:not(.site-header--full) .site-header__nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .site-header:not(.site-header--full) .site-header__burger {
+      display: grid;
+    }
+
+    .site-header:not(.site-header--full) .site-header__mobile:not([hidden]) {
+      display: grid;
+    }
   }
 
   .site-header__nav ul a,
@@ -419,18 +442,24 @@
     text-decoration: underline;
   }
 
-  /* Área de toque de 44 px de altura no celular, sem mudar o desenho do rodapé. */
+  /*
+   * Celular: cada link do rodapé com 44 px de altura de verdade. Uma área invisível maior que o
+   * link (com a lista a 29 px) invadia o link de baixo; assim, nenhuma passa por cima de outra.
+   */
   @media (max-width: 720px) {
-    .site-footer a {
-      position: relative;
+    .site-footer li > a,
+    .site-footer--campaign a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding-block: 0;
     }
 
-    .site-footer a::after {
-      content: '';
-      position: absolute;
-      inset: 50% 0 auto;
-      height: 44px;
-      transform: translateY(-50%);
+    .site-footer a.site-footer__privacy {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      vertical-align: middle;
     }
   }
 
