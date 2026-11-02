@@ -5,6 +5,18 @@
 // `DESKTOP` de PanelNavLinks.tsx.
 $desktop: 1024px;
 
+// Escala de letras do painel e do editor: nada abaixo de 13 px (o trilho de ícones do editor,
+// sem espaço, fica em 12 px).
+:root {
+  --gp-fs-title: 32px; // título da tela
+  --gp-fs-heading: 22px; // título de janela e da tela de entrar
+  --gp-fs-card: 18px; // título de cartão
+  --gp-fs-text: 15px; // texto
+  --gp-fs-help: 14px; // ajuda, endereços, botões
+  --gp-fs-small: 13px; // selos e datas
+  --gp-fs-rail: 12px; // trilho de ícones do editor
+}
+
 html[data-theme='light'],
 html:not([data-theme]) {
   --gp-bg: #f2f4f0;
@@ -74,7 +86,7 @@ html[data-theme] {
   padding: 0 8px 16px;
   font-family: var(--gp-font-display);
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--gp-fs-card);
   line-height: 1.2;
   color: var(--gp-ink);
 
@@ -82,7 +94,7 @@ html[data-theme] {
     display: block;
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
   }
 
@@ -107,7 +119,7 @@ html[data-theme] {
   padding: 12px 12px 0;
   margin-top: 4px;
   border-top: 1px solid var(--gp-line);
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   color: var(--gp-muted);
   width: 100%;
   min-width: 0;
@@ -123,7 +135,7 @@ html[data-theme] {
     place-items: center;
     font-style: normal;
     font-weight: 700;
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
   }
 
   span {
@@ -175,7 +187,7 @@ html[data-theme] {
     flex: 1;
     min-width: 0;
     font-family: var(--gp-font-display);
-    font-size: 17px;
+    font-size: var(--gp-fs-card);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -213,7 +225,7 @@ html[data-theme] {
   color: var(--gp-ink);
   text-decoration: none;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   cursor: pointer;
 
   &:hover {
@@ -240,7 +252,7 @@ html[data-theme] {
   display: grid;
   gap: 22px;
   color: var(--gp-ink);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   h1,
@@ -263,7 +275,7 @@ html[data-theme] {
 }
 
 .gp-small {
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
 }
 
 .gp-accent {
@@ -278,7 +290,7 @@ html[data-theme] {
   gap: 12px;
 
   h1 {
-    font-size: clamp(26px, 3.4vw, 34px);
+    font-size: clamp(26px, 3.4vw, var(--gp-fs-title));
     font-weight: 700;
   }
 
@@ -298,7 +310,7 @@ html[data-theme] {
   min-width: 0;
 
   h2 {
-    font-size: 18px;
+    font-size: var(--gp-fs-card);
     font-weight: 700;
   }
 
@@ -362,7 +374,7 @@ html[data-theme] {
   }
 
   b {
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
   }
 
   &__icon {
@@ -408,7 +420,7 @@ html[data-theme] {
   }
 
   &__sub {
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     color: var(--gp-muted);
     overflow-wrap: anywhere;
   }
@@ -440,7 +452,7 @@ html[data-theme] {
   cursor: pointer;
   font: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
   line-height: 1.4;
   white-space: nowrap;
   text-decoration: none;
@@ -483,13 +495,13 @@ html[data-theme] {
 
   &--lg {
     padding: 12px 20px;
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
     border-radius: 12px;
   }
 
   &--sm {
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     border-radius: 8px;
   }
 
@@ -511,7 +523,7 @@ html[data-theme] {
   gap: 6px;
   border-radius: 999px;
   padding: 3px 10px;
-  font-size: 12.5px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   white-space: nowrap;
 
@@ -582,7 +594,7 @@ html[data-theme] {
   align-items: center;
   border-radius: 12px;
   padding: 12px 14px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-tip {
@@ -621,7 +633,7 @@ html[data-theme] {
     cursor: pointer;
     font-weight: 600;
     color: var(--gp-muted);
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
@@ -645,13 +657,13 @@ html[data-theme] {
   background: var(--gp-warn-soft);
   border-radius: 12px;
   padding: 14px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-error {
   color: var(--gp-danger);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-searchbox {
@@ -689,12 +701,12 @@ html[data-theme] {
 
   label {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
 .gp-hint {
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
   color: var(--gp-muted);
   overflow-wrap: anywhere;
 }
@@ -707,7 +719,7 @@ html[data-theme] {
   border-radius: 10px;
   padding: 10px 12px;
   font: inherit;
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
 
   &:focus {
     outline: 2px solid var(--gp-accent);
@@ -748,7 +760,7 @@ html[data-theme] {
   }
 
   b {
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
   }
 }
 
@@ -797,12 +809,12 @@ html[data-theme] {
   background: var(--gp-bg);
   color: var(--gp-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   h1 {
     font-family: var(--gp-font-display);
-    font-size: clamp(24px, 4vw, 32px);
+    font-size: clamp(24px, 4vw, var(--gp-fs-title));
     line-height: 1.15;
     margin: 0;
     text-wrap: balance;
@@ -813,7 +825,7 @@ html[data-theme] {
   }
 
   code {
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
@@ -841,7 +853,7 @@ html[data-theme] {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   color: var(--gp-muted);
 
@@ -891,7 +903,7 @@ html[data-theme] {
 }
 
 .gp-eyebrow {
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -939,7 +951,7 @@ html[data-theme] {
   }
 
   b {
-    font-size: 16px;
+    font-size: var(--gp-fs-text);
   }
 
   &__icon {
@@ -1048,7 +1060,7 @@ html[data-theme] {
   background: var(--gp-bg);
   color: var(--gp-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   p {
@@ -1077,7 +1089,7 @@ html[data-theme] {
 
     h1 {
       font-family: var(--gp-font-display);
-      font-size: 26px;
+      font-size: var(--gp-fs-heading);
       line-height: 1.15;
       margin: 0;
       text-wrap: balance;
@@ -1088,7 +1100,7 @@ html[data-theme] {
     justify-self: center;
     color: var(--gp-accent);
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
     text-decoration: none;
 
     &:hover {
@@ -1113,7 +1125,7 @@ html[data-theme] {
   list-style: none;
   margin: 2px 0 0;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
 
   li {
     display: flex;
@@ -1184,7 +1196,7 @@ html[data-theme] {
   }
 
   &__name {
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1216,7 +1228,7 @@ html[data-theme] {
 
   &__noalt {
     color: var(--gp-warn);
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 700;
   }
 }
@@ -1279,7 +1291,7 @@ html[data-theme] {
 
   &__error {
     color: var(--gp-warn);
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 600;
   }
 
@@ -1307,7 +1319,7 @@ html[data-theme] {
 
 .gp-label {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-links {
@@ -1474,7 +1486,7 @@ textarea.gp-input {
     border-radius: 999px;
     padding: 6px 12px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     font-weight: 600;
     cursor: pointer;
 
@@ -1610,7 +1622,7 @@ textarea.gp-input {
     background: var(--color-primary);
     color: var(--color-on-primary);
     font-weight: 700;
-    font-size: 22px;
+    font-size: var(--gp-fs-heading);
   }
 }
 
@@ -1649,7 +1661,7 @@ textarea.gp-input {
   border: 0;
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   color: var(--gp-ink);
   padding: 0;
@@ -1697,7 +1709,7 @@ textarea.gp-input {
 
 .gp-input--hex {
   font-family: ui-monospace, monospace;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-contrast {
@@ -1707,7 +1719,7 @@ textarea.gp-input {
   &__line {
     border-radius: 10px;
     padding: 10px 12px;
-    font-size: 13.5px;
+    font-size: var(--gp-fs-help);
 
     &--warn {
       background: var(--gp-warn-soft);
@@ -1724,7 +1736,7 @@ textarea.gp-input {
   padding-left: 20px;
   display: grid;
   gap: 6px;
-  font-size: 13.5px;
+  font-size: var(--gp-fs-help);
   color: var(--gp-muted);
 }
 
@@ -1737,7 +1749,7 @@ textarea.gp-input {
 .gp-input--sm {
   width: auto;
   padding: 6px 10px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-invite {
@@ -1790,12 +1802,12 @@ textarea.gp-input {
   display: grid;
   gap: 16px;
   box-shadow: 0 6px 24px rgb(20 30 25 / 20%);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   outline: none;
 
   h2 {
     font-family: var(--gp-font-display);
-    font-size: 20px;
+    font-size: var(--gp-fs-heading);
     margin: 0;
     overflow-wrap: anywhere;
   }
@@ -1889,7 +1901,7 @@ textarea.gp-input {
     border-radius: 50%;
     background: var(--gp-line);
     color: var(--gp-muted);
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
     font-weight: 700;
   }
 
@@ -1941,7 +1953,7 @@ textarea.gp-input {
   border-radius: 999px;
   background: var(--gp-accent);
   color: var(--gp-accent-ink);
-  font-size: 12px;
+  font-size: var(--gp-fs-small);
   font-weight: 700;
   line-height: 20px;
   text-align: center;
@@ -1957,7 +1969,7 @@ textarea.gp-input {
     margin: 0;
     min-width: 18px;
     padding: 0 4px;
-    font-size: 11px;
+    font-size: var(--gp-fs-small);
     line-height: 18px;
   }
 }
@@ -1970,7 +1982,7 @@ textarea.gp-input {
   color: var(--gp-ink);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
   font-weight: 600;
   text-decoration: none;
 
@@ -1999,7 +2011,7 @@ textarea.gp-input {
     gap: 14px;
 
     h2 {
-      font-size: 22px;
+      font-size: var(--gp-fs-heading);
       overflow-wrap: anywhere;
     }
 
@@ -2079,7 +2091,7 @@ textarea.gp-input {
     }
 
     > span {
-      font-size: 13px;
+      font-size: var(--gp-fs-help);
       color: var(--gp-muted);
       white-space: nowrap;
       overflow: hidden;
@@ -2088,7 +2100,7 @@ textarea.gp-input {
   }
 
   time {
-    font-size: 12.5px;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
     white-space: nowrap;
   }
@@ -2105,11 +2117,9 @@ textarea.gp-input {
   }
 
   dt {
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
-    font-weight: 700;
+    font-weight: 600;
   }
 
   dd {
@@ -2201,7 +2211,7 @@ textarea.gp-input {
 
   .gp-input {
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 
   &__full {
@@ -2224,7 +2234,7 @@ textarea.gp-input {
     align-items: center;
     gap: 6px;
     margin-right: 4px;
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     white-space: nowrap;
   }
 }
