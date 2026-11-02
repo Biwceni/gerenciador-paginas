@@ -77,8 +77,19 @@ describe('link de telefone', () => {
     expect(telHref('(35) 99999-4521')).toBe('tel:+5535999994521')
     // DDD à moda antiga, com o 0 na frente.
     expect(telHref('035 3333-4521')).toBe('tel:+553533334521')
-    // Sem DDD: não dá para adivinhar a cidade, só o país.
-    expect(telHref('3333-4521')).toBe('tel:+5533334521')
+  })
+
+  it('deixa sem +55 o que não completa no formato internacional', () => {
+    // 0800, 0300, 0500 e 0900.
+    expect(telHref('0800 123 4567')).toBe('tel:08001234567')
+    expect(telHref('0300 789 1234')).toBe('tel:03007891234')
+    expect(telHref('0800-12-3456')).toBe('tel:0800123456')
+    // Números únicos (3003, 4004) e números sem DDD.
+    expect(telHref('4004-1234')).toBe('tel:40041234')
+    expect(telHref('3003 1234')).toBe('tel:30031234')
+    expect(telHref('3333-4521')).toBe('tel:33334521')
+    // Curtos, como os de emergência.
+    expect(telHref('190')).toBe('tel:190')
   })
 
   it('não repete o código do país', () => {
