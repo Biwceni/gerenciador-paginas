@@ -97,12 +97,13 @@ const sections: { [K in keyof Components]: Section<K> } = {
         label: 'Fundo',
         options: [
           { label: 'Foto', value: 'image' },
+          { label: 'Foto ao lado', value: 'side' },
           { label: 'Claro', value: 'light' },
           { label: 'Suave', value: 'soft' },
           { label: 'Cor do site', value: 'brand' },
         ],
       },
-      image: photo('Foto do fundo (com o fundo "Foto")'),
+      image: photo('Foto (com "Foto" ou "Foto ao lado")'),
       align: {
         type: 'radio',
         label: 'Posição do texto',

@@ -54,7 +54,7 @@ export function pageBuilder() {
       image?: number
       button?: string
       link?: LinkRef
-      style?: 'image' | Style
+      style?: 'image' | 'side' | Style
       align?: 'left' | 'center'
     }): PageComponent => ({
       type: 'Hero',

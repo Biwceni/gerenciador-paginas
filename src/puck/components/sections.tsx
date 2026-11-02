@@ -90,19 +90,37 @@ function SectionTitle({ title }: { title: React.ReactNode }) {
   return filled(title) ? <h2 className="section-title">{title}</h2> : null
 }
 
-/** Banner principal. No estilo "foto", a foto cobre o fundo, escurecida, com o texto em branco. */
+/**
+ * Banner principal. No estilo "foto", a foto cobre o fundo, escurecida, com o texto em branco; em
+ * "foto ao lado", o texto fica à esquerda e a foto à direita (embaixo do botão, no celular).
+ */
 export function Hero(props: WithMetadata<HeroProps>) {
-  const { id, title, text, image, button, align, metadata } = props
+  const { id, title, text, image, button, metadata } = props
   const photo = getPhoto(metadata, image)
-  // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível.
-  const style = props.style === 'image' && !photo ? 'brand' : props.style
+  // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível, e
+  // "foto ao lado" vira o fundo suave.
+  const style =
+    props.style === 'image' && !photo
+      ? 'brand'
+      : props.style === 'side'
+        ? photo
+          ? 'side'
+          : 'soft'
+        : props.style
+  // Com a foto ao lado, o texto fica sempre à esquerda.
+  const align = style === 'side' ? 'left' : props.align
   const isMain = metadata.mainHeadingId === id
   const Heading = isMain ? 'h1' : 'h2'
+  const classes = [
+    'section',
+    style === 'side' ? 'section--soft hero--side' : `section--${style}`,
+    'hero',
+    align === 'center' && 'hero--center',
+    !photo && 'hero--plain',
+  ]
 
   return (
-    <section
-      className={`section section--${style} hero${align === 'center' ? ' hero--center' : ''}`}
-    >
+    <section className={classes.filter(Boolean).join(' ')}>
       {style === 'image' && photo && (
         <>
           <Photo
@@ -121,6 +139,16 @@ export function Hero(props: WithMetadata<HeroProps>) {
           {filled(text) && <p className="hero__text">{text}</p>}
           <SectionButton button={button} metadata={metadata} />
         </div>
+        {style === 'side' && photo && (
+          <div className="hero__photo">
+            <Photo
+              fill
+              media={photo}
+              priority={isMain && !metadata.editing}
+              sizes="(max-width: 720px) 100vw, 480px"
+            />
+          </div>
+        )}
       </div>
     </section>
   )

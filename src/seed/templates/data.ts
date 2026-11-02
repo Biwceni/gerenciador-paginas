@@ -82,7 +82,7 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 5, button: 'Conheça nossos cafés', link: toPage(3) }),
+          b.hero({ image: 5, button: 'Conheça nossos cafés', link: toPage(3), style: 'side' }),
           b.features(),
           b.textImage({ image: 3, style: 'soft' }),
           b.testimonials({ style: 'light' }),
@@ -158,7 +158,7 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Agendar avaliação' }),
+          b.hero({ image: 1, button: 'Agendar avaliação', style: 'side' }),
           b.features(),
           b.textImage({ image: 4, style: 'soft' }),
           b.testimonials({ style: 'light' }),
@@ -233,7 +233,7 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 2, button: 'Pedir orçamento' }),
+          b.hero({ image: 2, button: 'Pedir orçamento', style: 'side' }),
           b.features(),
           b.textImage({ image: 1, style: 'soft' }),
           b.testimonials({ style: 'light' }),
@@ -308,7 +308,7 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 2, button: 'Ver produtos', link: toPage(2) }),
+          b.hero({ image: 2, button: 'Ver produtos', link: toPage(2), style: 'side' }),
           b.gallery({ images: [2, 1, 3] }),
           b.features({ style: 'soft' }),
           b.testimonials({ style: 'light' }),
@@ -383,7 +383,7 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Fale com a gente' }),
+          b.hero({ image: 1, button: 'Fale com a gente', style: 'side' }),
           b.features(),
           b.textImage({ image: 2, style: 'soft' }),
           b.cta({ button: 'Chamar no WhatsApp' }),
@@ -447,7 +447,12 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Ver projetos', link: toSection(1, 'projetos') }),
+          b.hero({
+            image: 1,
+            button: 'Ver projetos',
+            link: toSection(1, 'projetos'),
+            style: 'side',
+          }),
           b.textImage({ id: 'sobre', menu: 'Sobre', image: 3 }),
           b.features({ id: 'servicos', menu: 'Serviços', style: 'soft' }),
           b.gallery({ id: 'projetos', menu: 'Projetos', images: [1, 2, 4] }),
@@ -502,7 +507,12 @@ const packs: Pack[] = [
         title: 'Aula gratuita',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Quero minha vaga', link: toSection(1, 'inscricao') }),
+          b.hero({
+            image: 1,
+            button: 'Quero minha vaga',
+            link: toSection(1, 'inscricao'),
+            style: 'side',
+          }),
           b.features(),
           b.textImage({ image: 2, side: 'left', style: 'soft' }),
           b.testimonials({ style: 'light' }),
@@ -560,7 +570,12 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Fazer inscrição', link: toSection(1, 'inscricao') }),
+          b.hero({
+            image: 1,
+            button: 'Fazer inscrição',
+            link: toSection(1, 'inscricao'),
+            style: 'side',
+          }),
           b.features({ id: 'programacao', menu: 'Programação' }),
           b.gallery({ images: [2, 3, 4], style: 'soft' }),
           b.contact({ id: 'local', menu: 'Local' }),
@@ -624,7 +639,12 @@ const packs: Pack[] = [
         title: 'Início',
         slug: 'inicio',
         build: (b) => [
-          b.hero({ image: 1, button: 'Ver trabalhos', link: toSection(1, 'trabalhos') }),
+          b.hero({
+            image: 1,
+            button: 'Ver trabalhos',
+            link: toSection(1, 'trabalhos'),
+            style: 'side',
+          }),
           b.textImage({ id: 'sobre', menu: 'Sobre', image: 1 }),
           b.gallery({ id: 'trabalhos', menu: 'Trabalhos', images: [2, 3, 4], style: 'soft' }),
           b.features({ id: 'experiencia', menu: 'Experiência' }),

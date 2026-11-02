@@ -61,8 +61,9 @@ export const heroPropsSchema = z.object({
   text: z.string().max(300),
   image: photoRefSchema,
   button: buttonSchema.nullable(),
-  // `image`: a foto cobre o fundo, escurecida, com texto branco.
-  style: z.enum(['image', 'light', 'soft', 'brand']),
+  // `image`: a foto cobre o fundo, escurecida, com texto branco. `side`: texto à esquerda e a foto
+  // ao lado, com cantos arredondados (opção nova, só um valor a mais: a versão continua a 2).
+  style: z.enum(['image', 'side', 'light', 'soft', 'brand']),
   align: z.enum(['left', 'center']),
 })
 

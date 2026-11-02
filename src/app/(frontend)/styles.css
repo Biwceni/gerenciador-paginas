@@ -472,6 +472,55 @@
     outline-color: #fff;
   }
 
+  /* Celular: a película fica mais escura, para o título branco não passar por cima de rostos e de
+     partes claras da foto. */
+  @media (max-width: 720px) {
+    .hero__shade {
+      background: linear-gradient(180deg, rgba(24, 14, 8, 0.62), rgba(24, 14, 8, 0.8));
+    }
+  }
+
+  /* Sem foto (fundo claro, suave ou na cor do site): a faixa é ocupada pelo texto. Título com até
+     ~34 letras por linha e frase de apoio maior. */
+  .hero--plain .hero__inner {
+    max-width: none;
+  }
+
+  .hero--plain .hero__title {
+    max-width: 34ch;
+  }
+
+  /* À esquerda, o título usa a largura toda antes de quebrar (o `balance` o dividiria ao meio). */
+  .hero--plain:not(.hero--center) .hero__title {
+    text-wrap: pretty;
+  }
+
+  .hero--plain .hero__text {
+    font-size: clamp(19px, 17.3px + 0.435vw, 22px);
+  }
+
+  /* Foto ao lado: texto à esquerda, foto à direita com cantos arredondados; no celular, a foto
+     desce para baixo do botão. */
+  .hero--side .hero__container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 56px);
+    align-items: center;
+  }
+
+  .hero__photo {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  @media (max-width: 720px) {
+    .hero--side .hero__container {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   /* Texto com foto */
 
   .text-image {

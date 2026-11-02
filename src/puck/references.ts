@@ -85,6 +85,17 @@ export function pagePhotoIds(
   return seo && !sections.includes(seo) ? [...sections, seo] : sections
 }
 
+/**
+ * O primeiro banner da página está sem foto (nenhuma escolhida, ou apagada da biblioteca)? Na
+ * página inicial, o Publicar sugere uma: o banner fica mais forte com ela.
+ */
+export function heroWithoutPhoto(data: PuckPageData, hasPhoto: (id: number) => boolean): boolean {
+  const hero = data.content.find((item) => item.type === 'Hero')
+  if (hero?.type !== 'Hero') return false
+  const image = hero.props.image
+  return !image || !hasPhoto(image.mediaId)
+}
+
 /** A página tem algum botão (com texto) que leva ao WhatsApp? Sem número, ele não aparece no site. */
 export function usesWhatsApp(data: PuckPageData): boolean {
   const walk = (value: unknown): boolean => {
