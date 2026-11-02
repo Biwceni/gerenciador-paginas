@@ -298,6 +298,9 @@ test.describe.serial('editor: seções', () => {
     await expect.poll(() => order(page)).toEqual([INITIAL[1], INITIAL[0], ...INITIAL.slice(2)])
     await expect(actions.getByRole('button', { name: 'Subir' })).toBeDisabled()
 
+    // Como depois de Duplicar: o Puck termina a mudança (histórico e escolha) um instante depois,
+    // e um clique logo em seguida, com o servidor ainda compilando, se perdia.
+    await page.waitForTimeout(500)
     await actions.getByRole('button', { name: 'Descer' }).click()
     await expect.poll(() => order(page)).toEqual(INITIAL)
 
