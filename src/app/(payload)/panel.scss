@@ -1205,6 +1205,10 @@ html[data-theme] {
 
 // ---------- fotos ----------
 
+// Até aqui o detalhe da foto desce para baixo da grade (com 340 px ao lado, sobrava uma foto por
+// linha). Igual ao `STACKED` de PhotosLibrary.tsx.
+$media-stacked: 1279px;
+
 .gp-media {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -1398,12 +1402,13 @@ textarea.gp-input {
   min-height: 84px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: $media-stacked) {
   .gp-media {
     grid-template-columns: minmax(0, 1fr);
 
     &__detail {
       position: static;
+      scroll-margin-top: 72px;
     }
   }
 }
