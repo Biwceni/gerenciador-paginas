@@ -8,10 +8,22 @@
 
 .site {
   --color-line: color-mix(in srgb, var(--color-text) 13%, transparent);
+  /*
+   * Escala de letras do site, igual em todas as seções. Os tamanhos crescem com a tela, do celular
+   * (390 px) ao computador (1080 px): texto 16 → 17, título de seção 28 → 40, título da página
+   * 34 → 56. Nas prévias, a "tela" é a largura da prévia.
+   */
+  --fs-text: clamp(16px, 15.43px + 0.145vw, 17px);
+  --fs-lead: 19px;
+  --fs-h3: 22px;
+  --fs-h2: clamp(28px, 21.2px + 1.74vw, 40px);
+  --fs-h1: clamp(34px, 21.6px + 3.19vw, 56px);
+  /* Linha de texto corrido com ~65 letras. */
+  --measure: 65ch;
   box-sizing: border-box;
   margin: 0;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--fs-text);
   line-height: 1.6;
   color: var(--color-text);
   background: var(--color-background);
@@ -38,7 +50,12 @@
     text-wrap: balance;
   }
 
+  & h3 {
+    line-height: 1.3;
+  }
+
   & p {
+    max-width: var(--measure);
     margin: 0;
   }
 
@@ -107,13 +124,13 @@
 
   .section-title {
     margin-bottom: 28px;
-    font-size: clamp(26px, 4.2vw, 40px);
+    font-size: var(--fs-h2);
     font-weight: 700;
   }
 
   .page-title {
     padding-top: 48px;
-    font-size: clamp(32px, 6vw, 48px);
+    font-size: var(--fs-h1);
   }
 
   /* Botões: na cor principal; sobre a cor principal, invertidos. */
@@ -418,12 +435,12 @@
   }
 
   .hero__title {
-    font-size: clamp(32px, 6vw, 58px);
+    font-size: var(--fs-h1);
     font-weight: 700;
   }
 
   .hero__text {
-    font-size: clamp(16px, 2.2vw, 19px);
+    font-size: var(--fs-lead);
     opacity: 0.92;
   }
 
@@ -450,7 +467,7 @@
   }
 
   .text-image__text h2 {
-    font-size: clamp(26px, 4vw, 38px);
+    font-size: var(--fs-h2);
   }
 
   .text-image__photo {
@@ -489,7 +506,7 @@
   }
 
   .cta h2 {
-    font-size: clamp(26px, 4.4vw, 40px);
+    font-size: var(--fs-h2);
   }
 
   /* Página não encontrada e site em preparação */
@@ -529,7 +546,7 @@
   }
 
   .site-soon h1 {
-    font-size: clamp(28px, 5vw, 44px);
+    font-size: var(--fs-h1);
   }
 
   .site-soon p {
@@ -560,7 +577,7 @@
   }
 
   .not-found h1 {
-    font-size: 40px;
+    font-size: var(--fs-h2);
   }
 
   @media (max-width: 720px) {
@@ -627,7 +644,7 @@
   }
 
   .features h3 {
-    font-size: 19px;
+    font-size: var(--fs-h3);
   }
 
   /* Depoimentos */
@@ -641,7 +658,7 @@
   .testimonials blockquote {
     margin: 0;
     font-family: var(--font-headings);
-    font-size: 19px;
+    font-size: var(--fs-lead);
     line-height: 1.45;
   }
 
@@ -752,7 +769,7 @@
   }
 
   .link-list__title {
-    font-size: 28px;
+    font-size: var(--fs-h2);
   }
 
   .link-list__links {
@@ -820,7 +837,7 @@
   }
 
   .column-text h3 {
-    font-size: 22px;
+    font-size: var(--fs-h3);
   }
 
   .column-image {
@@ -846,12 +863,12 @@
   .rich-text > div {
     display: grid;
     gap: 14px;
-    max-width: 760px;
+    max-width: var(--measure);
   }
 
   .rich-text h3 {
     margin-top: 10px;
-    font-size: 22px;
+    font-size: var(--fs-h3);
   }
 
   .rich-text ul,
@@ -1007,7 +1024,6 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    font-size: 15px;
   }
 
   .site-form__check input {
