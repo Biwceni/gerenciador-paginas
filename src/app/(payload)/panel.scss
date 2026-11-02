@@ -241,6 +241,12 @@ html[data-theme] {
     background: var(--gp-accent-soft);
     color: var(--gp-accent);
   }
+
+  // Mesmo contorno dos botões, ao chegar pela tecla Tab (também na gaveta do celular).
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
+  }
 }
 
 @media (min-width: $desktop) {
@@ -2028,6 +2034,11 @@ textarea.gp-input {
 
   &:hover {
     background: var(--gp-surface-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
   }
 }
 
