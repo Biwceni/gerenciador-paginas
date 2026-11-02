@@ -20,9 +20,10 @@ export function Photo({ media, sizes, priority, className, fill }: Props) {
   // Sem descrição: `alt=""`, e o leitor de tela pula a foto em vez de ler o nome do arquivo.
   const alt = media.alt ?? ''
 
-  // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado): vai direto, sem o
+  // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado) ou guardada no
+  // próprio servidor (sem o Storage configurado, só no computador e nos testes): vai direto, sem o
   // otimizador de imagens do site, que só aceita o nosso Storage.
-  const unoptimized = isTemplatePhotoURL(media.url)
+  const unoptimized = isTemplatePhotoURL(media.url) || media.url.includes('/api/media/file/')
   const objectPosition =
     media.focalX != null && media.focalY != null ? `${media.focalX}% ${media.focalY}%` : undefined
 
