@@ -15,6 +15,8 @@ $desktop: 1024px;
   --gp-fs-help: 14px; // ajuda, endereços, botões
   --gp-fs-small: 13px; // selos e datas
   --gp-fs-rail: 12px; // trilho de ícones do editor
+  // Espaço acima do título das telas e da marca do menu lateral (computador): os dois alinhados.
+  --gp-top: 32px;
 }
 
 html[data-theme='light'],
@@ -241,6 +243,12 @@ html[data-theme] {
   }
 }
 
+@media (min-width: $desktop) {
+  .nav {
+    --nav-padding-block-start: var(--gp-top);
+  }
+}
+
 .gp-nav__spacer {
   flex: 1;
   min-height: 24px;
@@ -253,6 +261,11 @@ html[data-theme] {
   margin: 0 auto;
   padding: 8px var(--gutter-h) 96px;
   display: grid;
+
+  // No celular, logo abaixo da barra do topo; no computador, na altura da marca do menu.
+  @media (min-width: $desktop) {
+    padding-top: var(--gp-top);
+  }
   gap: 22px;
   color: var(--gp-ink);
   font-size: var(--gp-fs-text);
@@ -595,7 +608,16 @@ html[data-theme] {
 }
 
 .gp-back {
+  display: flex;
+  width: fit-content;
   margin: 0 0 8px -10px;
+
+  // No computador, o "voltar" sobe para o espaço do topo e o título fica (quase) na altura das
+  // outras telas.
+  @media (min-width: $desktop) {
+    margin-top: calc(-1 * var(--gp-top));
+    margin-bottom: 0;
+  }
 }
 
 .gp-stack {
