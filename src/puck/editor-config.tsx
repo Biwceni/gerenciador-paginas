@@ -108,6 +108,9 @@ const featureItems = (withIcon: boolean): Field => ({
   getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
 })
 
+const PLAIN_ITEMS = featureItems(false)
+const ICON_ITEMS = featureItems(true)
+
 const notice = (message: string): CustomField<undefined> => ({
   type: 'custom',
   render: () => <Notice>{message}</Notice>,
@@ -187,7 +190,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
     fields: {
       title: text('Título'),
       marker: featureMarker,
-      items: featureItems(false),
+      items: PLAIN_ITEMS,
       style: sectionStyle,
       menuLabel,
     },
@@ -203,10 +206,11 @@ const sections: { [K in keyof Components]: Section<K> } = {
       style: 'light',
     },
     // A escolha do ícone de cada item só aparece com o marcador "Ícone".
-    resolveFields: ({ props }, { fields }) => ({
-      ...fields,
-      items: featureItems(props.marker === 'icon'),
-    }),
+    // Os mesmos campos enquanto o marcador não muda: o painel não se redesenha a cada mudança.
+    resolveFields: ({ props }, { changed, fields, lastFields }) =>
+      lastFields && !changed.marker
+        ? lastFields
+        : { ...fields, items: props.marker === 'icon' ? ICON_ITEMS : PLAIN_ITEMS },
   },
   Testimonials: {
     fields: {
