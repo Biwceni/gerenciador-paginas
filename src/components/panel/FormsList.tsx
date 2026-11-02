@@ -54,7 +54,7 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
 
       <section className="gp-card gp-card--list">
         {forms.length > 0 ? (
-          <ul className="gp-rows">
+          <ul className="gp-rows gp-rows--forms">
             {forms.map((form) => (
               <li className="gp-row gp-row--form" key={form.id}>
                 <div>
@@ -68,10 +68,7 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
                   </div>
                 </div>
                 <div className="gp-row__actions">
-                  <Link
-                    className="gp-btn gp-btn--sm gp-btn--primary"
-                    href={`${formsHref}/${form.id}`}
-                  >
+                  <Link className="gp-btn gp-btn--sm" href={`${formsHref}/${form.id}`}>
                     <PanelIcon name="edit" size={14} />
                     Mudar perguntas
                   </Link>

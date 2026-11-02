@@ -2399,6 +2399,22 @@ textarea.gp-input {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+// Lista de formulários: as colunas dos botões são da lista toda, então "Mudar perguntas" e "Ver
+// respostas" ficam alinhados em todas as linhas, mesmo onde falta um deles.
+.gp-rows--forms {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 14px;
+
+  > .gp-row {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .gp-row__actions {
+    display: contents;
+  }
+}
+
 .gp-formcards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -2505,6 +2521,18 @@ textarea.gp-input {
 
     .gp-row__actions {
       justify-content: flex-start;
+    }
+  }
+
+  .gp-rows--forms {
+    grid-template-columns: minmax(0, 1fr);
+
+    > .gp-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gp-row__actions {
+      display: flex;
     }
   }
 }
