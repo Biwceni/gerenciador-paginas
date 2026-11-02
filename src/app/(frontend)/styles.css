@@ -941,12 +941,11 @@
     margin: 0;
   }
 
+  /* Rótulo em letra normal, sem caixa alta espaçada. */
   .contact__list dt {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.7;
+    font-size: 15px;
+    font-weight: 600;
+    opacity: 0.75;
   }
 
   .contact__list dd {
@@ -961,6 +960,21 @@
 
   .contact__list a:hover {
     text-decoration: underline;
+  }
+
+  .contact__list .contact__map {
+    display: block;
+    width: fit-content;
+    margin-top: 4px;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: normal;
+  }
+
+  .section--brand .contact__list .contact__map {
+    color: inherit;
   }
 
   /* Lista de links */

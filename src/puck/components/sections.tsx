@@ -385,14 +385,6 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
         <div className="contact__intro">
           {filled(title) && <h2 className="section-title">{title}</h2>}
           <Paragraphs text={text} />
-          {address &&
-            (metadata.editing ? (
-              <span className="button">Ver no mapa</span>
-            ) : (
-              <SiteLink className="button" href={mapsURL(address)}>
-                Ver no mapa
-              </SiteLink>
-            ))}
         </div>
         {items.length > 0 ? (
           <dl className="contact__list">
@@ -405,6 +397,15 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
                   ) : (
                     item.value
                   )}
+                  {/* O mapa fica logo abaixo do endereço. */}
+                  {item.label === 'Endereço' &&
+                    (metadata.editing ? (
+                      <span className="contact__map">Ver no mapa</span>
+                    ) : (
+                      <SiteLink className="contact__map" href={mapsURL(item.value)}>
+                        Ver no mapa
+                      </SiteLink>
+                    ))}
                 </dd>
               </div>
             ))}
