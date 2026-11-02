@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
-import { whatsAppURL } from '@/lib/links'
+import { telHref, whatsAppURL } from '@/lib/links'
 import { privacyBlocks } from '@/lib/privacy'
 import { initials } from '@/lib/site'
 
@@ -373,7 +373,7 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
   const whatsappHref = whatsAppURL(whatsapp)
   const items = [
     whatsappHref && { label: 'WhatsApp', value: whatsapp, href: whatsappHref },
-    phone && { label: 'Telefone', value: phone, href: `tel:${phone.replace(/[^\d+]/g, '')}` },
+    phone && { label: 'Telefone', value: phone, href: telHref(phone) ?? undefined },
     email && { label: 'E-mail', value: email, href: `mailto:${email}` },
     address && { label: 'Endereço', value: address },
     hours && { label: 'Horário', value: hours },

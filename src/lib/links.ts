@@ -29,6 +29,24 @@ export function normalizeWhatsApp(value: string | null | undefined): string | nu
   return null
 }
 
+/**
+ * Link de telefone sempre com o código do país: "(35) 3333-4521" → "tel:+553533334521". Número que
+ * já vem com "+" (ou "00") fica com o código dele; o 0 do DDD à moda antiga ("035 ...") sai.
+ * Todo `tel:` do site passa por aqui.
+ */
+export function telHref(value: string | null | undefined): string | null {
+  const raw = (value ?? '').trim()
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return null
+  if (raw.startsWith('+')) return `tel:+${digits}`
+  if (digits.startsWith('00')) return `tel:+${digits.slice(2)}`
+  const national = digits.replace(/^0+/, '')
+  if ((national.length === 12 || national.length === 13) && national.startsWith('55')) {
+    return `tel:+${national}`
+  }
+  return `tel:+55${national}`
+}
+
 export function whatsAppURL(value: string | null | undefined): string | null {
   const number = normalizeWhatsApp(value)
   return number ? `https://wa.me/${number}` : null

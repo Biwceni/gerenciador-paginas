@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { contrastRatio, readableTextColor, safeColor } from '@/lib/colors'
-import { isSafeURL, normalizeWhatsApp, validateExternalURL } from '@/lib/links'
+import { isSafeURL, normalizeWhatsApp, telHref, validateExternalURL } from '@/lib/links'
 import { slugify, validateSlug } from '@/lib/slug'
 
 describe('slugify', () => {
@@ -67,5 +67,30 @@ describe('links', () => {
     expect(normalizeWhatsApp('+55 31 99999-0000')).toBe('5531999990000')
     expect(normalizeWhatsApp('3133330000')).toBe('553133330000')
     expect(normalizeWhatsApp('12345')).toBeNull()
+  })
+})
+
+describe('link de telefone', () => {
+  it('põe o código do Brasil quando o número não tem', () => {
+    expect(telHref('(35) 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('3533334521')).toBe('tel:+553533334521')
+    expect(telHref('(35) 99999-4521')).toBe('tel:+5535999994521')
+    // DDD à moda antiga, com o 0 na frente.
+    expect(telHref('035 3333-4521')).toBe('tel:+553533334521')
+    // Sem DDD: não dá para adivinhar a cidade, só o país.
+    expect(telHref('3333-4521')).toBe('tel:+5533334521')
+  })
+
+  it('não repete o código do país', () => {
+    expect(telHref('+55 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('55 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('0055 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('+351 21 234 5678')).toBe('tel:+351212345678')
+  })
+
+  it('sem número, sem link', () => {
+    expect(telHref('')).toBeNull()
+    expect(telHref(null)).toBeNull()
+    expect(telHref('não tem')).toBeNull()
   })
 })

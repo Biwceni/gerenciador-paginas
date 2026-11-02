@@ -365,6 +365,19 @@
 
   /* Rodapé */
 
+  /*
+   * Faixa na cor principal (como a Chamada para ação) como última seção: um respiro na cor de fundo
+   * do site antes do rodapé escuro, para os dois não parecerem um bloco só. A segunda regra é a da
+   * prévia do editor.
+   */
+  main > .section--brand:last-child {
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
+
+  [data-puck-component]:last-child > .section--brand {
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
+
   .site-footer {
     padding-block: 44px 24px;
     background: var(--color-footer);
@@ -372,9 +385,10 @@
     font-size: 14.5px;
   }
 
+  /* Mais espaço para o Contato, que tem o endereço. */
   .site-footer__cols {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-columns: 1fr 0.8fr 1.4fr;
     gap: 28px;
   }
 
@@ -403,6 +417,21 @@
   .site-footer a:hover {
     opacity: 1;
     text-decoration: underline;
+  }
+
+  /* Área de toque de 44 px de altura no celular, sem mudar o desenho do rodapé. */
+  @media (max-width: 720px) {
+    .site-footer a {
+      position: relative;
+    }
+
+    .site-footer a::after {
+      content: '';
+      position: absolute;
+      inset: 50% 0 auto;
+      height: 44px;
+      transform: translateY(-50%);
+    }
   }
 
   .site-footer a:focus-visible {
@@ -450,6 +479,12 @@
   @media (max-width: 720px) {
     .site-footer__cols {
       grid-template-columns: 1fr;
+    }
+
+    /* "© 2026 Nome · Privacidade" e o horário, um embaixo do outro. */
+    .site-footer__copy {
+      flex-direction: column;
+      gap: 6px;
     }
   }
 
