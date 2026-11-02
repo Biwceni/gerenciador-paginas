@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { normalizeFontName } from '@/lib/style-presets'
 import { FONT_NAME_PATTERN } from '@/lib/theme'
 
-// Amostras de fonte da tela Configurações: só ali o painel pede fontes ao Google, e só as letras
-// da amostra (`text=`), para ficar leve. O site nunca usa estes arquivos: as fontes dele são
-// copiadas para o nosso Storage ao publicar.
+// Amostras de fonte da tela Configurações: só ali o painel pede fontes ao Google (nos atalhos, só
+// as letras deles, com `text=`, para ficar leve). O site nunca usa estes arquivos: as fontes dele
+// são copiadas para o nosso Storage ao publicar.
 
 const CSS_API = 'https://fonts.googleapis.com/css2'
 
@@ -28,28 +28,42 @@ export type FontSample = 'empty' | 'loading' | 'found' | 'missing'
 /**
  * Procura a fonte digitada no Google e, se achar, deixa ela pronta para a amostra. "missing" quando
  * o Google não tem a fonte (ele responde 400) ou o nome não é de fonte.
+ *
+ * O pedido é só pelo nome (mudar a frase da amostra não pede de novo), e cada campo usa um `<style>`
+ * só, trocado a cada fonte nova e tirado ao sair da tela.
  */
-export function useFontSample(rawName: string, text: string): FontSample {
+export function useFontSample(rawName: string): FontSample {
   const name = rawName.trim() ? normalizeFontName(rawName) : ''
-  const [result, setResult] = useState<{ key: string; state: FontSample }>({
-    key: '',
+  const [result, setResult] = useState<{ name: string; state: FontSample }>({
+    name: '',
     state: 'empty',
   })
-  const key = `${name}\n${text}`
+  const style = useRef<HTMLStyleElement | null>(null)
+
+  useEffect(
+    () => () => {
+      style.current?.remove()
+      style.current = null
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!name || !FONT_NAME_PATTERN.test(name)) return
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(googleFontsURL([name], text), { signal: controller.signal })
-        if (!response.ok) return setResult({ key, state: 'missing' })
-        const style = document.createElement('style')
-        style.dataset.gpFontSample = name
-        style.textContent = await response.text()
-        document.head.appendChild(style)
-        await document.fonts.load(`16px '${name}'`, text).catch(() => undefined)
-        setResult({ key, state: 'found' })
+        const response = await fetch(googleFontsURL([name]), { signal: controller.signal })
+        if (!response.ok) return setResult({ name, state: 'missing' })
+        const css = await response.text()
+        if (!style.current) {
+          style.current = document.createElement('style')
+          document.head.appendChild(style.current)
+        }
+        style.current.dataset.gpFontSample = name
+        style.current.textContent = css
+        await document.fonts.load(`16px '${name}'`).catch(() => undefined)
+        setResult({ name, state: 'found' })
       } catch {
         // Sem internet ou cancelado: sem amostra, sem aviso (o aviso vem ao salvar).
       }
@@ -58,9 +72,9 @@ export function useFontSample(rawName: string, text: string): FontSample {
       controller.abort()
       clearTimeout(timer)
     }
-  }, [key, name, text])
+  }, [name])
 
   if (!name) return 'empty'
   if (!FONT_NAME_PATTERN.test(name)) return 'missing'
-  return result.key === key ? result.state : 'loading'
+  return result.name === name ? result.state : 'loading'
 }

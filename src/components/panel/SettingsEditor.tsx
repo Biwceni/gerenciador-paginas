@@ -132,7 +132,7 @@ const PRESET_FONTS_URL = googleFontsURL(
 
 /** Amostra embaixo do campo de fonte, assim que o Google acha a fonte digitada. */
 function FontSampleLine({ name, text }: { name: string; text: string }) {
-  const sample = useFontSample(name, text)
+  const sample = useFontSample(name)
   if (sample !== 'found') return null
   return (
     <span className="gp-fontsample" style={{ fontFamily: fontStack(normalizeFontName(name)) }}>
