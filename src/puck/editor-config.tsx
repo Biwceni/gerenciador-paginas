@@ -84,13 +84,9 @@ const featureMarker: Field = {
   ],
 }
 
-const featureIcon: Field = {
-  type: 'select',
-  label: 'Ícone',
-  options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
-}
-
-const featureItems = (withIcon: boolean): Field => ({
+// O campo Ícone fica sempre no item, como a foto do banner: um campo que aparece e some conforme o
+// marcador (resolveFields) redesenhava o painel a cada mudança e fazia cliques se perderem.
+const featureItems: Field = {
   type: 'array',
   label: 'Destaques',
   min: 1,
@@ -98,7 +94,11 @@ const featureItems = (withIcon: boolean): Field => ({
   arrayFields: {
     title: text('Título'),
     text: textarea('Texto'),
-    ...(withIcon ? { icon: featureIcon } : {}),
+    icon: {
+      type: 'select',
+      label: 'Ícone (com o marcador "Ícone")',
+      options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
+    },
   },
   defaultItemProps: {
     title: 'Novo destaque',
@@ -106,10 +106,7 @@ const featureItems = (withIcon: boolean): Field => ({
     icon: 'check',
   },
   getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
-})
-
-const PLAIN_ITEMS = featureItems(false)
-const ICON_ITEMS = featureItems(true)
+}
 
 const notice = (message: string): CustomField<undefined> => ({
   type: 'custom',
@@ -190,7 +187,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
     fields: {
       title: text('Título'),
       marker: featureMarker,
-      items: PLAIN_ITEMS,
+      items: featureItems,
       style: sectionStyle,
       menuLabel,
     },
@@ -205,12 +202,6 @@ const sections: { [K in keyof Components]: Section<K> } = {
       })),
       style: 'light',
     },
-    // A escolha do ícone de cada item só aparece com o marcador "Ícone".
-    // Os mesmos campos enquanto o marcador não muda: o painel não se redesenha a cada mudança.
-    resolveFields: ({ props }, { changed, fields, lastFields }) =>
-      lastFields && !changed.marker
-        ? lastFields
-        : { ...fields, items: props.marker === 'icon' ? ICON_ITEMS : PLAIN_ITEMS },
   },
   Testimonials: {
     fields: {
