@@ -6,6 +6,8 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { editorPath } from '@/lib/editor'
 import {
+  type FormPage,
+  formPageName,
   CONSENT_TEXT,
   EMAIL,
   FIELD_TYPE_LABELS,
@@ -35,7 +37,7 @@ type Props = {
   /** Quantas mensagens o formulário já recebeu. */
   messages: number
   /** Páginas que usam o formulário. */
-  pages: { id: number; title: string }[]
+  pages: FormPage[]
   /** Como está a página de privacidade do site. */
   privacy: { state: 'live' } | { state: 'draft'; pageId: number } | { state: 'none' }
   siteEmail: string
@@ -514,7 +516,7 @@ export function FormEditor({
                 {pages.map((page) => (
                   <li key={page.id}>
                     <Link className="gp-link" href={editorPath(adminRoute, page.id)}>
-                      {page.title}
+                      {formPageName(page)}
                     </Link>
                   </li>
                 ))}

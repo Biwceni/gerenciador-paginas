@@ -105,6 +105,10 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
               <span className="gp-small gp-muted">
                 {starter.fields.map((field) => field.label).join(', ')}
               </span>
+              <span aria-hidden="true" className="gp-formcard__go">
+                <PanelIcon name="plus" size={14} />
+                Usar este
+              </span>
             </button>
           ))}
         </div>
