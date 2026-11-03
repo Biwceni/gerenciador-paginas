@@ -325,6 +325,8 @@ test.describe.serial('crítica de design', () => {
       '/admin/formularios',
       `/admin/formularios/${formId}`,
       '/admin/configuracoes',
+      '/admin/mensagens',
+      '/admin/avancado',
       '/admin/account',
       `/admin/editor/${homeId}`,
       '/',
