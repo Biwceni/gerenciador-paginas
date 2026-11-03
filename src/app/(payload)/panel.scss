@@ -1508,9 +1508,20 @@ textarea.gp-input {
   gap: 10px;
 }
 
+// Nomes das colunas dos links, só no computador. A última coluna tem a largura dos três botões.
+.gp-menuhead {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
+  gap: 8px;
+  margin-bottom: -6px;
+  color: var(--gp-muted);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+}
+
 .gp-menuitem {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) auto;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
   gap: 8px;
   align-items: start;
   padding-bottom: 10px;
@@ -1524,8 +1535,23 @@ textarea.gp-input {
     grid-column: 1 / -1;
   }
 
+  &__field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  // Rótulo de cada campo: só no celular, onde as colunas não têm nome em cima.
+  &__label {
+    display: none;
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    color: var(--gp-muted);
+  }
+
   &__moves {
     display: flex;
+    gap: 4px;
   }
 
   .gp-iconbtn[disabled] {
@@ -1672,10 +1698,19 @@ textarea.gp-input {
 }
 
 @media (max-width: 760px) {
+  .gp-menuhead {
+    display: none;
+  }
+
   .gp-menuitem {
     grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
 
-    .gp-linkpicker {
+    &__label {
+      display: block;
+    }
+
+    > .gp-menuitem__field:nth-child(2) {
       grid-column: 1 / -1;
       grid-row: 2;
     }

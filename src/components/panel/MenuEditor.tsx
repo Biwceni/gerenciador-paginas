@@ -281,24 +281,41 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                 A ordem aqui é a ordem no site. Até {MENU_LIMIT} links.
               </p>
             </div>
+            {/* Nomes das colunas no computador; no celular, cada campo mostra o seu. */}
+            {header.items.length > 0 && (
+              <div aria-hidden="true" className="gp-menuhead">
+                <span>Texto no menu</span>
+                <span>Abre a página</span>
+              </div>
+            )}
             <ol className="gp-menulist">
               {header.items.map((item, index) => (
                 <li className="gp-menuitem" key={item.id ?? index}>
-                  <input
-                    aria-label={`Texto do link ${index + 1}`}
-                    className="gp-input"
-                    maxLength={LABEL_LIMIT}
-                    onChange={(event) => setItem(index, { label: event.target.value })}
-                    placeholder="Texto no menu"
-                    value={item.label}
-                  />
-                  <LinkPicker
-                    label={`Para onde o link ${index + 1} leva`}
-                    onChange={(link) => setItem(index, { link })}
-                    pages={pages}
-                    value={item.link}
-                    whatsapp={Boolean(site.whatsappHref)}
-                  />
+                  <div className="gp-menuitem__field">
+                    <span aria-hidden="true" className="gp-menuitem__label">
+                      Texto no menu
+                    </span>
+                    <input
+                      aria-label={`Texto do link ${index + 1}`}
+                      className="gp-input"
+                      maxLength={LABEL_LIMIT}
+                      onChange={(event) => setItem(index, { label: event.target.value })}
+                      placeholder="Texto no menu"
+                      value={item.label}
+                    />
+                  </div>
+                  <div className="gp-menuitem__field">
+                    <span aria-hidden="true" className="gp-menuitem__label">
+                      Abre a página
+                    </span>
+                    <LinkPicker
+                      label={`Página do link ${index + 1}`}
+                      onChange={(link) => setItem(index, { link })}
+                      pages={pages}
+                      value={item.link}
+                      whatsapp={Boolean(site.whatsappHref)}
+                    />
+                  </div>
                   <div className="gp-menuitem__moves">
                     <button
                       aria-label={`Subir "${item.label}"`}
