@@ -86,7 +86,8 @@ const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
 const UI_ONLY_ACTIONS: readonly string[] = ['setUi', 'registerZone', 'unregisterZone']
 
-// Prévia em tamanho real: ocupa o espaço que sobra e nunca é encolhida. Sem os controles de zoom.
+// Prévia: começa ocupando o espaço que sobra; fora do celular, o PreviewTools passa a desenhar a
+// página com a largura de um computador. Sem os controles de zoom do Puck.
 const initialUi: Partial<UiState> = {
   viewports: { current: { width: '100%', height: 'auto' }, controlsVisible: false, options: [] },
 }
