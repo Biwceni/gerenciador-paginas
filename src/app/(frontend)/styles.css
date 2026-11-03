@@ -695,6 +695,19 @@
     align-items: center;
   }
 
+  /* Banner compacto (ex.: página Contato): menos altura e título um pouco menor. */
+  .hero.hero--compact {
+    padding-block: clamp(32px, 5vw, 56px);
+  }
+
+  .hero.hero--compact.section--image {
+    min-height: clamp(220px, 26vw, 320px);
+  }
+
+  .hero--compact .hero__title {
+    font-size: var(--fs-h2);
+  }
+
   .hero__photo {
     position: relative;
     aspect-ratio: 4 / 3;

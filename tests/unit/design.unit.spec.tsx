@@ -109,11 +109,28 @@ describe('Banner: Foto ao lado', () => {
     button: null,
     style: 'side' as const,
     align: 'center' as const,
+    height: 'normal' as const,
   }
 
   it('é aceito pelo esquema sem mudar a versão do conteúdo', () => {
     expect(CONTENT_VERSION).toBe(2)
     expect(parse([{ type: 'Hero', props: hero }]).success).toBe(true)
+  })
+
+  it('banner salvo antes da opção Altura continua com a altura normal', () => {
+    const { height: _height, ...before } = hero
+    const result = parse([{ type: 'Hero', props: before }])
+    expect(result.success).toBe(true)
+    const props = result.success ? (result.data.data.content[0].props as { height?: string }) : {}
+    expect(props.height).toBe('normal')
+  })
+
+  it('banner compacto ganha a classe própria', () => {
+    const html = renderToStaticMarkup(<Hero {...hero} height="compact" metadata={metadata} />)
+    expect(html).toContain('hero--compact')
+    expect(renderToStaticMarkup(<Hero {...hero} metadata={metadata} />)).not.toContain(
+      'hero--compact',
+    )
   })
 
   it('sem foto, vira o fundo suave', () => {

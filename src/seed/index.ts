@@ -77,6 +77,7 @@ const pages: SeedPage[] = [
           button: { label: 'Chamar no WhatsApp', link: whatsapp },
           style: 'soft',
           align: 'left',
+          height: 'normal',
         },
       },
       {
@@ -116,6 +117,7 @@ const pages: SeedPage[] = [
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
           style: 'brand',
           align: 'center',
+          height: 'normal',
         },
       },
       {
@@ -158,6 +160,7 @@ const pages: SeedPage[] = [
           button: { label: 'Fale com a gente', link: whatsapp },
           style: 'image',
           align: 'left',
+          height: 'normal',
         },
       },
       {
@@ -241,6 +244,7 @@ const pages: SeedPage[] = [
           },
           style: 'image',
           align: 'left',
+          height: 'normal',
         },
       },
       {

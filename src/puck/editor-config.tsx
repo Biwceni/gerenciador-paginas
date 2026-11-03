@@ -171,6 +171,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'No centro', value: 'center' },
         ],
       },
+      height: {
+        type: 'radio',
+        label: 'Altura',
+        options: [
+          { label: 'Normal', value: 'normal' },
+          { label: 'Compacto', value: 'compact' },
+        ],
+      },
     },
     defaultProps: {
       title: 'Escreva aqui um título chamativo',
@@ -179,6 +187,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       image: null,
       style: 'image',
       align: 'left',
+      height: 'normal',
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },

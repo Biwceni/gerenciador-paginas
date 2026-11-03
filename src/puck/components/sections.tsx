@@ -118,6 +118,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
     'hero',
     align === 'center' && 'hero--center',
     !photo && 'hero--plain',
+    props.height === 'compact' && 'hero--compact',
   ]
 
   return (

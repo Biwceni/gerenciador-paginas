@@ -29,6 +29,7 @@ export function blankContent(title: string): PageContent {
       button: null,
       style: 'soft',
       align: 'center',
+      height: 'normal',
     },
   })
   return content
