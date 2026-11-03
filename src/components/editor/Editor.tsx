@@ -43,6 +43,7 @@ import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
+import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
@@ -137,6 +138,8 @@ type Chrome = {
   backHref: string
   /** Resumo que aparece no painel da direita quando nenhuma seção está escolhida. */
   summary: { sections: number; address: string; exampleSections: number }
+  /** Escolhe a próxima seção que ainda tem texto de exemplo e rola até ela. */
+  goToExample: () => void
   open: (dialog: DialogName) => void
   leave: () => Promise<void>
   /** Abre o menu do celular, sabendo se dá para desfazer e refazer. */
@@ -258,11 +261,11 @@ function EditorFields({
           {sections === 1 ? '1 seção' : `${sections} seções`} · {address}
         </span>
         {exampleSections > 0 && (
-          <span className="ed-hint ed-hint--warn">
+          <button className="ed-linkbtn ed-hint--warn" onClick={chrome.goToExample} type="button">
             {exampleSections === 1
-              ? '1 seção ainda tem texto de exemplo.'
-              : `${exampleSections} seções ainda têm texto de exemplo.`}
-          </span>
+              ? '1 seção ainda tem texto de exemplo. Ver qual'
+              : `${exampleSections} seções ainda têm texto de exemplo. Ver a próxima`}
+          </button>
         )}
       </div>
       {children}
@@ -300,6 +303,7 @@ export function Editor(props: EditorProps) {
   const stopped = useRef(false)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
+  const exampleCursor = useRef(0)
   const removedToast = useRef<string | number | null>(null)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
@@ -512,6 +516,21 @@ export function Editor(props: EditorProps) {
       sections: data.content.length,
       address: `${props.domain}${path === '/' ? '' : path}`,
       exampleSections: exampleSections.length,
+    },
+    goToExample: () => {
+      const puck = getPuck.current?.()
+      if (!puck || !exampleSections.length) return
+      // A cada clique, a próxima da lista (volta à primeira depois da última).
+      const next = exampleSections[exampleCursor.current % exampleSections.length]
+      exampleCursor.current += 1
+      const index = puck.appState.data.content.findIndex((item) => item.props.id === next.props.id)
+      if (index < 0) return
+      puck.dispatch({
+        type: 'setUi',
+        ui: { itemSelector: { index, zone: ROOT_ZONE }, rightSideBarVisible: true },
+        recordHistory: false,
+      })
+      scrollToSection(next.props.id)
     },
     open: setDialog,
     openMore: (history) => {

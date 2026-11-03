@@ -951,3 +951,25 @@ textarea.ed-input {
     min-height: 44px;
   }
 }
+
+/* Botão com cara de link (ex.: "5 seções ainda têm texto de exemplo. Ver a próxima"). */
+.ed-linkbtn {
+  display: block;
+  min-height: 32px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ed-linkbtn:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
