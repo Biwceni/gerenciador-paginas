@@ -6,6 +6,7 @@ import { themeStyle } from '@/components/site/theme'
 import { populatedMedia, privacyHref, siteLinks } from '@/lib/content'
 import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
+import { previewFontFaces } from '@/lib/theme'
 import { pageSummary } from '@/puck/summary'
 
 import { MenuEditor } from './MenuEditor'
@@ -43,7 +44,8 @@ export async function MenuView(props: AdminViewServerProps) {
       pagination: false,
       ...access,
     }),
-    payload.findGlobal({ slug: 'site', depth: 1, draft: false, ...access }),
+    // O rascunho das configurações, como nas outras prévias do painel.
+    payload.findGlobal({ slug: 'site', depth: 1, draft: true, ...access }),
   ])
   const liveIds = new Set(live.docs.map((doc) => doc.id))
 
@@ -71,7 +73,7 @@ export async function MenuView(props: AdminViewServerProps) {
           whatsappHref: siteLinks(site).whatsappHref,
           privacyHref: privacyHref(site),
           theme: themeStyle(site) as Record<string, string>,
-          fontFaces: site.fontFaces ?? null,
+          fontFaces: previewFontFaces(site),
         }}
       />
     </PanelTemplate>

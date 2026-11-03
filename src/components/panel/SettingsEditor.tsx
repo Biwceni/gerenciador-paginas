@@ -6,14 +6,14 @@ import '@/app/(frontend)/styles.css'
 /* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
-import { request } from '@/components/editor/api'
 import { thumbnailURL } from '@/components/editor/context'
 import { footerSocial, SiteFooterView, SiteHeaderView } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
-import { normalizeWhatsApp, validateExternalURL, validateInstagram, whatsAppURL } from '@/lib/links'
+import { whatsAppURL } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
 import {
   COLOR_FIELDS,
@@ -28,26 +28,14 @@ import {
 import { FONT_NAME_PATTERN } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
+import { discardSettings, publishSettings, saveGlobalDraft } from './api'
 import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
+import { type SettingsState, toSiteData, validateSettings } from './settings'
 import { SiteFrame } from './SiteFrame'
 import { Tip } from './Tip'
-
-export type SettingsState = {
-  name: string
-  tagline: string
-  logo: number | null
-  homepage: number | null
-  privacyPage: number | null
-  colors: SiteColors
-  fonts: { headings: string; body: string }
-  contact: { whatsapp: string; phone: string; email: string; address: string; hours: string }
-  social: { instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
-  seoDescription: string
-  shareImage: number | null
-}
 
 type Props = {
   adminRoute: string
@@ -70,60 +58,10 @@ type Props = {
   photos: Media[]
 }
 
+export type { SettingsState }
+
 type SaveState = 'idle' | 'waiting' | 'saving' | 'invalid' | 'error'
 type FontRole = 'headings' | 'body'
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-/** Problemas que impedem salvar, por campo, em linguagem simples. */
-function validate(state: SettingsState): Record<string, string> {
-  const errors: Record<string, string> = {}
-  if (!state.name.trim()) errors.name = 'Escreva o nome do negócio.'
-  if (state.contact.whatsapp && !normalizeWhatsApp(state.contact.whatsapp)) {
-    errors.whatsapp = 'Digite o número com DDD. Ex.: (31) 99999-0000.'
-  }
-  if (state.contact.email && !EMAIL.test(state.contact.email.trim())) {
-    errors.email = 'Confira o e-mail. Ex.: contato@seunegocio.com.br'
-  }
-  const instagram = validateInstagram(state.social.instagram)
-  if (instagram !== true) errors.instagram = instagram
-  for (const key of ['facebook', 'youtube', 'tiktok', 'linkedin'] as const) {
-    const value = state.social[key].trim()
-    const result = value ? validateExternalURL(value) : true
-    if (result !== true) errors[key] = result
-  }
-  return errors
-}
-
-/** As configurações como o Payload guarda (texto vazio vira "sem valor"). */
-function toSiteData(state: SettingsState) {
-  const orNull = (value: string) => value.trim() || null
-  return {
-    name: state.name.trim(),
-    tagline: orNull(state.tagline),
-    logo: state.logo,
-    homepage: state.homepage,
-    privacyPage: state.privacyPage,
-    colors: state.colors,
-    fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
-    contact: {
-      whatsapp: orNull(state.contact.whatsapp),
-      phone: orNull(state.contact.phone),
-      email: orNull(state.contact.email),
-      address: orNull(state.contact.address),
-      hours: orNull(state.contact.hours),
-    },
-    social: {
-      instagram: orNull(state.social.instagram),
-      facebook: orNull(state.social.facebook),
-      youtube: orNull(state.social.youtube),
-      tiktok: orNull(state.social.tiktok),
-      linkedin: orNull(state.social.linkedin),
-    },
-    seoDescription: orNull(state.seoDescription),
-    shareImage: state.shareImage,
-  }
-}
 
 const PRESET_FONTS_URL = googleFontsURL(
   FONT_PRESETS.flatMap((preset) => [preset.headings, preset.body]),
@@ -154,16 +92,21 @@ export function SettingsEditor({
   draftHome,
   draftPrivacy,
   taglineHint,
-  pending,
+  pending: initialPending,
   people,
   canStartOver,
   photos: initialPhotos,
 }: Props) {
+  const router = useRouter()
   const [state, setState] = useState(initial)
-  const [published, setPublished] = useState(initial)
+  // O que já está guardado: no rascunho ou, sem rascunho, no ar.
+  const [saved, setSaved] = useState(initial)
+  const [pending, setPending] = useState(initialPending)
   const [touched, setTouched] = useState(false)
   const [save, setSave] = useState<SaveState>('idle')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const [fontError, setFontError] = useState<Partial<Record<FontRole, string>>>({})
   const [fontText, setFontText] = useState(initial.fonts)
   const [hexText, setHexText] = useState<SiteColors>(initial.colors)
@@ -171,64 +114,111 @@ export function SettingsEditor({
   const [choosing, setChoosing] = useState<'logo' | 'shareImage' | null>(null)
   const [fullPreview, setFullPreview] = useState(false)
 
-  const errors = validate(state)
+  const errors = validateSettings(state)
   const photo = (id: number | null) => photos.find((item) => item.id === id) ?? null
 
   const update = (next: Partial<SettingsState>) => {
     setState((current) => ({ ...current, ...next }))
     setTouched(true)
     setSave('waiting')
+    setMessage(null)
   }
 
-  // Cada mudança é salva e publicada sozinha, um pouco depois da última (como no protótipo).
+  /** Fonte que o Google não tem: volta para a de `from` e mostra o erro no campo. */
+  const rejectFont = (text: string, tried: SettingsState, from: SettingsState) => {
+    const role = (['headings', 'body'] as const).find((key) => tried.fonts[key] !== from.fonts[key])
+    if (!role || !text.includes('Google Fonts')) return false
+    setFontError({ [role]: text })
+    setFontText((current) => ({ ...current, [role]: from.fonts[role] }))
+    setState((current) => ({ ...current, fonts: { ...current.fonts, [role]: from.fonts[role] } }))
+    return true
+  }
+
+  // Cada mudança é guardada sozinha como rascunho, um pouco depois da última. O site só muda ao
+  // publicar.
   useEffect(() => {
-    // Já salvo: depois de salvar, `published` passa a ser este mesmo estado.
-    if (!touched || state === published) return
+    // Já guardado: depois de salvar, `saved` passa a ser este mesmo estado.
+    if (!touched || state === saved) return
     const timer = setTimeout(async () => {
-      if (Object.keys(validate(state)).length) {
+      if (Object.keys(validateSettings(state)).length) {
         setSave('invalid')
         return
       }
       setSave('saving')
       try {
-        await request(apiRoute, '/globals/site', {
-          method: 'POST',
-          body: JSON.stringify({ ...toSiteData(state), _status: 'published' }),
-        })
-        setPublished(state)
+        await saveGlobalDraft(apiRoute, 'site', toSiteData(state))
+        setSaved(state)
+        setPending(true)
         setFontError({})
         setSaveError(null)
         setSave('idle')
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Tente de novo.'
-        // Fonte que o Google não tem: volta para a anterior e salva o resto de novo.
-        const role = (['headings', 'body'] as const).find(
-          (key) => state.fonts[key] !== published.fonts[key],
-        )
-        if (role && message.includes('Google Fonts')) {
-          setFontError({ [role]: message })
-          setFontText((current) => ({ ...current, [role]: published.fonts[role] }))
-          setState((current) => ({
-            ...current,
-            fonts: { ...current.fonts, [role]: published.fonts[role] },
-          }))
+        const text = error instanceof Error ? error.message : 'Tente de novo.'
+        // A fonte volta para a anterior e o resto é guardado de novo.
+        if (rejectFont(text, state, saved)) {
           setSave('waiting')
           return
         }
-        setSaveError(message)
+        setSaveError(text)
         setSave('error')
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [apiRoute, published, state, touched])
+  }, [apiRoute, saved, state, touched])
 
-  // Aviso ao fechar a aba com mudança ainda não salva.
+  // Aviso ao fechar a aba só enquanto algo ainda não foi guardado (o rascunho guardado fica).
   useEffect(() => {
     if (save === 'idle') return
     const onLeave = (event: BeforeUnloadEvent) => event.preventDefault()
     window.addEventListener('beforeunload', onLeave)
     return () => window.removeEventListener('beforeunload', onLeave)
   }, [save])
+
+  /** Depois de publicar ou descartar: a tela fica igual ao que está no ar. */
+  const reset = (next: SettingsState) => {
+    setState(next)
+    setSaved(next)
+    setFontText(next.fonts)
+    setHexText(next.colors)
+    setFontError({})
+    setSaveError(null)
+    setPending(false)
+    setSave('idle')
+  }
+
+  const publish = async () => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      await publishSettings(apiRoute, toSiteData(state))
+      reset(state)
+      setMessage({ tone: 'ok', text: 'Configurações publicadas em todo o site.' })
+      router.refresh()
+    } catch (error) {
+      const text = error instanceof Error ? error.message : 'tente de novo.'
+      if (rejectFont(text, state, saved)) setSave('waiting')
+      setMessage({ tone: 'error', text: `Não deu para publicar: ${text}` })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const discard = async () => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      reset(await discardSettings(apiRoute))
+      setMessage({ tone: 'ok', text: 'Mudanças descartadas. Voltou a ser igual ao site no ar.' })
+      router.refresh()
+    } catch (error) {
+      setMessage({
+        tone: 'error',
+        text: `Não deu para descartar: ${error instanceof Error ? error.message : 'tente de novo.'}`,
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const setColor = (key: keyof SiteColors, value: string) => {
     setHexText((current) => ({ ...current, [key]: value }))
@@ -260,8 +250,10 @@ export function SettingsEditor({
   const contrast = contrastWarnings(state.colors)
   const previewSite = { colors: state.colors, fonts: state.fonts } as Partial<Site>
   const previewFonts = [...new Set([state.fonts.headings, state.fonts.body].filter(Boolean))]
+  const changed = pending || save !== 'idle'
+  const hasErrors = Object.keys(errors).length > 0
   const status = {
-    idle: 'Tudo salvo e no ar',
+    idle: pending ? 'Guardado, falta publicar' : 'Tudo no ar',
     waiting: 'Salvando…',
     saving: 'Salvando…',
     invalid: 'Corrija o campo marcado para salvar',
@@ -386,8 +378,8 @@ export function SettingsEditor({
         <div>
           <h1>Configurações</h1>
           <p>
-            Informações que valem para o site todo. As mudanças são salvas sozinhas e aparecem no
-            site na hora.
+            Informações que valem para o site todo. Suas mudanças ficam guardadas e vão ao ar quando
+            você publicar.
           </p>
         </div>
       </header>
@@ -395,18 +387,32 @@ export function SettingsEditor({
       <div className="gp-pubbar">
         <span
           aria-live="polite"
-          className={`gp-chip gp-chip--${save === 'idle' ? 'ok' : save === 'waiting' || save === 'saving' ? 'draft' : 'warn'}`}
+          className={`gp-chip gp-chip--${!changed ? 'ok' : save === 'waiting' || save === 'saving' ? 'draft' : 'warn'}`}
         >
           {status}
         </span>
         {saveError && <span className="gp-error">{saveError}</span>}
+        <div className="gp-actions">
+          {pending && (
+            <button className="gp-btn" disabled={busy} onClick={discard} type="button">
+              Descartar mudanças
+            </button>
+          )}
+          <button
+            className="gp-btn gp-btn--primary"
+            disabled={busy || !changed || hasErrors || save === 'saving'}
+            onClick={publish}
+            type="button"
+          >
+            {busy ? 'Aguarde…' : 'Publicar configurações'}
+          </button>
+        </div>
       </div>
 
-      {pending && !touched && (
-        <Tip>
-          Há mudanças feitas pela tela avançada que ainda não estão no ar. Elas vão junto na próxima
-          mudança que você fizer aqui.
-        </Tip>
+      {message && (
+        <p className={message.tone === 'ok' ? 'gp-notice' : 'gp-error'} role="status">
+          {message.text}
+        </p>
       )}
 
       <div className="gp-grid2">
@@ -674,8 +680,8 @@ export function SettingsEditor({
                   ))}
                 </datalist>
                 <span className="gp-hint">
-                  Ao salvar, a fonte é copiada do Google para o seu site: os visitantes não acessam
-                  o Google.
+                  Ao publicar, a fonte é copiada do Google para o seu site: os visitantes não
+                  acessam o Google.
                 </span>
               </div>
             </div>

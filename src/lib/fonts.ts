@@ -102,6 +102,19 @@ async function copyToStorage(faces: FontFace[]): Promise<FontFace[]> {
 export async function prepareFonts(
   names: string[],
 ): Promise<{ css: string; resolved: Record<string, string> }> {
+  const { faces, resolved } = await findFonts(names)
+  return { css: buildFontFaceCSS(await copyToStorage(faces)), resolved }
+}
+
+/**
+ * Só confere os nomes no Google Fonts, sem copiar nada: o rascunho das configurações recusa logo a
+ * fonte que não existe, e a cópia fica para quando publicar.
+ */
+export async function resolveFontNames(names: string[]): Promise<Record<string, string>> {
+  return (await findFonts(names)).resolved
+}
+
+async function findFonts(names: string[]) {
   const resolved: Record<string, string> = {}
   const faces: FontFace[] = []
 
@@ -118,5 +131,5 @@ export async function prepareFonts(
     faces.push(...parsed)
   }
 
-  return { css: buildFontFaceCSS(await copyToStorage(faces)), resolved }
+  return { faces, resolved }
 }

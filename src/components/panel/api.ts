@@ -5,6 +5,8 @@ import { FORM_STARTERS } from '@/lib/forms'
 import type { Footer, Form, Header, Page, Site } from '@/payload-types'
 import { emptyPageContent, type PageContent } from '@/puck/schema'
 
+import { type SiteData, toSettingsState, toSiteData } from './settings'
+
 // Ações da lista de páginas, pela API do Payload com a sessão do painel. As permissões e as regras
 // (como não excluir a página inicial) são conferidas no servidor.
 
@@ -161,11 +163,11 @@ export function deleteForm(apiRoute: string, id: number) {
 export type HeaderData = Pick<Header, 'items' | 'button'>
 export type FooterData = Pick<Footer, 'text' | 'showMenu' | 'showContact' | 'showSocial'>
 
-/** Guarda o menu ou o rodapé como rascunho: o site só muda ao publicar. */
+/** Guarda o menu, o rodapé ou as configurações como rascunho: o site só muda ao publicar. */
 export function saveGlobalDraft(
   apiRoute: string,
-  slug: 'header' | 'footer',
-  data: HeaderData | FooterData,
+  slug: 'header' | 'footer' | 'site',
+  data: HeaderData | FooterData | SiteData,
 ) {
   return request(apiRoute, `/globals/${slug}?draft=true`, {
     method: 'POST',
@@ -208,5 +210,24 @@ export async function discardMenuAndFooter(apiRoute: string) {
     },
   }
   await publishMenuAndFooter(apiRoute, published.header, published.footer)
+  return published
+}
+
+/** Publica as configurações com tudo o que está na tela. */
+export function publishSettings(apiRoute: string, data: SiteData) {
+  return request<{ result: Site }>(apiRoute, '/globals/site', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, _status: 'published' }),
+  })
+}
+
+/**
+ * Descarta o rascunho das configurações: lê o que está no ar e publica de novo, igual (como
+ * `discardMenuAndFooter`).
+ */
+export async function discardSettings(apiRoute: string) {
+  const site = await request<Site>(apiRoute, '/globals/site?depth=0&draft=false')
+  const published = toSettingsState(site)
+  await publishSettings(apiRoute, toSiteData(published))
   return published
 }

@@ -25,6 +25,8 @@ type Props = {
   initial: { name: string; tagline: string; whatsapp: string } | null
   /** Delas, as que estão no ar: saem do ar ao aplicar o modelo. */
   livePages: number
+  /** As Configurações têm mudança fora do ar: trocar de modelo descarta. */
+  settingsDraft: boolean
   templates: StartTemplate[]
 }
 
@@ -114,6 +116,7 @@ export function StartWizard({
   existingPages,
   initial,
   livePages,
+  settingsDraft,
   templates,
 }: Props) {
   const router = useRouter()
@@ -383,6 +386,12 @@ export function StartWizard({
                     rodapé, as cores e as letras passam a ser os do modelo. O contato e o e-mail
                     continuam os mesmos.
                   </span>
+                  {settingsDraft && (
+                    <span>
+                      As mudanças das Configurações que ainda não foram publicadas serão
+                      descartadas.
+                    </span>
+                  )}
                 </div>
               )}
               {error && (

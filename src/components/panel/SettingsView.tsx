@@ -5,21 +5,21 @@ import { exampleTagline } from '@/lib/examples'
 import { PANEL_PATHS } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
 import { getServerURL } from '@/lib/site'
-import { DEFAULT_COLORS } from '@/lib/theme'
 
 import { PanelTemplate, requireUser } from './PanelTemplate'
 import { PeopleCard } from './PeopleCard'
-import { SettingsEditor, type SettingsState } from './SettingsEditor'
+import { toSettingsState } from './settings'
+import { SettingsEditor } from './SettingsEditor'
 
 /**
  * Tela "Configurações" (`/admin/configuracoes`): identidade, página inicial, cores e letras,
- * contato e Google. Segue o `vSettings` do protótipo: muda e já vale no site.
+ * contato e Google. As mudanças ficam num rascunho e vão ao ar com "Publicar configurações".
  */
 export async function SettingsView(props: AdminViewServerProps) {
   const { payload, user, adminRoute } = requireUser(props, PANEL_PATHS.settings)
   const access = { overrideAccess: false, user } as const
   const [site, live, photos, people, models] = await Promise.all([
-    // O rascunho mais recente: se alguém mexeu pela tela avançada sem publicar, aparece aqui.
+    // O rascunho mais recente: a tela abre com as mudanças ainda fora do ar.
     payload.findGlobal({ slug: 'site', depth: 0, draft: true, ...access }),
     payload.find({
       collection: 'pages',
@@ -79,31 +79,7 @@ export async function SettingsView(props: AdminViewServerProps) {
   const privacyPage = relationID(site.privacyPage)
   const [draftHome, draftPrivacy] = await Promise.all([draftPage(homepage), draftPage(privacyPage)])
 
-  const initial: SettingsState = {
-    name: site.name ?? '',
-    tagline: site.tagline ?? '',
-    logo: relationID(site.logo),
-    homepage,
-    privacyPage,
-    colors: { ...DEFAULT_COLORS, ...site.colors },
-    fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
-    contact: {
-      whatsapp: site.contact?.whatsapp ?? '',
-      phone: site.contact?.phone ?? '',
-      email: site.contact?.email ?? '',
-      address: site.contact?.address ?? '',
-      hours: site.contact?.hours ?? '',
-    },
-    social: {
-      instagram: site.social?.instagram ?? '',
-      facebook: site.social?.facebook ?? '',
-      youtube: site.social?.youtube ?? '',
-      tiktok: site.social?.tiktok ?? '',
-      linkedin: site.social?.linkedin ?? '',
-    },
-    seoDescription: site.seoDescription ?? '',
-    shareImage: relationID(site.shareImage),
-  }
+  const initial = toSettingsState(site)
 
   return (
     <PanelTemplate {...props}>

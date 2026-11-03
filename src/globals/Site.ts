@@ -5,7 +5,7 @@ import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { colorField } from '../fields/color'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
-import { FontNotFoundError, prepareFonts } from '../lib/fonts'
+import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
 import { DEFAULT_COLORS, FONT_NAME_PATTERN } from '../lib/theme'
 
@@ -38,7 +38,8 @@ type SiteData = {
 /**
  * Ao publicar, copia as fontes escolhidas do Google Fonts para o nosso Storage e guarda o CSS
  * pronto: o site não depende do Google nem manda o endereço do visitante para lá (LGPD).
- * Só refaz quando as fontes mudam. Rascunho não baixa nada.
+ * Só refaz quando as fontes mudam. Rascunho não baixa nada: só confere no Google a fonte que mudou,
+ * para recusar logo a que não existe.
  *
  * `fontFaces` e `fontKey` só são escritos aqui: o que vier na requisição é descartado (o campo
  * escondido no painel ainda é aceito pela API, e o CSS vai para a página). O layout também
@@ -49,10 +50,40 @@ export const prepareSiteFonts: GlobalBeforeChangeHook = async ({ data, originalD
   const previous = originalDoc as SiteData | undefined
   site.fontFaces = previous?.fontFaces ?? null
   site.fontKey = previous?.fontKey ?? null
-  if (site._status !== 'published') return data
 
   const headings = site.fonts?.headings?.trim() || ''
   const body = site.fonts?.body?.trim() || ''
+  const notFound = (error: FontNotFoundError) =>
+    new ValidationError({
+      global: 'site',
+      errors: [
+        {
+          path: error.fontName === headings ? 'fonts.headings' : 'fonts.body',
+          message: `Não encontramos "${error.fontName}" no Google Fonts. Confira o nome em fonts.google.com.`,
+        },
+      ],
+      req,
+    })
+
+  if (site._status !== 'published') {
+    const changed = [headings, body].filter(
+      (name, index) => name && name !== (index ? previous?.fonts?.body : previous?.fonts?.headings),
+    )
+    if (!changed.length) return data
+    try {
+      const resolved = await resolveFontNames(changed)
+      site.fonts = {
+        headings: headings ? (resolved[headings] ?? headings) : null,
+        body: body ? (resolved[body] ?? body) : null,
+      }
+    } catch (error) {
+      if (error instanceof FontNotFoundError) throw notFound(error)
+      // Google fora do ar: guarda assim mesmo, e o publicar confere de novo.
+      req.payload.logger.error({ err: error }, 'Não deu para conferir as fontes do rascunho')
+    }
+    return data
+  }
+
   const key = `${headings}|${body}`
   if (key === previous?.fontKey && previous?.fontFaces) return data
 
@@ -65,18 +96,7 @@ export const prepareSiteFonts: GlobalBeforeChangeHook = async ({ data, originalD
     site.fontFaces = css
     site.fontKey = `${site.fonts.headings ?? ''}|${site.fonts.body ?? ''}`
   } catch (error) {
-    if (error instanceof FontNotFoundError) {
-      throw new ValidationError({
-        global: 'site',
-        errors: [
-          {
-            path: error.fontName === headings ? 'fonts.headings' : 'fonts.body',
-            message: `Não encontramos "${error.fontName}" no Google Fonts. Confira o nome em fonts.google.com.`,
-          },
-        ],
-        req,
-      })
-    }
+    if (error instanceof FontNotFoundError) throw notFound(error)
     // Falha do Google ou do Storage não impede publicar: fica a fonte anterior e a próxima
     // publicação tenta de novo (a chave não muda).
     req.payload.logger.error({ err: error }, 'Não deu para copiar as fontes do site')
