@@ -2,7 +2,6 @@ import Link from 'next/link'
 import React from 'react'
 
 import { instagramLink, whatsAppURL } from '@/lib/links'
-import { initials } from '@/lib/site'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
@@ -49,13 +48,7 @@ export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderPr
     <header className="site-header">
       <div className="container site-header__bar">
         <Link className="site-header__brand" href="/">
-          {logo ? (
-            <Photo className="site-header__logo" media={logo} sizes="160px" />
-          ) : (
-            <span aria-hidden="true" className="site-header__initials">
-              {initials(name)}
-            </span>
-          )}
+          {logo && <Photo className="site-header__logo" media={logo} sizes="160px" />}
           <span>{name}</span>
         </Link>
         {hasNav && (

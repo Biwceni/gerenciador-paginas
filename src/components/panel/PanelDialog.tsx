@@ -10,10 +10,12 @@ type Props = {
   children: React.ReactNode
   /** Mais larga, para grades de fotos. */
   wide?: boolean
+  /** Quase a tela toda, para a prévia do site em tamanho real. */
+  size?: 'full'
 }
 
 /** Janela por cima da tela, que fecha no X, no Esc ou clicando fora. Como a `Dialog` do editor. */
-export function PanelDialog({ title, onClose, children, wide }: Props) {
+export function PanelDialog({ title, onClose, children, wide, size }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function PanelDialog({ title, onClose, children, wide }: Props) {
       <div
         aria-labelledby="gp-dialog-title"
         aria-modal="true"
-        className={`gp-dialog${wide ? ' gp-dialog--wide' : ''}`}
+        className={`gp-dialog${wide ? ' gp-dialog--wide' : ''}${size ? ` gp-dialog--${size}` : ''}`}
         ref={ref}
         role="dialog"
         tabIndex={-1}

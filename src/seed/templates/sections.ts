@@ -1,5 +1,5 @@
 import { PRIVACY_TITLE } from '../../lib/privacy'
-import type { ButtonValue, LinkRef, PageComponent } from '../../puck/schema'
+import type { ButtonValue, FeatureIconName, LinkRef, PageComponent } from '../../puck/schema'
 
 // Montadores das seções dos modelos, com Lorem Ipsum no conteúdo (como o `loremize` do protótipo).
 // Nomes de página, menu e botões ficam legíveis. Fotos, páginas e formulários são citados pela
@@ -54,7 +54,7 @@ export function pageBuilder() {
       image?: number
       button?: string
       link?: LinkRef
-      style?: 'image' | Style
+      style?: 'image' | 'side' | Style
       align?: 'left' | 'center'
     }): PageComponent => ({
       type: 'Hero',
@@ -80,13 +80,21 @@ export function pageBuilder() {
         style: o.style ?? 'light',
       },
     }),
-    features: (o: Common & { count?: number } = {}): PageComponent => ({
+    // Com `icons`, cada item ganha um ícone; com `steps`, números (só para passo a passo).
+    features: (
+      o: Common & { count?: number; icons?: FeatureIconName[]; steps?: boolean } = {},
+    ): PageComponent => ({
       type: 'Features',
       props: {
         id: id('Features', o.id),
         menuLabel: o.menu ?? '',
         title: nextTitle(),
-        items: items(o.count ?? 3, () => ({ title: nextTitle(), text: L_S })),
+        marker: o.steps ? 'number' : o.icons ? 'icon' : 'none',
+        items: items(o.count ?? o.icons?.length ?? 3, (i) => ({
+          title: nextTitle(),
+          text: L_S,
+          icon: o.icons?.[i % o.icons.length] ?? 'check',
+        })),
         style: o.style ?? 'light',
       },
     }),
@@ -96,7 +104,11 @@ export function pageBuilder() {
         id: id('Testimonials', o.id),
         menuLabel: o.menu ?? '',
         title: nextTitle(),
-        items: items(o.count ?? 2, (i) => ({ quote: L_Q, name: NAMES[i % NAMES.length] })),
+        items: items(o.count ?? 2, (i) => ({
+          quote: L_Q,
+          name: NAMES[i % NAMES.length],
+          photo: null,
+        })),
         style: o.style ?? 'soft',
       },
     }),

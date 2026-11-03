@@ -11,6 +11,8 @@ export const PANEL_PATHS = {
   messages: '/mensagens',
   forms: '/formularios',
   advanced: '/avancado',
+  // Endereço padrão do Payload (`admin.routes.account`), com a tela nossa.
+  account: '/account',
 } as const
 
 export type PanelPath = keyof typeof PANEL_PATHS
@@ -67,6 +69,11 @@ export function timeAgo(date: Date | string, now: number = Date.now()): string {
   return days === 1 ? 'há 1 dia' : `há ${days} dias`
 }
 
+/** Aviso do painel: "1 página com mudanças fora do ar", "3 páginas com mudanças fora do ar". */
+export function pendingPagesText(count: number): string {
+  return `${count} ${count === 1 ? 'página' : 'páginas'} com mudanças fora do ar`
+}
+
 /** "Bom dia", "Boa tarde" ou "Boa noite", no horário de Brasília. */
 export function greeting(date: Date = new Date()): string {
   const hour = Number(
@@ -88,13 +95,17 @@ export function personName(person: Person): string {
   return person.name?.trim() || person.email?.split('@')[0] || 'Você'
 }
 
-/** "Fábio Ormeni" → "FO"; "ana" → "AN". Aparece no lugar da foto da conta. */
+/**
+ * "Fábio Ormeni" → "FO"; "Fábio" → "F"; "érica" → "E". Aparece no lugar da foto da conta: sempre
+ * sem acento e em maiúscula.
+ */
 export function personInitials(person: Person): string {
   const words = personName(person)
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '')
     .split(/[\s._-]+/)
     .filter(Boolean)
-  const letters =
-    words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0].slice(0, 2)
+  const letters = words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}` : words[0][0]
   return letters.toUpperCase()
 }
 

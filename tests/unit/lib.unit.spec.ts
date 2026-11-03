@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { contrastRatio, readableTextColor, safeColor } from '@/lib/colors'
-import { isSafeURL, normalizeWhatsApp, validateExternalURL } from '@/lib/links'
+import { isSafeURL, normalizeWhatsApp, telHref, validateExternalURL } from '@/lib/links'
 import { slugify, validateSlug } from '@/lib/slug'
 
 describe('slugify', () => {
@@ -67,5 +67,41 @@ describe('links', () => {
     expect(normalizeWhatsApp('+55 31 99999-0000')).toBe('5531999990000')
     expect(normalizeWhatsApp('3133330000')).toBe('553133330000')
     expect(normalizeWhatsApp('12345')).toBeNull()
+  })
+})
+
+describe('link de telefone', () => {
+  it('põe o código do Brasil quando o número não tem', () => {
+    expect(telHref('(35) 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('3533334521')).toBe('tel:+553533334521')
+    expect(telHref('(35) 99999-4521')).toBe('tel:+5535999994521')
+    // DDD à moda antiga, com o 0 na frente.
+    expect(telHref('035 3333-4521')).toBe('tel:+553533334521')
+  })
+
+  it('deixa sem +55 o que não completa no formato internacional', () => {
+    // 0800, 0300, 0500 e 0900.
+    expect(telHref('0800 123 4567')).toBe('tel:08001234567')
+    expect(telHref('0300 789 1234')).toBe('tel:03007891234')
+    expect(telHref('0800-12-3456')).toBe('tel:0800123456')
+    // Números únicos (3003, 4004) e números sem DDD.
+    expect(telHref('4004-1234')).toBe('tel:40041234')
+    expect(telHref('3003 1234')).toBe('tel:30031234')
+    expect(telHref('3333-4521')).toBe('tel:33334521')
+    // Curtos, como os de emergência.
+    expect(telHref('190')).toBe('tel:190')
+  })
+
+  it('não repete o código do país', () => {
+    expect(telHref('+55 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('55 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('0055 35 3333-4521')).toBe('tel:+553533334521')
+    expect(telHref('+351 21 234 5678')).toBe('tel:+351212345678')
+  })
+
+  it('sem número, sem link', () => {
+    expect(telHref('')).toBeNull()
+    expect(telHref(null)).toBeNull()
+    expect(telHref('não tem')).toBeNull()
   })
 })

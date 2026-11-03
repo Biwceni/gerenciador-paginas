@@ -2,9 +2,15 @@
 
 import React, { useState } from 'react'
 
-import { LOCKED_MESSAGE, markPanelLogin, WRONG_LOGIN_MESSAGE } from '@/lib/auth'
+import {
+  emailProblem,
+  LOCKED_MESSAGE,
+  markPanelLogin,
+  passwordProblem,
+  WRONG_LOGIN_MESSAGE,
+} from '@/lib/auth'
 
-import { AuthCard, AuthLink, LockedCard } from './AuthCard'
+import { AuthCard, AuthLink, FieldProblem, LockedCard } from './AuthCard'
 import { authRequest } from './authApi'
 
 type Props = {
@@ -21,9 +27,20 @@ export function LoginForm({ apiRoute, forgotHref, loginHref, redirectTo }: Props
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
+  // Avisos embaixo dos campos, depois de tentar entrar.
+  const [problems, setProblems] = useState<{ email?: string; password?: string }>({})
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    const found = {
+      email: emailProblem(email) ?? undefined,
+      password: passwordProblem(password) ?? undefined,
+    }
+    setProblems(found)
+    if (found.email || found.password) {
+      document.getElementById(found.email ? 'lg-email' : 'lg-pass')?.focus()
+      return
+    }
     setBusy(true)
     setError(null)
     const result = await authRequest(apiRoute, '/login', { email: email.trim(), password })
@@ -44,7 +61,7 @@ export function LoginForm({ apiRoute, forgotHref, loginHref, redirectTo }: Props
 
   return (
     <AuthCard lead="Use o e-mail que recebeu o convite." title="Entrar no seu site">
-      <form className="gp-authform" onSubmit={submit}>
+      <form className="gp-authform" noValidate onSubmit={submit}>
         {error && (
           <p className="gp-warnbox" role="alert">
             {error}
@@ -53,27 +70,39 @@ export function LoginForm({ apiRoute, forgotHref, loginHref, redirectTo }: Props
         <div className="gp-field">
           <label htmlFor="lg-email">E-mail</label>
           <input
+            aria-describedby={problems.email ? 'lg-email-problem' : undefined}
+            aria-invalid={Boolean(problems.email)}
             autoComplete="username"
             className="gp-input"
             id="lg-email"
             inputMode="email"
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              setProblems((current) => ({ ...current, email: undefined }))
+            }}
             required
             type="email"
             value={email}
           />
+          <FieldProblem id="lg-email-problem" text={problems.email} />
         </div>
         <div className="gp-field">
           <label htmlFor="lg-pass">Senha</label>
           <input
+            aria-describedby={problems.password ? 'lg-pass-problem' : undefined}
+            aria-invalid={Boolean(problems.password)}
             autoComplete="current-password"
             className="gp-input"
             id="lg-pass"
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value)
+              setProblems((current) => ({ ...current, password: undefined }))
+            }}
             required
             type="password"
             value={password}
           />
+          <FieldProblem id="lg-pass-problem" text={problems.password} />
         </div>
         <button
           className="gp-btn gp-btn--primary gp-btn--lg gp-btn--block"

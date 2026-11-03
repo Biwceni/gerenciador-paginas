@@ -35,9 +35,30 @@ function usageLabel(uses: PhotoUse[] | undefined): string {
   return settings ? 'Usada nas Configurações' : 'Não usada'
 }
 
+// Até esta largura o detalhe da foto fica embaixo da grade. Igual ao `$media-stacked` do panel.scss.
+const STACKED = '(max-width: 1279px)'
+
 export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const detail = useRef<HTMLElement>(null)
+  // Clique numa foto com o detalhe embaixo da grade: rola até ele, para a pessoa ver que abriu.
+  const scrollPending = useRef(false)
+  const showDetail = () => {
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    detail.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
+  }
+  useEffect(() => {
+    if (!scrollPending.current) return
+    scrollPending.current = false
+    showDetail()
+  }, [selectedId])
+  const choose = (id: number) => {
+    if (!window.matchMedia(STACKED).matches) return setSelectedId(id)
+    if (id === selectedId) return showDetail()
+    scrollPending.current = true
+    setSelectedId(id)
+  }
   const [notice, setNotice] = useState<string | null>(null)
   // Fotos que acabaram de chegar: aparecem na hora, antes de a tela ser relida do servidor.
   const [arrived, setArrived] = useState<Media[]>([])
@@ -98,7 +119,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
                 <button
                   aria-pressed={photo.id === selectedId}
                   className="gp-media__item"
-                  onClick={() => setSelectedId(photo.id)}
+                  onClick={() => choose(photo.id)}
                   type="button"
                 >
                   <img alt="" src={thumbnailURL(photo)} />
@@ -116,7 +137,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
           <p className="gp-card gp-empty">Ainda não há fotos. Envie a primeira.</p>
         )}
 
-        <aside className="gp-card gp-media__detail">
+        <aside className="gp-card gp-media__detail" ref={detail}>
           {selected ? (
             <PhotoDetail
               adminRoute={adminRoute}

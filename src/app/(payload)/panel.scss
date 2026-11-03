@@ -5,6 +5,20 @@
 // `DESKTOP` de PanelNavLinks.tsx.
 $desktop: 1024px;
 
+// Escala de letras do painel e do editor: nada abaixo de 13 px (o trilho de ícones do editor,
+// sem espaço, fica em 12 px).
+:root {
+  --gp-fs-title: 32px; // título da tela
+  --gp-fs-heading: 22px; // título de janela e da tela de entrar
+  --gp-fs-card: 18px; // título de cartão
+  --gp-fs-text: 15px; // texto
+  --gp-fs-help: 14px; // ajuda, endereços, botões
+  --gp-fs-small: 13px; // selos e datas
+  --gp-fs-rail: 12px; // trilho de ícones do editor
+  // Espaço acima do título das telas e da marca do menu lateral (computador): os dois alinhados.
+  --gp-top: 32px;
+}
+
 html[data-theme='light'],
 html:not([data-theme]) {
   --gp-bg: #f2f4f0;
@@ -13,6 +27,8 @@ html:not([data-theme]) {
   --gp-ink: #1b2420;
   --gp-muted: #5a6660;
   --gp-line: #d6dbd3;
+  // Contorno de campos e botões: 3:1 com os fundos do painel.
+  --gp-line-strong: #7a847e;
   --gp-accent: #0f6b55;
   --gp-accent-ink: #ffffff;
   --gp-accent-soft: #dbeee6;
@@ -31,6 +47,7 @@ html[data-theme='dark'] {
   --gp-ink: #e6ece8;
   --gp-muted: #9ba7a0;
   --gp-line: #323c37;
+  --gp-line-strong: #707a74;
   --gp-accent: #4fbf98;
   --gp-accent-ink: #0a1a13;
   --gp-accent-soft: #1c3a2f;
@@ -67,6 +84,14 @@ html[data-theme] {
   }
 }
 
+// Na gaveta do celular o nome do produto já está na barra do topo: a marca só aparece no
+// computador (e nas telas de entrar).
+@media (max-width: #{$desktop - 1px}) {
+  .gp-nav .gp-brandmark {
+    display: none;
+  }
+}
+
 .gp-brandmark {
   display: flex;
   align-items: center;
@@ -74,7 +99,7 @@ html[data-theme] {
   padding: 0 8px 16px;
   font-family: var(--gp-font-display);
   font-weight: 700;
-  font-size: 18px;
+  font-size: var(--gp-fs-card);
   line-height: 1.2;
   color: var(--gp-ink);
 
@@ -82,7 +107,7 @@ html[data-theme] {
     display: block;
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
   }
 
@@ -107,7 +132,7 @@ html[data-theme] {
   padding: 12px 12px 0;
   margin-top: 4px;
   border-top: 1px solid var(--gp-line);
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   color: var(--gp-muted);
   width: 100%;
   min-width: 0;
@@ -123,7 +148,7 @@ html[data-theme] {
     place-items: center;
     font-style: normal;
     font-weight: 700;
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
   }
 
   span {
@@ -175,7 +200,7 @@ html[data-theme] {
     flex: 1;
     min-width: 0;
     font-family: var(--gp-font-display);
-    font-size: 17px;
+    font-size: var(--gp-fs-card);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -213,7 +238,7 @@ html[data-theme] {
   color: var(--gp-ink);
   text-decoration: none;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   cursor: pointer;
 
   &:hover {
@@ -223,6 +248,18 @@ html[data-theme] {
   &[aria-current='page'] {
     background: var(--gp-accent-soft);
     color: var(--gp-accent);
+  }
+
+  // Mesmo contorno dos botões, ao chegar pela tecla Tab (também na gaveta do celular).
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (min-width: $desktop) {
+  .nav {
+    --nav-padding-block-start: var(--gp-top);
   }
 }
 
@@ -238,9 +275,14 @@ html[data-theme] {
   margin: 0 auto;
   padding: 8px var(--gutter-h) 96px;
   display: grid;
+
+  // No celular, logo abaixo da barra do topo; no computador, na altura da marca do menu.
+  @media (min-width: $desktop) {
+    padding-top: var(--gp-top);
+  }
   gap: 22px;
   color: var(--gp-ink);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   h1,
@@ -263,7 +305,7 @@ html[data-theme] {
 }
 
 .gp-small {
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
 }
 
 .gp-accent {
@@ -278,7 +320,7 @@ html[data-theme] {
   gap: 12px;
 
   h1 {
-    font-size: clamp(26px, 3.4vw, 34px);
+    font-size: clamp(26px, 3.4vw, var(--gp-fs-title));
     font-weight: 700;
   }
 
@@ -298,7 +340,7 @@ html[data-theme] {
   min-width: 0;
 
   h2 {
-    font-size: 18px;
+    font-size: var(--gp-fs-card);
     font-weight: 700;
   }
 
@@ -362,7 +404,7 @@ html[data-theme] {
   }
 
   b {
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
   }
 
   &__icon {
@@ -407,8 +449,25 @@ html[data-theme] {
     flex-wrap: wrap;
   }
 
+  // Nome da página: abre o editor, como o botão Editar.
+  &__link {
+    color: inherit;
+    text-decoration: none;
+    border-radius: 4px;
+
+    &:hover {
+      color: var(--gp-accent);
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--gp-accent);
+      outline-offset: 2px;
+    }
+  }
+
   &__sub {
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     color: var(--gp-muted);
     overflow-wrap: anywhere;
   }
@@ -433,14 +492,14 @@ html[data-theme] {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--gp-line);
+  border: 1px solid var(--gp-line-strong);
   background: var(--gp-surface);
   border-radius: 10px;
   padding: 9px 14px;
   cursor: pointer;
   font: inherit;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
   line-height: 1.4;
   white-space: nowrap;
   text-decoration: none;
@@ -483,14 +542,20 @@ html[data-theme] {
 
   &--lg {
     padding: 12px 20px;
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
     border-radius: 12px;
   }
 
   &--sm {
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     border-radius: 8px;
+  }
+
+  // Só o ícone (⋯, Ver no celular): quadrado, da altura dos outros botões pequenos.
+  &--icon {
+    justify-content: center;
+    padding-inline: 8px;
   }
 
   &[disabled],
@@ -511,7 +576,7 @@ html[data-theme] {
   gap: 6px;
   border-radius: 999px;
   padding: 3px 10px;
-  font-size: 12.5px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   white-space: nowrap;
 
@@ -557,7 +622,16 @@ html[data-theme] {
 }
 
 .gp-back {
+  display: flex;
+  width: fit-content;
   margin: 0 0 8px -10px;
+
+  // No computador, o "voltar" sobe para o espaço do topo e o título fica (quase) na altura das
+  // outras telas.
+  @media (min-width: $desktop) {
+    margin-top: calc(-1 * var(--gp-top));
+    margin-bottom: 0;
+  }
 }
 
 .gp-stack {
@@ -582,31 +656,25 @@ html[data-theme] {
   align-items: center;
   border-radius: 12px;
   padding: 12px 14px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
+// A dica do painel e do editor (componente Tip), como a `tip` do protótipo.
 .gp-tip {
   align-items: flex-start;
-  color: var(--gp-muted);
-  background: var(--gp-surface-2);
+  margin: 0;
+  color: var(--gp-ink);
+  background: var(--gp-accent-soft);
+  line-height: 1.45;
 
   .gp-ic {
-    margin-top: 2px;
+    margin-top: 1px;
+    color: var(--gp-accent);
   }
 
-  // Dica verde clara, como a `tip` do protótipo.
-  &--accent {
-    color: var(--gp-ink);
-    background: var(--gp-accent-soft);
-
-    .gp-ic {
-      color: var(--gp-accent);
-    }
-
-    a {
-      color: var(--gp-accent);
-      font-weight: 600;
-    }
+  a {
+    color: var(--gp-accent);
+    font-weight: 600;
   }
 }
 
@@ -621,7 +689,7 @@ html[data-theme] {
     cursor: pointer;
     font-weight: 600;
     color: var(--gp-muted);
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
@@ -639,26 +707,41 @@ html[data-theme] {
   }
 }
 
+// Aviso de uma linha com o botão na ponta ("1 página com mudanças fora do ar").
+.gp-notice--warn {
+  flex-wrap: wrap;
+  background: var(--gp-warn-soft);
+}
+
+.gp-notice__action {
+  margin-left: auto;
+}
+
 .gp-warnbox {
   display: grid;
   gap: 10px;
   background: var(--gp-warn-soft);
   border-radius: 12px;
   padding: 14px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
+}
+
+.gp-warnbox--field {
+  margin: 0;
+  padding: 8px 12px;
 }
 
 .gp-error {
   color: var(--gp-danger);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-searchbox {
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--gp-line);
+  border: 1px solid var(--gp-line-strong);
   border-radius: 10px;
   padding: 0 12px;
   background: var(--gp-surface);
@@ -689,25 +772,25 @@ html[data-theme] {
 
   label {
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
 .gp-hint {
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
   color: var(--gp-muted);
   overflow-wrap: anywhere;
 }
 
 .gp-input {
   width: 100%;
-  border: 1px solid var(--gp-line);
+  border: 1px solid var(--gp-line-strong);
   background: var(--gp-surface);
   color: var(--gp-ink);
   border-radius: 10px;
   padding: 10px 12px;
   font: inherit;
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
 
   &:focus {
     outline: 2px solid var(--gp-accent);
@@ -748,43 +831,66 @@ html[data-theme] {
   }
 
   b {
-    font-size: 15px;
+    font-size: var(--gp-fs-text);
   }
 }
 
+// Miniatura do cartão: uma folha com as seções do modelo, de cima para baixo. O que não cabe
+// fica cortado embaixo, como uma página que continua.
 .gp-mini {
-  background: var(--gp-surface-2);
-  border-radius: 10px;
-  padding: 8px;
   display: grid;
-  gap: 4px;
-  height: 110px;
-  align-content: start;
+  justify-items: center;
+  height: 132px;
+  padding: 10px 10px 0;
   overflow: hidden;
+  border-radius: 10px;
+  background: var(--gp-surface-2);
 
-  i {
+  &__sheet {
+    display: grid;
+    align-content: start;
+    gap: 3px;
+    width: 96px;
+    min-height: 100%;
+    padding: 6px 6px 0;
+    border-radius: 6px 6px 0 0;
+    background: var(--gp-surface);
+    box-shadow: 0 0 0 1px var(--gp-line);
+  }
+
+  &__section {
     display: block;
-    border-radius: 4px;
-    background: var(--gp-line);
-    height: 12px;
+    width: 84px;
+    height: 56px;
   }
 
-  .hero {
-    height: 42px;
+  &__title {
+    display: block;
+    width: 60%;
+    height: 8px;
+    margin: 6px 0 8px;
+    border-radius: 3px;
     background: var(--gp-accent);
-    opacity: 0.75;
   }
 
-  .cols {
-    height: 22px;
-    background: repeating-linear-gradient(90deg, var(--gp-line) 0 30%, transparent 30% 35%);
+  &__add {
+    display: grid;
+    place-items: center;
+    height: 48px;
+    border: 2px dashed var(--gp-line-strong);
+    border-radius: 6px;
+    color: var(--gp-muted);
   }
 
-  .cta {
-    height: 16px;
-    background: var(--gp-accent);
-    opacity: 0.45;
+  &--icon {
+    place-items: center;
+    padding: 0;
+    color: var(--gp-accent);
   }
+}
+
+.gp-btn--fit {
+  justify-self: start;
 }
 
 // ---------- início guiado (fase 4) ----------
@@ -797,12 +903,12 @@ html[data-theme] {
   background: var(--gp-bg);
   color: var(--gp-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   h1 {
     font-family: var(--gp-font-display);
-    font-size: clamp(24px, 4vw, 32px);
+    font-size: clamp(24px, 4vw, var(--gp-fs-title));
     line-height: 1.15;
     margin: 0;
     text-wrap: balance;
@@ -813,7 +919,7 @@ html[data-theme] {
   }
 
   code {
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 }
 
@@ -841,7 +947,7 @@ html[data-theme] {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   color: var(--gp-muted);
 
@@ -891,7 +997,7 @@ html[data-theme] {
 }
 
 .gp-eyebrow {
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -939,7 +1045,7 @@ html[data-theme] {
   }
 
   b {
-    font-size: 16px;
+    font-size: var(--gp-fs-text);
   }
 
   &__icon {
@@ -1048,7 +1154,7 @@ html[data-theme] {
   background: var(--gp-bg);
   color: var(--gp-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   line-height: 1.5;
 
   p {
@@ -1077,22 +1183,24 @@ html[data-theme] {
 
     h1 {
       font-family: var(--gp-font-display);
-      font-size: 26px;
+      font-size: var(--gp-fs-heading);
       line-height: 1.15;
       margin: 0;
       text-wrap: balance;
     }
   }
 
+  // Sublinhado, como no protótipo: tem cara de link.
   &__link {
     justify-self: center;
     color: var(--gp-accent);
     font-weight: 600;
-    font-size: 14px;
-    text-decoration: none;
+    font-size: var(--gp-fs-help);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 
     &:hover {
-      text-decoration: underline;
+      text-decoration-thickness: 2px;
     }
   }
 }
@@ -1113,7 +1221,7 @@ html[data-theme] {
   list-style: none;
   margin: 2px 0 0;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
 
   li {
     display: flex;
@@ -1134,6 +1242,10 @@ html[data-theme] {
 }
 
 // ---------- fotos ----------
+
+// Até aqui o detalhe da foto desce para baixo da grade (com 340 px ao lado, sobrava uma foto por
+// linha). Igual ao `STACKED` de PhotosLibrary.tsx.
+$media-stacked: 1279px;
 
 .gp-media {
   display: grid;
@@ -1184,7 +1296,7 @@ html[data-theme] {
   }
 
   &__name {
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1216,7 +1328,7 @@ html[data-theme] {
 
   &__noalt {
     color: var(--gp-warn);
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 700;
   }
 }
@@ -1226,7 +1338,7 @@ html[data-theme] {
   display: grid;
   justify-items: center;
   gap: 6px;
-  border: 2px dashed var(--gp-line);
+  border: 2px dashed var(--gp-line-strong);
   border-radius: 12px;
   background: var(--gp-surface);
   color: var(--gp-muted);
@@ -1279,7 +1391,7 @@ html[data-theme] {
 
   &__error {
     color: var(--gp-warn);
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     font-weight: 600;
   }
 
@@ -1307,7 +1419,7 @@ html[data-theme] {
 
 .gp-label {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-links {
@@ -1328,12 +1440,13 @@ textarea.gp-input {
   min-height: 84px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: $media-stacked) {
   .gp-media {
     grid-template-columns: minmax(0, 1fr);
 
     &__detail {
       position: static;
+      scroll-margin-top: 72px;
     }
   }
 }
@@ -1428,7 +1541,7 @@ textarea.gp-input {
     width: 38px;
     height: 22px;
     border-radius: 999px;
-    background: var(--gp-line);
+    background: var(--gp-line-strong);
     position: relative;
     cursor: pointer;
     flex: none;
@@ -1468,13 +1581,13 @@ textarea.gp-input {
   gap: 6px;
 
   button {
-    border: 1px solid var(--gp-line);
+    border: 1px solid var(--gp-line-strong);
     background: var(--gp-surface);
     color: var(--gp-ink);
     border-radius: 999px;
     padding: 6px 12px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--gp-fs-help);
     font-weight: 600;
     cursor: pointer;
 
@@ -1604,14 +1717,6 @@ textarea.gp-input {
     background: #fff;
     border: 1px solid var(--gp-line);
   }
-
-  &--initials {
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-weight: 700;
-    font-size: 22px;
-  }
 }
 
 .gp-style {
@@ -1649,7 +1754,7 @@ textarea.gp-input {
   border: 0;
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--gp-fs-small);
   font-weight: 600;
   color: var(--gp-ink);
   padding: 0;
@@ -1684,7 +1789,7 @@ textarea.gp-input {
     width: 44px;
     height: 44px;
     padding: 2px;
-    border: 1px solid var(--gp-line);
+    border: 1px solid var(--gp-line-strong);
     border-radius: 10px;
     background: var(--gp-surface);
     cursor: pointer;
@@ -1697,7 +1802,7 @@ textarea.gp-input {
 
 .gp-input--hex {
   font-family: ui-monospace, monospace;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-contrast {
@@ -1707,7 +1812,7 @@ textarea.gp-input {
   &__line {
     border-radius: 10px;
     padding: 10px 12px;
-    font-size: 13.5px;
+    font-size: var(--gp-fs-help);
 
     &--warn {
       background: var(--gp-warn-soft);
@@ -1724,7 +1829,7 @@ textarea.gp-input {
   padding-left: 20px;
   display: grid;
   gap: 6px;
-  font-size: 13.5px;
+  font-size: var(--gp-fs-help);
   color: var(--gp-muted);
 }
 
@@ -1737,7 +1842,7 @@ textarea.gp-input {
 .gp-input--sm {
   width: auto;
   padding: 6px 10px;
-  font-size: 14px;
+  font-size: var(--gp-fs-help);
 }
 
 .gp-invite {
@@ -1748,8 +1853,58 @@ textarea.gp-input {
   padding-top: 14px;
 }
 
-.gp-dialog--wide {
+// Junto com .gp-dialog, que vem depois neste arquivo e manteria os 460 px.
+.gp-dialog.gp-dialog--wide {
   max-width: 820px;
+}
+
+.gp-dialog.gp-dialog--full {
+  max-width: min(1180px, 100%);
+}
+
+// Atalhos de letras: "Aa" e o nome, cada um com as fontes que o atalho aplica.
+.gp-fontpresets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gp-fontpreset {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 1px solid var(--gp-line-strong);
+  border-radius: 12px;
+  background: var(--gp-surface);
+  color: var(--gp-ink);
+  font-size: var(--gp-fs-help);
+  cursor: pointer;
+
+  &__aa {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+
+  &[aria-pressed='true'] {
+    border-color: var(--gp-accent);
+    background: var(--gp-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--gp-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
+  }
+}
+
+// Frase de exemplo na fonte digitada, embaixo do campo.
+.gp-fontsample {
+  font-size: var(--gp-fs-card);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 960px) {
@@ -1763,6 +1918,70 @@ textarea.gp-input {
     &__preview {
       position: static;
     }
+  }
+}
+
+// ---------- minha conta ----------
+
+.gp-account__value {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.gp-choices {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+
+  legend {
+    padding: 0;
+    margin-bottom: 4px;
+  }
+
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+
+    @media (max-width: 560px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+// Escolha em cartão (rádio de verdade, para o teclado e os leitores de tela).
+.gp-choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid var(--gp-line-strong);
+  border-radius: 12px;
+  background: var(--gp-surface);
+  cursor: pointer;
+
+  > span {
+    display: grid;
+    gap: 2px;
+  }
+
+  input {
+    margin: 3px 0 0;
+    accent-color: var(--gp-accent);
+  }
+
+  &:has(input:checked) {
+    border-color: var(--gp-accent);
+    background: var(--gp-accent-soft);
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
   }
 }
 
@@ -1790,12 +2009,12 @@ textarea.gp-input {
   display: grid;
   gap: 16px;
   box-shadow: 0 6px 24px rgb(20 30 25 / 20%);
-  font-size: 15px;
+  font-size: var(--gp-fs-text);
   outline: none;
 
   h2 {
     font-family: var(--gp-font-display);
-    font-size: 20px;
+    font-size: var(--gp-fs-heading);
     margin: 0;
     overflow-wrap: anywhere;
   }
@@ -1823,6 +2042,11 @@ textarea.gp-input {
   &:hover {
     background: var(--gp-surface-2);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1831,6 +2055,39 @@ textarea.gp-input {
 
     &__actions {
       justify-content: flex-start;
+    }
+  }
+}
+
+// Linha de página (Páginas e Páginas recentes).
+.gp-row--page .gp-row__chip--inline {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .gp-row--page {
+    gap: 8px;
+
+    .gp-row__chip--inline {
+      display: inline-flex;
+    }
+
+    .gp-row__chip--column,
+    .gp-row__domain {
+      display: none;
+    }
+
+    .gp-row__actions {
+      flex-wrap: nowrap;
+    }
+  }
+
+  // "Ver" só com o ícone (o nome fica no aria-label).
+  .gp-btn--icon-sm {
+    padding-inline: 8px;
+
+    .gp-btn__label {
+      display: none;
     }
   }
 }
@@ -1889,7 +2146,7 @@ textarea.gp-input {
     border-radius: 50%;
     background: var(--gp-line);
     color: var(--gp-muted);
-    font-size: 12px;
+    font-size: var(--gp-fs-small);
     font-weight: 700;
   }
 
@@ -1907,7 +2164,24 @@ textarea.gp-input {
   .is-done b {
     color: var(--gp-muted);
     font-weight: 500;
-    text-decoration: line-through;
+  }
+}
+
+// Tudo feito: a lista recolhe numa linha, que abre se a pessoa quiser ver.
+.gp-finished {
+  padding-block: 14px;
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .gp-todo__mark {
+    background: var(--gp-ok-soft);
+    color: var(--gp-ok);
   }
 }
 
@@ -1941,7 +2215,7 @@ textarea.gp-input {
   border-radius: 999px;
   background: var(--gp-accent);
   color: var(--gp-accent-ink);
-  font-size: 12px;
+  font-size: var(--gp-fs-small);
   font-weight: 700;
   line-height: 20px;
   text-align: center;
@@ -1957,7 +2231,7 @@ textarea.gp-input {
     margin: 0;
     min-width: 18px;
     padding: 0 4px;
-    font-size: 11px;
+    font-size: var(--gp-fs-small);
     line-height: 18px;
   }
 }
@@ -1965,12 +2239,12 @@ textarea.gp-input {
 // ---------- mensagens ----------
 
 .gp-seg a {
-  border: 1px solid var(--gp-line);
+  border: 1px solid var(--gp-line-strong);
   background: var(--gp-surface);
   color: var(--gp-ink);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--gp-fs-help);
   font-weight: 600;
   text-decoration: none;
 
@@ -1999,7 +2273,7 @@ textarea.gp-input {
     gap: 14px;
 
     h2 {
-      font-size: 22px;
+      font-size: var(--gp-fs-heading);
       overflow-wrap: anywhere;
     }
 
@@ -2079,7 +2353,7 @@ textarea.gp-input {
     }
 
     > span {
-      font-size: 13px;
+      font-size: var(--gp-fs-help);
       color: var(--gp-muted);
       white-space: nowrap;
       overflow: hidden;
@@ -2088,7 +2362,7 @@ textarea.gp-input {
   }
 
   time {
-    font-size: 12.5px;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
     white-space: nowrap;
   }
@@ -2105,11 +2379,9 @@ textarea.gp-input {
   }
 
   dt {
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: var(--gp-fs-small);
     color: var(--gp-muted);
-    font-weight: 700;
+    font-weight: 600;
   }
 
   dd {
@@ -2143,6 +2415,22 @@ textarea.gp-input {
 
 .gp-row--form {
   grid-template-columns: minmax(0, 1fr) auto;
+}
+
+// Lista de formulários: as colunas dos botões são da lista toda, então "Mudar perguntas" e "Ver
+// respostas" ficam alinhados em todas as linhas, mesmo onde falta um deles.
+.gp-rows--forms {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 14px;
+
+  > .gp-row {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .gp-row__actions {
+    display: contents;
+  }
 }
 
 .gp-formcards {
@@ -2201,7 +2489,7 @@ textarea.gp-input {
 
   .gp-input {
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: var(--gp-fs-help);
   }
 
   &__full {
@@ -2224,7 +2512,7 @@ textarea.gp-input {
     align-items: center;
     gap: 6px;
     margin-right: 4px;
-    font-size: 13px;
+    font-size: var(--gp-fs-small);
     white-space: nowrap;
   }
 }
@@ -2251,6 +2539,18 @@ textarea.gp-input {
 
     .gp-row__actions {
       justify-content: flex-start;
+    }
+  }
+
+  .gp-rows--forms {
+    grid-template-columns: minmax(0, 1fr);
+
+    > .gp-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gp-row__actions {
+      display: flex;
     }
   }
 }

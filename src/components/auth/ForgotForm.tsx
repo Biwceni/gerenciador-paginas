@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react'
 
-import { AuthCard, AuthLink } from './AuthCard'
+import { emailProblem } from '@/lib/auth'
+
+import { AuthCard, AuthLink, FieldProblem } from './AuthCard'
 import { authRequest } from './authApi'
 
 /**
@@ -14,9 +16,16 @@ export function ForgotForm({ apiRoute, loginHref }: { apiRoute: string; loginHre
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    const found = emailProblem(email)
+    setProblem(found)
+    if (found) {
+      document.getElementById('fg-email')?.focus()
+      return
+    }
     setBusy(true)
     setError(null)
     const result = await authRequest(apiRoute, '/forgot-password', { email: email.trim() })
@@ -47,7 +56,7 @@ export function ForgotForm({ apiRoute, loginHref }: { apiRoute: string; loginHre
       lead="Digite seu e-mail. Vamos enviar um link para você."
       title="Criar uma senha nova"
     >
-      <form className="gp-authform" onSubmit={submit}>
+      <form className="gp-authform" noValidate onSubmit={submit}>
         {error && (
           <p className="gp-warnbox" role="alert">
             {error}
@@ -56,15 +65,21 @@ export function ForgotForm({ apiRoute, loginHref }: { apiRoute: string; loginHre
         <div className="gp-field">
           <label htmlFor="fg-email">E-mail</label>
           <input
+            aria-describedby={problem ? 'fg-email-problem' : undefined}
+            aria-invalid={Boolean(problem)}
             autoComplete="username"
             className="gp-input"
             id="fg-email"
             inputMode="email"
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              setProblem(null)
+            }}
             required
             type="email"
             value={email}
           />
+          <FieldProblem id="fg-email-problem" text={problem} />
         </div>
         <button
           className="gp-btn gp-btn--primary gp-btn--lg gp-btn--block"

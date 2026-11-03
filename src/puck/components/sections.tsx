@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
-import { whatsAppURL } from '@/lib/links'
+import { telHref, whatsAppURL } from '@/lib/links'
 import { privacyBlocks } from '@/lib/privacy'
 import { initials } from '@/lib/site'
 
@@ -28,6 +28,7 @@ import type {
   VideoProps,
 } from '../schema'
 import { SectionButton } from './Button'
+import { FeatureIcon } from './FeatureIcon'
 import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
 
@@ -90,19 +91,37 @@ function SectionTitle({ title }: { title: React.ReactNode }) {
   return filled(title) ? <h2 className="section-title">{title}</h2> : null
 }
 
-/** Banner principal. No estilo "foto", a foto cobre o fundo, escurecida, com o texto em branco. */
+/**
+ * Banner principal. No estilo "foto", a foto cobre o fundo, escurecida, com o texto em branco; em
+ * "foto ao lado", o texto fica à esquerda e a foto à direita (embaixo do botão, no celular).
+ */
 export function Hero(props: WithMetadata<HeroProps>) {
-  const { id, title, text, image, button, align, metadata } = props
+  const { id, title, text, image, button, metadata } = props
   const photo = getPhoto(metadata, image)
-  // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível.
-  const style = props.style === 'image' && !photo ? 'brand' : props.style
+  // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível, e
+  // "foto ao lado" vira o fundo suave.
+  const style =
+    props.style === 'image' && !photo
+      ? 'brand'
+      : props.style === 'side'
+        ? photo
+          ? 'side'
+          : 'soft'
+        : props.style
+  // Com a foto ao lado, o texto fica sempre à esquerda.
+  const align = style === 'side' ? 'left' : props.align
   const isMain = metadata.mainHeadingId === id
   const Heading = isMain ? 'h1' : 'h2'
+  const classes = [
+    'section',
+    style === 'side' ? 'section--soft hero--side' : `section--${style}`,
+    'hero',
+    align === 'center' && 'hero--center',
+    !photo && 'hero--plain',
+  ]
 
   return (
-    <section
-      className={`section section--${style} hero${align === 'center' ? ' hero--center' : ''}`}
-    >
+    <section className={classes.filter(Boolean).join(' ')}>
       {style === 'image' && photo && (
         <>
           <Photo
@@ -121,6 +140,16 @@ export function Hero(props: WithMetadata<HeroProps>) {
           {filled(text) && <p className="hero__text">{text}</p>}
           <SectionButton button={button} metadata={metadata} />
         </div>
+        {style === 'side' && photo && (
+          <div className="hero__photo">
+            <Photo
+              fill
+              media={photo}
+              priority={isMain && !metadata.editing}
+              sizes="(max-width: 720px) 100vw, 480px"
+            />
+          </div>
+        )}
       </div>
     </section>
   )
@@ -159,29 +188,43 @@ export function TextImage({
   )
 }
 
-/** Destaques numerados, até três por linha. */
-export function Features({ id, title, items, style, metadata }: WithMetadata<FeaturesProps>) {
+/**
+ * Destaques, até três por linha, sem caixa. Marcador: nenhum (padrão), um ícone por item ou
+ * números (passo a passo, e só então uma lista numerada).
+ */
+export function Features({
+  id,
+  title,
+  items,
+  marker = 'none',
+  style,
+  metadata,
+}: WithMetadata<FeaturesProps>) {
   const shown = metadata.editing
     ? items
     : items.filter((item) => filled(item.title) || filled(item.text))
   if (!shown.length) return null
   const two = shown.length % 2 === 0 && shown.length < 6
+  const List = marker === 'number' ? 'ol' : 'ul'
 
   return (
     <Section id={id} metadata={metadata} style={style}>
       <div className="container">
         <SectionTitle title={title} />
-        <ol className={`cards features${two ? ' cards--two' : ''}`}>
+        <List className={`features${two ? ' features--two' : ''}`}>
           {shown.map((item, index) => (
-            <li className="card" key={index}>
-              <span aria-hidden="true" className="features__number">
-                {index + 1}
-              </span>
+            <li className="features__item" key={index}>
+              {marker === 'number' && (
+                <span aria-hidden="true" className="features__number">
+                  {index + 1}
+                </span>
+              )}
+              {marker === 'icon' && <FeatureIcon name={item.icon ?? 'check'} />}
               {filled(item.title) && <h3>{item.title}</h3>}
               <Paragraphs text={item.text} />
             </li>
           ))}
-        </ol>
+        </List>
       </div>
     </Section>
   )
@@ -201,17 +244,32 @@ export function Testimonials({
     <Section id={id} metadata={metadata} style={style}>
       <div className="container">
         <SectionTitle title={title} />
-        <ul className="cards cards--two testimonials">
-          {shown.map((item, index) => (
-            <li className="card" key={index}>
-              <figure>
-                <blockquote>
-                  <p>{item.quote}</p>
-                </blockquote>
-                {filled(item.name) && <figcaption>{item.name}</figcaption>}
-              </figure>
-            </li>
-          ))}
+        <ul className="testimonials">
+          {shown.map((item, index) => {
+            const photo = getPhoto(metadata, item.photo ?? null)
+            return (
+              <li key={index}>
+                <figure>
+                  <span aria-hidden="true" className="testimonials__mark">
+                    “
+                  </span>
+                  <blockquote>
+                    <p>{item.quote}</p>
+                  </blockquote>
+                  {(filled(item.name) || photo) && (
+                    <figcaption>
+                      {photo && (
+                        <span className="testimonials__photo">
+                          <Photo fill media={photo} sizes="48px" />
+                        </span>
+                      )}
+                      {item.name}
+                    </figcaption>
+                  )}
+                </figure>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </Section>
@@ -230,8 +288,24 @@ export function Faq({ id, title, items, style, metadata }: WithMetadata<FaqProps
         <div className="faq">
           {shown.map((item, index) => (
             // No editor as respostas ficam abertas, para dar para escrever nelas.
-            <details className="card" key={index} open={metadata.editing || undefined}>
-              <summary>{item.question}</summary>
+            <details className="faq__item" key={index} open={metadata.editing || undefined}>
+              <summary>
+                <span>{item.question}</span>
+                <svg
+                  aria-hidden="true"
+                  className="faq__arrow"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </summary>
               <div className="faq__answer">
                 <Paragraphs text={item.answer} />
               </div>
@@ -253,7 +327,7 @@ export function Gallery({ id, title, images, style, metadata }: WithMetadata<Gal
       <div className="container">
         <SectionTitle title={title} />
         {photos.length ? (
-          <ul className="gallery">
+          <ul className={`gallery${photos.length % 2 ? ' gallery--odd' : ''}`}>
             {photos.map((photo, index) => (
               <li key={`${photo.id}-${index}`}>
                 <Photo fill media={photo} sizes="(max-width: 720px) 50vw, 340px" />
@@ -299,7 +373,7 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
   const whatsappHref = whatsAppURL(whatsapp)
   const items = [
     whatsappHref && { label: 'WhatsApp', value: whatsapp, href: whatsappHref },
-    phone && { label: 'Telefone', value: phone, href: `tel:${phone.replace(/[^\d+]/g, '')}` },
+    phone && { label: 'Telefone', value: phone, href: telHref(phone) ?? undefined },
     email && { label: 'E-mail', value: email, href: `mailto:${email}` },
     address && { label: 'Endereço', value: address },
     hours && { label: 'Horário', value: hours },
@@ -311,14 +385,6 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
         <div className="contact__intro">
           {filled(title) && <h2 className="section-title">{title}</h2>}
           <Paragraphs text={text} />
-          {address &&
-            (metadata.editing ? (
-              <span className="button">Ver no mapa</span>
-            ) : (
-              <SiteLink className="button" href={mapsURL(address)}>
-                Ver no mapa
-              </SiteLink>
-            ))}
         </div>
         {items.length > 0 ? (
           <dl className="contact__list">
@@ -331,6 +397,15 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
                   ) : (
                     item.value
                   )}
+                  {/* O mapa fica logo abaixo do endereço. */}
+                  {item.label === 'Endereço' &&
+                    (metadata.editing ? (
+                      <span className="contact__map">Ver no mapa</span>
+                    ) : (
+                      <SiteLink className="contact__map" href={mapsURL(item.value)}>
+                        Ver no mapa
+                      </SiteLink>
+                    ))}
                 </dd>
               </div>
             ))}

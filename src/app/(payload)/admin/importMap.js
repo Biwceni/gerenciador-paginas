@@ -35,6 +35,7 @@ import { ForgotView as ForgotView_9cfb307d8750231fb68dc126ba7ee437 } from '../..
 import { FirstUserView as FirstUserView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { NewPasswordView as NewPasswordView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { Dashboard as Dashboard_65e8b0fdc5f8da02b62d337686836a55 } from '../../../components/panel/Dashboard'
+import { AccountView as AccountView_545084acf205edc0b09aabb359efe2cd } from '../../../components/panel/AccountView'
 import { PagesView as PagesView_3ab2f2f957837c1342f8d935eb94cb95 } from '../../../components/panel/PagesView'
 import { NewPageView as NewPageView_1d0a38642d637525d244257b6e4edf4a } from '../../../components/panel/NewPageView'
 import { PhotosView as PhotosView_b45782ed4be03127f4543c2ffec78e23 } from '../../../components/panel/PhotosView'
@@ -87,6 +88,7 @@ export const importMap = {
   "/components/auth/AuthViews#FirstUserView": FirstUserView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#NewPasswordView": NewPasswordView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/panel/Dashboard#Dashboard": Dashboard_65e8b0fdc5f8da02b62d337686836a55,
+  "/components/panel/AccountView#AccountView": AccountView_545084acf205edc0b09aabb359efe2cd,
   "/components/panel/PagesView#PagesView": PagesView_3ab2f2f957837c1342f8d935eb94cb95,
   "/components/panel/NewPageView#NewPageView": NewPageView_1d0a38642d637525d244257b6e4edf4a,
   "/components/panel/PhotosView#PhotosView": PhotosView_b45782ed4be03127f4543c2ffec78e23,

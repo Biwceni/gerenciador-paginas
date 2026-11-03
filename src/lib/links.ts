@@ -29,6 +29,32 @@ export function normalizeWhatsApp(value: string | null | undefined): string | nu
   return null
 }
 
+/** 0800, 0300, 0500 e 0900: só completam discados como são, sem o código do país. */
+const SERVICE_NUMBER = /^0[3589]00\d{6,7}$/
+
+/**
+ * Link de telefone com o código do país quando o número tem DDD: "(35) 3333-4521" →
+ * "tel:+553533334521". Número que já vem com "+" (ou "00") fica com o código dele; o 0 do DDD à
+ * moda antiga ("035 ...") sai. Fica como foi digitado, sem o +55, o que não completa no formato
+ * internacional: 0800 e parecidos, número sem DDD (inclusive 3003 e 4004) e os curtos, como 190.
+ * Todo `tel:` do site passa por aqui.
+ */
+export function telHref(value: string | null | undefined): string | null {
+  const raw = (value ?? '').trim()
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return null
+  if (raw.startsWith('+')) return `tel:+${digits}`
+  if (digits.startsWith('00')) return `tel:+${digits.slice(2)}`
+  if (SERVICE_NUMBER.test(digits)) return `tel:${digits}`
+  const national = digits.replace(/^0+/, '')
+  if ((national.length === 12 || national.length === 13) && national.startsWith('55')) {
+    return `tel:+${national}`
+  }
+  // Com DDD: 10 dígitos (fixo) ou 11 (celular).
+  if (national.length === 10 || national.length === 11) return `tel:+55${national}`
+  return `tel:${digits}`
+}
+
 export function whatsAppURL(value: string | null | undefined): string | null {
   const number = normalizeWhatsApp(value)
   return number ? `https://wa.me/${number}` : null

@@ -4,15 +4,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
+import { SectionThumb } from '@/components/editor/SectionThumb'
 import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { PRIVACY_TEMPLATE_KEY, PRIVACY_TITLE } from '@/lib/privacy'
 import { slugify, uniqueSlug } from '@/lib/slug'
+import { type Components, SECTION_LABELS } from '@/puck/config'
 
 import { blankContent, copyPage, createPage, createPageFromTemplate } from './api'
 import { PanelIcon } from './PanelIcon'
-
-export type MiniBlock = 'hero' | 'cols' | 'cta' | 'l'
 
 type Props = {
   adminRoute: string
@@ -21,24 +21,59 @@ type Props = {
   /** Identificador do modelo que já vem escolhido (`?modelo=`), como o "Criar agora" dos formulários. */
   initialModel: string | null
   /** Modelos de página (coleção Modelos, fase 4). */
-  models: { id: number; key: string; title: string; text: string; mini: MiniBlock[] }[]
+  models: { id: number; key: string; title: string; text: string; sections: string[] }[]
   pages: { id: number; title: string; slug: string }[]
 }
 
-const STARTS: { key: 'blank' | 'copy'; title: string; text: string; mini: MiniBlock[] }[] = [
+const STARTS: { key: 'blank' | 'copy'; title: string; text: string }[] = [
   {
     key: 'blank',
     title: 'Em branco',
     text: 'Começa só com um título. Você acrescenta as seções no editor.',
-    mini: ['hero'],
   },
   {
     key: 'copy',
     title: 'Copiar uma página',
     text: 'Parte de uma página que já existe, com as seções e os textos dela.',
-    mini: ['l', 'l', 'cols', 'l'],
   },
 ]
+
+const isSection = (type: string): type is keyof Components => type in SECTION_LABELS
+
+/**
+ * Miniatura do cartão: as seções que o modelo cria, empilhadas como numa folha, com os mesmos
+ * desenhos da lista "Adicionar seção". Em branco: um título e o "+"; cópia: o ícone de copiar.
+ */
+function StartMini({ start, sections }: { start: Start; sections?: string[] }) {
+  if (start === 'copy') {
+    return (
+      <span aria-hidden="true" className="gp-mini gp-mini--icon">
+        <PanelIcon name="copy" size={40} />
+      </span>
+    )
+  }
+  if (start === 'blank') {
+    return (
+      <span aria-hidden="true" className="gp-mini">
+        <span className="gp-mini__sheet">
+          <i className="gp-mini__title" />
+          <i className="gp-mini__add">
+            <PanelIcon name="plus" size={16} />
+          </i>
+        </span>
+      </span>
+    )
+  }
+  return (
+    <span aria-hidden="true" className="gp-mini">
+      <span className="gp-mini__sheet">
+        {(sections ?? []).filter(isSection).map((type, index) => (
+          <SectionThumb className="gp-mini__section" key={index} type={type} />
+        ))}
+      </span>
+    </span>
+  )
+}
 
 /** Um modelo (pelo id), em branco ou cópia. */
 type Start = number | 'blank' | 'copy'
@@ -59,6 +94,8 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
   const taken = pages.map((page) => page.slug)
   const slug = title ? uniqueSlug(title, taken) : ''
   const changed = Boolean(title) && slug !== slugify(title)
+  // O que ainda falta para criar, embaixo do botão desligado.
+  const missing = !title ? 'Dê um nome para a página.' : null
 
   const create = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -114,11 +151,7 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
             role="radio"
             type="button"
           >
-            <span aria-hidden="true" className="gp-mini">
-              {item.mini.map((block, index) => (
-                <i className={block} key={index} />
-              ))}
-            </span>
+            <StartMini sections={'sections' in item ? item.sections : undefined} start={item.key} />
             <b>{item.title}</b>
             <span className="gp-small gp-muted">{item.text}</span>
           </button>
@@ -166,10 +199,11 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
             Não deu para criar: {error}
           </p>
         )}
-        <div>
+        <div className="gp-field">
           <button
-            className="gp-btn gp-btn--primary gp-btn--lg"
-            disabled={!title || busy}
+            aria-describedby={missing ? 'np-missing' : undefined}
+            className="gp-btn gp-btn--primary gp-btn--lg gp-btn--fit"
+            disabled={Boolean(missing) || busy}
             type="submit"
           >
             {busy
@@ -178,6 +212,11 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
                 : 'Criando…'
               : 'Criar e começar a editar'}
           </button>
+          {missing && (
+            <span className="gp-hint" id="np-missing">
+              {missing}
+            </span>
+          )}
         </div>
       </form>
     </div>

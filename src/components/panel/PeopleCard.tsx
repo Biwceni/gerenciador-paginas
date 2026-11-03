@@ -4,6 +4,7 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 
 import { request } from '@/components/editor/api'
+import { panelHref } from '@/lib/panel'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
@@ -100,7 +101,10 @@ export function PeopleCard({ adminRoute, apiRoute, me, people: initialPeople }: 
             )}
             <div className="gp-row__actions">
               {person.id === me.id ? (
-                <Link className="gp-btn gp-btn--sm gp-btn--ghost" href={`${adminRoute}/account`}>
+                <Link
+                  className="gp-btn gp-btn--sm gp-btn--ghost"
+                  href={panelHref(adminRoute, 'account')}
+                >
                   Minha conta
                 </Link>
               ) : (

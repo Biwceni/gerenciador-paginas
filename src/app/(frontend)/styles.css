@@ -8,10 +8,22 @@
 
 .site {
   --color-line: color-mix(in srgb, var(--color-text) 13%, transparent);
+  /*
+   * Escala de letras do site, igual em todas as seções. Os tamanhos crescem com a tela, do celular
+   * (390 px) ao computador (1080 px): texto 16 → 17, título de seção 28 → 40, título da página
+   * 34 → 56. Nas prévias, a "tela" é a largura da prévia.
+   */
+  --fs-text: clamp(16px, 15.43px + 0.145vw, 17px);
+  --fs-lead: 19px;
+  --fs-h3: 22px;
+  --fs-h2: clamp(28px, 21.2px + 1.74vw, 40px);
+  --fs-h1: clamp(34px, 21.6px + 3.19vw, 56px);
+  /* Linha de texto corrido com ~65 letras. */
+  --measure: 65ch;
   box-sizing: border-box;
   margin: 0;
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--fs-text);
   line-height: 1.6;
   color: var(--color-text);
   background: var(--color-background);
@@ -38,7 +50,12 @@
     text-wrap: balance;
   }
 
+  & h3 {
+    line-height: 1.3;
+  }
+
   & p {
+    max-width: var(--measure);
     margin: 0;
   }
 
@@ -105,15 +122,51 @@
     color: var(--color-on-primary);
   }
 
+  /*
+   * Seção com o mesmo fundo da anterior: o espaço de cima diminui, para não somar dois espaços
+   * inteiros (~176 px). Não vale para o banner com foto. A segunda linha de cada regra é a da
+   * prévia do editor, em que o Puck põe cada seção dentro de um elemento seu.
+   */
+  /* Uma regra por seletor: em lista, o Next junta tudo num :is() e a prévia não copia. */
+  .section--light:not(.hero--side) + .section--light:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--light:not(.hero--side))
+    + [data-puck-component]
+    > .section--light:not(.hero) {
+    padding-top: 24px;
+  }
+
+  .section--soft:not(.hero--side) + .section--soft:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--soft:not(.hero--side))
+    + [data-puck-component]
+    > .section--soft:not(.hero) {
+    padding-top: 24px;
+  }
+
+  .section--brand:not(.hero--side) + .section--brand:not(.hero) {
+    padding-top: 24px;
+  }
+
+  [data-puck-component]:has(> .section--brand:not(.hero--side))
+    + [data-puck-component]
+    > .section--brand:not(.hero) {
+    padding-top: 24px;
+  }
+
   .section-title {
     margin-bottom: 28px;
-    font-size: clamp(26px, 4.2vw, 40px);
+    font-size: var(--fs-h2);
     font-weight: 700;
   }
 
   .page-title {
     padding-top: 48px;
-    font-size: clamp(32px, 6vw, 48px);
+    font-size: var(--fs-h1);
   }
 
   /* Botões: na cor principal; sobre a cor principal, invertidos. */
@@ -162,27 +215,24 @@
     padding-block: 14px;
   }
 
+  /* Sem logo, só o nome do site, na fonte dos títulos. */
   .site-header__brand {
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
     font-family: var(--font-headings);
-    font-size: 19px;
+    font-size: 21px;
     font-weight: 700;
+    line-height: 1.2;
     text-decoration: none;
   }
 
-  .site-header__initials {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-size: 14px;
+  /* No computador o nome fica numa linha: o topo mede se ele e o menu cabem (HeaderMenu). */
+  @media (min-width: 721px) {
+    .site-header__brand span {
+      white-space: nowrap;
+    }
   }
 
   .site-header__logo {
@@ -201,6 +251,52 @@
     padding: 0;
     list-style: none;
     font-size: 15px;
+  }
+
+  /* O botão do topo nunca quebra em duas linhas. */
+  .site-header__nav .button {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /*
+   * Não coube numa linha: menu escondido (mas ainda medido) e o ☰ no lugar. Quem mede é o
+   * HeaderMenu, depois que a página carrega. Entre 721 e 1023 px o topo já nasce com o ☰ e só passa
+   * ao menu inteiro quando ele cabe (classe --full); acima disso, nasce com o menu e passa ao ☰ se
+   * não couber (classe --compact). Assim nome e menu nunca se sobrepõem, nem antes do JavaScript.
+   */
+  .site-header--compact .site-header__nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .site-header--compact .site-header__burger {
+    display: grid;
+  }
+
+  .site-header--compact .site-header__mobile:not([hidden]) {
+    display: grid;
+  }
+
+  @media (min-width: 721px) and (max-width: 1023px) {
+    .site-header:not(.site-header--full) .site-header__nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .site-header:not(.site-header--full) .site-header__burger {
+      display: grid;
+    }
+
+    .site-header:not(.site-header--full) .site-header__mobile:not([hidden]) {
+      display: grid;
+    }
   }
 
   .site-header__nav ul a,
@@ -229,8 +325,43 @@
     cursor: pointer;
   }
 
+  /* Menu do ☰, embaixo do topo: no celular e quando o topo não cabe numa linha. */
   .site-header__mobile {
     display: none;
+  }
+
+  .site-header__mobile:not([hidden]) {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    gap: 4px;
+    padding: 8px clamp(18px, 5vw, 48px) 16px;
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .site-header__mobile ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-header__mobile ul a {
+    display: block;
+    padding: 10px 0;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .site-header__mobile ul a[aria-current='page'] {
+    color: var(--color-primary);
+  }
+
+  .site-header__mobile .button {
+    justify-content: center;
+    margin-top: 8px;
   }
 
   @media (max-width: 720px) {
@@ -239,7 +370,7 @@
     }
 
     .site-header__brand {
-      font-size: 17px;
+      font-size: 19px;
     }
 
     .site-header__nav {
@@ -251,42 +382,24 @@
     }
 
     .site-header__mobile:not([hidden]) {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      z-index: 5;
       display: grid;
-      gap: 4px;
-      padding: 8px 18px 16px;
-      background: var(--color-background);
-      border-bottom: 1px solid var(--color-line);
-    }
-
-    .site-header__mobile ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .site-header__mobile ul a {
-      display: block;
-      padding: 10px 0;
-      font-weight: 600;
-      border-bottom: 1px solid var(--color-line);
-    }
-
-    .site-header__mobile ul a[aria-current='page'] {
-      color: var(--color-primary);
-    }
-
-    .site-header__mobile .button {
-      justify-content: center;
-      margin-top: 8px;
     }
   }
 
   /* Rodapé */
+
+  /*
+   * Faixa na cor principal (como a Chamada para ação) como última seção: um respiro na cor de fundo
+   * do site antes do rodapé escuro, para os dois não parecerem um bloco só. A segunda regra é a da
+   * prévia do editor.
+   */
+  main > .section--brand:last-child {
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
+
+  [data-puck-component]:last-child > .section--brand {
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
 
   .site-footer {
     padding-block: 44px 24px;
@@ -295,9 +408,10 @@
     font-size: 14.5px;
   }
 
+  /* Mais espaço para o Contato, que tem o endereço. */
   .site-footer__cols {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-columns: 1fr 0.8fr 1.4fr;
     gap: 28px;
   }
 
@@ -326,6 +440,27 @@
   .site-footer a:hover {
     opacity: 1;
     text-decoration: underline;
+  }
+
+  /*
+   * Celular: cada link do rodapé com 44 px de altura de verdade. Uma área invisível maior que o
+   * link (com a lista a 29 px) invadia o link de baixo; assim, nenhuma passa por cima de outra.
+   */
+  @media (max-width: 720px) {
+    .site-footer li > a,
+    .site-footer--campaign a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding-block: 0;
+    }
+
+    .site-footer a.site-footer__privacy {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      vertical-align: middle;
+    }
   }
 
   .site-footer a:focus-visible {
@@ -374,6 +509,12 @@
     .site-footer__cols {
       grid-template-columns: 1fr;
     }
+
+    /* "© 2026 Nome · Privacidade" e o horário, um embaixo do outro. */
+    .site-footer__copy {
+      flex-direction: column;
+      gap: 6px;
+    }
   }
 
   /* Banner principal */
@@ -418,17 +559,66 @@
   }
 
   .hero__title {
-    font-size: clamp(32px, 6vw, 58px);
+    font-size: var(--fs-h1);
     font-weight: 700;
   }
 
   .hero__text {
-    font-size: clamp(16px, 2.2vw, 19px);
+    font-size: var(--fs-lead);
     opacity: 0.92;
   }
 
   .hero.section--image a:focus-visible {
     outline-color: #fff;
+  }
+
+  /* Celular: a película fica mais escura, para o título branco não passar por cima de rostos e de
+     partes claras da foto. */
+  @media (max-width: 720px) {
+    .hero__shade {
+      background: linear-gradient(180deg, rgba(24, 14, 8, 0.62), rgba(24, 14, 8, 0.8));
+    }
+  }
+
+  /* Sem foto (fundo claro, suave ou na cor do site): a faixa é ocupada pelo texto. Título com até
+     ~34 letras por linha e frase de apoio maior. */
+  .hero--plain .hero__inner {
+    max-width: none;
+  }
+
+  .hero--plain .hero__title {
+    max-width: 34ch;
+  }
+
+  /* À esquerda, o título usa a largura toda antes de quebrar (o `balance` o dividiria ao meio). */
+  .hero--plain:not(.hero--center) .hero__title {
+    text-wrap: pretty;
+  }
+
+  .hero--plain .hero__text {
+    font-size: clamp(19px, 17.3px + 0.435vw, 22px);
+  }
+
+  /* Foto ao lado: texto à esquerda, foto à direita com cantos arredondados; no celular, a foto
+     desce para baixo do botão. */
+  .hero--side .hero__container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 56px);
+    align-items: center;
+  }
+
+  .hero__photo {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+
+  @media (max-width: 720px) {
+    .hero--side .hero__container {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   /* Texto com foto */
@@ -450,7 +640,7 @@
   }
 
   .text-image__text h2 {
-    font-size: clamp(26px, 4vw, 38px);
+    font-size: var(--fs-h2);
   }
 
   .text-image__photo {
@@ -489,7 +679,7 @@
   }
 
   .cta h2 {
-    font-size: clamp(26px, 4.4vw, 40px);
+    font-size: var(--fs-h2);
   }
 
   /* Página não encontrada e site em preparação */
@@ -529,17 +719,11 @@
   }
 
   .site-soon h1 {
-    font-size: clamp(28px, 5vw, 44px);
+    font-size: var(--fs-h1);
   }
 
   .site-soon p {
     max-width: 520px;
-  }
-
-  .site-soon__initials {
-    width: 64px;
-    height: 64px;
-    font-size: 24px;
   }
 
   .site-soon__logo {
@@ -560,7 +744,7 @@
   }
 
   .not-found h1 {
-    font-size: 40px;
+    font-size: var(--fs-h2);
   }
 
   @media (max-width: 720px) {
@@ -575,6 +759,12 @@
     .gallery {
       grid-template-columns: 1fr 1fr;
     }
+
+    /* Número ímpar de fotos: a última ocupa as duas colunas, em vez de ficar sozinha. */
+    .gallery--odd li:last-child {
+      grid-column: 1 / -1;
+      aspect-ratio: 2;
+    }
   }
 
   /* Âncoras do menu: a seção não fica colada no topo da tela ao chegar por um link. */
@@ -582,91 +772,143 @@
     scroll-margin-top: 12px;
   }
 
-  /* Cartões (destaques, depoimentos, perguntas): sempre sobre o fundo do site, em qualquer fundo. */
+  /*
+   * Destaques, depoimentos e perguntas não usam caixas: cada um tem a sua cara. Cartão com borda
+   * fica só onde separa algo clicável ou independente (como a Lista de links).
+   */
 
-  .cards {
+  /* Destaques: sem cartão. Marcador opcional: ícone em linha ou número (passo a passo). */
+
+  .features {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(28px, 4vw, 44px);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .cards--two {
-    grid-template-columns: repeat(2, 1fr);
+  .features--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .card {
+  .features__item {
     display: grid;
     align-content: start;
+    justify-items: start;
     gap: 8px;
-    padding: 22px;
-    border: 1px solid var(--color-line);
-    border-radius: 16px;
-    background: var(--color-background);
-    color: var(--color-text);
   }
 
-  .card a:focus-visible {
-    outline-color: var(--color-primary);
+  .features__icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 4px;
+    color: var(--color-primary);
   }
-
-  /* Destaques */
 
   .features__number {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 4px;
     border-radius: 50%;
-    background: var(--color-surface);
-    color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
     font-family: var(--font-headings);
     font-weight: 700;
   }
 
-  .features h3 {
-    font-size: 19px;
+  .section--brand .features__icon {
+    color: var(--color-on-primary);
   }
 
-  /* Depoimentos */
+  .section--brand .features__number {
+    background: var(--color-on-primary);
+    color: var(--color-primary);
+  }
+
+  .features h3 {
+    font-size: var(--fs-h3);
+  }
+
+  /* Depoimentos: sem caixa, aspas grandes na cor principal e o nome embaixo. */
+
+  .testimonials {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(28px, 5vw, 56px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 
   .testimonials figure {
     display: grid;
-    gap: 12px;
+    gap: 14px;
     margin: 0;
+  }
+
+  .testimonials__mark {
+    height: 0.55em;
+    font-family: var(--font-headings);
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-primary);
+  }
+
+  .section--brand .testimonials__mark {
+    color: var(--color-on-primary);
   }
 
   .testimonials blockquote {
     margin: 0;
     font-family: var(--font-headings);
-    font-size: 19px;
+    font-size: var(--fs-lead);
     line-height: 1.45;
   }
 
   .testimonials figcaption {
-    font-weight: 600;
-    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
   }
 
-  /* Perguntas frequentes */
+  .testimonials__photo {
+    position: relative;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 50%;
+  }
+
+  /* Perguntas frequentes: linhas com divisória, a seta nossa à direita, que gira ao abrir. */
 
   .faq {
     display: grid;
-    gap: 10px;
-    max-width: 760px;
+    border-top: 1px solid var(--color-line);
   }
 
-  .faq .card {
-    display: block;
-    padding: 14px 18px;
-    border-radius: 12px;
+  .faq__item {
+    border-bottom: 1px solid var(--color-line);
   }
 
   .faq summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
     font-weight: 600;
+    list-style: none;
     cursor: pointer;
+  }
+
+  .faq summary::-webkit-details-marker {
+    display: none;
   }
 
   .faq summary:focus-visible {
@@ -674,11 +916,33 @@
     outline-offset: 3px;
   }
 
+  /* Alinhada à primeira linha da pergunta, nunca sozinha numa linha. */
+  .faq__arrow {
+    flex: none;
+    margin-top: calc((1lh - 20px) / 2);
+    color: var(--color-primary);
+    transition: transform 0.2s;
+  }
+
+  .section--brand .faq__arrow {
+    color: var(--color-on-primary);
+  }
+
+  .faq__item[open] .faq__arrow {
+    transform: rotate(180deg);
+  }
+
   .faq__answer {
     display: grid;
     gap: 10px;
-    margin-top: 8px;
-    opacity: 0.8;
+    padding-bottom: 18px;
+    opacity: 0.85;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .faq__arrow {
+      transition: none;
+    }
   }
 
   /* Contato e endereço */
@@ -706,12 +970,11 @@
     margin: 0;
   }
 
+  /* Rótulo em letra normal, sem caixa alta espaçada. */
   .contact__list dt {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.7;
+    font-size: 15px;
+    font-weight: 600;
+    opacity: 0.75;
   }
 
   .contact__list dd {
@@ -726,6 +989,21 @@
 
   .contact__list a:hover {
     text-decoration: underline;
+  }
+
+  .contact__list .contact__map {
+    display: block;
+    width: fit-content;
+    margin-top: 4px;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: normal;
+  }
+
+  .section--brand .contact__list .contact__map {
+    color: inherit;
   }
 
   /* Lista de links */
@@ -752,7 +1030,7 @@
   }
 
   .link-list__title {
-    font-size: 28px;
+    font-size: var(--fs-h2);
   }
 
   .link-list__links {
@@ -820,7 +1098,7 @@
   }
 
   .column-text h3 {
-    font-size: 22px;
+    font-size: var(--fs-h3);
   }
 
   .column-image {
@@ -846,12 +1124,12 @@
   .rich-text > div {
     display: grid;
     gap: 14px;
-    max-width: 760px;
+    max-width: var(--measure);
   }
 
   .rich-text h3 {
     margin-top: 10px;
-    font-size: 22px;
+    font-size: var(--fs-h3);
   }
 
   .rich-text ul,
@@ -939,8 +1217,9 @@
   }
 
   @media (max-width: 720px) {
-    .cards,
-    .cards--two,
+    .features,
+    .features--two,
+    .testimonials,
     .contact,
     .columns {
       grid-template-columns: 1fr;
@@ -1007,7 +1286,6 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    font-size: 15px;
   }
 
   .site-form__check input {

@@ -65,6 +65,24 @@ export async function checkPanelLogin(apiRoute: string): Promise<boolean> {
   }
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Aviso do campo de e-mail das telas de entrar, ou `null` se estiver certo. É nosso, e não o do
+ * navegador, que sai no idioma dele.
+ */
+export function emailProblem(email: string): string | null {
+  const value = email.trim()
+  if (!value) return 'Digite o seu e-mail.'
+  if (!EMAIL_PATTERN.test(value)) return 'Confira o e-mail. Ex.: nome@exemplo.com.br'
+  return null
+}
+
+/** Aviso do campo de senha da tela de entrar, ou `null`. */
+export function passwordProblem(password: string): string | null {
+  return password ? null : 'Digite a sua senha.'
+}
+
 export type PasswordRule = { ok: boolean; label: string }
 
 /** As regras da senha nova, mostradas enquanto a pessoa digita. */

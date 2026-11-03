@@ -13,6 +13,7 @@ import type { PageRow } from './data'
 import { PageRowItem } from './PageRowItem'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { Tip } from './Tip'
 
 type Props = {
   adminRoute: string
@@ -113,27 +114,25 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
           <ul className="gp-rows">
             {list.map((page) => (
               <PageRowItem adminRoute={adminRoute} domain={domain} key={page.id} page={page}>
-                <Link
-                  className="gp-btn gp-btn--sm gp-btn--primary"
-                  href={editorPath(adminRoute, page.id)}
-                >
+                <Link className="gp-btn gp-btn--sm" href={editorPath(adminRoute, page.id)}>
                   <PanelIcon name="edit" size={14} />
                   Editar
                 </Link>
                 {page.status !== 'draft' && (
-                  <a className="gp-btn gp-btn--sm" href={page.path} rel="noopener" target="_blank">
+                  <a
+                    aria-label={`Ver ${page.title} no site`}
+                    className="gp-btn gp-btn--sm gp-btn--icon-sm"
+                    href={page.path}
+                    rel="noopener"
+                    target="_blank"
+                  >
                     <PanelIcon name="eye" size={14} />
-                    Ver
+                    <span aria-hidden="true" className="gp-btn__label">
+                      Ver
+                    </span>
                   </a>
                 )}
-                <button
-                  aria-label={`Mais opções de "${page.title}"`}
-                  className="gp-btn gp-btn--sm gp-btn--ghost"
-                  onClick={() => setMoreId(page.id)}
-                  type="button"
-                >
-                  Mais…
-                </button>
+                <MoreButton onClick={() => setMoreId(page.id)} title={page.title} />
               </PageRowItem>
             ))}
           </ul>
@@ -165,7 +164,7 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
                   page={page}
                 >
                   <button
-                    className="gp-btn gp-btn--sm gp-btn--primary"
+                    className="gp-btn gp-btn--sm"
                     disabled={restoring !== null}
                     onClick={() => restore(page)}
                     type="button"
@@ -173,14 +172,7 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
                     <PanelIcon name="file" size={14} />
                     {restoring === page.id ? 'Restaurando…' : 'Restaurar'}
                   </button>
-                  <button
-                    aria-label={`Mais opções de "${page.title}"`}
-                    className="gp-btn gp-btn--sm gp-btn--ghost"
-                    onClick={() => setMoreId(page.id)}
-                    type="button"
-                  >
-                    Mais…
-                  </button>
+                  <MoreButton onClick={() => setMoreId(page.id)} title={page.title} />
                 </PageRowItem>
               ))}
             </ul>
@@ -188,14 +180,11 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
         )}
       </section>
 
-      <p className="gp-tip gp-tip--accent">
-        <PanelIcon name="help" size={16} />
-        <span>
-          A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais…” em outra página
-          ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>. A ordem aqui
-          segue o menu do site.
-        </span>
-      </p>
+      <Tip>
+        A página inicial é a que abre em <b>{domain}</b>. Para trocar, use “Mais opções” (⋯) em
+        outra página ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>. A
+        ordem aqui segue o menu do site.
+      </Tip>
 
       {more && (
         <MoreDialog
@@ -209,6 +198,21 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
         />
       )}
     </div>
+  )
+}
+
+/** Botão ⋯ da linha: abre as outras ações da página. */
+function MoreButton({ onClick, title }: { onClick: () => void; title: string }) {
+  return (
+    <button
+      aria-label={`Mais opções de ${title}`}
+      className="gp-btn gp-btn--sm gp-btn--icon"
+      onClick={onClick}
+      title="Mais opções"
+      type="button"
+    >
+      <PanelIcon name="more" size={16} />
+    </button>
   )
 }
 

@@ -4,9 +4,11 @@ import { Users } from '@/collections/Users'
 import { inviteEmailHTML } from '@/email/invite'
 import { resetPasswordEmailHTML } from '@/email/resetPassword'
 import {
+  emailProblem,
   LOCK_MINUTES,
   LOCKED_MESSAGE,
   MAX_LOGIN_ATTEMPTS,
+  passwordProblem,
   passwordRules,
   WRONG_LOGIN_MESSAGE,
 } from '@/lib/auth'
@@ -55,5 +57,17 @@ describe('regras da senha nova', () => {
     expect(passwordRules('abcdefgh').every((rule) => rule.ok)).toBe(false)
     expect(passwordRules('12345678').every((rule) => rule.ok)).toBe(false)
     expect(passwordRules('café2026').every((rule) => rule.ok)).toBe(true)
+  })
+})
+
+describe('avisos dos campos de entrar', () => {
+  it('são nossos, em português, e somem com o campo certo', () => {
+    expect(emailProblem('')).toBe('Digite o seu e-mail.')
+    expect(emailProblem('   ')).toBe('Digite o seu e-mail.')
+    expect(emailProblem('fabio')).toBe('Confira o e-mail. Ex.: nome@exemplo.com.br')
+    expect(emailProblem('fabio@exemplo')).toBe('Confira o e-mail. Ex.: nome@exemplo.com.br')
+    expect(emailProblem(' fabio@exemplo.com.br ')).toBeNull()
+    expect(passwordProblem('')).toBe('Digite a sua senha.')
+    expect(passwordProblem('x')).toBeNull()
   })
 })

@@ -11,6 +11,7 @@ import {
   greeting,
   panelHref,
   type PanelPath,
+  pendingPagesText,
   sortPagesForList,
 } from '@/lib/panel'
 import { getServerURL } from '@/lib/site'
@@ -22,7 +23,7 @@ import {
   loadUnreadMessages,
   type PendingGlobal,
 } from './data'
-import { PageRowItem, StatusChip } from './PageRowItem'
+import { PageRowItem } from './PageRowItem'
 import { PanelIcon, type PanelIconName } from './PanelIcon'
 
 const GLOBAL_SCREEN: Record<PendingGlobal['slug'], PanelPath> = {
@@ -64,6 +65,8 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
     await loadFinishInput(payload, user, sortPagesForList(pages, await menuPageOrder(req))),
   )
   const finishDone = finish.filter((step) => step.done).length
+  // Um botão verde cheio por tela: o da próxima coisa a fazer.
+  const nextStep = finish.find((step) => !step.done)
   const home = pages.find((page) => page.home)
   const siteLive = Boolean(home && home.status !== 'draft')
   // Sem página inicial publicada: o que dá para mostrar de como está ficando é o editor dela.
@@ -104,6 +107,34 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         </div>
       </header>
 
+      {/* O que está salvo e ainda não está no ar: uma linha. A lista fica em Páginas recentes. */}
+      {pending.length > 0 && (
+        <p className="gp-notice gp-notice--warn" role="status">
+          <span>{pendingPagesText(pending.length)}</span>
+          <Link
+            className="gp-btn gp-btn--sm gp-notice__action"
+            href={
+              pending.length === 1
+                ? editorPath(adminRoute, pending[0].id)
+                : panelHref(adminRoute, 'pages')
+            }
+          >
+            {pending.length === 1 ? 'Continuar' : 'Ver'}
+          </Link>
+        </p>
+      )}
+      {pendingGlobals.map((global) => (
+        <p className="gp-notice gp-notice--warn" key={global.slug} role="status">
+          <span>{global.label} com mudanças fora do ar</span>
+          <Link
+            className="gp-btn gp-btn--sm gp-notice__action"
+            href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
+          >
+            Continuar
+          </Link>
+        </p>
+      ))}
+
       {searchParams?.pronto && (
         <p className="gp-notice" role="status">
           <PanelIcon name="check" />
@@ -137,7 +168,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             <span aria-hidden="true" className="gp-live__dot" />
             Seu site está no ar em <span className="gp-accent">{domain}</span>
           </div>
-          <a className="gp-btn gp-btn--primary" href="/" rel="noopener" target="_blank">
+          <a className="gp-btn" href="/" rel="noopener" target="_blank">
             <PanelIcon name="eye" size={16} />
             Ver meu site
           </a>
@@ -191,7 +222,17 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         </section>
       )}
 
-      {finishDone < finish.length && (
+      {finishDone === finish.length ? (
+        <details className="gp-card gp-finished">
+          <summary>
+            <span aria-hidden="true" className="gp-todo__mark">
+              <PanelIcon name="check" size={14} />
+            </span>
+            Tudo pronto no seu site
+          </summary>
+          <FinishList finish={finish} />
+        </details>
+      ) : (
         <section aria-labelledby="gp-finish-title" className="gp-card">
           <div className="gp-card__head">
             <h2 id="gp-finish-title">Para terminar seu site</h2>
@@ -202,64 +243,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
           <div aria-hidden="true" className="gp-progress">
             <i style={{ width: `${Math.round((finishDone / finish.length) * 100)}%` }} />
           </div>
-          <ol className="gp-todo">
-            {finish.map((step, index) => (
-              <li className={step.done ? 'is-done' : undefined} key={step.key}>
-                <span aria-hidden="true" className="gp-todo__mark">
-                  {step.done ? <PanelIcon name="check" size={14} /> : index + 1}
-                </span>
-                <div className="gp-todo__text">
-                  <b>{step.title}</b>
-                  {!step.done && step.detail && (
-                    <span className="gp-small gp-muted">{step.detail}</span>
-                  )}
-                </div>
-                {!step.done && (
-                  <Link
-                    className={`gp-btn gp-btn--sm${'page' in step.target ? ' gp-btn--primary' : ''}`}
-                    href={stepHref(step)}
-                  >
-                    {step.action}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {(pending.length > 0 || pendingGlobals.length > 0) && (
-        <section className="gp-card">
-          <h2>Falta publicar</h2>
-          <p className="gp-muted gp-small">
-            Estas mudanças estão salvas, mas ainda não aparecem para os visitantes.
-          </p>
-          <ul className="gp-rows">
-            {pending.map((page) => (
-              <PageRowItem adminRoute={adminRoute} domain={domain} key={page.id} page={page}>
-                <Link
-                  className="gp-btn gp-btn--sm gp-btn--primary"
-                  href={editorPath(adminRoute, page.id)}
-                >
-                  Continuar
-                </Link>
-              </PageRowItem>
-            ))}
-            {pendingGlobals.map((global) => (
-              <li className="gp-row" key={global.slug}>
-                <div className="gp-row__title">{global.label}</div>
-                <StatusChip status="changed" />
-                <div className="gp-row__actions">
-                  <Link
-                    className="gp-btn gp-btn--sm gp-btn--primary"
-                    href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
-                  >
-                    Continuar
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <FinishList finish={finish} href={stepHref} next={nextStep} />
         </section>
       )}
 
@@ -293,5 +277,44 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         )}
       </section>
     </div>
+  )
+}
+
+/** Passos de "Para terminar seu site". Feito: check verde e texto mais suave, sem botão. */
+function FinishList({
+  finish,
+  href,
+  next,
+}: {
+  finish: FinishStep[]
+  href?: (step: FinishStep) => string
+  next?: FinishStep
+}) {
+  return (
+    <ol className="gp-todo">
+      {finish.map((step, index) => (
+        <li className={step.done ? 'is-done' : undefined} key={step.key}>
+          <span aria-hidden="true" className="gp-todo__mark">
+            {step.done ? <PanelIcon name="check" size={14} /> : index + 1}
+          </span>
+          <div className="gp-todo__text">
+            <b>{step.title}</b>
+            {step.done ? (
+              <span className="gp-sr"> (feito)</span>
+            ) : (
+              step.detail && <span className="gp-small gp-muted">{step.detail}</span>
+            )}
+          </div>
+          {!step.done && href && (
+            <Link
+              className={`gp-btn gp-btn--sm${step === next ? ' gp-btn--primary' : ''}`}
+              href={href(step)}
+            >
+              {step.action}
+            </Link>
+          )}
+        </li>
+      ))}
+    </ol>
   )
 }

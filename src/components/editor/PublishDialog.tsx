@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { isExamplePhoto } from '@/lib/examples'
 import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
-import { collectReferences, pagePhotoIds, usesWhatsApp } from '@/puck/references'
+import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import type { PuckPageData } from '@/puck/schema'
 
 import { updatePhotoAlt } from './api'
@@ -79,6 +79,9 @@ export function PublishDialog({
     isExamplePhoto(photoById[id]),
   )
   const whatsappWithoutNumber = !whatsappHref && usesWhatsApp(data)
+  // Aviso leve: não muda o botão para "Publicar mesmo assim".
+  const homeHeroWithoutPhoto =
+    pageId === homepageId && heroWithoutPhoto(data, (id) => Boolean(photoById[id]))
   const draftLinks = pageIds
     .filter((id) => id !== pageId)
     .flatMap((id) => {
@@ -222,6 +225,12 @@ export function PublishDialog({
             }
           >
             Funciona, mas o site fica mais seu com fotos suas.
+          </Check>
+        )}
+        {homeHeroWithoutPhoto && (
+          <Check title="O banner da página inicial fica mais forte com uma foto">
+            Escolha uma nas opções do banner: em &ldquo;Foto ao lado&rdquo; ela aparece ao lado do
+            texto.
           </Check>
         )}
         <Check ok title="Aparece certinho no Google">

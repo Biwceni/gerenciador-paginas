@@ -7,6 +7,7 @@ import { toast } from '@payloadcms/ui'
 import { createUsePuck } from '@puckeditor/core'
 import React, { useState } from 'react'
 
+import { Tip } from '@/components/panel/Tip'
 import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
@@ -353,7 +354,7 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
 
 /** Aviso fixo no painel de opções (não guarda nada). */
 export function Notice({ children }: { children: React.ReactNode }) {
-  return <p className="ed-notice">{children}</p>
+  return <Tip>{children}</Tip>
 }
 
 /**
