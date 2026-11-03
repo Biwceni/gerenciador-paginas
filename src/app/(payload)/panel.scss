@@ -824,10 +824,33 @@ html[data-theme] {
   gap: 10px;
   align-content: start;
   font: inherit;
+  position: relative;
+
+  &:hover {
+    border-color: var(--gp-line-strong);
+  }
 
   &[aria-checked='true'] {
     border-color: var(--gp-accent);
     box-shadow: 0 0 0 4px var(--gp-accent-soft);
+
+    // Selo de escolhido, além da borda.
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--gp-accent);
+      color: var(--gp-accent-ink);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+    }
   }
 
   &:focus-visible {
@@ -891,6 +914,51 @@ html[data-theme] {
     place-items: center;
     padding: 0;
     color: var(--gp-accent);
+  }
+}
+
+// No celular, cartões compactos: desenho pequeno à esquerda, nome e descrição à direita.
+@media (max-width: 720px) {
+  .gp-starts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .gp-start {
+    grid-template-columns: 88px minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 2px;
+    align-items: center;
+    padding: 10px 44px 10px 10px;
+
+    .gp-mini {
+      grid-row: 1 / span 2;
+      height: 88px;
+      padding: 8px 8px 0;
+    }
+
+    .gp-mini__sheet {
+      width: 64px;
+      gap: 2px;
+      padding: 4px 4px 0;
+    }
+
+    .gp-mini__section {
+      width: 56px;
+      height: 37px;
+    }
+
+    .gp-mini__add {
+      height: 32px;
+    }
+
+    b {
+      align-self: end;
+    }
+
+    > .gp-small {
+      align-self: start;
+    }
   }
 }
 

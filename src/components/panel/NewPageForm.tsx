@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import { SectionThumb } from '@/components/editor/SectionThumb'
 import { editorPath } from '@/lib/editor'
@@ -89,6 +89,7 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
   const [name, setName] = useState(asked && asked === privacyModel ? PRIVACY_TITLE : '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const nameField = useRef<HTMLInputElement>(null)
 
   const title = name.trim()
   const taken = pages.map((page) => page.slug)
@@ -147,6 +148,13 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
             onClick={() => {
               setStart(item.key)
               if (item.key === privacyModel?.id && !name.trim()) setName(PRIVACY_TITLE)
+              // No celular o campo fica bem abaixo dos cartões: leva até ele.
+              const field = nameField.current
+              if (field) {
+                const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                field.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+                field.focus({ preventScroll: true })
+              }
             }}
             role="radio"
             type="button"
@@ -182,6 +190,7 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
             className="gp-input"
             id="np-name"
             maxLength={80}
+            ref={nameField}
             onChange={(event) => setName(event.target.value)}
             placeholder="Ex.: Promoção de inverno"
             value={name}
