@@ -260,6 +260,24 @@ html[data-theme] {
 @media (min-width: $desktop) {
   .nav {
     --nav-padding-block-start: var(--gp-top);
+    // A linha da direita fica no contêiner da tela (abaixo), para ir até o fim das telas longas.
+    border-right: 0;
+  }
+
+  // Menu lateral com a altura toda: o Payload já o deixa fixo ao rolar, com a altura da janela.
+  // A linha que o separa da tela é desenhada no contêiner, que tem a altura da página inteira.
+  .template-default--nav-open:has(.gp-nav) {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: calc(var(--nav-width, 275px) - 1px);
+      width: 1px;
+      background: var(--gp-line);
+      pointer-events: none;
+      z-index: 1;
+    }
   }
 }
 
