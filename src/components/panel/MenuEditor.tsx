@@ -318,26 +318,26 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                   </div>
                   <div className="gp-menuitem__moves">
                     <button
-                      aria-label={`Subir "${item.label}"`}
-                      className="gp-iconbtn"
+                      aria-label={`Subir ${item.label.trim() || `o link ${index + 1}`}`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       disabled={index === 0}
                       onClick={() => moveItem(index, -1)}
                       type="button"
                     >
-                      <PanelIcon name="up" size={15} />
+                      <PanelIcon name="up" size={18} />
                     </button>
                     <button
-                      aria-label={`Descer "${item.label}"`}
-                      className="gp-iconbtn"
+                      aria-label={`Descer ${item.label.trim() || `o link ${index + 1}`}`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       disabled={index === header.items.length - 1}
                       onClick={() => moveItem(index, 1)}
                       type="button"
                     >
-                      <PanelIcon name="down" size={15} />
+                      <PanelIcon name="down" size={18} />
                     </button>
                     <button
-                      aria-label={`Tirar "${item.label}" do menu`}
-                      className="gp-iconbtn"
+                      aria-label={`Tirar ${item.label.trim() || `o link ${index + 1}`} do menu`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       onClick={() =>
                         changeHeader({
                           ...header,
@@ -346,7 +346,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                       }
                       type="button"
                     >
-                      <PanelIcon name="x" size={15} />
+                      <PanelIcon name="x" size={18} />
                     </button>
                   </div>
                   <LinkWarning link={item.link} pageById={pageById} whatsapp={site.whatsappHref} />

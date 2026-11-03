@@ -929,3 +929,25 @@ textarea.ed-input {
   gap: 6px;
   padding: 16px;
 }
+
+/* Subir e Descer de um item da lista (Destaques), ao lado do arrastar do Puck. */
+.ed-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ed-moves .ed-btn {
+  min-height: 36px;
+}
+
+.ed-moves .ed-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 638px) {
+  .ed-moves .ed-btn {
+    min-height: 44px;
+  }
+}

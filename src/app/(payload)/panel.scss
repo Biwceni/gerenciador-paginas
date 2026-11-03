@@ -2082,6 +2082,22 @@ textarea.gp-input {
   }
 }
 
+// Subir, descer e tirar (Menu e rodapé, Formulário): com contorno, 36 px no computador e 44 px no
+// celular.
+.gp-iconbtn.gp-iconbtn--move {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gp-line-strong);
+  background: var(--gp-surface);
+}
+
+@media (max-width: 760px) {
+  .gp-iconbtn.gp-iconbtn--move {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .gp-iconbtn {
   display: inline-grid;
   place-items: center;

@@ -369,31 +369,31 @@ export function FormEditor({
                     Obrigatória
                   </label>
                   <button
-                    aria-label={`Subir “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Subir ${question.label.trim() || `a pergunta ${index + 1}`}`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={index === 0}
                     onClick={() => move(index, -1)}
                     type="button"
                   >
-                    <PanelIcon name="up" size={16} />
+                    <PanelIcon name="up" size={18} />
                   </button>
                   <button
-                    aria-label={`Descer “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Descer ${question.label.trim() || `a pergunta ${index + 1}`}`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={index === questions.length - 1}
                     onClick={() => move(index, 1)}
                     type="button"
                   >
-                    <PanelIcon name="down" size={16} />
+                    <PanelIcon name="down" size={18} />
                   </button>
                   <button
-                    aria-label={`Tirar “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Tirar ${question.label.trim() || `a pergunta ${index + 1}`} do formulário`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={questions.length < 2}
                     onClick={() => removeQuestion(question.id)}
                     type="button"
                   >
-                    <PanelIcon name="x" size={16} />
+                    <PanelIcon name="x" size={18} />
                   </button>
                 </div>
                 {!question.label.trim() && (

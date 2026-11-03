@@ -4,6 +4,7 @@ import { type Config, type CustomField, type Field, FieldLabel } from '@puckedit
 import React from 'react'
 
 import {
+  ArrayItemMoves,
   FormField,
   LinkField,
   MenuLabelField,
@@ -98,6 +99,16 @@ const featureItems: Field = {
       type: 'select',
       label: 'Ícone (com o marcador "Ícone")',
       options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
+    },
+    // Só botões: não guarda nada no item.
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves name={name} noun="Destaque" />
+        </FieldLabel>
+      ),
     },
   },
   defaultItemProps: {

@@ -4,9 +4,10 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { toast } from '@payloadcms/ui'
-import { createUsePuck } from '@puckeditor/core'
+import { createUsePuck, useGetPuck } from '@puckeditor/core'
 import React, { useState } from 'react'
 
+import { PanelIcon } from '@/components/panel/PanelIcon'
 import { Tip } from '@/components/panel/Tip'
 import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
@@ -18,6 +19,7 @@ import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { addMenuItem, linksTo, readMenu } from './menu'
+import { ROOT_ZONE } from './puck'
 
 // Campos próprios do painel de opções do editor. Os textos são editados na própria página; aqui
 // ficam as escolhas: foto da biblioteca, destino de um link, vídeo.
@@ -431,6 +433,62 @@ export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
         As mensagens ficam em Mensagens, no painel, e chegam por e-mail. Quem envia precisa marcar
         que concorda com o uso dos dados.
       </p>
+    </div>
+  )
+}
+
+/**
+ * Subir e descer um item de uma lista (os Destaques), além do arrastar do Puck. O campo fica dentro
+ * do item: o nome dele diz a lista e a posição (`items[2].move`). A lista inteira volta para a
+ * seção com o item no lugar novo, e o Desfazer pega a mudança.
+ */
+export function ArrayItemMoves({ name, noun }: { name: string; noun: string }) {
+  const getPuck = useGetPuck()
+  const match = /^([A-Za-z]+)\[(\d+)\]\.\w+$/.exec(name)
+  const list = match?.[1] ?? ''
+  const index = Number(match?.[2] ?? -1)
+  const items = usePuck((s) => s.selectedItem?.props[list]) as { title?: string }[] | undefined
+  if (!match || !Array.isArray(items)) return null
+  const title = items[index]?.title?.trim() || `${noun} ${index + 1}`
+
+  const move = (by: -1 | 1) => {
+    const { appState, dispatch, selectedItem } = getPuck()
+    const selector = appState.ui.itemSelector
+    const current = selectedItem?.props[list]
+    if (!selectedItem || !selector || !Array.isArray(current)) return
+    const next = [...current]
+    const [item] = next.splice(index, 1)
+    next.splice(index + by, 0, item)
+    dispatch({
+      type: 'replace',
+      destinationIndex: selector.index,
+      destinationZone: selector.zone ?? ROOT_ZONE,
+      data: { ...selectedItem, props: { ...selectedItem.props, [list]: next } },
+    })
+  }
+
+  return (
+    <div className="ed-moves">
+      <button
+        aria-label={`Subir ${title}`}
+        className="ed-btn ed-btn--sm"
+        disabled={index === 0}
+        onClick={() => move(-1)}
+        type="button"
+      >
+        <PanelIcon name="up" size={16} />
+        Subir
+      </button>
+      <button
+        aria-label={`Descer ${title}`}
+        className="ed-btn ed-btn--sm"
+        disabled={index === items.length - 1}
+        onClick={() => move(1)}
+        type="button"
+      >
+        <PanelIcon name="down" size={16} />
+        Descer
+      </button>
     </div>
   )
 }
