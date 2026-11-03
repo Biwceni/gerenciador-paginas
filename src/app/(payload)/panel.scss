@@ -1025,8 +1025,14 @@ html[data-theme] {
   text-align: right;
 }
 
-.gp-pubbar .gp-actions {
-  align-items: flex-start;
+// Na barra de publicar, o motivo fica ao lado do botão, para a barra (que acompanha a rolagem)
+// não crescer.
+.gp-pubbar .gp-btnwrap {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
 }
 
 .gp-typegrid {
@@ -1659,6 +1665,7 @@ textarea.gp-input {
 
   &__cap {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;

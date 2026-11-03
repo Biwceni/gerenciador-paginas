@@ -73,6 +73,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  // Parte da prévia em destaque: segue o foco (topo nos links e no botão, rodapé no Rodapé).
+  const [part, setPart] = useState<'all' | 'header' | 'footer'>('all')
   const dirty = useRef<{ header: boolean; footer: boolean }>({ header: false, footer: false })
   const [version, setVersion] = useState(0)
 
@@ -274,7 +276,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
 
       <div className="gp-hfl">
         <div className="gp-hfl__forms">
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('header')}>
             <div>
               <h2>Links do menu</h2>
               <p className="gp-small gp-muted">
@@ -369,7 +371,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             </div>
           </section>
 
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('header')}>
             <h2>Botão de destaque no topo</h2>
             <label className="gp-switch">
               <input
@@ -426,7 +428,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             )}
           </section>
 
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('footer')}>
             <h2>Rodapé</h2>
             <div className="gp-field">
               <label htmlFor="hf-text">Frase do rodapé</label>
@@ -476,6 +478,24 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
         <section aria-label="Prévia" className="gp-previewbox">
           <div className="gp-previewbox__cap">
             <span>Prévia</span>
+            <div className="gp-seg" role="group" aria-label="Parte da prévia">
+              {(
+                [
+                  ['all', 'Tudo'],
+                  ['header', 'Topo'],
+                  ['footer', 'Rodapé'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  aria-pressed={part === value}
+                  key={value}
+                  onClick={() => setPart(value)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="gp-seg" role="group" aria-label="Tamanho da prévia">
               <button
                 aria-pressed={device === 'desktop'}
@@ -498,34 +518,41 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               fontFaces={site.fontFaces}
               theme={site.theme}
               title="Prévia do topo e do rodapé"
-              width={device === 'mobile' ? 390 : 1200}
+              // Só uma parte: desenhada mais estreita, para as letras ficarem maiores.
+              width={device === 'mobile' ? 390 : part === 'all' ? 1200 : 960}
             >
-              <SiteHeaderView
-                button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
-                items={previewItems}
-                logo={site.logo}
-                name={site.name}
-              />
-              <div
-                style={{
-                  padding: '56px 16px',
-                  textAlign: 'center',
-                  fontWeight: 600,
-                  opacity: 0.6,
-                  background: 'var(--color-surface)',
-                }}
-              >
-                Conteúdo da página
-              </div>
-              <SiteFooterView
-                contact={site.contact}
-                menu={footer.showMenu ? previewItems : []}
-                name={site.name}
-                privacyHref={site.privacyHref}
-                showContact={footer.showContact}
-                social={footer.showSocial ? site.social : []}
-                text={footer.text || null}
-              />
+              {part !== 'footer' && (
+                <SiteHeaderView
+                  button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
+                  items={previewItems}
+                  logo={site.logo}
+                  name={site.name}
+                />
+              )}
+              {part === 'all' && (
+                <div
+                  style={{
+                    padding: '56px 16px',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    opacity: 0.6,
+                    background: 'var(--color-surface)',
+                  }}
+                >
+                  Conteúdo da página
+                </div>
+              )}
+              {part !== 'header' && (
+                <SiteFooterView
+                  contact={site.contact}
+                  menu={footer.showMenu ? previewItems : []}
+                  name={site.name}
+                  privacyHref={site.privacyHref}
+                  showContact={footer.showContact}
+                  social={footer.showSocial ? site.social : []}
+                  text={footer.text || null}
+                />
+              )}
             </SiteFrame>
           </div>
         </section>

@@ -48,11 +48,12 @@ export function SiteFrame({ title, theme, fontFaces, stylesheets, width, childre
       frame.head.appendChild(style)
     }
     add(siteCSS())
-    add('body{margin:0;pointer-events:none}')
+    // Sem a altura mínima da tela: a prévia mede o conteúdo, e ele pode encolher.
+    add('body{margin:0;pointer-events:none}body.site{min-height:0}')
     if (fontFaces) add(safeStyleText(fontFaces))
     setBody(frame.body)
 
-    const observer = new ResizeObserver(() => setHeight(frame.documentElement.scrollHeight))
+    const observer = new ResizeObserver(() => setHeight(frame.body.offsetHeight))
     observer.observe(frame.body)
     return () => observer.disconnect()
   }, [fontFaces])
