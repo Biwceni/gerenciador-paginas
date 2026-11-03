@@ -275,6 +275,9 @@ html[data-theme] {
   margin: 0 auto;
   padding: 8px var(--gutter-h) 96px;
   display: grid;
+  // Uma coluna que não cresce com o conteúdo (linhas com rolagem lateral própria, como os
+  // atalhos das Configurações, não alargam a tela).
+  grid-template-columns: minmax(0, 1fr);
 
   // No celular, logo abaixo da barra do topo; no computador, na altura da marca do menu.
   @media (min-width: $desktop) {
@@ -1568,6 +1571,59 @@ textarea.gp-input {
 }
 
 // ---------- menu e rodapé ----------
+
+// Atalhos para os blocos das Configurações, na barra de publicar (que acompanha a rolagem). No
+// celular, uma linha com rolagem lateral só dela.
+.gp-toc {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 360px;
+  min-width: 0;
+  gap: 2px 14px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--gp-accent);
+    font-size: var(--gp-fs-help);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .gp-toc {
+    flex-basis: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+
+    a {
+      min-height: 44px;
+    }
+  }
+}
+
+// Os blocos das Configurações não ficam por baixo da barra de publicar ao seguir um atalho.
+.gp-page section[id^='st-'],
+.gp-page div[id^='st-'] {
+  scroll-margin-top: calc(var(--app-header-height, 60px) + 120px);
+}
+
+// Área de perigo: "Começar de novo com um modelo" troca o site inteiro.
+.gp-card--danger {
+  border-color: var(--gp-danger);
+
+  h2 {
+    color: var(--gp-danger);
+  }
+}
 
 // Barra de publicar (Configurações, Menu e rodapé): o aviso de salvo fica no título, aqui só os
 // botões, com o motivo embaixo do principal quando ele está desligado.

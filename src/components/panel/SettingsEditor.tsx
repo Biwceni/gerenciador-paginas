@@ -62,6 +62,19 @@ type Props = {
 
 export type { SettingsState }
 
+// Blocos da tela, na ordem, para os atalhos do topo.
+const SECTIONS: [string, string][] = [
+  ['st-identidade', 'Identidade'],
+  ['st-inicial', 'Página inicial'],
+  ['st-privacidade', 'Privacidade'],
+  ['st-cores', 'Cores e letras'],
+  ['st-contato', 'Contato'],
+  ['st-redes', 'Redes sociais'],
+  ['st-google', 'Google'],
+  ['st-pessoas', 'Pessoas com acesso'],
+  ['st-modelo', 'Começar de novo'],
+]
+
 type SaveState = 'idle' | 'waiting' | 'saving' | 'invalid' | 'error'
 type FontRole = 'headings' | 'body'
 
@@ -403,6 +416,14 @@ export function SettingsEditor({
       </header>
 
       <div className="gp-pubbar">
+        {/* Atalhos para cada bloco: a tela é longa. */}
+        <nav aria-label="Blocos desta tela" className="gp-toc">
+          {SECTIONS.filter(([id]) => id !== 'st-modelo' || canStartOver).map(([id, label]) => (
+            <a href={`#${id}`} key={id}>
+              {label}
+            </a>
+          ))}
+        </nav>
         <div className="gp-actions">
           {pending && (
             <button className="gp-btn" disabled={busy} onClick={discard} type="button">
@@ -431,7 +452,7 @@ export function SettingsEditor({
       )}
 
       <div className="gp-grid2">
-        <section className="gp-card">
+        <section className="gp-card" id="st-identidade">
           <h2>Identidade</h2>
           {text('name', 'Nome do negócio', { max: 80 })}
           {text('tagline', 'Frase de apresentação', {
@@ -478,7 +499,7 @@ export function SettingsEditor({
         </section>
 
         <div className="gp-col">
-          <section className="gp-card">
+          <section className="gp-card" id="st-inicial">
             <h2>Página inicial</h2>
             <div className="gp-field">
               <label htmlFor="st-home">Qual página abre em {domain}?</label>
@@ -503,7 +524,7 @@ export function SettingsEditor({
               </span>
             </div>
           </section>
-          <section className="gp-card">
+          <section className="gp-card" id="st-privacidade">
             <h2>Página de privacidade</h2>
             <div className="gp-field">
               <label htmlFor="st-privacy">Qual página explica como você cuida dos dados?</label>
@@ -540,7 +561,7 @@ export function SettingsEditor({
           </section>
         </div>
 
-        <section className="gp-card gp-grid2__full">
+        <section className="gp-card gp-grid2__full" id="st-cores">
           <div>
             <h2>Cores e letras</h2>
             <p className="gp-small gp-muted">Valem para o site todo.</p>
@@ -728,7 +749,7 @@ export function SettingsEditor({
           </div>
         </section>
 
-        <section className="gp-card">
+        <section className="gp-card" id="st-contato">
           <div>
             <h2>Contato</h2>
             <p className="gp-small gp-muted">
@@ -748,7 +769,7 @@ export function SettingsEditor({
         </section>
 
         <div>
-          <section className="gp-card">
+          <section className="gp-card" id="st-redes">
             <div>
               <h2>Redes sociais</h2>
               <p className="gp-small gp-muted">Deixe em branco o que não usa.</p>
@@ -761,7 +782,7 @@ export function SettingsEditor({
           </section>
         </div>
 
-        <section className="gp-card gp-grid2__full">
+        <section className="gp-card gp-grid2__full" id="st-google">
           <h2>Google e compartilhamento</h2>
           <div className="gp-grid2">
             {text('seoDescription', 'Descrição do site no Google', {
@@ -812,18 +833,20 @@ export function SettingsEditor({
           </ul>
         </section>
 
-        <div className="gp-grid2__full">{people}</div>
+        <div className="gp-grid2__full" id="st-pessoas">
+          {people}
+        </div>
 
         {canStartOver && (
-          <section className="gp-card gp-grid2__full">
+          <section className="gp-card gp-card--danger gp-grid2__full" id="st-modelo">
             <h2>Começar de novo com um modelo</h2>
-            <p className="gp-muted gp-small">
-              Escolha outro tipo de site e um modelo pronto. As páginas de hoje saem do ar e ficam
-              guardadas como rascunho; o menu, o rodapé, as cores e as letras passam a ser os do
-              modelo. Antes de trocar, você vê o modelo e confirma.
+            <p>
+              <b>Troca o site inteiro.</b> As páginas de hoje saem do ar e ficam guardadas em
+              Páginas, no grupo Arquivadas; o menu, o rodapé, as cores e as letras passam a ser os
+              do modelo. Antes de trocar, você vê o modelo e confirma.
             </p>
             <div>
-              <Link className="gp-btn" href={panelHref(adminRoute, 'start')}>
+              <Link className="gp-btn gp-btn--danger" href={panelHref(adminRoute, 'start')}>
                 Ver os modelos
               </Link>
             </div>
