@@ -61,7 +61,15 @@ function usePanelRules() {
   const plugin = usePuck((s) => s.appState.ui.plugin.current)
   const selector = usePuck((s) => s.appState.ui.itemSelector)
   const sections = usePuck((s) => s.appState.data.content.length)
-  const previous = useRef({ left, right, selected: null as string | null, sections })
+  // Qual seção, e não a posição: subir ou descer a escolhida não conta como escolher outra.
+  const selectedId = usePuck((s) => (s.selectedItem?.props.id as string | undefined) ?? null)
+  const previous = useRef({
+    left,
+    right,
+    selected: null as string | null,
+    selectedId: null as string | null,
+    sections,
+  })
 
   useEffect(() => {
     if (window.innerWidth < ONE_PANEL_WIDTH) {
@@ -83,7 +91,7 @@ function usePanelRules() {
   const selected = selector ? `${selector.zone}/${selector.index}` : null
   useEffect(() => {
     const before = previous.current
-    previous.current = { left, right, selected, sections }
+    previous.current = { left, right, selected, selectedId, sections }
     const width = window.innerWidth
     if (width < MOBILE_WIDTH) return
     // Com espaço para os dois painéis: escolher uma seção na página recolhe a lista de seções. A
@@ -91,7 +99,8 @@ function usePanelRules() {
     // para acrescentar outra logo abaixo.
     if (width >= ONE_PANEL_WIDTH) {
       const inserted = sections !== before.sections
-      if (selected && selected !== before.selected && !inserted && left && plugin === 'blocks') {
+      const other = selectedId !== null && selectedId !== before.selectedId
+      if (other && !inserted && left && plugin === 'blocks') {
         dispatch({ type: 'setUi', ui: { leftSideBarVisible: false }, recordHistory: false })
       }
       return
@@ -104,7 +113,21 @@ function usePanelRules() {
       ui = { leftSideBarVisible: false, rightSideBarVisible: true }
     }
     if (ui) dispatch({ type: 'setUi', ui, recordHistory: false })
-  }, [dispatch, left, plugin, right, sections, selected])
+  }, [dispatch, left, plugin, right, sections, selected, selectedId])
+
+  // O Puck calcula a redução da prévia assim que um painel abre ou fecha, ainda no meio da animação,
+  // e ela ficaria menor do que cabe. Depois da animação, pede a conta de novo (mesma largura).
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const { viewports } = getPuck().appState.ui
+      dispatch({
+        type: 'setUi',
+        ui: { viewports: { ...viewports, current: { ...viewports.current } } },
+        recordHistory: false,
+      })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [dispatch, getPuck, left, right])
 
   // A janela encolheu com os dois painéis abertos (por exemplo, encaixada na metade da tela).
   useEffect(() => {

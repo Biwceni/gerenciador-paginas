@@ -456,7 +456,7 @@ test.describe.serial('editor: seções', () => {
     await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBeGreaterThan(390)
     // Em 1440 px, esconder os painéis deixa a página de 1280 px caber sem reduzir.
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.getByRole('button', { name: /tamanho real (100%)/ }).click()
+    await page.getByRole('button', { name: /tamanho real \(100%\)/ }).click()
     await expect(page.getByText('Computador, tamanho real')).toBeVisible()
   })
 
