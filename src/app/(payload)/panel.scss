@@ -878,7 +878,7 @@ html[data-theme] {
       border-radius: 50%;
       background: var(--gp-accent);
       color: var(--gp-accent-ink);
-      font-size: 15px;
+      font-size: var(--gp-fs-text);
       font-weight: 700;
       line-height: 1;
     }
