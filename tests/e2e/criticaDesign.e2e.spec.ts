@@ -122,11 +122,18 @@ test.describe.serial('crítica de design', () => {
     const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true })
     const header = await payload.findGlobal({ slug: 'header', depth: 0, overrideAccess: true })
     previous = {
+      // Valores explícitos: num banco zerado as Configurações ainda não existem, e um contato
+      // vazio ({}) não apagaria o que este teste preenche (o site novo conta os passos feitos).
       site: {
         ...(site.name ? { name: site.name } : {}),
         homepage: site.homepage ?? null,
-        colors: site.colors ?? {},
-        contact: site.contact ?? {},
+        colors: { primary: site.colors?.primary ?? PUBLISHED },
+        contact: {
+          whatsapp: site.contact?.whatsapp ?? null,
+          phone: site.contact?.phone ?? null,
+          email: site.contact?.email ?? null,
+          address: site.contact?.address ?? null,
+        },
       },
       header: { items: header.items, button: header.button },
     }
