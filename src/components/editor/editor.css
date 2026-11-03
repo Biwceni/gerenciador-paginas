@@ -814,11 +814,11 @@ textarea.ed-input {
   background: var(--ed-bg);
 }
 
-/* Botão das opções, no pé da barra de ícones. */
+/* Botão das opções, logo abaixo de "Adicionar seção" e "Ordem", no topo da barra de ícones. */
 .ed-root [class*='PuckLayout-nav'] nav {
   height: 100%;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   /* Acima do selo do Next, que aparece nesse canto em desenvolvimento. */
   padding-bottom: 48px;
 }

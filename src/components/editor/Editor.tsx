@@ -264,9 +264,6 @@ function EditorFields({
               : `${exampleSections} seções ainda têm texto de exemplo.`}
           </span>
         )}
-        <button className="ed-btn ed-btn--sm" onClick={() => chrome.open('settings')} type="button">
-          Página e Google
-        </button>
       </div>
       {children}
     </>
