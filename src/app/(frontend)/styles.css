@@ -1365,10 +1365,6 @@
     position: relative;
   }
 
-  & .editor-locked > [inert] {
-    opacity: 0.75;
-  }
-
   & .editor-locked__tip {
     position: absolute;
     inset: 0;
