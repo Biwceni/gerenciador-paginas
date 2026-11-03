@@ -492,3 +492,38 @@ export function ArrayItemMoves({ name, noun }: { name: string; noun: string }) {
     </div>
   )
 }
+
+type StackedOption = { value: string; label: string; hint: string }
+
+/**
+ * Escolha única em cartões empilhados, um embaixo do outro (como o Tema em Minha conta): os nomes
+ * longos cabem inteiros, sem quebrar em 2 + 1 como o rádio do Puck.
+ */
+export function StackedChoiceField({
+  name,
+  onChange,
+  options,
+  readOnly,
+  value,
+}: FieldProps<string> & { name: string; options: StackedOption[] }) {
+  return (
+    <div className="ed-choices" role="radiogroup">
+      {options.map((option) => (
+        <label className="ed-choice" key={option.value}>
+          <input
+            checked={value === option.value}
+            disabled={readOnly}
+            name={name}
+            onChange={() => onChange(option.value)}
+            type="radio"
+            value={option.value}
+          />
+          <span>
+            <b>{option.label}</b>
+            <span className="ed-hint">{option.hint}</span>
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}

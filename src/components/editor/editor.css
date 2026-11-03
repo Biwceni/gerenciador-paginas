@@ -973,3 +973,45 @@ textarea.ed-input {
   outline: 2px solid var(--ed-accent);
   outline-offset: 2px;
 }
+
+/* Rótulos dos campos todos no mesmo estilo: sem os ícones que o Puck põe em alguns tipos. */
+.ed-root [class*='Input-labelIcon'] {
+  display: none;
+}
+
+/* Escolha em cartões empilhados (Marcador dos Destaques), como o Tema em Minha conta. */
+.ed-choices {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 10px;
+  background: var(--ed-bg);
+  cursor: pointer;
+}
+
+.ed-choice input {
+  margin-top: 3px;
+  accent-color: var(--ed-accent);
+}
+
+.ed-choice b {
+  display: block;
+  font-size: var(--gp-fs-help);
+}
+
+.ed-choice:has(input:checked) {
+  border-color: var(--ed-accent);
+  box-shadow: inset 0 0 0 1px var(--ed-accent);
+}
+
+.ed-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}

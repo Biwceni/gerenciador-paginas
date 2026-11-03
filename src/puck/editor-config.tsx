@@ -11,6 +11,7 @@ import {
   Notice,
   PhotoField,
   PhotoListField,
+  StackedChoiceField,
   VideoField,
 } from '@/components/editor/fields'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
@@ -75,14 +76,26 @@ const button: Field = {
   objectFields: { label: text('Texto do botão (vazio: sem botão)'), link },
 }
 
-const featureMarker: Field = {
-  type: 'radio',
+type FeatureMarker = 'none' | 'icon' | 'number'
+
+const featureMarker: CustomField<FeatureMarker> = {
+  type: 'custom',
   label: 'Marcador',
-  options: [
-    { label: 'Nenhum', value: 'none' },
-    { label: 'Ícone', value: 'icon' },
-    { label: 'Números (passo a passo)', value: 'number' },
-  ],
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <StackedChoiceField
+        name={name}
+        onChange={(next) => onChange(next as FeatureMarker)}
+        options={[
+          { value: 'none', label: 'Nenhum', hint: 'Só o título e o texto' },
+          { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada destaque' },
+          { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3' },
+        ]}
+        readOnly={readOnly}
+        value={value ?? 'none'}
+      />
+    </FieldLabel>
+  ),
 }
 
 // O campo Ícone fica sempre no item, como a foto do banner: um campo que aparece e some conforme o
