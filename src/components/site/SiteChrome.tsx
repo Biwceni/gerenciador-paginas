@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import React from 'react'
 
-import { instagramLink, whatsAppURL } from '@/lib/links'
+import { instagramLink, mapsURL, whatsAppURL } from '@/lib/links'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
@@ -243,8 +243,13 @@ export function SiteFooterView({
                       <SiteLink href={`mailto:${contact.email}`}>{contact.email}</SiteLink>
                     </li>
                   )}
+                  {/* O endereço abre o mapa, como na seção Contato e endereço. */}
                   {showContact && contact.address && (
-                    <li className="site-footer__address">{contact.address}</li>
+                    <li>
+                      <SiteLink className="site-footer__address" href={mapsURL(contact.address)}>
+                        {contact.address}
+                      </SiteLink>
+                    </li>
                   )}
                   {social.map((item) => (
                     <li key={item.key}>

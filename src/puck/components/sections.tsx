@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
-import { telHref, whatsAppURL } from '@/lib/links'
+import { mapsURL, telHref, whatsAppURL } from '@/lib/links'
 import { privacyBlocks } from '@/lib/privacy'
 import { initials } from '@/lib/site'
 
@@ -361,11 +361,7 @@ export function CallToAction({
   )
 }
 
-/** Busca do endereço no Google Maps, aberta numa aba nova. Nada do Google carrega na página. */
-export function mapsURL(address: string): string {
-  const query = address.replace(/\s+/g, ' ').trim()
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-}
+export { mapsURL }
 
 /** Contato e endereço: os dados vêm das configurações e mudam no site todo. */
 export function Contact({ id, title, text, style, metadata }: WithMetadata<ContactProps>) {

@@ -528,6 +528,11 @@
     text-decoration: underline;
   }
 
+  .site-footer a.site-footer__privacy {
+    display: inline;
+    padding: 0;
+  }
+
   /*
    * Celular: cada link do rodapé com 44 px de altura de verdade. Uma área invisível maior que o
    * link (com a lista a 29 px) invadia o link de baixo; assim, nenhuma passa por cima de outra.
@@ -541,10 +546,12 @@
       padding-block: 0;
     }
 
+    /* "Privacidade": 44 px de área de toque sem mudar a linha (a margem negativa devolve a altura). */
     .site-footer a.site-footer__privacy {
       display: inline-flex;
       align-items: center;
       min-height: 44px;
+      margin-block: -12px;
       vertical-align: middle;
     }
   }
@@ -553,9 +560,7 @@
     outline-color: var(--color-on-footer);
   }
 
-  .site-footer__address {
-    padding: 3px 0;
-    opacity: 0.85;
+  .site-footer a.site-footer__address {
     white-space: pre-line;
   }
 
@@ -569,11 +574,6 @@
     border-top: 1px solid color-mix(in srgb, var(--color-on-footer) 15%, transparent);
     font-size: 13px;
     opacity: 0.75;
-  }
-
-  .site-footer a.site-footer__privacy {
-    display: inline;
-    padding: 0;
   }
 
   .site-footer--campaign {
