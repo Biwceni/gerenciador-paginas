@@ -2,7 +2,7 @@
 
 import { useTheme } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { passwordReady, PasswordFields } from '@/components/auth/PasswordFields'
 import { request } from '@/components/editor/api'
@@ -55,32 +55,33 @@ function ProfileCard({ apiRoute, user }: Props) {
   const router = useRouter()
   const [name, setName] = useState(user.name)
   const [saved, setSaved] = useState(user.name)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<Message>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const saving = name.trim() !== saved && !error
 
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setBusy(true)
-    setMessage(null)
-    try {
-      await request(apiRoute, `/users/${user.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: name.trim() }),
-      })
-      setSaved(name.trim())
-      setMessage({ tone: 'ok', text: 'Nome salvo.' })
-      router.refresh()
-    } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'Tente de novo.' })
-    } finally {
-      setBusy(false)
-    }
-  }
+  // O nome é salvo sozinho, um segundo depois da última tecla (como o Formulário).
+  useEffect(() => {
+    const next = name.trim()
+    if (next === saved || error) return
+    const timer = setTimeout(async () => {
+      try {
+        await request(apiRoute, `/users/${user.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ name: next }),
+        })
+        setSaved(next)
+        router.refresh()
+      } catch (failure) {
+        setError(failure instanceof Error ? failure.message : 'Tente de novo.')
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [apiRoute, attempt, error, name, router, saved, user.id])
 
   return (
     <section aria-labelledby="gp-account-data" className="gp-card">
       <h2 id="gp-account-data">Seus dados</h2>
-      <form className="gp-authform" onSubmit={save}>
+      <form className="gp-authform" onSubmit={(event) => event.preventDefault()}>
         <div className="gp-field">
           <label htmlFor="ac-name">Nome</label>
           <input
@@ -88,7 +89,10 @@ function ProfileCard({ apiRoute, user }: Props) {
             className="gp-input"
             id="ac-name"
             maxLength={80}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value)
+              setError(null)
+            }}
             value={name}
           />
           <span className="gp-hint">Aparece no pé do menu do painel.</span>
@@ -107,16 +111,27 @@ function ProfileCard({ apiRoute, user }: Props) {
               : 'Só um administrador muda o tipo de acesso.'}
           </span>
         </div>
-        <div className="gp-actions">
-          <button
-            className="gp-btn gp-btn--primary"
-            disabled={busy || name.trim() === saved}
-            type="submit"
-          >
-            {busy ? 'Salvando…' : 'Salvar nome'}
-          </button>
-        </div>
-        <Feedback message={message} />
+        <Feedback
+          message={
+            error
+              ? { tone: 'error', text: `Não deu para salvar: ${error}` }
+              : { tone: 'ok', text: saving ? 'Salvando…' : 'Tudo salvo' }
+          }
+        />
+        {error && (
+          <div>
+            <button
+              className="gp-btn gp-btn--sm"
+              onClick={() => {
+                setError(null)
+                setAttempt((n) => n + 1)
+              }}
+              type="button"
+            >
+              Tentar de novo
+            </button>
+          </div>
+        )}
       </form>
     </section>
   )
