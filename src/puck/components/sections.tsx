@@ -28,7 +28,7 @@ import type {
   VideoProps,
 } from '../schema'
 import { SectionButton } from './Button'
-import { FeatureIcon } from './FeatureIcon'
+import { ContactIcon, type ContactIconName, FeatureIcon } from './FeatureIcon'
 import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
 
@@ -371,13 +371,31 @@ export function mapsURL(address: string): string {
 export function Contact({ id, title, text, style, metadata }: WithMetadata<ContactProps>) {
   const { whatsapp, phone, email, address, hours } = metadata.site.contact
   const whatsappHref = whatsAppURL(whatsapp)
-  const items = [
-    whatsappHref && { label: 'WhatsApp', value: whatsapp, href: whatsappHref },
-    phone && { label: 'Telefone', value: phone, href: telHref(phone) ?? undefined },
-    email && { label: 'E-mail', value: email, href: `mailto:${email}` },
-    address && { label: 'Endereço', value: address },
-    hours && { label: 'Horário', value: hours },
-  ].filter((item): item is { label: string; value: string; href?: string } => Boolean(item))
+  type Item = { icon: ContactIconName; label: string; value: string; href?: string; extra?: string }
+  const items: Item[] = []
+  if (whatsapp && whatsappHref) {
+    items.push({ icon: 'whatsapp', label: 'WhatsApp', value: whatsapp, href: whatsappHref })
+  }
+  if (phone) {
+    items.push({
+      icon: 'phone',
+      label: 'Telefone',
+      value: phone,
+      href: telHref(phone) ?? undefined,
+    })
+  }
+  if (email) items.push({ icon: 'mail', label: 'E-mail', value: email, href: `mailto:${email}` })
+  // O endereço abre o mapa: a linha inteira é o link.
+  if (address) {
+    items.push({
+      icon: 'map',
+      label: 'Endereço',
+      value: address,
+      href: mapsURL(address),
+      extra: 'Ver no mapa',
+    })
+  }
+  if (hours) items.push({ icon: 'clock', label: 'Horário', value: hours })
 
   return (
     <Section id={id} metadata={metadata} style={style}>
@@ -387,29 +405,34 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
           <Paragraphs text={text} />
         </div>
         {items.length > 0 ? (
-          <dl className="contact__list">
-            {items.map((item) => (
-              <div key={item.label}>
-                <dt>{item.label}</dt>
-                <dd>
+          <ul className="contact__list">
+            {items.map((item) => {
+              // A linha inteira (ícone, rótulo e valor) é a área de toque, com pelo menos 44 px.
+              const body = (
+                <>
+                  <ContactIcon name={item.icon} />
+                  <span className="contact__text">
+                    <span className="contact__label">{item.label}</span>
+                    <span className="contact__value">{item.value}</span>
+                    {item.extra && <span className="contact__map">{item.extra}</span>}
+                  </span>
+                </>
+              )
+              return (
+                <li key={item.label}>
                   {item.href && !metadata.editing ? (
-                    <SiteLink href={item.href}>{item.value}</SiteLink>
+                    <SiteLink className="contact__item contact__item--link" href={item.href}>
+                      {body}
+                    </SiteLink>
                   ) : (
-                    item.value
+                    <div className={`contact__item${item.href ? ' contact__item--link' : ''}`}>
+                      {body}
+                    </div>
                   )}
-                  {/* O mapa fica logo abaixo do endereço. */}
-                  {item.label === 'Endereço' &&
-                    (metadata.editing ? (
-                      <span className="contact__map">Ver no mapa</span>
-                    ) : (
-                      <SiteLink className="contact__map" href={mapsURL(item.value)}>
-                        Ver no mapa
-                      </SiteLink>
-                    ))}
-                </dd>
-              </div>
-            ))}
-          </dl>
+                </li>
+              )
+            })}
+          </ul>
         ) : (
           metadata.editing && (
             <EditorPlaceholder>

@@ -966,43 +966,78 @@
 
   .contact__list {
     display: grid;
-    gap: 14px;
+    gap: 4px;
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Cada contato é uma linha: ícone, rótulo e valor. Com link, a linha inteira é a área de toque. */
+  .contact__item {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    min-height: 44px;
+    padding: 8px 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .contact__icon {
+    margin-top: 2px;
+    color: var(--color-primary);
+  }
+
+  .contact__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
   }
 
   /* Rótulo em letra normal, sem caixa alta espaçada. */
-  .contact__list dt {
+  .contact__label {
     font-size: 15px;
     font-weight: 600;
     opacity: 0.75;
   }
 
-  .contact__list dd {
-    margin: 2px 0 0;
+  .contact__value {
     font-weight: 600;
     white-space: pre-line;
+    overflow-wrap: anywhere;
   }
 
-  .contact__list a {
-    text-decoration: none;
+  /* Valor com cara de ação: na cor principal, um pouco puxada para a do texto (contraste de 4,5:1
+     também no fundo suave, nas combinações prontas). */
+  .contact__item--link .contact__value {
+    color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text));
   }
 
-  .contact__list a:hover {
+  a.contact__item:hover .contact__value,
+  a.contact__item:focus-visible .contact__value {
     text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
-  .contact__list .contact__map {
-    display: block;
-    width: fit-content;
-    margin-top: 4px;
-    color: var(--color-primary);
+  a.contact__item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .contact__map {
+    color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text));
+    font-size: 15px;
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
-    white-space: normal;
   }
 
-  .section--brand .contact__list .contact__map {
+  /* Na faixa com a cor principal, tudo na cor do texto da faixa. */
+  .section--brand .contact__icon,
+  .section--brand .contact__item--link .contact__value,
+  .section--brand .contact__map {
     color: inherit;
   }
 
