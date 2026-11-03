@@ -475,16 +475,17 @@
   /* Rodapé */
 
   /*
-   * Faixa na cor principal (como a Chamada para ação) como última seção: um respiro na cor de fundo
-   * do site antes do rodapé escuro, para os dois não parecerem um bloco só. A segunda regra é a da
-   * prévia do editor.
+   * Faixa na cor principal (como a Chamada para ação) como última seção: encosta no rodapé, com uma
+   * linha fina na cor principal mais escura separando os dois (uma tira na cor de fundo entre eles
+   * parecia falha). Fora do fim da página, o espaço entre seções continua o normal. A segunda regra
+   * é a da prévia do editor.
    */
   main > .section--brand:last-child {
-    margin-bottom: clamp(32px, 5vw, 56px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 70%, #000);
   }
 
   [data-puck-component]:last-child > .section--brand {
-    margin-bottom: clamp(32px, 5vw, 56px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 70%, #000);
   }
 
   .site-footer {
