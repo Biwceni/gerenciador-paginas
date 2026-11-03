@@ -37,6 +37,7 @@ import { SaveStatus } from './SaveStatus'
 import { type SettingsState, toSiteData, validateSettings } from './settings'
 import { SiteFrame } from './SiteFrame'
 import { Tip } from './Tip'
+import { WhyDisabled } from './WhyDisabled'
 
 type Props = {
   adminRoute: string
@@ -254,6 +255,15 @@ export function SettingsEditor({
   const previewFonts = [...new Set([state.fonts.headings, state.fonts.body].filter(Boolean))]
   const changed = pending || save !== 'idle'
   const hasErrors = Object.keys(errors).length > 0
+  const cantPublish = busy
+    ? null
+    : hasErrors
+      ? 'Corrija o campo marcado para publicar'
+      : save === 'saving'
+        ? 'Espere terminar de salvar'
+        : !changed
+          ? 'Nada para publicar'
+          : null
 
   const text = (
     key: 'name' | 'tagline' | 'seoDescription',
@@ -399,14 +409,18 @@ export function SettingsEditor({
               Descartar mudanças
             </button>
           )}
-          <button
-            className="gp-btn gp-btn--primary"
-            disabled={busy || !changed || hasErrors || save === 'saving'}
-            onClick={publish}
-            type="button"
-          >
-            {busy ? 'Aguarde…' : 'Publicar configurações'}
-          </button>
+          <div className="gp-btnwrap">
+            <button
+              aria-describedby={cantPublish ? 'st-why' : undefined}
+              className="gp-btn gp-btn--primary"
+              disabled={busy || Boolean(cantPublish)}
+              onClick={publish}
+              type="button"
+            >
+              {busy ? 'Aguarde…' : 'Publicar configurações'}
+            </button>
+            <WhyDisabled id="st-why" reason={cantPublish} />
+          </div>
         </div>
       </div>
 

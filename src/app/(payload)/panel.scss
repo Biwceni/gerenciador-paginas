@@ -1012,8 +1012,21 @@ html[data-theme] {
 .gp-obnav {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+// Botão principal com o motivo embaixo quando está desligado (WhyDisabled.tsx).
+.gp-btnwrap {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  text-align: right;
+}
+
+.gp-pubbar .gp-actions {
+  align-items: flex-start;
 }
 
 .gp-typegrid {
@@ -1458,11 +1471,13 @@ textarea.gp-input {
 
 // ---------- menu e rodapé ----------
 
+// Barra de publicar (Configurações, Menu e rodapé): o aviso de salvo fica no título, aqui só os
+// botões, com o motivo embaixo do principal quando ele está desligado.
 .gp-pubbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   background: var(--gp-surface);
   border: 1px solid var(--gp-line);

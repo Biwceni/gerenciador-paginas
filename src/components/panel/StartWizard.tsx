@@ -13,6 +13,7 @@ import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { Tip } from './Tip'
 import { TemplatePreview, type TemplatePreviewData } from './TemplatePreview'
+import { WhyDisabled } from './WhyDisabled'
 
 export type StartTemplate = TemplatePreviewData & { siteType: SiteType; segment: Segment | null }
 
@@ -167,6 +168,17 @@ export function StartWizard({
     (current === 'segment' && Boolean(segment)) ||
     (current === 'model' && Boolean(chosen)) ||
     (current === 'basics' && Boolean(name.trim()) && !whatsappInvalid && !busy)
+  // O que falta para seguir, embaixo do botão desligado.
+  const missing =
+    canGo || busy
+      ? null
+      : current === 'model'
+        ? 'Escolha um modelo para continuar'
+        : current !== 'basics'
+          ? 'Escolha uma opção para continuar'
+          : !name.trim()
+            ? 'Escreva o nome do negócio para continuar'
+            : 'Confira o número do WhatsApp para continuar'
 
   const create = async () => {
     if (!chosen) return
@@ -416,20 +428,24 @@ export function StartWizard({
             ) : (
               <span />
             )}
-            <button
-              className="gp-btn gp-btn--primary gp-btn--lg"
-              disabled={!canGo}
-              onClick={next}
-              type="button"
-            >
-              {current !== 'basics'
-                ? 'Continuar'
-                : busy
-                  ? 'Montando seu site…'
-                  : existingPages > 0
-                    ? 'Trocar meu site por este modelo'
-                    : 'Criar meu site'}
-            </button>
+            <div className="gp-btnwrap">
+              <button
+                aria-describedby={missing ? 'ob-why' : undefined}
+                className="gp-btn gp-btn--primary gp-btn--lg"
+                disabled={!canGo}
+                onClick={next}
+                type="button"
+              >
+                {current !== 'basics'
+                  ? 'Continuar'
+                  : busy
+                    ? 'Montando seu site…'
+                    : existingPages > 0
+                      ? 'Trocar meu site por este modelo'
+                      : 'Criar meu site'}
+              </button>
+              <WhyDisabled id="ob-why" reason={missing} />
+            </div>
           </div>
           {busy && (
             <p aria-live="polite" className="gp-small gp-muted">

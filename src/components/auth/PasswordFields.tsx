@@ -66,3 +66,11 @@ export function PasswordFields({
 /** As regras estão cumpridas e as duas senhas são iguais. */
 export const passwordReady = (password: string, confirm: string) =>
   passwordRules(password).every((rule) => rule.ok) && password === confirm
+
+/** O que falta para salvar a senha, embaixo do botão desligado. */
+export const passwordMissing = (password: string, confirm: string): string | null =>
+  !passwordRules(password).every((rule) => rule.ok)
+    ? 'Siga as regras da senha acima.'
+    : password !== confirm
+      ? 'Repita a mesma senha no segundo campo.'
+      : null

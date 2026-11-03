@@ -8,6 +8,7 @@ import { panelHref } from '@/lib/panel'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
+import { WhyDisabled } from './WhyDisabled'
 
 type Person = Pick<User, 'id' | 'email' | 'name' | 'role'>
 
@@ -263,6 +264,7 @@ function InviteForm({
           Cancelar
         </button>
         <button
+          aria-describedby={!email && !busy ? 'inv-why' : undefined}
           className="gp-btn gp-btn--sm gp-btn--primary"
           disabled={busy || !email}
           type="submit"
@@ -270,6 +272,7 @@ function InviteForm({
           {busy ? 'Enviando…' : 'Enviar convite'}
         </button>
       </div>
+      <WhyDisabled id="inv-why" reason={!email && !busy ? 'Escreva o e-mail da pessoa.' : null} />
     </form>
   )
 }

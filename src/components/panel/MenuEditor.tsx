@@ -22,6 +22,7 @@ import { discardMenuAndFooter, type HeaderData, publishMenuAndFooter, saveGlobal
 import { PanelIcon } from './PanelIcon'
 import { SaveStatus } from './SaveStatus'
 import { SiteFrame } from './SiteFrame'
+import { WhyDisabled } from './WhyDisabled'
 
 const MENU_LIMIT = 8
 const LABEL_LIMIT = 30
@@ -189,6 +190,13 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
 
   const changed = pending || save !== 'idle'
+  const cantPublish = busy
+    ? null
+    : save === 'saving'
+      ? 'Espere terminar de salvar'
+      : !changed
+        ? 'Nada para publicar'
+        : null
 
   const setItem = (index: number, next: Partial<Item>) =>
     changeHeader({
@@ -243,14 +251,18 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               Descartar mudanças
             </button>
           )}
-          <button
-            className="gp-btn gp-btn--primary"
-            disabled={busy || !changed || save === 'saving'}
-            onClick={publish}
-            type="button"
-          >
-            {busy ? 'Aguarde…' : 'Publicar menu e rodapé'}
-          </button>
+          <div className="gp-btnwrap">
+            <button
+              aria-describedby={cantPublish ? 'hf-why' : undefined}
+              className="gp-btn gp-btn--primary"
+              disabled={busy || Boolean(cantPublish)}
+              onClick={publish}
+              type="button"
+            >
+              {busy ? 'Aguarde…' : 'Publicar menu e rodapé'}
+            </button>
+            <WhyDisabled id="hf-why" reason={cantPublish} />
+          </div>
         </div>
       </div>
 

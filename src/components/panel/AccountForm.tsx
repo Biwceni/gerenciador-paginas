@@ -4,12 +4,13 @@ import { useTheme } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
-import { passwordReady, PasswordFields } from '@/components/auth/PasswordFields'
+import { PasswordFields, passwordMissing, passwordReady } from '@/components/auth/PasswordFields'
 import { request } from '@/components/editor/api'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
 import { SaveStatus } from './SaveStatus'
+import { WhyDisabled } from './WhyDisabled'
 
 type Props = {
   apiRoute: string
@@ -170,6 +171,7 @@ function PasswordCard({ apiRoute, userId }: { apiRoute: string; userId: number }
           <div className="gp-actions">
             <button
               className="gp-btn gp-btn--primary"
+              aria-describedby={passwordMissing(password, confirm) ? 'ac-why' : undefined}
               disabled={busy || !passwordReady(password, confirm)}
               type="submit"
             >
@@ -179,6 +181,7 @@ function PasswordCard({ apiRoute, userId }: { apiRoute: string; userId: number }
               Cancelar
             </button>
           </div>
+          <WhyDisabled id="ac-why" reason={busy ? null : passwordMissing(password, confirm)} />
         </form>
       ) : (
         <div className="gp-actions">
