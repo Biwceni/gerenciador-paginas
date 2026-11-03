@@ -277,6 +277,79 @@
     display: grid;
   }
 
+  /* Com o ☰, o nome do site pode quebrar linha: nunca é cortado nem fica por baixo do botão. */
+  .site-header--compact .site-header__brand span {
+    white-space: normal;
+  }
+
+  /*
+   * Botão de destaque compacto, ao lado do ☰ (só aparece com ele). Sem espaço para o texto, fica só
+   * o ícone do destino, com o texto como nome acessível.
+   */
+  .site-header__cta {
+    display: none;
+    flex: none;
+    justify-content: center;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 16px;
+    white-space: nowrap;
+  }
+
+  .site-header__cta svg {
+    display: none;
+  }
+
+  .site-header--cta-icon .site-header__cta {
+    width: 44px;
+    padding: 0;
+  }
+
+  .site-header--cta-icon .site-header__cta svg {
+    display: block;
+  }
+
+  .site-header--cta-icon .site-header__cta-text {
+    display: none;
+  }
+
+  .site-header--compact .site-header__cta {
+    display: inline-flex;
+  }
+
+  /* Medida do HeaderMenu: tudo no tamanho inteiro por um instante, sem aparecer. */
+  .site-header--measure .site-header__brand span {
+    white-space: nowrap;
+  }
+
+  .site-header--measure .site-header__cta {
+    display: inline-flex;
+    position: absolute;
+    visibility: hidden;
+    width: auto;
+    padding: 0 16px;
+  }
+
+  .site-header--measure .site-header__cta svg {
+    display: none;
+  }
+
+  .site-header--measure .site-header__cta-text {
+    display: inline;
+  }
+
+  /* Menu do ☰ aberto: o resto da página escurece, e tocar no fundo fecha. */
+  .site-header--open {
+    z-index: 6;
+  }
+
+  .site-header__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background: rgb(0 0 0 / 45%);
+  }
+
   .site-header--compact .site-header__mobile:not([hidden]) {
     display: grid;
   }
@@ -292,6 +365,10 @@
 
     .site-header:not(.site-header--full) .site-header__burger {
       display: grid;
+    }
+
+    .site-header:not(.site-header--full) .site-header__cta {
+      display: inline-flex;
     }
 
     .site-header:not(.site-header--full) .site-header__mobile:not([hidden]) {
@@ -315,9 +392,10 @@
 
   .site-header__burger {
     display: none;
+    flex: none;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: 1px solid var(--color-line);
     border-radius: 10px;
     background: none;
@@ -379,6 +457,14 @@
 
     .site-header__burger {
       display: grid;
+    }
+
+    .site-header__cta {
+      display: inline-flex;
+    }
+
+    .site-header__brand span {
+      white-space: normal;
     }
 
     .site-header__mobile:not([hidden]) {
@@ -1014,7 +1100,11 @@
     color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text));
   }
 
-  a.contact__item:hover .contact__value,
+  a.contact__item:hover .contact__value {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
   a.contact__item:focus-visible .contact__value {
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -1035,8 +1125,14 @@
   }
 
   /* Na faixa com a cor principal, tudo na cor do texto da faixa. */
-  .section--brand .contact__icon,
-  .section--brand .contact__item--link .contact__value,
+  .section--brand .contact__icon {
+    color: inherit;
+  }
+
+  .section--brand .contact__item--link .contact__value {
+    color: inherit;
+  }
+
   .section--brand .contact__map {
     color: inherit;
   }

@@ -22,6 +22,40 @@ type HeaderProps = {
   campaign?: boolean
 }
 
+/** Ícone do destino do botão de destaque, para a versão só com o ícone do topo compacto. */
+function CtaIcon({ href }: { href: string }) {
+  const path = href.startsWith('https://wa.me/') ? (
+    <>
+      <path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z" />
+      <path d="M9 9.5c.3 2.3 2.2 4.2 4.5 4.5l1-1.2 2 .9c-.3 1-1.2 1.6-2.2 1.5-3.3-.3-6-3-6.3-6.3-.1-1 .5-1.9 1.5-2.2l.9 2z" />
+    </>
+  ) : href.startsWith('tel:') ? (
+    <path d="M5 3h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 5.3 5.3l1.4-2.2L19 13.5V17a2 2 0 0 1-2 2A15 15 0 0 1 3 5a2 2 0 0 1 2-2z" />
+  ) : href.startsWith('mailto:') ? (
+    <>
+      <rect height="14" rx="2" width="18" x="3" y="5" />
+      <path d="M3.5 6.5L12 13l8.5-6.5" />
+    </>
+  ) : (
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  )
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+      width="20"
+    >
+      {path}
+    </svg>
+  )
+}
+
 export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderProps) {
   const hasNav = !campaign && (items.length > 0 || button)
 
@@ -56,6 +90,17 @@ export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderPr
             <nav aria-label="Menu principal" className="site-header__nav">
               {navContent}
             </nav>
+            {/* Com o ☰: o botão de destaque continua à vista, compacto, ao lado dele. */}
+            {button && (
+              <SiteLink
+                aria-label={button.label}
+                className="button site-header__cta"
+                href={button.href}
+              >
+                <CtaIcon href={button.href} />
+                <span className="site-header__cta-text">{button.label}</span>
+              </SiteLink>
+            )}
             <HeaderMenu>{navContent}</HeaderMenu>
           </>
         )}
