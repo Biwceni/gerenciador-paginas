@@ -213,6 +213,9 @@ test.describe.serial('editor: seções', () => {
   test('com uma seção selecionada, a lista coloca abaixo dela', async ({ page }) => {
     await expect(page.getByText('Clique para colocar no fim da página')).toBeVisible()
     await selectSection(page, 1)
+    // Escolher a seção recolhe a lista (C22); ela volta pelo "Adicionar seção" do trilho.
+    await expect(page.getByText('Clique para colocar abaixo de “Destaques”')).toBeHidden()
+    await page.locator('nav li').getByText('Adicionar', { exact: false }).click()
     await expect(page.getByText('Clique para colocar abaixo de “Destaques”')).toBeVisible()
 
     await listItem(page, 'Texto simples').click()

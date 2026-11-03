@@ -60,7 +60,8 @@ function usePanelRules() {
   const right = usePuck((s) => s.appState.ui.rightSideBarVisible)
   const plugin = usePuck((s) => s.appState.ui.plugin.current)
   const selector = usePuck((s) => s.appState.ui.itemSelector)
-  const previous = useRef({ left, right, selected: null as string | null })
+  const sections = usePuck((s) => s.appState.data.content.length)
+  const previous = useRef({ left, right, selected: null as string | null, sections })
 
   useEffect(() => {
     if (window.innerWidth < ONE_PANEL_WIDTH) {
@@ -82,12 +83,15 @@ function usePanelRules() {
   const selected = selector ? `${selector.zone}/${selector.index}` : null
   useEffect(() => {
     const before = previous.current
-    previous.current = { left, right, selected }
+    previous.current = { left, right, selected, sections }
     const width = window.innerWidth
     if (width < MOBILE_WIDTH) return
-    // Com espaço para os dois painéis: escolher uma seção recolhe a lista de seções.
+    // Com espaço para os dois painéis: escolher uma seção na página recolhe a lista de seções. A
+    // seção que acabou de entrar pela lista também fica escolhida, mas aí a lista continua aberta,
+    // para acrescentar outra logo abaixo.
     if (width >= ONE_PANEL_WIDTH) {
-      if (selected && selected !== before.selected && left && plugin === 'blocks') {
+      const inserted = sections !== before.sections
+      if (selected && selected !== before.selected && !inserted && left && plugin === 'blocks') {
         dispatch({ type: 'setUi', ui: { leftSideBarVisible: false }, recordHistory: false })
       }
       return
@@ -100,7 +104,7 @@ function usePanelRules() {
       ui = { leftSideBarVisible: false, rightSideBarVisible: true }
     }
     if (ui) dispatch({ type: 'setUi', ui, recordHistory: false })
-  }, [dispatch, left, plugin, right, selected])
+  }, [dispatch, left, plugin, right, sections, selected])
 
   // A janela encolheu com os dois painéis abertos (por exemplo, encaixada na metade da tela).
   useEffect(() => {
