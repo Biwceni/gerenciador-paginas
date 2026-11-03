@@ -1339,6 +1339,25 @@ html[data-theme] {
 // linha). Igual ao `STACKED` de PhotosLibrary.tsx.
 $media-stacked: 1279px;
 
+// Filtros e busca das Fotos, em cima da grade.
+.gp-media__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  .gp-searchbox {
+    flex: 1 1 220px;
+    max-width: 340px;
+  }
+}
+
+.gp-media__none {
+  grid-column: 1 / -1;
+  padding: 24px 0;
+}
+
 .gp-media {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -1418,7 +1437,12 @@ $media-stacked: 1279px;
     overflow-wrap: anywhere;
   }
 
+  // Falta de descrição em destaque, embaixo do uso.
   &__noalt {
+    justify-self: start;
+    border-radius: 999px;
+    padding: 1px 8px;
+    background: var(--gp-warn-soft);
     color: var(--gp-warn);
     font-size: var(--gp-fs-small);
     font-weight: 700;
