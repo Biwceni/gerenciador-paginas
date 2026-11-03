@@ -20,6 +20,7 @@ import type { PageSummary } from '@/puck/summary'
 
 import { discardMenuAndFooter, type HeaderData, publishMenuAndFooter, saveGlobalDraft } from './api'
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
 import { SiteFrame } from './SiteFrame'
 
 const MENU_LIMIT = 8
@@ -188,14 +189,6 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
 
   const changed = pending || save !== 'idle'
-  const status =
-    save === 'waiting' || save === 'saving'
-      ? 'Salvando…'
-      : save === 'error'
-        ? 'Não deu para salvar. Confira a internet.'
-        : changed
-          ? 'Alterações não publicadas'
-          : 'No ar'
 
   const setItem = (index: number, next: Partial<Item>) =>
     changeHeader({
@@ -231,12 +224,19 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           <h1>Menu e rodapé</h1>
           <p>O topo e o rodapé aparecem iguais em todas as páginas. Você muda aqui uma vez só.</p>
         </div>
+        <SaveStatus
+          error={save === 'error' ? 'Confira a internet.' : null}
+          mode="publish"
+          onRetry={() => {
+            setSave('waiting')
+            setVersion((value) => value + 1)
+          }}
+          pending={pending}
+          state={save === 'error' ? 'error' : save === 'idle' ? 'saved' : 'saving'}
+        />
       </header>
 
       <div className="gp-pubbar">
-        <span aria-live="polite" className={`gp-chip gp-chip--${changed ? 'warn' : 'ok'}`}>
-          {status}
-        </span>
         <div className="gp-actions">
           {pending && (
             <button className="gp-btn" disabled={busy} onClick={discard} type="button">

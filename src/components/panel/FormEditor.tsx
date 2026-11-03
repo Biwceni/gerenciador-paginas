@@ -20,6 +20,7 @@ import type { Form } from '@/payload-types'
 import { deleteForm, saveForm } from './api'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
 
 type Props = {
   adminRoute: string
@@ -263,24 +264,20 @@ export function FormEditor({
           <h1>{title.trim() || 'Formulário'}</h1>
           <p>Mudou aqui, muda em todas as páginas que usam este formulário. Salva sozinho.</p>
         </div>
-        <p aria-live="polite" className="gp-small gp-muted gp-savestate">
-          {incomplete
-            ? 'Falta completar o que está marcado'
-            : writing
-              ? 'A pergunta é salva quando você sair do campo'
-              : save === 'saved'
-                ? 'Tudo salvo'
-                : save === 'error'
-                  ? ''
-                  : 'Salvando…'}
-        </p>
+        <SaveStatus
+          blocked={
+            incomplete
+              ? 'Falta completar o que está marcado'
+              : writing
+                ? 'A pergunta é salva quando você sair do campo'
+                : null
+          }
+          error={saveError}
+          mode="save"
+          onRetry={changed}
+          state={save === 'error' ? 'error' : save === 'saved' ? 'saved' : 'saving'}
+        />
       </header>
-
-      {save === 'error' && (
-        <p className="gp-error" role="alert">
-          Não deu para salvar: {saveError}
-        </p>
-      )}
 
       <section className="gp-card">
         <div className="gp-field">

@@ -174,10 +174,10 @@ test.describe.serial('site novo', () => {
 
     // A própria aba salva várias vezes seguidas sem se acusar.
     await editTitle(tabB, 'Título da aba B')
-    await expect(tabB.locator('.ed-top__status')).toContainText('Salvo automaticamente às')
+    await expect(tabB.locator('.ed-top__status')).toContainText('Guardado às')
     await tabB.getByRole('textbox', { name: 'Título' }).first().fill('Título da aba B de novo')
     await expect(tabB.locator('.ed-top__status')).toContainText('Salvando')
-    await expect(tabB.locator('.ed-top__status')).toContainText('Salvo automaticamente às')
+    await expect(tabB.locator('.ed-top__status')).toContainText('Guardado às')
     await expect(tabB.getByRole('alertdialog')).toHaveCount(0)
 
     await editTitle(tabA, 'Título da aba A')

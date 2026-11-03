@@ -33,6 +33,7 @@ import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
+import { SaveStatus } from './SaveStatus'
 import { type SettingsState, toSiteData, validateSettings } from './settings'
 import { SiteFrame } from './SiteFrame'
 import { Tip } from './Tip'
@@ -103,6 +104,7 @@ export function SettingsEditor({
   const [saved, setSaved] = useState(initial)
   const [pending, setPending] = useState(initialPending)
   const [touched, setTouched] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const [save, setSave] = useState<SaveState>('idle')
   const [saveError, setSaveError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -164,7 +166,7 @@ export function SettingsEditor({
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [apiRoute, saved, state, touched])
+  }, [apiRoute, attempt, saved, state, touched])
 
   // Aviso ao fechar a aba só enquanto algo ainda não foi guardado (o rascunho guardado fica).
   useEffect(() => {
@@ -252,13 +254,6 @@ export function SettingsEditor({
   const previewFonts = [...new Set([state.fonts.headings, state.fonts.body].filter(Boolean))]
   const changed = pending || save !== 'idle'
   const hasErrors = Object.keys(errors).length > 0
-  const status = {
-    idle: pending ? 'Guardado, falta publicar' : 'Tudo no ar',
-    waiting: 'Salvando…',
-    saving: 'Salvando…',
-    invalid: 'Corrija o campo marcado para salvar',
-    error: 'Não deu para salvar',
-  }[save]
 
   const text = (
     key: 'name' | 'tagline' | 'seoDescription',
@@ -382,16 +377,22 @@ export function SettingsEditor({
             você publicar.
           </p>
         </div>
+        <SaveStatus
+          blocked={save === 'invalid' ? 'Corrija o campo marcado para salvar' : null}
+          error={saveError}
+          mode="publish"
+          onRetry={() => {
+            setSave('waiting')
+            setAttempt((value) => value + 1)
+          }}
+          pending={pending}
+          state={
+            save === 'error' ? 'error' : save === 'idle' || save === 'invalid' ? 'saved' : 'saving'
+          }
+        />
       </header>
 
       <div className="gp-pubbar">
-        <span
-          aria-live="polite"
-          className={`gp-chip gp-chip--${!changed ? 'ok' : save === 'waiting' || save === 'saving' ? 'draft' : 'warn'}`}
-        >
-          {status}
-        </span>
-        {saveError && <span className="gp-error">{saveError}</span>}
         <div className="gp-actions">
           {pending && (
             <button className="gp-btn" disabled={busy} onClick={discard} type="button">

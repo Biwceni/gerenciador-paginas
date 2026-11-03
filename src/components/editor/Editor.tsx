@@ -493,17 +493,15 @@ export function Editor(props: EditorProps) {
 
   const status = conflict
     ? 'Salvamento parado: a página mudou em outro lugar'
-    : save.state === 'saving'
+    : save.state === 'saving' || save.state === 'pending'
       ? 'Salvando…'
-      : save.state === 'pending'
-        ? 'Salvando em instantes…'
-        : save.state === 'error'
-          ? `Não deu para salvar: ${save.message}`
-          : live && !hasChanges
-            ? 'Tudo publicado'
-            : `Salvo automaticamente${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''} · ${
-                live ? 'há mudanças fora do ar' : 'rascunho, ainda não está no ar'
-              }`
+      : save.state === 'error'
+        ? `Não deu para salvar: ${save.message}`
+        : live && !hasChanges
+          ? 'Tudo no ar'
+          : `Guardado${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''}, falta publicar${
+              live ? '' : ' · rascunho, ainda não está no ar'
+            }`
 
   const chrome: Chrome = {
     title: settings.title,

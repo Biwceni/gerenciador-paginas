@@ -9,6 +9,7 @@ import { request } from '@/components/editor/api'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
 
 type Props = {
   apiRoute: string
@@ -30,33 +31,12 @@ const THEMES: [ThemeChoice, string, string][] = [
   ['dark', 'Escuro', 'Fundo escuro'],
 ]
 
-/** Partes de Minha conta: nome, senha e tema do painel. */
+/** Minha conta: nome (salvo sozinho), senha e tema do painel. */
 export function AccountForm({ apiRoute, user }: Props) {
-  return (
-    <div className="gp-grid2">
-      <ProfileCard apiRoute={apiRoute} user={user} />
-      <div className="gp-col">
-        <PasswordCard apiRoute={apiRoute} userId={user.id} />
-        <ThemeCard />
-      </div>
-    </div>
-  )
-}
-
-function Feedback({ message }: { message: Message }) {
-  return (
-    <p aria-live="polite" className={message?.tone === 'error' ? 'gp-error' : 'gp-hint'}>
-      {message?.text}
-    </p>
-  )
-}
-
-function ProfileCard({ apiRoute, user }: Props) {
   const router = useRouter()
   const [name, setName] = useState(user.name)
   const [saved, setSaved] = useState(user.name)
   const [error, setError] = useState<string | null>(null)
-  const [attempt, setAttempt] = useState(0)
   const saving = name.trim() !== saved && !error
 
   // O nome é salvo sozinho, um segundo depois da última tecla (como o Formulário).
@@ -76,64 +56,71 @@ function ProfileCard({ apiRoute, user }: Props) {
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [apiRoute, attempt, error, name, router, saved, user.id])
+  }, [apiRoute, error, name, router, saved, user.id])
 
   return (
-    <section aria-labelledby="gp-account-data" className="gp-card">
-      <h2 id="gp-account-data">Seus dados</h2>
-      <form className="gp-authform" onSubmit={(event) => event.preventDefault()}>
-        <div className="gp-field">
-          <label htmlFor="ac-name">Nome</label>
-          <input
-            autoComplete="name"
-            className="gp-input"
-            id="ac-name"
-            maxLength={80}
-            onChange={(event) => {
-              setName(event.target.value)
-              setError(null)
-            }}
-            value={name}
-          />
-          <span className="gp-hint">Aparece no pé do menu do painel.</span>
+    <div className="gp-page">
+      <header className="gp-pagehead">
+        <div>
+          <h1>Minha conta</h1>
+          <p>Seus dados de acesso ao painel e o jeito de ver o painel.</p>
         </div>
-        <div className="gp-field">
-          <span className="gp-label">E-mail</span>
-          <span className="gp-account__value">{user.email}</span>
-          <span className="gp-hint">É com ele que você entra no painel.</span>
-        </div>
-        <div className="gp-field">
-          <span className="gp-label">Tipo de acesso</span>
-          <span className="gp-account__value">{ROLE_TEXT[user.role]}</span>
-          <span className="gp-hint">
-            {user.role === 'admin'
-              ? 'Outro administrador pode mudar o seu em Configurações, em “Pessoas com acesso”.'
-              : 'Só um administrador muda o tipo de acesso.'}
-          </span>
-        </div>
-        <Feedback
-          message={
-            error
-              ? { tone: 'error', text: `Não deu para salvar: ${error}` }
-              : { tone: 'ok', text: saving ? 'Salvando…' : 'Tudo salvo' }
-          }
+        <SaveStatus
+          error={error}
+          mode="save"
+          onRetry={() => setError(null)}
+          state={error ? 'error' : saving ? 'saving' : 'saved'}
         />
-        {error && (
-          <div>
-            <button
-              className="gp-btn gp-btn--sm"
-              onClick={() => {
-                setError(null)
-                setAttempt((n) => n + 1)
-              }}
-              type="button"
-            >
-              Tentar de novo
-            </button>
+      </header>
+      <div className="gp-grid2">
+        <section aria-labelledby="gp-account-data" className="gp-card">
+          <h2 id="gp-account-data">Seus dados</h2>
+          <div className="gp-authform">
+            <div className="gp-field">
+              <label htmlFor="ac-name">Nome</label>
+              <input
+                autoComplete="name"
+                className="gp-input"
+                id="ac-name"
+                maxLength={80}
+                onChange={(event) => {
+                  setName(event.target.value)
+                  setError(null)
+                }}
+                value={name}
+              />
+              <span className="gp-hint">Aparece no pé do menu do painel. Salva sozinho.</span>
+            </div>
+            <div className="gp-field">
+              <span className="gp-label">E-mail</span>
+              <span className="gp-account__value">{user.email}</span>
+              <span className="gp-hint">É com ele que você entra no painel.</span>
+            </div>
+            <div className="gp-field">
+              <span className="gp-label">Tipo de acesso</span>
+              <span className="gp-account__value">{ROLE_TEXT[user.role]}</span>
+              <span className="gp-hint">
+                {user.role === 'admin'
+                  ? 'Outro administrador pode mudar o seu em Configurações, em “Pessoas com acesso”.'
+                  : 'Só um administrador muda o tipo de acesso.'}
+              </span>
+            </div>
           </div>
-        )}
-      </form>
-    </section>
+        </section>
+        <div className="gp-col">
+          <PasswordCard apiRoute={apiRoute} userId={user.id} />
+          <ThemeCard />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Feedback({ message }: { message: Message }) {
+  return (
+    <p aria-live="polite" className={message?.tone === 'error' ? 'gp-error' : 'gp-hint'}>
+      {message?.text}
+    </p>
   )
 }
 

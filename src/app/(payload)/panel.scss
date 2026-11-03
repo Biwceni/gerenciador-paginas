@@ -603,6 +603,11 @@ html[data-theme] {
     color: var(--gp-muted);
   }
 
+  &--error {
+    background: var(--gp-danger-soft);
+    color: var(--gp-danger);
+  }
+
   &--home {
     background: var(--gp-accent-soft);
     color: var(--gp-accent);
@@ -2466,8 +2471,34 @@ textarea.gp-input {
   }
 }
 
-.gp-savestate {
-  white-space: nowrap;
+// Aviso de "salvo" (SaveStatus.tsx): na linha do título, à direita; no celular, logo abaixo dele.
+.gp-savestatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  min-height: 28px;
+}
+
+.gp-savestatus__detail {
+  flex-basis: 100%;
+  text-align: right;
+  color: var(--gp-danger);
+  font-size: var(--gp-fs-help);
+}
+
+@media (max-width: 720px) {
+  .gp-pagehead > .gp-savestatus {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .gp-savestatus__detail {
+    text-align: left;
+  }
 }
 
 .gp-questions {
