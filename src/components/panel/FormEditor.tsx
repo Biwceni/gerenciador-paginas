@@ -302,44 +302,61 @@ export function FormEditor({
         <p className="gp-small gp-muted">
           Escreva a pergunta como o visitante vai ler. O resto o sistema faz.
         </p>
+        {/* Nomes das colunas no computador; no celular, cada campo mostra o seu. */}
+        {questions.length > 0 && (
+          <div aria-hidden="true" className="gp-questionhead">
+            <span>Pergunta</span>
+            <span>Tipo de resposta</span>
+          </div>
+        )}
         <ul className="gp-questions">
           {questions.map((question, index) => {
             const noOptions =
               question.blockType === 'select' && !optionLines(question.optionsText).length
             return (
               <li className="gp-question" key={question.id}>
-                <input
-                  aria-invalid={!question.label.trim()}
-                  aria-label="Pergunta"
-                  className="gp-input"
-                  maxLength={200}
-                  onBlur={() => {
-                    if (question.writing && question.label.trim()) {
-                      changeQuestion(question.id, { writing: false })
+                <div className="gp-question__field">
+                  <span aria-hidden="true" className="gp-question__label">
+                    Pergunta
+                  </span>
+                  <input
+                    aria-invalid={!question.label.trim()}
+                    aria-label={`Pergunta ${index + 1}`}
+                    className="gp-input"
+                    maxLength={200}
+                    onBlur={() => {
+                      if (question.writing && question.label.trim()) {
+                        changeQuestion(question.id, { writing: false })
+                      }
+                    }}
+                    onChange={(event) => changeQuestion(question.id, { label: event.target.value })}
+                    placeholder="Escreva a pergunta"
+                    value={question.label}
+                  />
+                </div>
+                <div className="gp-question__field">
+                  <span aria-hidden="true" className="gp-question__label">
+                    Tipo de resposta
+                  </span>
+                  <select
+                    aria-label={`Tipo de resposta da pergunta ${index + 1}`}
+                    className="gp-input"
+                    onChange={(event) =>
+                      changeQuestion(question.id, {
+                        blockType: event.target.value as FormFieldType,
+                        // O que veio de outro tipo não serve neste (ex.: valor inicial da caixa).
+                        extra: {},
+                      })
                     }
-                  }}
-                  onChange={(event) => changeQuestion(question.id, { label: event.target.value })}
-                  placeholder="Escreva a pergunta"
-                  value={question.label}
-                />
-                <select
-                  aria-label="Tipo de resposta"
-                  className="gp-input"
-                  onChange={(event) =>
-                    changeQuestion(question.id, {
-                      blockType: event.target.value as FormFieldType,
-                      // O que veio de outro tipo não serve neste (ex.: valor inicial da caixa).
-                      extra: {},
-                    })
-                  }
-                  value={question.blockType}
-                >
-                  {Object.entries(FIELD_TYPE_LABELS).map(([type, label]) => (
-                    <option key={type} value={type}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                    value={question.blockType}
+                  >
+                    {Object.entries(FIELD_TYPE_LABELS).map(([type, label]) => (
+                      <option key={type} value={type}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="gp-question__moves">
                   <label className="gp-question__required">
                     <input

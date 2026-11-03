@@ -2559,9 +2559,21 @@ textarea.gp-input {
   list-style: none;
 }
 
+// Nomes das colunas das perguntas, só no computador (alinhados com o contorno de cada pergunta).
+.gp-questionhead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px 236px;
+  gap: 8px;
+  padding: 0 9px;
+  margin-bottom: -6px;
+  color: var(--gp-muted);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+}
+
 .gp-question {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190px auto;
+  grid-template-columns: minmax(0, 1fr) 190px 236px;
   gap: 8px;
   align-items: center;
   border: 1px solid var(--gp-line);
@@ -2577,10 +2589,25 @@ textarea.gp-input {
     grid-column: 1 / -1;
   }
 
+  &__field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  // Rótulo de cada campo: só no celular.
+  &__label {
+    display: none;
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    color: var(--gp-muted);
+  }
+
   &__moves {
     display: flex;
     align-items: center;
-    gap: 2px;
+    justify-content: flex-end;
+    gap: 4px;
 
     .gp-iconbtn[disabled] {
       opacity: 0.35;
@@ -2607,8 +2634,20 @@ textarea.gp-input {
 }
 
 @media (max-width: 760px) {
+  .gp-questionhead {
+    display: none;
+  }
+
   .gp-question {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gp-question__label {
+    display: block;
+  }
+
+  .gp-question__moves {
+    justify-content: flex-start;
   }
 
   .gp-question__moves {
