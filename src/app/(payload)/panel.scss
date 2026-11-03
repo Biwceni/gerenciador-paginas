@@ -390,6 +390,16 @@ html[data-theme] {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
 
+  // No celular, os atalhos em grade 2×2.
+  @media (max-width: 720px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+
+    a {
+      padding: 12px;
+    }
+  }
+
   a {
     display: grid;
     gap: 8px;

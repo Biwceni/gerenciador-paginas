@@ -83,14 +83,21 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   const pending = pages.filter((page) => page.status !== 'live')
   const recent = pages.slice(0, 4)
 
-  const quick: [PanelPath, PanelIconName, string, string][] = [
+  type Quick = [PanelPath, PanelIconName, string, string]
+  // "Trocar fotos" sai enquanto o passo "Coloque suas fotos" está pendente: os dois levam a Fotos.
+  const photosPending = finish.some((step) => step.key === 'photos' && !step.done)
+  const quick: Quick[] = [
     ['newPage', 'plus', 'Criar uma página', 'Promoção, evento, serviço novo'],
-    [
-      'photos',
-      'image',
-      'Trocar fotos',
-      `${photos.totalDocs} ${photos.totalDocs === 1 ? 'foto' : 'fotos'} na biblioteca`,
-    ],
+    ...(photosPending
+      ? []
+      : [
+          [
+            'photos',
+            'image',
+            'Trocar fotos',
+            `${photos.totalDocs} ${photos.totalDocs === 1 ? 'foto' : 'fotos'} na biblioteca`,
+          ] satisfies Quick,
+        ]),
     ['menu', 'layout', 'Mudar o menu', 'Os links do topo e do rodapé'],
     ['settings', 'pin', 'Telefone e endereço', 'Muda em todas as páginas'],
   ]
