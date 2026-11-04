@@ -456,15 +456,37 @@ export function ArrayItemMoves({ name, noun }: { name: string; noun: string }) {
     const selector = appState.ui.itemSelector
     const current = selectedItem?.props[list]
     if (!selectedItem || !selector || !Array.isArray(current)) return
-    const next = [...current]
-    const [item] = next.splice(index, 1)
-    next.splice(index + by, 0, item)
+    const reorder = <T,>(values: T[]) => {
+      const next = [...values]
+      const [item] = next.splice(index, 1)
+      next.splice(index + by, 0, item)
+      return next
+    }
     dispatch({
       type: 'replace',
       destinationIndex: selector.index,
       destinationZone: selector.zone ?? ROOT_ZONE,
-      data: { ...selectedItem, props: { ...selectedItem.props, [list]: next } },
+      data: { ...selectedItem, props: { ...selectedItem.props, [list]: reorder(current) } },
     })
+    // O Puck guarda qual item está aberto pela posição na lista dele (`ui.arrayState`, com a chave
+    // que ele monta para o campo). Mudando a ordem dela junto, o item movido continua aberto.
+    const key = `${selectedItem.props.id}_array_${list}`
+    const state = getPuck().appState.ui.arrayState[key]
+    if (state?.items.length === current.length) {
+      dispatch({
+        type: 'setUi',
+        ui: {
+          arrayState: {
+            ...appState.ui.arrayState,
+            [key]: {
+              ...state,
+              items: reorder(state.items).map((item, at) => ({ ...item, _currentIndex: at })),
+            },
+          },
+        },
+        recordHistory: false,
+      })
+    }
   }
 
   return (
