@@ -1,7 +1,7 @@
 'use client'
 
 import { useGetPuck } from '@puckeditor/core'
-import React, { useEffect, useRef, useSyncExternalStore } from 'react'
+import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
@@ -17,27 +17,6 @@ const PHONE_WIDTH = 390
  */
 const DESKTOP_WIDTH = 1280
 
-/** Quanto a prévia está reduzida: o Puck escreve a escala no estilo da raiz da prévia. */
-function useCanvasZoom(): number {
-  return useSyncExternalStore(
-    (notify) => {
-      const observer = new MutationObserver(notify)
-      observer.observe(document.body, {
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style'],
-      })
-      return () => observer.disconnect()
-    },
-    () => {
-      const root = document.getElementById('puck-canvas-root')
-      const scale = /scale\(([\d.]+)\)/.exec(root?.style.transform ?? '')
-      return scale ? Number(scale[1]) : 1
-    },
-    () => 1,
-  )
-}
-
 const noSubscription = () => () => {}
 
 /** Elemento da tela do Puck, que só existe no navegador e depois de ele desenhar. */
@@ -47,6 +26,28 @@ const useElement = (selector: string) =>
     () => document.querySelector(selector),
     () => null,
   )
+
+/** Quanto a prévia está reduzida: o Puck escreve a escala no estilo da raiz da prévia. */
+function useCanvasZoom(): number {
+  const root = useElement('#puck-canvas-root') as HTMLElement | null
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!root) return () => {}
+      const observer = new MutationObserver(notify)
+      observer.observe(root, { attributes: true, attributeFilter: ['style'] })
+      return () => observer.disconnect()
+    },
+    [root],
+  )
+  return useSyncExternalStore(
+    subscribe,
+    () => {
+      const scale = /scale\(([\d.]+)\)/.exec(root?.style.transform ?? '')
+      return scale ? Number(scale[1]) : 1
+    },
+    () => 1,
+  )
+}
 
 /**
  * Painéis em volta da prévia. Com pouca largura, abre um painel por vez. Ao escolher uma seção, a
@@ -195,10 +196,10 @@ export function PreviewTools() {
               <PanelIcon name="phone" />
             </button>
           </div>
-          {!onPhone && (
+          {!onPhone && panelsOpen && (
+            // Só esconde os painéis: a partir de uns 1350 px, a página de 1280 px cabe sem reduzir. O
+            // Puck não deixa travar o zoom de fora (ele recalcula a cada mudança de tamanho).
             <button
-              aria-label="Ver em tamanho real (100%), escondendo os painéis"
-              aria-pressed={real && !panelsOpen}
               className="ed-btn ed-btn--sm"
               onClick={() =>
                 dispatch({
@@ -207,10 +208,10 @@ export function PreviewTools() {
                   recordHistory: false,
                 })
               }
-              title="Esconde os painéis para a página caber sem reduzir"
+              title="Esconde os painéis para a prévia ficar maior"
               type="button"
             >
-              100%
+              Esconder painéis
             </button>
           )}
           <span aria-live="polite">

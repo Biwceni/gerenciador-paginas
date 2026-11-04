@@ -448,7 +448,7 @@ test.describe.serial('editor: seções', () => {
     })
   }
 
-  test('computador ou celular na prévia, e o 100%', async ({ page }) => {
+  test('computador ou celular na prévia, e Esconder painéis', async ({ page }) => {
     await page.getByRole('button', { name: 'Ver como celular' }).click()
     await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBe(390)
     await expect(page.getByText('Celular, tamanho real')).toBeVisible()
@@ -456,7 +456,7 @@ test.describe.serial('editor: seções', () => {
     await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBeGreaterThan(390)
     // Em 1440 px, esconder os painéis deixa a página de 1280 px caber sem reduzir.
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.getByRole('button', { name: /tamanho real \(100%\)/ }).click()
+    await page.getByRole('button', { name: 'Esconder painéis' }).click()
     await expect(page.getByText('Computador, tamanho real')).toBeVisible()
   })
 
