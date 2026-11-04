@@ -153,8 +153,9 @@ export function SettingsEditor({
   // Cada mudança é guardada sozinha como rascunho, um pouco depois da última. O site só muda ao
   // publicar.
   useEffect(() => {
-    // Já guardado: depois de salvar, `saved` passa a ser este mesmo estado.
-    if (!touched || state === saved) return
+    // Já guardado: depois de salvar, `saved` passa a ser este mesmo estado. Enquanto publica ou
+    // descarta, espera: um rascunho gravado no meio criaria de novo as mudanças fora do ar.
+    if (!touched || state === saved || busy) return
     const timer = setTimeout(async () => {
       if (Object.keys(validateSettings(state)).length) {
         setSave('invalid')
@@ -180,7 +181,7 @@ export function SettingsEditor({
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [apiRoute, attempt, saved, state, touched])
+  }, [apiRoute, attempt, busy, saved, state, touched])
 
   // Aviso ao fechar a aba só enquanto algo ainda não foi guardado (o rascunho guardado fica).
   useEffect(() => {
@@ -426,7 +427,12 @@ export function SettingsEditor({
         </nav>
         <div className="gp-actions">
           {pending && (
-            <button className="gp-btn" disabled={busy} onClick={discard} type="button">
+            <button
+              className="gp-btn"
+              disabled={busy || save === 'saving'}
+              onClick={discard}
+              type="button"
+            >
               Descartar mudanças
             </button>
           )}
@@ -451,7 +457,8 @@ export function SettingsEditor({
         </p>
       )}
 
-      <div className="gp-grid2">
+      {/* Travada enquanto publica ou descarta: o que fosse digitado no meio seria desfeito. */}
+      <div className="gp-grid2" inert={busy}>
         <section className="gp-card" id="st-identidade">
           <h2>Identidade</h2>
           {text('name', 'Nome do negócio', { max: 80 })}
