@@ -337,7 +337,16 @@ function MoreMenu({
   )
 
   return (
-    <div className="gp-more" ref={wrap}>
+    <div
+      className="gp-more"
+      // Sair com Tab também fecha; o foco segue para onde a pessoa foi. Sem destino (clique, que no
+      // Safari não dá foco ao botão), quem fecha é o clique fora.
+      onBlur={(event) => {
+        const to = event.relatedTarget
+        if (open && to && !wrap.current?.contains(to)) setOpen(false)
+      }}
+      ref={wrap}
+    >
       <button
         aria-controls={open ? id : undefined}
         aria-expanded={open}
