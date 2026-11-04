@@ -38,12 +38,14 @@ export function AccountForm({ apiRoute, user }: Props) {
   const [name, setName] = useState(user.name)
   const [saved, setSaved] = useState(user.name)
   const [error, setError] = useState<string | null>(null)
-  const saving = name.trim() !== saved && !error
+  // Nome vazio não é salvo: o pé do menu ficaria sem nome.
+  const empty = !name.trim()
+  const saving = name.trim() !== saved && !error && !empty
 
   // O nome é salvo sozinho, um segundo depois da última tecla (como o Formulário).
   useEffect(() => {
     const next = name.trim()
-    if (next === saved || error) return
+    if (!next || next === saved || error) return
     const timer = setTimeout(async () => {
       try {
         await request(apiRoute, `/users/${user.id}`, {
@@ -67,6 +69,7 @@ export function AccountForm({ apiRoute, user }: Props) {
           <p>Seus dados de acesso ao painel e o jeito de ver o painel.</p>
         </div>
         <SaveStatus
+          blocked={empty ? 'Escreva seu nome' : null}
           error={error}
           mode="save"
           onRetry={() => setError(null)}
@@ -80,6 +83,7 @@ export function AccountForm({ apiRoute, user }: Props) {
             <div className="gp-field">
               <label htmlFor="ac-name">Nome</label>
               <input
+                aria-invalid={empty}
                 autoComplete="name"
                 className="gp-input"
                 id="ac-name"
@@ -90,6 +94,7 @@ export function AccountForm({ apiRoute, user }: Props) {
                 }}
                 value={name}
               />
+              {empty && <span className="gp-hint gp-hint--error">Escreva seu nome.</span>}
               <span className="gp-hint">Aparece no pé do menu do painel. Salva sozinho.</span>
             </div>
             <div className="gp-field">
