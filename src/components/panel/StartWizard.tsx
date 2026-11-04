@@ -13,6 +13,7 @@ import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { Tip } from './Tip'
 import { TemplatePreview, type TemplatePreviewData } from './TemplatePreview'
+import { WhyDisabled } from './WhyDisabled'
 
 export type StartTemplate = TemplatePreviewData & { siteType: SiteType; segment: Segment | null }
 
@@ -25,6 +26,8 @@ type Props = {
   initial: { name: string; tagline: string; whatsapp: string } | null
   /** Delas, as que estão no ar: saem do ar ao aplicar o modelo. */
   livePages: number
+  /** As Configurações têm mudança fora do ar: trocar de modelo descarta. */
+  settingsDraft: boolean
   templates: StartTemplate[]
 }
 
@@ -114,6 +117,7 @@ export function StartWizard({
   existingPages,
   initial,
   livePages,
+  settingsDraft,
   templates,
 }: Props) {
   const router = useRouter()
@@ -164,6 +168,17 @@ export function StartWizard({
     (current === 'segment' && Boolean(segment)) ||
     (current === 'model' && Boolean(chosen)) ||
     (current === 'basics' && Boolean(name.trim()) && !whatsappInvalid && !busy)
+  // O que falta para seguir, embaixo do botão desligado.
+  const missing =
+    canGo || busy
+      ? null
+      : current === 'model'
+        ? 'Escolha um modelo para continuar'
+        : current !== 'basics'
+          ? 'Escolha uma opção para continuar'
+          : !name.trim()
+            ? 'Escreva o nome do negócio para continuar'
+            : 'Confira o número do WhatsApp para continuar'
 
   const create = async () => {
     if (!chosen) return
@@ -383,6 +398,12 @@ export function StartWizard({
                     rodapé, as cores e as letras passam a ser os do modelo. O contato e o e-mail
                     continuam os mesmos.
                   </span>
+                  {settingsDraft && (
+                    <span>
+                      As mudanças das Configurações que ainda não foram publicadas serão
+                      descartadas.
+                    </span>
+                  )}
                 </div>
               )}
               {error && (
@@ -407,20 +428,24 @@ export function StartWizard({
             ) : (
               <span />
             )}
-            <button
-              className="gp-btn gp-btn--primary gp-btn--lg"
-              disabled={!canGo}
-              onClick={next}
-              type="button"
-            >
-              {current !== 'basics'
-                ? 'Continuar'
-                : busy
-                  ? 'Montando seu site…'
-                  : existingPages > 0
-                    ? 'Trocar meu site por este modelo'
-                    : 'Criar meu site'}
-            </button>
+            <div className="gp-btnwrap">
+              <button
+                aria-describedby={missing ? 'ob-why' : undefined}
+                className="gp-btn gp-btn--primary gp-btn--lg"
+                disabled={!canGo}
+                onClick={next}
+                type="button"
+              >
+                {current !== 'basics'
+                  ? 'Continuar'
+                  : busy
+                    ? 'Montando seu site…'
+                    : existingPages > 0
+                      ? 'Trocar meu site por este modelo'
+                      : 'Criar meu site'}
+              </button>
+              <WhyDisabled id="ob-why" reason={missing} />
+            </div>
           </div>
           {busy && (
             <p aria-live="polite" className="gp-small gp-muted">

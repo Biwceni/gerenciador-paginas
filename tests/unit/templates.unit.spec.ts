@@ -63,6 +63,50 @@ describe('modelos da estreia', () => {
   })
 })
 
+describe('páginas dos modelos (crítica de design)', () => {
+  type Item = {
+    type: string
+    props: { button?: { label: string; link: { kind: string } } | null; height?: string }
+  }
+  const itemsOf = (page: NonNullable<Template['pages']>[number]) =>
+    (page.content as { data: { content: Item[] } }).data.content
+  const sites = templateSeeds.filter((seed) => seed.kind === 'site')
+
+  it('C5: toda página interna termina com uma chamada para a ação ou um formulário', () => {
+    for (const seed of sites) {
+      for (const page of (seed.pages ?? []).slice(1)) {
+        const last = itemsOf(page).at(-1)
+        expect(['CallToAction', 'Form'], `${seed.key} › ${page.title}`).toContain(last?.type)
+      }
+    }
+  })
+
+  it('C6: os botões que levam ao WhatsApp usam o texto do botão do topo', () => {
+    for (const seed of sites) {
+      const top = seed.header?.button
+      if (!top?.label || top.link?.kind !== 'whatsapp') continue
+      for (const page of seed.pages ?? []) {
+        for (const item of itemsOf(page)) {
+          if (item.props.button?.link?.kind === 'whatsapp') {
+            expect(item.props.button.label, `${seed.key} › ${page.title}`).toBe(top.label)
+          }
+        }
+      }
+    }
+  })
+
+  it('C3: a página Contato tem banner compacto e o "Fale conosco" depois do Contato', () => {
+    const dentist = templateSeeds.find((seed) => seed.key === 'saude-leve')!
+    const contact = dentist.pages!.find((page) => page.title === 'Contato')!
+    const items = itemsOf(contact)
+    expect(items.map((item) => item.type)).toEqual(['Hero', 'Contact', 'Form'])
+    expect(items[0].props.height).toBe('compact')
+    expect(dentist.forms?.map((form) => form.title)).toEqual(['Fale conosco'])
+    // A página inicial continua com o banner normal.
+    expect(itemsOf(dentist.pages![0])[0].props.height).toBe('normal')
+  })
+})
+
 describe('fotos dos modelos', () => {
   it('só aceita endereços https do Pexels e do Unsplash', () => {
     expect(isTemplatePhotoURL('https://images.pexels.com/photos/1/pexels-photo-1.jpeg')).toBe(true)
@@ -146,6 +190,8 @@ type Call = { op: string; args: Record<string, unknown> }
 function fakeReq({ pages = [] as object[], live = [] as object[], site = {} as object } = {}) {
   const calls: Call[] = []
   let nextId = 100
+  // Formulários com números à parte, para os das páginas não mudarem quando o modelo tem formulário.
+  let nextFormId = 900
   const payload = {
     db: {},
     logger: { error: () => {} },
@@ -157,7 +203,8 @@ function fakeReq({ pages = [] as object[], live = [] as object[], site = {} as o
     findGlobal: async () => site,
     create: async (args: Record<string, unknown>) => {
       calls.push({ op: 'create', args })
-      return { id: nextId++, ...(args.data as object) }
+      const id = args.collection === 'forms' ? nextFormId++ : nextId++
+      return { id, ...(args.data as object) }
     },
     update: async (args: Record<string, unknown>) => {
       calls.push({ op: 'update', args })

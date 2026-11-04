@@ -213,6 +213,9 @@ test.describe.serial('editor: seções', () => {
   test('com uma seção selecionada, a lista coloca abaixo dela', async ({ page }) => {
     await expect(page.getByText('Clique para colocar no fim da página')).toBeVisible()
     await selectSection(page, 1)
+    // Escolher a seção recolhe a lista (C22); ela volta pelo "Adicionar seção" do trilho.
+    await expect(page.getByText('Clique para colocar abaixo de “Destaques”')).toBeHidden()
+    await page.locator('nav li').getByText('Adicionar', { exact: false }).click()
     await expect(page.getByText('Clique para colocar abaixo de “Destaques”')).toBeVisible()
 
     await listItem(page, 'Texto simples').click()
@@ -419,17 +422,16 @@ test.describe.serial('editor: seções', () => {
   })
 
   for (const width of [1366, 1024]) {
-    test(`prévia em tamanho real, sem zoom, em ${width} px`, async ({ page }) => {
+    test(`prévia de computador com 1280 px, reduzida para caber, em ${width} px`, async ({
+      page,
+    }) => {
       await page.setViewportSize({ width, height: 768 })
       await openEditor(page)
 
       await expect(page.getByRole('group', { name: 'Tamanho da tela' })).toBeVisible()
-      await expect(page.getByText('Tamanho real, sem zoom')).toBeVisible()
+      await expect(page.getByText(/Computador, reduzido para caber/)).toBeVisible()
       await expect(page.locator('select')).toHaveCount(0)
-      const scale = await page
-        .locator('#puck-canvas-root')
-        .evaluate((element) => getComputedStyle(element).transform)
-      expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(scale)
+      await expect(page.locator('#puck-canvas-root')).toHaveCSS('width', '1280px')
 
       const before = await boxOf(page.locator('iframe'))
       await page.locator('nav li').getByText('Ordem', { exact: true }).click()
@@ -446,11 +448,16 @@ test.describe.serial('editor: seções', () => {
     })
   }
 
-  test('computador ou celular na prévia, sem encolher', async ({ page }) => {
+  test('computador ou celular na prévia, e Esconder painéis', async ({ page }) => {
     await page.getByRole('button', { name: 'Ver como celular' }).click()
     await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBe(390)
+    await expect(page.getByText('Celular, tamanho real')).toBeVisible()
     await page.getByRole('button', { name: 'Ver como computador' }).click()
     await expect.poll(async () => (await boxOf(page.locator('iframe'))).width).toBeGreaterThan(390)
+    // Em 1440 px, esconder os painéis deixa a página de 1280 px caber sem reduzir.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.getByRole('button', { name: 'Esconder painéis' }).click()
+    await expect(page.getByText('Computador, tamanho real')).toBeVisible()
   })
 
   test('botão Opções recolhe e abre o painel da direita', async ({ page }) => {

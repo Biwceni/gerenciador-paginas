@@ -124,3 +124,43 @@ export function FeatureIcon({ name }: { name: FeatureIconName }) {
     </svg>
   )
 }
+
+// Ícones do Contato e endereço, no mesmo traço dos Destaques. Os que já existem lá são reaproveitados.
+const CONTACT_PATHS = {
+  whatsapp: (
+    <>
+      <path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z" />
+      <path d="M9 9.5c.3 2.3 2.2 4.2 4.5 4.5l1-1.2 2 .9c-.3 1-1.2 1.6-2.2 1.5-3.3-.3-6-3-6.3-6.3-.1-1 .5-1.9 1.5-2.2l.9 2z" />
+    </>
+  ),
+  phone: PATHS.phone,
+  mail: (
+    <>
+      <rect height="14" rx="2" width="18" x="3" y="5" />
+      <path d="M3.5 6.5L12 13l8.5-6.5" />
+    </>
+  ),
+  map: PATHS.pin,
+  clock: PATHS.clock,
+} satisfies Record<string, React.ReactNode>
+
+export type ContactIconName = keyof typeof CONTACT_PATHS
+
+export function ContactIcon({ name }: { name: ContactIconName }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="contact__icon"
+      fill="none"
+      height="22"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
+      viewBox="0 0 24 24"
+      width="22"
+    >
+      {CONTACT_PATHS[name]}
+    </svg>
+  )
+}

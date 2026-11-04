@@ -12,17 +12,9 @@ export function AccountView({ initPageResult }: AdminViewServerProps) {
   if (!user) return null
 
   return (
-    <div className="gp-page">
-      <header className="gp-pagehead">
-        <div>
-          <h1>Minha conta</h1>
-          <p>Seus dados de acesso ao painel e o jeito de ver o painel.</p>
-        </div>
-      </header>
-      <AccountForm
-        apiRoute={payload.config.routes.api}
-        user={{ id: user.id, email: user.email, name: user.name ?? '', role: user.role }}
-      />
-    </div>
+    <AccountForm
+      apiRoute={payload.config.routes.api}
+      user={{ id: user.id, email: user.email, name: user.name ?? '', role: user.role }}
+    />
   )
 }

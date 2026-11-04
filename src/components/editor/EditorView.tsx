@@ -11,6 +11,7 @@ import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { toFormDefinition } from '@/lib/forms'
 import { getServerURL } from '@/lib/site'
+import { previewFontFaces } from '@/lib/theme'
 import { parsePageContent } from '@/puck/schema'
 import { pageSummary } from '@/puck/summary'
 
@@ -38,7 +39,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
   if (!Number.isInteger(id) || id <= 0) notFound()
 
   const access = { overrideAccess: false, user } as const
-  const [draft, livePages, pages, photos, site, forms, exampleTexts] = await Promise.all([
+  const [draft, livePages, pages, photos, site, liveSite, forms, exampleTexts] = await Promise.all([
     payload.findByID({
       collection: 'pages',
       id,
@@ -77,7 +78,16 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       sort: '-createdAt',
       ...access,
     }),
-    payload.findGlobal({ slug: 'site', depth: 1, draft: false, ...access }),
+    // O rascunho das configurações: a prévia mostra o que vai ao ar quando a pessoa publicar.
+    payload.findGlobal({ slug: 'site', depth: 1, draft: true, ...access }),
+    // A página inicial é a que está no ar: a escolhida num rascunho ainda não vale.
+    payload.findGlobal({
+      slug: 'site',
+      select: { homepage: true },
+      depth: 0,
+      draft: false,
+      ...access,
+    }),
     payload.find({
       collection: 'forms',
       select: { title: true, submitButtonLabel: true, confirmationMessage: true, fields: true },
@@ -115,19 +125,19 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       adminRoute={adminRoute}
       // Topo e rodapé publicados, desenhados aqui no servidor pelos mesmos componentes do site.
       chrome={{
-        header: <SiteHeader currentPageId={id} />,
-        headerCampaign: <SiteHeader campaign currentPageId={id} />,
-        footer: <SiteFooter />,
-        footerCampaign: <SiteFooter campaign />,
+        header: <SiteHeader currentPageId={id} site={site} />,
+        headerCampaign: <SiteHeader campaign currentPageId={id} site={site} />,
+        footer: <SiteFooter site={site} />,
+        footerCampaign: <SiteFooter campaign site={site} />,
         headerAdminHref: panelHref(adminRoute, 'menu'),
         footerAdminHref: panelHref(adminRoute, 'menu'),
       }}
       apiRoute={payload.config.routes.api}
       domain={new URL(getServerURL()).host}
       exampleTexts={exampleTexts}
-      fontFaces={site.fontFaces ?? null}
+      fontFaces={previewFontFaces(site)}
       forms={forms.docs.map(toFormDefinition)}
-      homepageId={links.homepageId}
+      homepageId={siteLinks(liveSite).homepageId}
       initialData={content.data.data}
       page={{
         id,

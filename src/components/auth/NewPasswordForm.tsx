@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react'
 
+import { WhyDisabled } from '@/components/panel/WhyDisabled'
+
 import { AuthCard, ExpiredCard } from './AuthCard'
 import { authRequest } from './authApi'
-import { PasswordFields, passwordReady } from './PasswordFields'
+import { PasswordFields, passwordMissing, passwordReady } from './PasswordFields'
 
 type Props = {
   adminRoute: string
@@ -76,11 +78,13 @@ export function NewPasswordForm(props: Props) {
         />
         <button
           className="gp-btn gp-btn--primary gp-btn--lg gp-btn--block"
+          aria-describedby={passwordMissing(password, confirm) ? 'np-why' : undefined}
           disabled={busy || !passwordReady(password, confirm)}
           type="submit"
         >
           {busy ? 'Salvando…' : invite ? 'Criar senha e entrar' : 'Salvar e entrar'}
         </button>
+        <WhyDisabled id="np-why" reason={busy ? null : passwordMissing(password, confirm)} />
       </form>
     </AuthCard>
   )

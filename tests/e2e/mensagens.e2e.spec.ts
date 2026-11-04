@@ -88,7 +88,7 @@ test.describe.serial('mensagens e formulários', () => {
     await page.reload({ waitUntil: 'networkidle' })
     const question = page.getByRole('textbox', { name: 'Pergunta' })
     await expect(question.nth(0)).toHaveValue('Como você se chama?')
-    await page.getByRole('button', { name: 'Descer “Como você se chama?”' }).click()
+    await page.getByRole('button', { name: 'Descer Como você se chama?' }).click()
     await expect(question.nth(1)).toHaveValue('Como você se chama?')
     await expect(page.getByText('Tudo salvo')).toBeVisible({ timeout: 15_000 })
 

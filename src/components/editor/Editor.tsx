@@ -43,6 +43,7 @@ import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
+import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PhotoPicker } from './PhotoPicker'
@@ -86,7 +87,8 @@ const SAVE_DELAY = 1200
 const PIECES: readonly string[] = COLUMN_PIECES
 const UI_ONLY_ACTIONS: readonly string[] = ['setUi', 'registerZone', 'unregisterZone']
 
-// Prévia em tamanho real: ocupa o espaço que sobra e nunca é encolhida. Sem os controles de zoom.
+// Prévia: começa ocupando o espaço que sobra; fora do celular, o PreviewTools passa a desenhar a
+// página com a largura de um computador. Sem os controles de zoom do Puck.
 const initialUi: Partial<UiState> = {
   viewports: { current: { width: '100%', height: 'auto' }, controlsVisible: false, options: [] },
 }
@@ -136,6 +138,8 @@ type Chrome = {
   backHref: string
   /** Resumo que aparece no painel da direita quando nenhuma seção está escolhida. */
   summary: { sections: number; address: string; exampleSections: number }
+  /** Escolhe a próxima seção que ainda tem texto de exemplo e rola até ela. */
+  goToExample: () => void
   open: (dialog: DialogName) => void
   leave: () => Promise<void>
   /** Abre o menu do celular, sabendo se dá para desfazer e refazer. */
@@ -257,15 +261,12 @@ function EditorFields({
           {sections === 1 ? '1 seção' : `${sections} seções`} · {address}
         </span>
         {exampleSections > 0 && (
-          <span className="ed-hint ed-hint--warn">
+          <button className="ed-linkbtn ed-hint--warn" onClick={chrome.goToExample} type="button">
             {exampleSections === 1
-              ? '1 seção ainda tem texto de exemplo.'
-              : `${exampleSections} seções ainda têm texto de exemplo.`}
-          </span>
+              ? '1 seção ainda tem texto de exemplo. Ver qual'
+              : `${exampleSections} seções ainda têm texto de exemplo. Ver a próxima`}
+          </button>
         )}
-        <button className="ed-btn ed-btn--sm" onClick={() => chrome.open('settings')} type="button">
-          Página e Google
-        </button>
       </div>
       {children}
     </>
@@ -302,6 +303,7 @@ export function Editor(props: EditorProps) {
   const stopped = useRef(false)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
+  const exampleCursor = useRef(0)
   const removedToast = useRef<string | number | null>(null)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
@@ -493,17 +495,15 @@ export function Editor(props: EditorProps) {
 
   const status = conflict
     ? 'Salvamento parado: a página mudou em outro lugar'
-    : save.state === 'saving'
+    : save.state === 'saving' || save.state === 'pending'
       ? 'Salvando…'
-      : save.state === 'pending'
-        ? 'Salvando em instantes…'
-        : save.state === 'error'
-          ? `Não deu para salvar: ${save.message}`
-          : live && !hasChanges
-            ? 'Tudo publicado'
-            : `Salvo automaticamente${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''} · ${
-                live ? 'há mudanças fora do ar' : 'rascunho, ainda não está no ar'
-              }`
+      : save.state === 'error'
+        ? `Não deu para salvar: ${save.message}`
+        : live && !hasChanges
+          ? 'Tudo no ar'
+          : `Guardado${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''}, falta publicar${
+              live ? '' : ' · rascunho, ainda não está no ar'
+            }`
 
   const chrome: Chrome = {
     title: settings.title,
@@ -516,6 +516,21 @@ export function Editor(props: EditorProps) {
       sections: data.content.length,
       address: `${props.domain}${path === '/' ? '' : path}`,
       exampleSections: exampleSections.length,
+    },
+    goToExample: () => {
+      const puck = getPuck.current?.()
+      if (!puck || !exampleSections.length) return
+      // A cada clique, a próxima da lista (volta à primeira depois da última).
+      const next = exampleSections[exampleCursor.current % exampleSections.length]
+      exampleCursor.current += 1
+      const index = puck.appState.data.content.findIndex((item) => item.props.id === next.props.id)
+      if (index < 0) return
+      puck.dispatch({
+        type: 'setUi',
+        ui: { itemSelector: { index, zone: ROOT_ZONE }, rightSideBarVisible: true },
+        recordHistory: false,
+      })
+      scrollToSection(next.props.id)
     },
     open: setDialog,
     openMore: (history) => {

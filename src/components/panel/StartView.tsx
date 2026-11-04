@@ -92,6 +92,7 @@ export async function StartView(props: AdminViewServerProps) {
           : null
       }
       livePages={live.totalDocs}
+      settingsDraft={site._status === 'draft'}
       templates={list}
     />
   )

@@ -814,11 +814,11 @@ textarea.ed-input {
   background: var(--ed-bg);
 }
 
-/* Botão das opções, no pé da barra de ícones. */
+/* Botão das opções, logo abaixo de "Adicionar seção" e "Ordem", no topo da barra de ícones. */
 .ed-root [class*='PuckLayout-nav'] nav {
   height: 100%;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   /* Acima do selo do Next, que aparece nesse canto em desenvolvimento. */
   padding-bottom: 48px;
 }
@@ -928,4 +928,90 @@ textarea.ed-input {
   justify-items: start;
   gap: 6px;
   padding: 16px;
+}
+
+/* Subir e Descer de um item da lista (Destaques), ao lado do arrastar do Puck. */
+.ed-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ed-moves .ed-btn {
+  min-height: 36px;
+}
+
+.ed-moves .ed-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 638px) {
+  .ed-moves .ed-btn {
+    min-height: 44px;
+  }
+}
+
+/* Botão com cara de link (ex.: "5 seções ainda têm texto de exemplo. Ver a próxima"). */
+.ed-linkbtn {
+  display: block;
+  min-height: 32px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ed-linkbtn:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+/* Rótulos dos campos todos no mesmo estilo: sem os ícones que o Puck põe em alguns tipos. */
+.ed-root [class*='Input-labelIcon'] {
+  display: none;
+}
+
+/* Escolha em cartões empilhados (Marcador dos Destaques), como o Tema em Minha conta. */
+.ed-choices {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 10px;
+  background: var(--ed-bg);
+  cursor: pointer;
+}
+
+.ed-choice input {
+  margin-top: 3px;
+  accent-color: var(--ed-accent);
+}
+
+.ed-choice b {
+  display: block;
+  font-size: var(--gp-fs-help);
+}
+
+.ed-choice:has(input:checked) {
+  border-color: var(--ed-accent);
+  box-shadow: inset 0 0 0 1px var(--ed-accent);
+}
+
+.ed-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
 }

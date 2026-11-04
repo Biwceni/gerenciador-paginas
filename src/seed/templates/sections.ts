@@ -56,6 +56,7 @@ export function pageBuilder() {
       link?: LinkRef
       style?: 'image' | 'side' | Style
       align?: 'left' | 'center'
+      height?: 'normal' | 'compact'
     }): PageComponent => ({
       type: 'Hero',
       props: {
@@ -66,6 +67,7 @@ export function pageBuilder() {
         button: o.button ? button(o.button, o.link) : null,
         style: o.style ?? 'image',
         align: o.align ?? 'left',
+        height: o.height ?? 'normal',
       },
     }),
     textImage: (o: Common & { image?: number; side?: 'left' | 'right' }): PageComponent => ({

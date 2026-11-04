@@ -260,6 +260,24 @@ html[data-theme] {
 @media (min-width: $desktop) {
   .nav {
     --nav-padding-block-start: var(--gp-top);
+    // A linha da direita fica no contêiner da tela (abaixo), para ir até o fim das telas longas.
+    border-right: 0;
+  }
+
+  // Menu lateral com a altura toda: o Payload já o deixa fixo ao rolar, com a altura da janela.
+  // A linha que o separa da tela é desenhada no contêiner, que tem a altura da página inteira.
+  .template-default--nav-open:has(.gp-nav) {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: calc(var(--nav-width, 275px) - 1px);
+      width: 1px;
+      background: var(--gp-line);
+      pointer-events: none;
+      z-index: 1;
+    }
   }
 }
 
@@ -275,6 +293,9 @@ html[data-theme] {
   margin: 0 auto;
   padding: 8px var(--gutter-h) 96px;
   display: grid;
+  // Uma coluna que não cresce com o conteúdo (linhas com rolagem lateral própria, como os
+  // atalhos das Configurações, não alargam a tela).
+  grid-template-columns: minmax(0, 1fr);
 
   // No celular, logo abaixo da barra do topo; no computador, na altura da marca do menu.
   @media (min-width: $desktop) {
@@ -386,6 +407,16 @@ html[data-theme] {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
+
+  // No celular, os atalhos em grade 2×2.
+  @media (max-width: 720px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+
+    a {
+      padding: 12px;
+    }
+  }
 
   a {
     display: grid;
@@ -601,6 +632,11 @@ html[data-theme] {
   &--draft {
     background: var(--gp-surface-2);
     color: var(--gp-muted);
+  }
+
+  &--error {
+    background: var(--gp-danger-soft);
+    color: var(--gp-danger);
   }
 
   &--home {
@@ -819,10 +855,33 @@ html[data-theme] {
   gap: 10px;
   align-content: start;
   font: inherit;
+  position: relative;
+
+  &:hover {
+    border-color: var(--gp-line-strong);
+  }
 
   &[aria-checked='true'] {
     border-color: var(--gp-accent);
     box-shadow: 0 0 0 4px var(--gp-accent-soft);
+
+    // Selo de escolhido, além da borda.
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--gp-accent);
+      color: var(--gp-accent-ink);
+      font-size: var(--gp-fs-text);
+      font-weight: 700;
+      line-height: 1;
+    }
   }
 
   &:focus-visible {
@@ -886,6 +945,51 @@ html[data-theme] {
     place-items: center;
     padding: 0;
     color: var(--gp-accent);
+  }
+}
+
+// No celular, cartões compactos: desenho pequeno à esquerda, nome e descrição à direita.
+@media (max-width: 720px) {
+  .gp-starts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .gp-start {
+    grid-template-columns: 88px minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 2px;
+    align-items: center;
+    padding: 10px 44px 10px 10px;
+
+    .gp-mini {
+      grid-row: 1 / span 2;
+      height: 88px;
+      padding: 8px 8px 0;
+    }
+
+    .gp-mini__sheet {
+      width: 64px;
+      gap: 2px;
+      padding: 4px 4px 0;
+    }
+
+    .gp-mini__section {
+      width: 56px;
+      height: 37px;
+    }
+
+    .gp-mini__add {
+      height: 32px;
+    }
+
+    b {
+      align-self: end;
+    }
+
+    > .gp-small {
+      align-self: start;
+    }
   }
 }
 
@@ -1007,8 +1111,27 @@ html[data-theme] {
 .gp-obnav {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+// Botão principal com o motivo embaixo quando está desligado (WhyDisabled.tsx).
+.gp-btnwrap {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  text-align: right;
+}
+
+// Na barra de publicar, o motivo fica ao lado do botão, para a barra (que acompanha a rolagem)
+// não crescer.
+.gp-pubbar .gp-btnwrap {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
 }
 
 .gp-typegrid {
@@ -1247,6 +1370,25 @@ html[data-theme] {
 // linha). Igual ao `STACKED` de PhotosLibrary.tsx.
 $media-stacked: 1279px;
 
+// Filtros e busca das Fotos, em cima da grade.
+.gp-media__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  .gp-searchbox {
+    flex: 1 1 220px;
+    max-width: 340px;
+  }
+}
+
+.gp-media__none {
+  grid-column: 1 / -1;
+  padding: 24px 0;
+}
+
 .gp-media {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -1326,7 +1468,12 @@ $media-stacked: 1279px;
     overflow-wrap: anywhere;
   }
 
+  // Falta de descrição em destaque, embaixo do uso.
   &__noalt {
+    justify-self: start;
+    border-radius: 999px;
+    padding: 1px 8px;
+    background: var(--gp-warn-soft);
     color: var(--gp-warn);
     font-size: var(--gp-fs-small);
     font-weight: 700;
@@ -1453,11 +1600,66 @@ textarea.gp-input {
 
 // ---------- menu e rodapé ----------
 
+// Atalhos para os blocos das Configurações, na barra de publicar (que acompanha a rolagem). No
+// celular, uma linha com rolagem lateral só dela.
+.gp-toc {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 360px;
+  min-width: 0;
+  gap: 2px 14px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: var(--gp-accent);
+    font-size: var(--gp-fs-help);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .gp-toc {
+    flex-basis: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+
+    a {
+      min-height: 44px;
+    }
+  }
+}
+
+// Os blocos das Configurações não ficam por baixo da barra de publicar ao seguir um atalho.
+.gp-page section[id^='st-'],
+.gp-page div[id^='st-'] {
+  scroll-margin-top: calc(var(--app-header-height, 60px) + 120px);
+}
+
+// Área de perigo: "Começar de novo com um modelo" troca o site inteiro.
+.gp-card--danger {
+  border-color: var(--gp-danger);
+
+  h2 {
+    color: var(--gp-danger);
+  }
+}
+
+// Barra de publicar (Configurações, Menu e rodapé): o aviso de salvo fica no título, aqui só os
+// botões, com o motivo embaixo do principal quando ele está desligado.
 .gp-pubbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   background: var(--gp-surface);
   border: 1px solid var(--gp-line);
@@ -1488,9 +1690,20 @@ textarea.gp-input {
   gap: 10px;
 }
 
+// Nomes das colunas dos links, só no computador. A última coluna tem a largura dos três botões.
+.gp-menuhead {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
+  gap: 8px;
+  margin-bottom: -6px;
+  color: var(--gp-muted);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+}
+
 .gp-menuitem {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) auto;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
   gap: 8px;
   align-items: start;
   padding-bottom: 10px;
@@ -1504,8 +1717,23 @@ textarea.gp-input {
     grid-column: 1 / -1;
   }
 
+  &__field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  // Rótulo de cada campo: só no celular, onde as colunas não têm nome em cima.
+  &__label {
+    display: none;
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    color: var(--gp-muted);
+  }
+
   &__moves {
     display: flex;
+    gap: 4px;
   }
 
   .gp-iconbtn[disabled] {
@@ -1613,6 +1841,7 @@ textarea.gp-input {
 
   &__cap {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
@@ -1652,10 +1881,19 @@ textarea.gp-input {
 }
 
 @media (max-width: 760px) {
+  .gp-menuhead {
+    display: none;
+  }
+
   .gp-menuitem {
     grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
 
-    .gp-linkpicker {
+    &__label {
+      display: block;
+    }
+
+    > .gp-menuitem__field:nth-child(2) {
       grid-column: 1 / -1;
       grid-row: 2;
     }
@@ -2024,6 +2262,22 @@ textarea.gp-input {
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
+  }
+}
+
+// Subir, descer e tirar (Menu e rodapé, Formulário): com contorno, 36 px no computador e 44 px no
+// celular.
+.gp-iconbtn.gp-iconbtn--move {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gp-line-strong);
+  background: var(--gp-surface);
+}
+
+@media (max-width: 760px) {
+  .gp-iconbtn.gp-iconbtn--move {
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -2441,6 +2695,8 @@ textarea.gp-input {
 
 .gp-formcard {
   display: grid;
+  // Nome, perguntas e, no pé, o "Usar este" (os cartões da linha têm a mesma altura).
+  grid-template-rows: auto 1fr auto;
   gap: 6px;
   border: 2px solid var(--gp-line);
   border-radius: 16px;
@@ -2451,13 +2707,30 @@ textarea.gp-input {
   text-align: left;
   cursor: pointer;
 
+  // Como os cartões de Nova página.
   &:hover:not([disabled]) {
-    border-color: var(--gp-accent);
+    border-color: var(--gp-line-strong);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
   }
 
   &[disabled] {
     opacity: 0.6;
     cursor: wait;
+  }
+
+  // O sinal de ação: o cartão cria um formulário.
+  &__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: var(--gp-accent);
+    font-size: var(--gp-fs-help);
+    font-weight: 700;
   }
 
   &:focus-visible {
@@ -2466,8 +2739,34 @@ textarea.gp-input {
   }
 }
 
-.gp-savestate {
-  white-space: nowrap;
+// Aviso de "salvo" (SaveStatus.tsx): na linha do título, à direita; no celular, logo abaixo dele.
+.gp-savestatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  min-height: 28px;
+}
+
+.gp-savestatus__detail {
+  flex-basis: 100%;
+  text-align: right;
+  color: var(--gp-danger);
+  font-size: var(--gp-fs-help);
+}
+
+@media (max-width: 720px) {
+  .gp-pagehead > .gp-savestatus {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .gp-savestatus__detail {
+    text-align: left;
+  }
 }
 
 .gp-questions {
@@ -2478,9 +2777,21 @@ textarea.gp-input {
   list-style: none;
 }
 
+// Nomes das colunas das perguntas, só no computador (alinhados com o contorno de cada pergunta).
+.gp-questionhead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px 236px;
+  gap: 8px;
+  padding: 0 9px;
+  margin-bottom: -6px;
+  color: var(--gp-muted);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+}
+
 .gp-question {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 190px auto;
+  grid-template-columns: minmax(0, 1fr) 190px 236px;
   gap: 8px;
   align-items: center;
   border: 1px solid var(--gp-line);
@@ -2496,10 +2807,25 @@ textarea.gp-input {
     grid-column: 1 / -1;
   }
 
+  &__field {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  // Rótulo de cada campo: só no celular.
+  &__label {
+    display: none;
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    color: var(--gp-muted);
+  }
+
   &__moves {
     display: flex;
     align-items: center;
-    gap: 2px;
+    justify-content: flex-end;
+    gap: 4px;
 
     .gp-iconbtn[disabled] {
       opacity: 0.35;
@@ -2526,8 +2852,20 @@ textarea.gp-input {
 }
 
 @media (max-width: 760px) {
+  .gp-questionhead {
+    display: none;
+  }
+
   .gp-question {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gp-question__label {
+    display: block;
+  }
+
+  .gp-question__moves {
+    justify-content: flex-start;
   }
 
   .gp-question__moves {
@@ -2552,5 +2890,75 @@ textarea.gp-input {
     .gp-row__actions {
       display: flex;
     }
+  }
+}
+
+// ---------- menu "Mais opções" (⋯) de Páginas ----------
+
+.gp-more {
+  position: relative;
+}
+
+// Preso ao ⋯, abrindo para baixo. A largura e a posição na linha vêm do PagesList (sempre dentro
+// da tela).
+.gp-moremenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--gp-line-strong);
+  border-radius: 12px;
+  background: var(--gp-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--gp-ink);
+    font: inherit;
+    font-size: var(--gp-fs-help);
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: var(--gp-surface-2);
+      outline: none;
+    }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--gp-accent);
+    }
+
+    &:disabled {
+      color: var(--gp-muted);
+      cursor: not-allowed;
+    }
+
+    &--danger {
+      color: var(--gp-danger);
+    }
+
+    @media (max-width: 760px) {
+      min-height: 44px;
+    }
+  }
+
+  &__help {
+    margin: 4px 0 0;
+    padding: 8px 10px 4px;
+    border-top: 1px solid var(--gp-line);
+    color: var(--gp-muted);
+    font-size: var(--gp-fs-small);
+    line-height: 1.45;
   }
 }

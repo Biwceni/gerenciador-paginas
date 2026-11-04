@@ -791,15 +791,86 @@ const packs: Pack[] = [
   },
 ]
 
+/** Formulário "Fale conosco" da página Contato dos modelos (C3), como o pronto de Formulários. */
+const CONTACT_FORM: NonNullable<TemplateSeed['forms']>[number] = {
+  title: 'Fale conosco',
+  submitButtonLabel: 'Enviar',
+  fields: [
+    { type: 'text', name: 'nome', label: 'Nome', required: true },
+    { type: 'text', name: 'whatsapp', label: 'WhatsApp', required: true },
+    { type: 'email', name: 'email', label: 'E-mail', required: false },
+    { type: 'textarea', name: 'mensagem', label: 'Mensagem', required: false },
+  ],
+}
+
+type PageRules = {
+  /** Texto do botão de destaque do topo, quando ele leva ao WhatsApp. */
+  whatsappLabel: string | null
+  /** Posição (a partir de 1) do "Fale conosco" nos formulários do modelo. */
+  contactForm: number
+  /** Página interna: termina chamando para a ação. */
+  internal: boolean
+}
+
+/**
+ * Regras comuns das páginas dos modelos (crítica de design de 03/11/2026):
+ * - C6: todo botão que leva ao WhatsApp usa o texto do botão de destaque do topo;
+ * - C3: a página interna com Contato e endereço tem o banner compacto e, logo depois, o "Fale
+ *   conosco";
+ * - C5: página interna sem formulário no fim termina com uma Chamada para ação.
+ */
+function finishPage(items: PageComponent[], b: Builder, rules: PageRules): PageComponent[] {
+  const label = rules.whatsappLabel
+  if (label) {
+    for (const item of items) {
+      if (item.type !== 'Hero' && item.type !== 'CallToAction') continue
+      if (item.props.button?.link?.kind === 'whatsapp') item.props.button.label = label
+    }
+  }
+
+  // Só na página Contato: nos sites de uma página só, o Contato fica na inicial, que não muda.
+  const contact = rules.internal ? items.findIndex((item) => item.type === 'Contact') : -1
+  if (contact >= 0) {
+    for (const item of items) if (item.type === 'Hero') item.props.height = 'compact'
+    if (!items.some((item) => item.type === 'Form')) {
+      items.splice(contact + 1, 0, b.form({ form: rules.contactForm }))
+    }
+  }
+
+  const last = items[items.length - 1]
+  if (rules.internal && last && last.type !== 'Form' && last.type !== 'CallToAction') {
+    items.push(b.cta({ button: label ?? 'Fale com a gente' }))
+  }
+  return items
+}
+
+/** Os formulários do modelo, com o "Fale conosco" no fim quando alguma página tem Contato. */
+function modelForms(forms: TemplateSeed['forms'], hasContact: boolean) {
+  const list = [...(forms ?? [])]
+  return hasContact ? [...list, CONTACT_FORM] : list
+}
+
 const content = (items: PageComponent[]) => ({
   version: CONTENT_VERSION,
   data: { root: { props: {} }, content: items },
 })
 
 function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
+  const whatsappLabel = pack.button && !pack.button.section ? pack.button.label : null
+  const hasContact =
+    !pack.campaign &&
+    pack.pages
+      .slice(1)
+      .some((page) => page.build(pageBuilder()).some((item) => item.type === 'Contact'))
+  const forms = modelForms(pack.forms, hasContact)
   return pack.variants.map((variant, variantIndex) => {
     const pages = pack.pages.map((page, index) => {
-      const items = page.build(pageBuilder())
+      const b = pageBuilder()
+      const items = finishPage(page.build(b), b, {
+        whatsappLabel,
+        contactForm: forms.length,
+        internal: index > 0 && !pack.campaign,
+      })
       // O banner da primeira página muda com a variação, como no protótipo (`applyHero`).
       const hero = items.find((item) => item.type === 'Hero')
       if (index === 0 && variant.hero && hero?.type === 'Hero')
@@ -841,7 +912,7 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
       order: packIndex * 10 + variantIndex,
       pages,
       photos: pack.photos.map(([id, alt]) => ({ url: pexels(id), alt })),
-      forms: pack.forms ?? [],
+      forms,
       site: {
         name: pack.site.name,
         tagline: pack.site.tagline,
@@ -912,7 +983,11 @@ const pageModels: {
     name: 'Contato',
     description: 'Telefone, endereço e horário, sempre atualizados',
     slug: 'contato',
-    build: (b) => [b.hero({ image: 1, button: 'Chamar no WhatsApp', style: 'soft' }), b.contact()],
+    build: (b) => [
+      b.hero({ image: 1, button: 'Chamar no WhatsApp', style: 'soft', height: 'compact' }),
+      b.contact(),
+      b.form({ form: 1 }),
+    ],
   },
   {
     key: PRIVACY_TEMPLATE_KEY,
@@ -942,6 +1017,6 @@ export const templateSeeds: TemplateSeed[] = [
       },
     ],
     photos: pagePhotos.map(([id, alt]) => ({ url: pexels(id), alt })),
-    forms: [],
+    forms: model.key === 'pagina-contato' ? [CONTACT_FORM] : [],
   })),
 ]

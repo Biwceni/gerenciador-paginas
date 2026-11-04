@@ -20,7 +20,9 @@ import type { PageSummary } from '@/puck/summary'
 
 import { discardMenuAndFooter, type HeaderData, publishMenuAndFooter, saveGlobalDraft } from './api'
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
 import { SiteFrame } from './SiteFrame'
+import { WhyDisabled } from './WhyDisabled'
 
 const MENU_LIMIT = 8
 const LABEL_LIMIT = 30
@@ -71,6 +73,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  // Parte da prévia em destaque: segue o foco (topo nos links e no botão, rodapé no Rodapé).
+  const [part, setPart] = useState<'all' | 'header' | 'footer'>('all')
   const dirty = useRef<{ header: boolean; footer: boolean }>({ header: false, footer: false })
   const [version, setVersion] = useState(0)
 
@@ -188,14 +192,13 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
 
   const changed = pending || save !== 'idle'
-  const status =
-    save === 'waiting' || save === 'saving'
-      ? 'Salvando…'
-      : save === 'error'
-        ? 'Não deu para salvar. Confira a internet.'
-        : changed
-          ? 'Alterações não publicadas'
-          : 'No ar'
+  const cantPublish = busy
+    ? null
+    : save === 'saving'
+      ? 'Espere terminar de salvar'
+      : !changed
+        ? 'Nada para publicar'
+        : null
 
   const setItem = (index: number, next: Partial<Item>) =>
     changeHeader({
@@ -231,26 +234,37 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           <h1>Menu e rodapé</h1>
           <p>O topo e o rodapé aparecem iguais em todas as páginas. Você muda aqui uma vez só.</p>
         </div>
+        <SaveStatus
+          error={save === 'error' ? 'Confira a internet.' : null}
+          mode="publish"
+          onRetry={() => {
+            setSave('waiting')
+            setVersion((value) => value + 1)
+          }}
+          pending={pending}
+          state={save === 'error' ? 'error' : save === 'idle' ? 'saved' : 'saving'}
+        />
       </header>
 
       <div className="gp-pubbar">
-        <span aria-live="polite" className={`gp-chip gp-chip--${changed ? 'warn' : 'ok'}`}>
-          {status}
-        </span>
         <div className="gp-actions">
           {pending && (
             <button className="gp-btn" disabled={busy} onClick={discard} type="button">
               Descartar mudanças
             </button>
           )}
-          <button
-            className="gp-btn gp-btn--primary"
-            disabled={busy || !changed || save === 'saving'}
-            onClick={publish}
-            type="button"
-          >
-            {busy ? 'Aguarde…' : 'Publicar menu e rodapé'}
-          </button>
+          <div className="gp-btnwrap">
+            <button
+              aria-describedby={cantPublish ? 'hf-why' : undefined}
+              className="gp-btn gp-btn--primary"
+              disabled={busy || Boolean(cantPublish)}
+              onClick={publish}
+              type="button"
+            >
+              {busy ? 'Aguarde…' : 'Publicar menu e rodapé'}
+            </button>
+            <WhyDisabled id="hf-why" reason={cantPublish} />
+          </div>
         </div>
       </div>
 
@@ -262,53 +276,70 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
 
       <div className="gp-hfl">
         <div className="gp-hfl__forms">
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('header')}>
             <div>
               <h2>Links do menu</h2>
               <p className="gp-small gp-muted">
                 A ordem aqui é a ordem no site. Até {MENU_LIMIT} links.
               </p>
             </div>
+            {/* Nomes das colunas no computador; no celular, cada campo mostra o seu. */}
+            {header.items.length > 0 && (
+              <div aria-hidden="true" className="gp-menuhead">
+                <span>Texto no menu</span>
+                <span>Abre a página</span>
+              </div>
+            )}
             <ol className="gp-menulist">
               {header.items.map((item, index) => (
                 <li className="gp-menuitem" key={item.id ?? index}>
-                  <input
-                    aria-label={`Texto do link ${index + 1}`}
-                    className="gp-input"
-                    maxLength={LABEL_LIMIT}
-                    onChange={(event) => setItem(index, { label: event.target.value })}
-                    placeholder="Texto no menu"
-                    value={item.label}
-                  />
-                  <LinkPicker
-                    label={`Para onde o link ${index + 1} leva`}
-                    onChange={(link) => setItem(index, { link })}
-                    pages={pages}
-                    value={item.link}
-                    whatsapp={Boolean(site.whatsappHref)}
-                  />
+                  <div className="gp-menuitem__field">
+                    <span aria-hidden="true" className="gp-menuitem__label">
+                      Texto no menu
+                    </span>
+                    <input
+                      aria-label={`Texto do link ${index + 1}`}
+                      className="gp-input"
+                      maxLength={LABEL_LIMIT}
+                      onChange={(event) => setItem(index, { label: event.target.value })}
+                      placeholder="Texto no menu"
+                      value={item.label}
+                    />
+                  </div>
+                  <div className="gp-menuitem__field">
+                    <span aria-hidden="true" className="gp-menuitem__label">
+                      Abre a página
+                    </span>
+                    <LinkPicker
+                      label={`Página do link ${index + 1}`}
+                      onChange={(link) => setItem(index, { link })}
+                      pages={pages}
+                      value={item.link}
+                      whatsapp={Boolean(site.whatsappHref)}
+                    />
+                  </div>
                   <div className="gp-menuitem__moves">
                     <button
-                      aria-label={`Subir "${item.label}"`}
-                      className="gp-iconbtn"
+                      aria-label={`Subir ${item.label.trim() || `o link ${index + 1}`}`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       disabled={index === 0}
                       onClick={() => moveItem(index, -1)}
                       type="button"
                     >
-                      <PanelIcon name="up" size={15} />
+                      <PanelIcon name="up" size={18} />
                     </button>
                     <button
-                      aria-label={`Descer "${item.label}"`}
-                      className="gp-iconbtn"
+                      aria-label={`Descer ${item.label.trim() || `o link ${index + 1}`}`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       disabled={index === header.items.length - 1}
                       onClick={() => moveItem(index, 1)}
                       type="button"
                     >
-                      <PanelIcon name="down" size={15} />
+                      <PanelIcon name="down" size={18} />
                     </button>
                     <button
-                      aria-label={`Tirar "${item.label}" do menu`}
-                      className="gp-iconbtn"
+                      aria-label={`Tirar ${item.label.trim() || `o link ${index + 1}`} do menu`}
+                      className="gp-iconbtn gp-iconbtn--move"
                       onClick={() =>
                         changeHeader({
                           ...header,
@@ -317,7 +348,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                       }
                       type="button"
                     >
-                      <PanelIcon name="x" size={15} />
+                      <PanelIcon name="x" size={18} />
                     </button>
                   </div>
                   <LinkWarning link={item.link} pageById={pageById} whatsapp={site.whatsappHref} />
@@ -340,7 +371,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             </div>
           </section>
 
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('header')}>
             <h2>Botão de destaque no topo</h2>
             <label className="gp-switch">
               <input
@@ -397,7 +428,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             )}
           </section>
 
-          <section className="gp-card">
+          <section className="gp-card" onFocus={() => setPart('footer')}>
             <h2>Rodapé</h2>
             <div className="gp-field">
               <label htmlFor="hf-text">Frase do rodapé</label>
@@ -447,6 +478,24 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
         <section aria-label="Prévia" className="gp-previewbox">
           <div className="gp-previewbox__cap">
             <span>Prévia</span>
+            <div className="gp-seg" role="group" aria-label="Parte da prévia">
+              {(
+                [
+                  ['all', 'Tudo'],
+                  ['header', 'Topo'],
+                  ['footer', 'Rodapé'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  aria-pressed={part === value}
+                  key={value}
+                  onClick={() => setPart(value)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="gp-seg" role="group" aria-label="Tamanho da prévia">
               <button
                 aria-pressed={device === 'desktop'}
@@ -469,34 +518,41 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               fontFaces={site.fontFaces}
               theme={site.theme}
               title="Prévia do topo e do rodapé"
-              width={device === 'mobile' ? 390 : 1200}
+              // Só uma parte: desenhada mais estreita, para as letras ficarem maiores.
+              width={device === 'mobile' ? 390 : part === 'all' ? 1200 : 960}
             >
-              <SiteHeaderView
-                button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
-                items={previewItems}
-                logo={site.logo}
-                name={site.name}
-              />
-              <div
-                style={{
-                  padding: '56px 16px',
-                  textAlign: 'center',
-                  fontWeight: 600,
-                  opacity: 0.6,
-                  background: 'var(--color-surface)',
-                }}
-              >
-                Conteúdo da página
-              </div>
-              <SiteFooterView
-                contact={site.contact}
-                menu={footer.showMenu ? previewItems : []}
-                name={site.name}
-                privacyHref={site.privacyHref}
-                showContact={footer.showContact}
-                social={footer.showSocial ? site.social : []}
-                text={footer.text || null}
-              />
+              {part !== 'footer' && (
+                <SiteHeaderView
+                  button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
+                  items={previewItems}
+                  logo={site.logo}
+                  name={site.name}
+                />
+              )}
+              {part === 'all' && (
+                <div
+                  style={{
+                    padding: '56px 16px',
+                    textAlign: 'center',
+                    fontWeight: 600,
+                    opacity: 0.6,
+                    background: 'var(--color-surface)',
+                  }}
+                >
+                  Conteúdo da página
+                </div>
+              )}
+              {part !== 'header' && (
+                <SiteFooterView
+                  contact={site.contact}
+                  menu={footer.showMenu ? previewItems : []}
+                  name={site.name}
+                  privacyHref={site.privacyHref}
+                  showContact={footer.showContact}
+                  social={footer.showSocial ? site.social : []}
+                  text={footer.text || null}
+                />
+              )}
             </SiteFrame>
           </div>
         </section>

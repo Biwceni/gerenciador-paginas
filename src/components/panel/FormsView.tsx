@@ -1,7 +1,7 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
-import { loadFormUsage } from '@/lib/formUsage'
+import { formPageName, loadFormUsage } from '@/lib/formUsage'
 import { PANEL_PATHS } from '@/lib/panel'
 
 import { countMessagesByForm } from './data'
@@ -39,7 +39,7 @@ export async function FormsView(props: AdminViewServerProps) {
           id: form.id,
           title: form.title,
           questions: form.fields?.length ?? 0,
-          pages: usage.get(form.id)?.map((page) => page.title) ?? [],
+          pages: usage.get(form.id)?.map(formPageName) ?? [],
           messages: counts.get(form.id) ?? 0,
         }))}
       />

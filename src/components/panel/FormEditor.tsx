@@ -6,6 +6,8 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { editorPath } from '@/lib/editor'
 import {
+  type FormPage,
+  formPageName,
   CONSENT_TEXT,
   EMAIL,
   FIELD_TYPE_LABELS,
@@ -20,6 +22,7 @@ import type { Form } from '@/payload-types'
 import { deleteForm, saveForm } from './api'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
 
 type Props = {
   adminRoute: string
@@ -34,7 +37,7 @@ type Props = {
   /** Quantas mensagens o formulário já recebeu. */
   messages: number
   /** Páginas que usam o formulário. */
-  pages: { id: number; title: string }[]
+  pages: FormPage[]
   /** Como está a página de privacidade do site. */
   privacy: { state: 'live' } | { state: 'draft'; pageId: number } | { state: 'none' }
   siteEmail: string
@@ -263,24 +266,20 @@ export function FormEditor({
           <h1>{title.trim() || 'Formulário'}</h1>
           <p>Mudou aqui, muda em todas as páginas que usam este formulário. Salva sozinho.</p>
         </div>
-        <p aria-live="polite" className="gp-small gp-muted gp-savestate">
-          {incomplete
-            ? 'Falta completar o que está marcado'
-            : writing
-              ? 'A pergunta é salva quando você sair do campo'
-              : save === 'saved'
-                ? 'Tudo salvo'
-                : save === 'error'
-                  ? ''
-                  : 'Salvando…'}
-        </p>
+        <SaveStatus
+          blocked={
+            incomplete
+              ? 'Falta completar o que está marcado'
+              : writing
+                ? 'A pergunta é salva quando você sair do campo'
+                : null
+          }
+          error={saveError}
+          mode="save"
+          onRetry={changed}
+          state={save === 'error' ? 'error' : save === 'saved' ? 'saved' : 'saving'}
+        />
       </header>
-
-      {save === 'error' && (
-        <p className="gp-error" role="alert">
-          Não deu para salvar: {saveError}
-        </p>
-      )}
 
       <section className="gp-card">
         <div className="gp-field">
@@ -305,44 +304,61 @@ export function FormEditor({
         <p className="gp-small gp-muted">
           Escreva a pergunta como o visitante vai ler. O resto o sistema faz.
         </p>
+        {/* Nomes das colunas no computador; no celular, cada campo mostra o seu. */}
+        {questions.length > 0 && (
+          <div aria-hidden="true" className="gp-questionhead">
+            <span>Pergunta</span>
+            <span>Tipo de resposta</span>
+          </div>
+        )}
         <ul className="gp-questions">
           {questions.map((question, index) => {
             const noOptions =
               question.blockType === 'select' && !optionLines(question.optionsText).length
             return (
               <li className="gp-question" key={question.id}>
-                <input
-                  aria-invalid={!question.label.trim()}
-                  aria-label="Pergunta"
-                  className="gp-input"
-                  maxLength={200}
-                  onBlur={() => {
-                    if (question.writing && question.label.trim()) {
-                      changeQuestion(question.id, { writing: false })
+                <div className="gp-question__field">
+                  <span aria-hidden="true" className="gp-question__label">
+                    Pergunta
+                  </span>
+                  <input
+                    aria-invalid={!question.label.trim()}
+                    aria-label={`Pergunta ${index + 1}`}
+                    className="gp-input"
+                    maxLength={200}
+                    onBlur={() => {
+                      if (question.writing && question.label.trim()) {
+                        changeQuestion(question.id, { writing: false })
+                      }
+                    }}
+                    onChange={(event) => changeQuestion(question.id, { label: event.target.value })}
+                    placeholder="Escreva a pergunta"
+                    value={question.label}
+                  />
+                </div>
+                <div className="gp-question__field">
+                  <span aria-hidden="true" className="gp-question__label">
+                    Tipo de resposta
+                  </span>
+                  <select
+                    aria-label={`Tipo de resposta da pergunta ${index + 1}`}
+                    className="gp-input"
+                    onChange={(event) =>
+                      changeQuestion(question.id, {
+                        blockType: event.target.value as FormFieldType,
+                        // O que veio de outro tipo não serve neste (ex.: valor inicial da caixa).
+                        extra: {},
+                      })
                     }
-                  }}
-                  onChange={(event) => changeQuestion(question.id, { label: event.target.value })}
-                  placeholder="Escreva a pergunta"
-                  value={question.label}
-                />
-                <select
-                  aria-label="Tipo de resposta"
-                  className="gp-input"
-                  onChange={(event) =>
-                    changeQuestion(question.id, {
-                      blockType: event.target.value as FormFieldType,
-                      // O que veio de outro tipo não serve neste (ex.: valor inicial da caixa).
-                      extra: {},
-                    })
-                  }
-                  value={question.blockType}
-                >
-                  {Object.entries(FIELD_TYPE_LABELS).map(([type, label]) => (
-                    <option key={type} value={type}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                    value={question.blockType}
+                  >
+                    {Object.entries(FIELD_TYPE_LABELS).map(([type, label]) => (
+                      <option key={type} value={type}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="gp-question__moves">
                   <label className="gp-question__required">
                     <input
@@ -355,31 +371,31 @@ export function FormEditor({
                     Obrigatória
                   </label>
                   <button
-                    aria-label={`Subir “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Subir ${question.label.trim() || `a pergunta ${index + 1}`}`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={index === 0}
                     onClick={() => move(index, -1)}
                     type="button"
                   >
-                    <PanelIcon name="up" size={16} />
+                    <PanelIcon name="up" size={18} />
                   </button>
                   <button
-                    aria-label={`Descer “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Descer ${question.label.trim() || `a pergunta ${index + 1}`}`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={index === questions.length - 1}
                     onClick={() => move(index, 1)}
                     type="button"
                   >
-                    <PanelIcon name="down" size={16} />
+                    <PanelIcon name="down" size={18} />
                   </button>
                   <button
-                    aria-label={`Tirar “${question.label}”`}
-                    className="gp-iconbtn"
+                    aria-label={`Tirar ${question.label.trim() || `a pergunta ${index + 1}`} do formulário`}
+                    className="gp-iconbtn gp-iconbtn--move"
                     disabled={questions.length < 2}
                     onClick={() => removeQuestion(question.id)}
                     type="button"
                   >
-                    <PanelIcon name="x" size={16} />
+                    <PanelIcon name="x" size={18} />
                   </button>
                 </div>
                 {!question.label.trim() && (
@@ -500,7 +516,7 @@ export function FormEditor({
                 {pages.map((page) => (
                   <li key={page.id}>
                     <Link className="gp-link" href={editorPath(adminRoute, page.id)}>
-                      {page.title}
+                      {formPageName(page)}
                     </Link>
                   </li>
                 ))}

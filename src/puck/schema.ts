@@ -65,6 +65,8 @@ export const heroPropsSchema = z.object({
   // ao lado, com cantos arredondados (opção nova, só um valor a mais: a versão continua a 2).
   style: z.enum(['image', 'side', 'light', 'soft', 'brand']),
   align: z.enum(['left', 'center']),
+  // `compact`: banner baixo, para páginas como Contato (opção nova, com padrão: a versão continua 2).
+  height: z.enum(['normal', 'compact']).default('normal'),
 })
 
 export const textImagePropsSchema = z.object({

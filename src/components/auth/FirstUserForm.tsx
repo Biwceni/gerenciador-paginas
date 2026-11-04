@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react'
 
+import { WhyDisabled } from '@/components/panel/WhyDisabled'
+
 import { AuthCard } from './AuthCard'
 import { authRequest } from './authApi'
-import { PasswordFields, passwordReady } from './PasswordFields'
+import { PasswordFields, passwordMissing, passwordReady } from './PasswordFields'
 
 /**
  * Primeira conta do site. Sem o campo "Tipo de acesso": a primeira conta sempre vira
@@ -79,11 +81,13 @@ export function FirstUserForm({ adminRoute, apiRoute }: { adminRoute: string; ap
         />
         <button
           className="gp-btn gp-btn--primary gp-btn--lg gp-btn--block"
+          aria-describedby={passwordMissing(password, confirm) ? 'fu-why' : undefined}
           disabled={busy || !passwordReady(password, confirm)}
           type="submit"
         >
           {busy ? 'Criando…' : 'Criar conta e entrar'}
         </button>
+        <WhyDisabled id="fu-why" reason={busy ? null : passwordMissing(password, confirm)} />
       </form>
     </AuthCard>
   )

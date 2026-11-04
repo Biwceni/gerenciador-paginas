@@ -4,12 +4,14 @@ import { type Config, type CustomField, type Field, FieldLabel } from '@puckedit
 import React from 'react'
 
 import {
+  ArrayItemMoves,
   FormField,
   LinkField,
   MenuLabelField,
   Notice,
   PhotoField,
   PhotoListField,
+  StackedChoiceField,
   VideoField,
 } from '@/components/editor/fields'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
@@ -74,14 +76,26 @@ const button: Field = {
   objectFields: { label: text('Texto do botão (vazio: sem botão)'), link },
 }
 
-const featureMarker: Field = {
-  type: 'radio',
+type FeatureMarker = 'none' | 'icon' | 'number'
+
+const featureMarker: CustomField<FeatureMarker> = {
+  type: 'custom',
   label: 'Marcador',
-  options: [
-    { label: 'Nenhum', value: 'none' },
-    { label: 'Ícone', value: 'icon' },
-    { label: 'Números (passo a passo)', value: 'number' },
-  ],
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <StackedChoiceField
+        name={name}
+        onChange={(next) => onChange(next as FeatureMarker)}
+        options={[
+          { value: 'none', label: 'Nenhum', hint: 'Só o título e o texto' },
+          { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada destaque' },
+          { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3' },
+        ]}
+        readOnly={readOnly}
+        value={value ?? 'none'}
+      />
+    </FieldLabel>
+  ),
 }
 
 // O campo Ícone fica sempre no item, como a foto do banner: um campo que aparece e some conforme o
@@ -98,6 +112,16 @@ const featureItems: Field = {
       type: 'select',
       label: 'Ícone (com o marcador "Ícone")',
       options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
+    },
+    // Só botões: não guarda nada no item.
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves name={name} noun="Destaque" />
+        </FieldLabel>
+      ),
     },
   },
   defaultItemProps: {
@@ -147,6 +171,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'No centro', value: 'center' },
         ],
       },
+      height: {
+        type: 'radio',
+        label: 'Altura',
+        options: [
+          { label: 'Normal', value: 'normal' },
+          { label: 'Compacto', value: 'compact' },
+        ],
+      },
     },
     defaultProps: {
       title: 'Escreva aqui um título chamativo',
@@ -155,6 +187,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       image: null,
       style: 'image',
       align: 'left',
+      height: 'normal',
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },

@@ -357,8 +357,9 @@ test.describe.serial('QA visual e revisão de design', () => {
     // Não cabe numa linha: o topo usa o ☰, e o botão aparece inteiro no menu aberto.
     const burger = page.getByRole('button', { name: 'Abrir menu' })
     if (await burger.isVisible()) await burger.click()
+    // O de texto inteiro: no menu aberto ou no topo (o compacto, ao lado do ☰, é outro teste).
     const button = page
-      .locator('.site-header a.button', { hasText: LONG_BUTTON })
+      .locator('.site-header a.button:not(.site-header__cta)', { hasText: LONG_BUTTON })
       .locator('visible=true')
     await expect(button).toHaveCount(1)
     const lines = await button.evaluate((element) => {

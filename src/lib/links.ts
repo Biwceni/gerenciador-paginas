@@ -92,3 +92,9 @@ export function linkKind(href: string): 'internal' | 'external' | null {
   if (INTERNAL_PATH.test(href)) return 'internal'
   return isSafeURL(href) ? 'external' : null
 }
+
+/** Busca do endereço no Google Maps, aberta numa aba nova. Nada do Google carrega na página. */
+export function mapsURL(address: string): string {
+  const query = address.replace(/\s+/g, ' ').trim()
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+}

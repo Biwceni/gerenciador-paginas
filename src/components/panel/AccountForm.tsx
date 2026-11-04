@@ -2,13 +2,15 @@
 
 import { useTheme } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { passwordReady, PasswordFields } from '@/components/auth/PasswordFields'
+import { PasswordFields, passwordMissing, passwordReady } from '@/components/auth/PasswordFields'
 import { request } from '@/components/editor/api'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
+import { SaveStatus } from './SaveStatus'
+import { WhyDisabled } from './WhyDisabled'
 
 type Props = {
   apiRoute: string
@@ -30,14 +32,91 @@ const THEMES: [ThemeChoice, string, string][] = [
   ['dark', 'Escuro', 'Fundo escuro'],
 ]
 
-/** Partes de Minha conta: nome, senha e tema do painel. */
+/** Minha conta: nome (salvo sozinho), senha e tema do painel. */
 export function AccountForm({ apiRoute, user }: Props) {
+  const router = useRouter()
+  const [name, setName] = useState(user.name)
+  const [saved, setSaved] = useState(user.name)
+  const [error, setError] = useState<string | null>(null)
+  // Nome vazio não é salvo: o pé do menu ficaria sem nome.
+  const empty = !name.trim()
+  const saving = name.trim() !== saved && !error && !empty
+
+  // O nome é salvo sozinho, um segundo depois da última tecla (como o Formulário).
+  useEffect(() => {
+    const next = name.trim()
+    if (!next || next === saved || error) return
+    const timer = setTimeout(async () => {
+      try {
+        await request(apiRoute, `/users/${user.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ name: next }),
+        })
+        setSaved(next)
+        router.refresh()
+      } catch (failure) {
+        setError(failure instanceof Error ? failure.message : 'Tente de novo.')
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [apiRoute, error, name, router, saved, user.id])
+
   return (
-    <div className="gp-grid2">
-      <ProfileCard apiRoute={apiRoute} user={user} />
-      <div className="gp-col">
-        <PasswordCard apiRoute={apiRoute} userId={user.id} />
-        <ThemeCard />
+    <div className="gp-page">
+      <header className="gp-pagehead">
+        <div>
+          <h1>Minha conta</h1>
+          <p>Seus dados de acesso ao painel e o jeito de ver o painel.</p>
+        </div>
+        <SaveStatus
+          blocked={empty ? 'Escreva seu nome' : null}
+          error={error}
+          mode="save"
+          onRetry={() => setError(null)}
+          state={error ? 'error' : saving ? 'saving' : 'saved'}
+        />
+      </header>
+      <div className="gp-grid2">
+        <section aria-labelledby="gp-account-data" className="gp-card">
+          <h2 id="gp-account-data">Seus dados</h2>
+          <div className="gp-authform">
+            <div className="gp-field">
+              <label htmlFor="ac-name">Nome</label>
+              <input
+                aria-invalid={empty}
+                autoComplete="name"
+                className="gp-input"
+                id="ac-name"
+                maxLength={80}
+                onChange={(event) => {
+                  setName(event.target.value)
+                  setError(null)
+                }}
+                value={name}
+              />
+              {empty && <span className="gp-hint gp-hint--error">Escreva seu nome.</span>}
+              <span className="gp-hint">Aparece no pé do menu do painel. Salva sozinho.</span>
+            </div>
+            <div className="gp-field">
+              <span className="gp-label">E-mail</span>
+              <span className="gp-account__value">{user.email}</span>
+              <span className="gp-hint">É com ele que você entra no painel.</span>
+            </div>
+            <div className="gp-field">
+              <span className="gp-label">Tipo de acesso</span>
+              <span className="gp-account__value">{ROLE_TEXT[user.role]}</span>
+              <span className="gp-hint">
+                {user.role === 'admin'
+                  ? 'Outro administrador pode mudar o seu em Configurações, em “Pessoas com acesso”.'
+                  : 'Só um administrador muda o tipo de acesso.'}
+              </span>
+            </div>
+          </div>
+        </section>
+        <div className="gp-col">
+          <PasswordCard apiRoute={apiRoute} userId={user.id} />
+          <ThemeCard />
+        </div>
       </div>
     </div>
   )
@@ -48,77 +127,6 @@ function Feedback({ message }: { message: Message }) {
     <p aria-live="polite" className={message?.tone === 'error' ? 'gp-error' : 'gp-hint'}>
       {message?.text}
     </p>
-  )
-}
-
-function ProfileCard({ apiRoute, user }: Props) {
-  const router = useRouter()
-  const [name, setName] = useState(user.name)
-  const [saved, setSaved] = useState(user.name)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<Message>(null)
-
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setBusy(true)
-    setMessage(null)
-    try {
-      await request(apiRoute, `/users/${user.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: name.trim() }),
-      })
-      setSaved(name.trim())
-      setMessage({ tone: 'ok', text: 'Nome salvo.' })
-      router.refresh()
-    } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'Tente de novo.' })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <section aria-labelledby="gp-account-data" className="gp-card">
-      <h2 id="gp-account-data">Seus dados</h2>
-      <form className="gp-authform" onSubmit={save}>
-        <div className="gp-field">
-          <label htmlFor="ac-name">Nome</label>
-          <input
-            autoComplete="name"
-            className="gp-input"
-            id="ac-name"
-            maxLength={80}
-            onChange={(event) => setName(event.target.value)}
-            value={name}
-          />
-          <span className="gp-hint">Aparece no pé do menu do painel.</span>
-        </div>
-        <div className="gp-field">
-          <span className="gp-label">E-mail</span>
-          <span className="gp-account__value">{user.email}</span>
-          <span className="gp-hint">É com ele que você entra no painel.</span>
-        </div>
-        <div className="gp-field">
-          <span className="gp-label">Tipo de acesso</span>
-          <span className="gp-account__value">{ROLE_TEXT[user.role]}</span>
-          <span className="gp-hint">
-            {user.role === 'admin'
-              ? 'Outro administrador pode mudar o seu em Configurações, em “Pessoas com acesso”.'
-              : 'Só um administrador muda o tipo de acesso.'}
-          </span>
-        </div>
-        <div className="gp-actions">
-          <button
-            className="gp-btn gp-btn--primary"
-            disabled={busy || name.trim() === saved}
-            type="submit"
-          >
-            {busy ? 'Salvando…' : 'Salvar nome'}
-          </button>
-        </div>
-        <Feedback message={message} />
-      </form>
-    </section>
   )
 }
 
@@ -168,6 +176,7 @@ function PasswordCard({ apiRoute, userId }: { apiRoute: string; userId: number }
           <div className="gp-actions">
             <button
               className="gp-btn gp-btn--primary"
+              aria-describedby={passwordMissing(password, confirm) ? 'ac-why' : undefined}
               disabled={busy || !passwordReady(password, confirm)}
               type="submit"
             >
@@ -177,6 +186,7 @@ function PasswordCard({ apiRoute, userId }: { apiRoute: string; userId: number }
               Cancelar
             </button>
           </div>
+          <WhyDisabled id="ac-why" reason={busy ? null : passwordMissing(password, confirm)} />
         </form>
       ) : (
         <div className="gp-actions">

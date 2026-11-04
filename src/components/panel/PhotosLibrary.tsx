@@ -28,6 +28,11 @@ type Props = {
   usage: Record<number, PhotoUse[]>
 }
 
+type Filter = 'all' | 'noalt' | 'unused'
+
+const hasAlt = (photo: Media) => Boolean(photo.alt?.trim())
+const isUnused = (uses: PhotoUse[] | undefined) => !uses?.length
+
 function usageLabel(uses: PhotoUse[] | undefined): string {
   const pages = uses?.filter((use) => use.kind === 'page').length ?? 0
   const settings = uses?.some((use) => use.kind === 'settings')
@@ -79,6 +84,23 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
   const library = [...arrived.filter((photo) => !known.has(photo.id)), ...photos]
   const selected = library.find((photo) => photo.id === selectedId)
 
+  const [filter, setFilter] = useState<Filter>('all')
+  const [query, setQuery] = useState('')
+  const search = query.trim().toLowerCase()
+  const filters: [Filter, string, number][] = [
+    ['all', 'Todas', library.length],
+    ['noalt', 'Sem descrição', library.filter((photo) => !hasAlt(photo)).length],
+    ['unused', 'Não usadas', library.filter((photo) => isUnused(usage[photo.id])).length],
+  ]
+  const shown = library.filter(
+    (photo) =>
+      (filter !== 'noalt' || !hasAlt(photo)) &&
+      (filter !== 'unused' || isUnused(usage[photo.id])) &&
+      (!search ||
+        photoLabel(photo).toLowerCase().includes(search) ||
+        (photo.alt ?? '').toLowerCase().includes(search)),
+  )
+
   return (
     <div className="gp-page">
       <header className="gp-pagehead">
@@ -110,11 +132,43 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
         )}
       </div>
 
+      {library.length > 0 && (
+        <div className="gp-media__tools">
+          <div aria-label="Mostrar" className="gp-seg" role="group">
+            {filters.map(([value, label, count]) => (
+              <button
+                aria-pressed={filter === value}
+                key={value}
+                onClick={() => setFilter(value)}
+                type="button"
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
+          <label className="gp-searchbox">
+            <PanelIcon name="search" size={16} />
+            <input
+              aria-label="Procurar foto pelo nome ou pela descrição"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Procurar foto"
+              type="search"
+              value={query}
+            />
+          </label>
+        </div>
+      )}
+
       <div className="gp-media">
         {library.length || uploads.items.length ? (
           <ul className="gp-media__grid">
             <UploadTiles uploads={uploads} />
-            {library.map((photo) => (
+            {shown.length === 0 && (
+              <li className="gp-media__none gp-muted">
+                {search ? 'Nenhuma foto com esse nome ou descrição.' : 'Nenhuma foto aqui.'}
+              </li>
+            )}
+            {shown.map((photo) => (
               <li key={photo.id}>
                 <button
                   aria-pressed={photo.id === selectedId}
@@ -124,11 +178,8 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
                 >
                   <img alt="" src={thumbnailURL(photo)} />
                   <span className="gp-media__name">{photoLabel(photo)}</span>
-                  {photo.alt?.trim() ? (
-                    <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
-                  ) : (
-                    <span className="gp-media__noalt">Sem descrição</span>
-                  )}
+                  <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
+                  {!hasAlt(photo) && <span className="gp-media__noalt">Sem descrição</span>}
                 </button>
               </li>
             ))}

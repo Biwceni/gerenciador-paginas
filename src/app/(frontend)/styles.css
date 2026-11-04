@@ -277,6 +277,79 @@
     display: grid;
   }
 
+  /* Com o ☰, o nome do site pode quebrar linha: nunca é cortado nem fica por baixo do botão. */
+  .site-header--compact .site-header__brand span {
+    white-space: normal;
+  }
+
+  /*
+   * Botão de destaque compacto, ao lado do ☰ (só aparece com ele). Sem espaço para o texto, fica só
+   * o ícone do destino, com o texto como nome acessível.
+   */
+  .site-header__cta {
+    display: none;
+    flex: none;
+    justify-content: center;
+    min-height: 44px;
+    margin-left: auto;
+    padding: 0 16px;
+    white-space: nowrap;
+  }
+
+  .site-header__cta svg {
+    display: none;
+  }
+
+  .site-header--cta-icon .site-header__cta {
+    width: 44px;
+    padding: 0;
+  }
+
+  .site-header--cta-icon .site-header__cta svg {
+    display: block;
+  }
+
+  .site-header--cta-icon .site-header__cta-text {
+    display: none;
+  }
+
+  .site-header--compact .site-header__cta {
+    display: inline-flex;
+  }
+
+  /* Medida do HeaderMenu: tudo no tamanho inteiro por um instante, sem aparecer. */
+  .site-header--measure .site-header__brand span {
+    white-space: nowrap;
+  }
+
+  .site-header--measure .site-header__cta {
+    display: inline-flex;
+    position: absolute;
+    visibility: hidden;
+    width: auto;
+    padding: 0 16px;
+  }
+
+  .site-header--measure .site-header__cta svg {
+    display: none;
+  }
+
+  .site-header--measure .site-header__cta-text {
+    display: inline;
+  }
+
+  /* Menu do ☰ aberto: o resto da página escurece, e tocar no fundo fecha. */
+  .site-header--open {
+    z-index: 6;
+  }
+
+  .site-header__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background: rgb(0 0 0 / 45%);
+  }
+
   .site-header--compact .site-header__mobile:not([hidden]) {
     display: grid;
   }
@@ -292,6 +365,10 @@
 
     .site-header:not(.site-header--full) .site-header__burger {
       display: grid;
+    }
+
+    .site-header:not(.site-header--full) .site-header__cta {
+      display: inline-flex;
     }
 
     .site-header:not(.site-header--full) .site-header__mobile:not([hidden]) {
@@ -315,9 +392,10 @@
 
   .site-header__burger {
     display: none;
+    flex: none;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: 1px solid var(--color-line);
     border-radius: 10px;
     background: none;
@@ -381,6 +459,14 @@
       display: grid;
     }
 
+    .site-header__cta {
+      display: inline-flex;
+    }
+
+    .site-header__brand span {
+      white-space: normal;
+    }
+
     .site-header__mobile:not([hidden]) {
       display: grid;
     }
@@ -389,16 +475,17 @@
   /* Rodapé */
 
   /*
-   * Faixa na cor principal (como a Chamada para ação) como última seção: um respiro na cor de fundo
-   * do site antes do rodapé escuro, para os dois não parecerem um bloco só. A segunda regra é a da
-   * prévia do editor.
+   * Faixa na cor principal (como a Chamada para ação) como última seção: encosta no rodapé, com uma
+   * linha fina na cor principal mais escura separando os dois (uma tira na cor de fundo entre eles
+   * parecia falha). Fora do fim da página, o espaço entre seções continua o normal. A segunda regra
+   * é a da prévia do editor.
    */
   main > .section--brand:last-child {
-    margin-bottom: clamp(32px, 5vw, 56px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 70%, #000);
   }
 
   [data-puck-component]:last-child > .section--brand {
-    margin-bottom: clamp(32px, 5vw, 56px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 70%, #000);
   }
 
   .site-footer {
@@ -442,6 +529,11 @@
     text-decoration: underline;
   }
 
+  .site-footer a.site-footer__privacy {
+    display: inline;
+    padding: 0;
+  }
+
   /*
    * Celular: cada link do rodapé com 44 px de altura de verdade. Uma área invisível maior que o
    * link (com a lista a 29 px) invadia o link de baixo; assim, nenhuma passa por cima de outra.
@@ -455,10 +547,12 @@
       padding-block: 0;
     }
 
+    /* "Privacidade": 44 px de área de toque sem mudar a linha (a margem negativa devolve a altura). */
     .site-footer a.site-footer__privacy {
       display: inline-flex;
       align-items: center;
       min-height: 44px;
+      margin-block: -12px;
       vertical-align: middle;
     }
   }
@@ -467,9 +561,7 @@
     outline-color: var(--color-on-footer);
   }
 
-  .site-footer__address {
-    padding: 3px 0;
-    opacity: 0.85;
+  .site-footer a.site-footer__address {
     white-space: pre-line;
   }
 
@@ -483,11 +575,6 @@
     border-top: 1px solid color-mix(in srgb, var(--color-on-footer) 15%, transparent);
     font-size: 13px;
     opacity: 0.75;
-  }
-
-  .site-footer a.site-footer__privacy {
-    display: inline;
-    padding: 0;
   }
 
   .site-footer--campaign {
@@ -606,6 +693,19 @@
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
     gap: clamp(28px, 5vw, 56px);
     align-items: center;
+  }
+
+  /* Banner compacto (ex.: página Contato): menos altura e título um pouco menor. */
+  .hero.hero--compact {
+    padding-block: clamp(32px, 5vw, 56px);
+  }
+
+  .hero.hero--compact.section--image {
+    min-height: clamp(220px, 26vw, 320px);
+  }
+
+  .hero--compact .hero__title {
+    font-size: var(--fs-h2);
   }
 
   .hero__photo {
@@ -966,43 +1066,88 @@
 
   .contact__list {
     display: grid;
-    gap: 14px;
+    gap: 4px;
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Cada contato é uma linha: ícone, rótulo e valor. Com link, a linha inteira é a área de toque. */
+  .contact__item {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    min-height: 44px;
+    padding: 8px 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .contact__icon {
+    margin-top: 2px;
+    color: var(--color-primary);
+  }
+
+  .contact__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
   }
 
   /* Rótulo em letra normal, sem caixa alta espaçada. */
-  .contact__list dt {
+  .contact__label {
     font-size: 15px;
     font-weight: 600;
     opacity: 0.75;
   }
 
-  .contact__list dd {
-    margin: 2px 0 0;
+  .contact__value {
     font-weight: 600;
     white-space: pre-line;
+    overflow-wrap: anywhere;
   }
 
-  .contact__list a {
-    text-decoration: none;
+  /* Valor com cara de ação: na cor principal, um pouco puxada para a do texto (contraste de 4,5:1
+     também no fundo suave, nas combinações prontas). */
+  .contact__item--link .contact__value {
+    color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text));
   }
 
-  .contact__list a:hover {
+  a.contact__item:hover .contact__value {
     text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
-  .contact__list .contact__map {
-    display: block;
-    width: fit-content;
-    margin-top: 4px;
-    color: var(--color-primary);
+  a.contact__item:focus-visible .contact__value {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  a.contact__item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .contact__map {
+    color: color-mix(in srgb, var(--color-primary) 80%, var(--color-text));
+    font-size: 15px;
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
-    white-space: normal;
   }
 
-  .section--brand .contact__list .contact__map {
+  /* Na faixa com a cor principal, tudo na cor do texto da faixa. */
+  .section--brand .contact__icon {
+    color: inherit;
+  }
+
+  .section--brand .contact__item--link .contact__value {
+    color: inherit;
+  }
+
+  .section--brand .contact__map {
     color: inherit;
   }
 
@@ -1363,10 +1508,6 @@
 
   & .editor-locked {
     position: relative;
-  }
-
-  & .editor-locked > [inert] {
-    opacity: 0.75;
   }
 
   & .editor-locked__tip {

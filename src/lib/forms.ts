@@ -327,3 +327,12 @@ export function checkSubmission(
   if (!data.length) return { ok: false, message: 'Preencha o formulário antes de enviar.' }
   return { ok: true, data }
 }
+
+/** Uma página que usa o formulário, com o estado dela: no ar, só rascunho ou arquivada. */
+export type FormPage = { id: number; title: string; state: 'live' | 'draft' | 'archived' }
+
+/** "Em breve (arquivada)", "Promoção (rascunho)" ou só o nome, se está no ar. */
+export const formPageName = (page: FormPage) =>
+  page.state === 'live'
+    ? page.title
+    : `${page.title} (${page.state === 'archived' ? 'arquivada' : 'rascunho'})`
