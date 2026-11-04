@@ -38,7 +38,9 @@ function useCompactHeader(button: React.RefObject<HTMLButtonElement | null>) {
       const burgerWidth = button.current?.offsetWidth || 44
       header.classList.remove('site-header--measure')
 
-      const next = brandWidth + gap + navWidth > width
+      // Até 720 px o CSS esconde o menu (`display: none`, mede 0): ali o topo é sempre o do ☰.
+      const navHidden = nav.getClientRects().length === 0
+      const next = navHidden || brandWidth + gap + navWidth > width
       // As duas classes: entre 721 e 1023 px o CSS já começa com o ☰ e espera o `--full`.
       header.classList.toggle('site-header--compact', next)
       header.classList.toggle('site-header--full', !next)
