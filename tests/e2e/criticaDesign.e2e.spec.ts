@@ -104,6 +104,19 @@ test.describe.serial('crítica de design', () => {
             },
           },
           {
+            type: 'Features',
+            props: {
+              id: 'Features-critica',
+              menuLabel: '',
+              title: 'Por que nós',
+              items: ['Primeiro', 'Segundo', 'Terceiro'].map((name) => ({
+                title: name,
+                text: 'Texto.',
+              })),
+              style: 'light',
+            },
+          },
+          {
             type: 'Contact',
             props: {
               id: 'Contact-critica',
@@ -240,6 +253,17 @@ test.describe.serial('crítica de design', () => {
       overrideAccess: true,
     })
     expect(docs[0].name).toBe(name)
+
+    // Vazio não é salvo: o aviso pede o nome e o banco continua com o de antes.
+    await page.getByLabel('Nome', { exact: true }).fill('')
+    await expect(page.getByText('Escreva seu nome', { exact: true })).toBeVisible()
+    await page.waitForTimeout(2000)
+    const after = await payload.find({
+      collection: 'users',
+      where: { email: { equals: testUser.email } },
+      overrideAccess: true,
+    })
+    expect(after.docs[0].name).toBe(name)
   })
 
   test('Menu e rodapé e Formulário com rótulos visíveis em 390 px', async () => {
@@ -313,6 +337,33 @@ test.describe.serial('crítica de design', () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('#menu-celular')).toBeHidden()
     await expect(page.getByRole('button', { name: 'Abrir menu' })).toBeFocused()
+  })
+
+  test('Destaques: Descer duas vezes leva o mesmo item até o fim', async () => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await open(page, `/admin/editor/${homeId}`)
+    const frame = page.frameLocator('iframe').first()
+    await frame
+      .locator('[data-puck-component]')
+      .nth(1)
+      .click({ position: { x: 5, y: 5 } })
+    await page.getByText('Primeiro', { exact: true }).locator('visible=true').first().click()
+    await page.getByRole('button', { name: 'Descer Primeiro' }).click()
+    await expect(frame.locator('.features__item h3')).toHaveText([
+      'Segundo',
+      'Primeiro',
+      'Terceiro',
+    ])
+    // O item movido continua aberto: o mesmo botão desce ele de novo.
+    await page.getByRole('button', { name: 'Descer Primeiro' }).click()
+    await expect(frame.locator('.features__item h3')).toHaveText([
+      'Segundo',
+      'Terceiro',
+      'Primeiro',
+    ])
+    await expect(page.locator('input[name="items[2].title"]').locator('visible=true')).toHaveValue(
+      'Primeiro',
+    )
   })
 
   test('nenhuma tela do painel nem do site rola para o lado', async () => {
