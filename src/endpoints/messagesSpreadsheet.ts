@@ -2,6 +2,7 @@ import type { Endpoint, PayloadHandler } from 'payload'
 
 import { toFormDefinition } from '../lib/forms'
 import { messageFields, messagesCsv } from '../lib/messages'
+import { pageTitle } from '../lib/pageTitle'
 import { relationID } from '../lib/relations'
 
 const LIMIT = 10000
@@ -43,7 +44,7 @@ const download: PayloadHandler = async (req) => {
         ...access,
       })
     : null
-  const pageTitles = new Map(pages?.docs.map((page) => [page.id, page.title]))
+  const pageTitles = new Map(pages?.docs.map((page) => [page.id, pageTitle(page.title)]))
   const definitions = new Map(forms.docs.map((form) => [form.id, toFormDefinition(form)]))
 
   const csv = messagesCsv(

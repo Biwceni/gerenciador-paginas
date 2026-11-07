@@ -99,9 +99,40 @@ export async function copyTemplatePhotos(
   return { ids, missing: list.filter((photo, index) => photo && !ids[index]).length }
 }
 
+/**
+ * Formulário de mesmo nome que ainda não recebeu nenhuma mensagem: é reaproveitado, para aplicar o
+ * modelo de novo não deixar vários "Fale conosco" iguais na tela Formulários.
+ */
+async function reusableForm(req: PayloadRequest, title: string): Promise<number | null> {
+  const access = { overrideAccess: false, req } as const
+  const { docs } = await req.payload.find({
+    collection: 'forms',
+    where: { title: { equals: title } },
+    select: { title: true },
+    depth: 0,
+    sort: 'createdAt',
+    pagination: false,
+    ...access,
+  })
+  for (const form of docs) {
+    const { totalDocs } = await req.payload.count({
+      collection: 'form-submissions',
+      where: { form: { equals: form.id } },
+      ...access,
+    })
+    if (!totalDocs) return form.id
+  }
+  return null
+}
+
 async function createTemplateForms(req: PayloadRequest, template: Template): Promise<number[]> {
   const ids: number[] = []
   for (const form of template.forms ?? []) {
+    const reused = await reusableForm(req, form.title)
+    if (reused) {
+      ids.push(reused)
+      continue
+    }
     const doc = await req.payload.create({
       collection: 'forms',
       data: {
@@ -160,6 +191,27 @@ function headerLink(link: TemplateLink | null | undefined, pageIds: number[]) {
 }
 
 export type SiteAnswers = { name: string; tagline: string; whatsapp: string }
+
+/**
+ * Endereço que uma página arquivada passa a ter quando uma página nova do modelo precisa do dela:
+ * "contato" vira "contato-arquivada-12" (o número é o da página, então não se repete).
+ */
+export function archivedSlug(slug: string, id: number): string {
+  return `${slug.slice(0, 60).replace(/-+$/, '')}-arquivada-${id}`
+}
+
+/** Dados para guardar uma página em "Arquivadas": o rascunho mais recente inteiro, com o endereço. */
+function archivedPageData(page: Page, slug: string) {
+  return {
+    title: page.title,
+    slug,
+    campaign: page.campaign,
+    content: page.content,
+    seo: { ...page.seo, image: relationID(page.seo?.image) },
+    archived: true,
+    _status: 'draft' as const,
+  }
+}
 
 /**
  * Configurações do site depois de aplicar um modelo. Do modelo vêm só as cores e as letras: a
@@ -224,11 +276,27 @@ export async function applySiteTemplate(
       pagination: false,
       ...access,
     })
-    const taken = existing.map((page) => page.slug)
     const firstSite = existing.every((page) => page.archived)
+
+    // Endereços que as páginas do modelo querem. Página já arquivada com um deles libera o endereço
+    // agora (sem isso, cada "Começar de novo" criava "contato-2", "contato-3"...). As que ainda
+    // estão no site liberam quando forem arquivadas, no fim.
+    const wanted = (template.pages ?? []).map((page) => uniqueSlug(page.slug, []))
+    for (const page of existing) {
+      if (!page.archived || !wanted.includes(page.slug)) continue
+      page.slug = archivedSlug(page.slug, page.id)
+      await req.payload.update({
+        collection: 'pages',
+        id: page.id,
+        data: archivedPageData(page, page.slug),
+        ...access,
+      })
+    }
+    const taken = existing.map((page) => page.slug)
 
     // Primeiro cria todas (os links entre elas precisam dos ids), depois põe o conteúdo.
     const created: Page[] = []
+    const contents: PuckPageData[] = []
     for (const page of template.pages ?? []) {
       const slug = uniqueSlug(page.slug, taken)
       taken.push(slug)
@@ -257,6 +325,7 @@ export async function applySiteTemplate(
           text: answers.tagline || undefined,
         })
       }
+      contents.push(data)
       await req.payload.update({
         collection: 'pages',
         id: ids.pages[index],
@@ -308,18 +377,31 @@ export async function applySiteTemplate(
     // "Arquivadas" (as regras de `archiveRules` recusam arquivar a inicial e as do menu). Vai o
     // rascunho mais recente inteiro, para as mudanças não publicadas não se perderem (como o
     // "Arquivar" do painel).
+    // Quem tem um endereço que o modelo quer libera o endereço aqui.
+    const freed = new Set<string>()
     for (const page of existing.filter((doc) => !doc.archived)) {
+      const slug = wanted.includes(page.slug) ? archivedSlug(page.slug, page.id) : page.slug
+      if (slug !== page.slug) freed.add(page.slug)
+      await req.payload.update({
+        collection: 'pages',
+        id: page.id,
+        data: archivedPageData(page, slug),
+        ...access,
+      })
+    }
+    // As páginas novas que nasceram com "-2" ficam com o endereço limpo. Só no "Começar de novo":
+    // no primeiro site, todas as antigas já estavam arquivadas e liberaram o endereço no começo.
+    for (const [index, page] of created.entries()) {
+      if (page.slug === wanted[index] || !freed.has(wanted[index])) continue
       await req.payload.update({
         collection: 'pages',
         id: page.id,
         data: {
           title: page.title,
-          slug: page.slug,
+          slug: wanted[index],
           campaign: page.campaign,
-          content: page.content,
-          seo: { ...page.seo, image: relationID(page.seo?.image) },
-          archived: true,
-          _status: 'draft',
+          content: { version: emptyPageContent().version, data: contents[index] },
+          _status: 'published',
         },
         ...access,
       })

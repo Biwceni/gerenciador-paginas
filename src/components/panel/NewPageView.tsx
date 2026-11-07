@@ -56,7 +56,7 @@ export async function NewPageView(props: AdminViewServerProps) {
         })}
         pages={pages
           .map(({ id, title, slug }) => ({ id, title, slug }))
-          .sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'))}
+          .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'pt-BR'))}
       />
     </PanelTemplate>
   )

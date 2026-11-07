@@ -3,6 +3,7 @@ import type { Payload, PayloadRequest, TypedUser } from 'payload'
 import { collectReferences } from '../puck/references'
 import { parsePageContent } from '../puck/schema'
 import type { FormPage } from './forms'
+import { pageTitle } from './pageTitle'
 
 export { type FormPage, formPageName } from './forms'
 
@@ -28,7 +29,7 @@ export async function loadFormUsage(payload: Payload, who: Who): Promise<FormUsa
     payload.find({ ...query, draft: true }),
     payload.find({ ...query, draft: false }),
   ])
-  const titles = new Map(latest.docs.map((doc) => [doc.id, doc.title]))
+  const titles = new Map(latest.docs.map((doc) => [doc.id, pageTitle(doc.title)]))
   const archived = new Set(latest.docs.filter((doc) => doc.archived).map((doc) => doc.id))
   const liveIds = new Set(
     live.docs.filter((doc) => doc._status === 'published').map((doc) => doc.id),
@@ -42,7 +43,11 @@ export async function loadFormUsage(payload: Payload, who: Who): Promise<FormUsa
     for (const formId of collectReferences(content.data.data).formIds) {
       const pages = usage.get(formId) ?? []
       if (!pages.some((page) => page.id === doc.id)) {
-        pages.push({ id: doc.id, title: titles.get(doc.id) ?? doc.title, state: state(doc.id) })
+        pages.push({
+          id: doc.id,
+          title: titles.get(doc.id) ?? pageTitle(doc.title),
+          state: state(doc.id),
+        })
       }
       usage.set(formId, pages)
     }

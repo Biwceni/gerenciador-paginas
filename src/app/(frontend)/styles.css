@@ -313,6 +313,11 @@
     display: none;
   }
 
+  /* Destino sem ícone que o explique: sem espaço para o texto, o botão fica só dentro do ☰. */
+  .site-header--cta-icon .site-header__cta:not(:has(svg)) {
+    display: none;
+  }
+
   .site-header--compact .site-header__cta {
     display: inline-flex;
   }
@@ -442,13 +447,52 @@
     margin-top: 8px;
   }
 
+  /*
+   * Celular: o topo tem sempre a mesma altura (os botões de 44 px) e é todo decidido no servidor.
+   * O nome do site vai em até duas linhas, com letra menor; o botão de destaque segue o `data-cta`
+   * (texto, só o ícone ou só dentro do ☰), calculado pelo tamanho do nome e do texto do botão.
+   */
   @media (max-width: 720px) {
     .site-header__bar {
+      gap: 12px;
       padding-block: 10px;
     }
 
     .site-header__brand {
-      font-size: 19px;
+      flex: 1 1 auto;
+      font-size: 17px;
+      line-height: 1.15;
+    }
+
+    .site-header__brand span {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow-wrap: anywhere;
+    }
+
+    .site-header__cta {
+      padding: 0 14px;
+      font-size: 14px;
+    }
+
+    .site-header[data-cta='icon'] .site-header__cta {
+      width: 44px;
+      padding: 0;
+    }
+
+    .site-header[data-cta='icon'] .site-header__cta svg {
+      display: block;
+    }
+
+    .site-header[data-cta='icon'] .site-header__cta-text {
+      display: none;
+    }
+
+    .site-header[data-cta='menu'] .site-header__cta {
+      display: none;
     }
 
     .site-header__nav {
@@ -529,9 +573,15 @@
     text-decoration: underline;
   }
 
+  /*
+   * "Privacidade" fica no meio da frase do rodapé: sublinhado sempre, porque só a cor não o separa
+   * do texto ao lado (axe link-in-text-block).
+   */
   .site-footer a.site-footer__privacy {
     display: inline;
     padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   /*

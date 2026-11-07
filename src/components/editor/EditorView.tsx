@@ -141,7 +141,8 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       initialData={content.data.data}
       page={{
         id,
-        title: draft.title,
+        // Rascunho criado sem nome: o campo abre vazio para a pessoa escrever.
+        title: draft.title ?? '',
         slug: draft.slug,
         campaign: draft.campaign,
         seo: draft.seo,

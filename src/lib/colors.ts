@@ -27,6 +27,21 @@ export function readableTextColor(background: string): string {
     : LIGHT_TEXT
 }
 
+/**
+ * A cor que se vê com `color` por cima de `background` numa opacidade (`opacity` do CSS): mistura
+ * os dois, canal a canal.
+ */
+export function blendColors(color: string, background: string, opacity: number): string {
+  const channel = (hex: string, start: number) => parseInt(hex.slice(start, start + 2), 16)
+  return `#${[1, 3, 5]
+    .map((start) =>
+      Math.round(channel(color, start) * opacity + channel(background, start) * (1 - opacity))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
+}
+
 /** Devolve a cor se for válida; senão, a cor padrão. Evita CSS quebrado ou injetado. */
 export function safeColor(value: string | null | undefined, fallback: string): string {
   return value && HEX_COLOR_PATTERN.test(value) ? value.toLowerCase() : fallback

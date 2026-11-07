@@ -616,6 +616,8 @@ export function Editor(props: EditorProps) {
                 metadata={metadata}
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
+                // O indicador de carregamento do Puck é um `<span aria-label>` sem papel (axe
+                // aria-prohibited-attr): vem de dentro do pacote, sem override para trocar.
                 overrides={{
                   header: EditorHeader,
                   iframe: EditorFrame,

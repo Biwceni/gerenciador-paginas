@@ -81,6 +81,8 @@ export function EditorFrame({
 
   useEffect(() => {
     if (!frame) return
+    // O iframe é do Puck (`#preview-frame`) e vem sem nome: o leitor de tela diria só "quadro".
+    frame.defaultView?.frameElement?.setAttribute('title', 'Prévia da página')
     frame.documentElement.setAttribute('lang', 'pt-BR')
     frame.body.classList.add('site')
     for (const [name, value] of Object.entries(theme)) frame.body.style.setProperty(name, value)

@@ -197,10 +197,12 @@ function fakeReq({ pages = [] as object[], live = [] as object[], site = {} as o
     logger: { error: () => {} },
     find: async (args: Record<string, unknown>) => {
       calls.push({ op: 'find', args })
-      if (args.collection === 'media') return { docs: [] }
+      // Sem fotos e sem formulários para reaproveitar.
+      if (args.collection === 'media' || args.collection === 'forms') return { docs: [] }
       return { docs: args.draft ? pages : live }
     },
     findGlobal: async () => site,
+    count: async () => ({ totalDocs: 0 }),
     create: async (args: Record<string, unknown>) => {
       calls.push({ op: 'create', args })
       const id = args.collection === 'forms' ? nextFormId++ : nextId++
@@ -289,7 +291,15 @@ describe('aplicar um modelo de site', () => {
       _status: 'draft',
       archived: true,
       title: 'Antiga',
+      // Libera o endereço para a página nova.
+      slug: 'inicio-arquivada-5',
     })
+    // E a página nova, que nasceu "inicio-2", fica com o endereço limpo.
+    const rename = calls.findIndex(
+      (c) => c.op === 'update' && c.args.id === 100 && (c.args.data as { slug?: string }).slug,
+    )
+    expect(rename).toBeGreaterThan(archive)
+    expect(calls[rename].args.data).toMatchObject({ slug: 'inicio', _status: 'published' })
     // Tudo com o usuário da requisição.
     for (const call of calls.filter((c) => c.args.collection === 'pages')) {
       expect(call.args.overrideAccess).toBe(false)

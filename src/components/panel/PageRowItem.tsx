@@ -2,7 +2,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { editorPath } from '@/lib/editor'
-import { PAGE_STATUS_LABEL, timeAgo } from '@/lib/panel'
+import { PAGE_STATUS_LABEL } from '@/lib/panel'
 
 import type { PageRow } from './data'
 import { PanelIcon } from './PanelIcon'
@@ -64,7 +64,7 @@ export function PageRowItem({
         <div className="gp-row__sub">
           {/* No celular, só o caminho ("/tratamentos"). */}
           <span className="gp-row__domain">{domain}</span>
-          {page.path} · editada {timeAgo(page.updatedAt)}
+          {page.path} · editada {page.editedAgo}
         </div>
       </div>
       {chip('column')}

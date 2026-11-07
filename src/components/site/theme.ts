@@ -6,8 +6,14 @@ import type { Site } from '@/payload-types'
 
 const FALLBACK_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
+/**
+ * A fonte escolhida, a reserva com as mesmas medidas ("<fonte> Fallback", de `fontFallback.ts`, só no
+ * site publicado) e a fonte do aparelho.
+ */
 function fontStack(name: string | null | undefined): string {
-  return name && FONT_NAME_PATTERN.test(name) ? `"${name}", ${FALLBACK_FONT}` : FALLBACK_FONT
+  return name && FONT_NAME_PATTERN.test(name)
+    ? `"${name}", "${name} Fallback", ${FALLBACK_FONT}`
+    : FALLBACK_FONT
 }
 
 /**

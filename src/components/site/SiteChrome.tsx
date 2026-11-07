@@ -22,8 +22,25 @@ type HeaderProps = {
   campaign?: boolean
 }
 
+/** O destino do botão tem um ícone que diz o que ele faz (WhatsApp, telefone, e-mail). */
+export function hasCtaIcon(href: string): boolean {
+  return href.startsWith('https://wa.me/') || href.startsWith('tel:') || href.startsWith('mailto:')
+}
+
+/**
+ * Como o botão de destaque aparece no topo do celular, decidido já no servidor (assim o topo não
+ * muda de tamanho depois que a página carrega): com o texto, se ele e o nome do site cabem; só com
+ * o ícone, se o destino tem um; senão, só dentro do ☰. Nunca uma seta sem texto.
+ */
+export function mobileCtaMode(name: string, button: { label: string; href: string }) {
+  const label = button.label.trim()
+  if (label.length <= 12 && name.length + label.length <= 30) return 'text'
+  return hasCtaIcon(button.href) ? 'icon' : 'menu'
+}
+
 /** Ícone do destino do botão de destaque, para a versão só com o ícone do topo compacto. */
 function CtaIcon({ href }: { href: string }) {
+  if (!hasCtaIcon(href)) return null
   const path = href.startsWith('https://wa.me/') ? (
     <>
       <path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z" />
@@ -31,13 +48,11 @@ function CtaIcon({ href }: { href: string }) {
     </>
   ) : href.startsWith('tel:') ? (
     <path d="M5 3h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 5.3 5.3l1.4-2.2L19 13.5V17a2 2 0 0 1-2 2A15 15 0 0 1 3 5a2 2 0 0 1 2-2z" />
-  ) : href.startsWith('mailto:') ? (
+  ) : (
     <>
       <rect height="14" rx="2" width="18" x="3" y="5" />
       <path d="M3.5 6.5L12 13l8.5-6.5" />
     </>
-  ) : (
-    <path d="M5 12h14M13 6l6 6-6 6" />
   )
   return (
     <svg
@@ -79,7 +94,10 @@ export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderPr
   )
 
   return (
-    <header className="site-header">
+    <header
+      className="site-header"
+      data-cta={button && hasNav ? mobileCtaMode(name, button) : undefined}
+    >
       <div className="container site-header__bar">
         <Link className="site-header__brand" href="/">
           {logo && <Photo className="site-header__logo" media={logo} sizes="160px" />}

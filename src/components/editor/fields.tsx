@@ -31,6 +31,8 @@ type FieldProps<V> = {
   value: V
   onChange: (value: V) => void
   readOnly?: boolean
+  /** O campo do Puck: o rótulo dele dá nome às caixas de seleção (o `FieldLabel` é uma `div`). */
+  field?: { label?: string }
 }
 
 /** Uma foto da biblioteca. Guarda só o id (relação), nunca o endereço. */
@@ -146,7 +148,7 @@ function optionValue(link: LinkRef | undefined): string {
  * Para onde um botão leva: WhatsApp da empresa, uma página, uma seção de uma página ou outro site.
  * Página em rascunho aparece marcada; ao publicar, a checagem avisa.
  */
-export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
+export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkRef>) {
   const { pages, pageId, whatsappHref } = useEditor()
   // Seções desta página vêm do que está na tela agora, não do que foi salvo.
   const content = usePuck((state) => state.appState.data.content)
@@ -179,6 +181,7 @@ export function LinkField({ value, onChange, readOnly }: FieldProps<LinkRef>) {
   return (
     <div className="ed-link-field">
       <select
+        aria-label={field?.label || 'Leva para'}
         className="ed-input"
         disabled={readOnly}
         onChange={(event) => select(event.target.value)}
@@ -364,7 +367,7 @@ export function Notice({ children }: { children: React.ReactNode }) {
  * padrão (Nome, WhatsApp, E-mail e Mensagem) com um clique; os campos se mudam na tela de
  * Formulários do painel.
  */
-export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
+export function FormField({ value, onChange, readOnly, field }: FieldProps<FormRef>) {
   const { adminRoute, apiRoute, forms, addForm } = useEditor()
   const [creating, setCreating] = useState(false)
   const selected = value ? forms.find((form) => form.id === value.formId) : undefined
@@ -393,6 +396,7 @@ export function FormField({ value, onChange, readOnly }: FieldProps<FormRef>) {
     <div className="ed-link-field">
       {forms.length > 0 && (
         <select
+          aria-label={field?.label || 'Formulário'}
           className="ed-input"
           disabled={readOnly}
           onChange={(event) =>
