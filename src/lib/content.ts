@@ -5,6 +5,7 @@ import config from '@/payload.config'
 import type { Footer, Header, Media, Page, Site } from '@/payload-types'
 
 import { whatsAppURL } from './links'
+import { safeMotion } from './motion'
 import { relationID } from './relations'
 import { FALLBACK_SITE_NAME } from './site'
 import { sectionAnchors } from '../puck/anchors'
@@ -105,6 +106,7 @@ export function siteInfo(site: Partial<Site>): SiteInfo {
     logo: populatedMedia(site.logo),
     contact: site.contact ?? {},
     privacyHref: privacyHref(site),
+    motion: safeMotion(site.motion),
   }
 }
 

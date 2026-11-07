@@ -58,7 +58,7 @@ describe('Destaques: marcador', () => {
   it('sem marcador: lista sem números e sem ícones', () => {
     const html = features({})
     expect(html).toMatch(
-      /^<section[^>]*><div class="container">.*<ul class="features features--two">/,
+      /^<section[^>]*><div class="container anim-part">.*<ul class="features features--two">/,
     )
     expect(html).not.toContain('features__number')
     expect(html).not.toContain('features__icon')

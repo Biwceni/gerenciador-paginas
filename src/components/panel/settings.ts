@@ -1,4 +1,5 @@
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '@/lib/links'
+import { type Motion, safeMotion } from '@/lib/motion'
 import { relationID } from '@/lib/relations'
 import type { SiteColors } from '@/lib/style-presets'
 import { DEFAULT_COLORS, type Personality, safePersonality } from '@/lib/theme'
@@ -15,6 +16,7 @@ export type SettingsState = {
   privacyPage: number | null
   colors: SiteColors
   personality: Personality
+  motion: Motion
   fonts: { headings: string; body: string }
   contact: { whatsapp: string; phone: string; email: string; address: string; hours: string }
   social: { instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
@@ -32,6 +34,7 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
     privacyPage: relationID(site.privacyPage),
     colors: { ...DEFAULT_COLORS, ...site.colors },
     personality: safePersonality(site.personality),
+    motion: safeMotion(site.motion),
     fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
     contact: {
       whatsapp: site.contact?.whatsapp ?? '',
@@ -63,6 +66,7 @@ export function toSiteData(state: SettingsState) {
     privacyPage: state.privacyPage,
     colors: state.colors,
     personality: state.personality,
+    motion: state.motion,
     fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
     contact: {
       whatsapp: orNull(state.contact.whatsapp),

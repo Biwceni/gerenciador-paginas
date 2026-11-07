@@ -58,6 +58,8 @@ const pages: SeedPage[] = [
           text: L_S,
           button: null,
           style: 'soft',
+
+          anim: 'site',
         },
       },
     ],
@@ -76,6 +78,8 @@ const pages: SeedPage[] = [
           image: photo(2),
           button: { label: 'Chamar no WhatsApp', link: whatsapp },
           style: 'soft',
+
+          anim: 'site',
           align: 'left',
           height: 'normal',
           highlight: '',
@@ -89,6 +93,8 @@ const pages: SeedPage[] = [
           title: 'Venha nos visitar',
           text: L_S,
           style: 'light',
+
+          anim: 'site',
         },
       },
       {
@@ -99,6 +105,8 @@ const pages: SeedPage[] = [
           title: 'Perguntas frequentes',
           items: [1, 2, 3].map(() => ({ question: 'Lorem ipsum dolor sit amet?', answer: L_M })),
           style: 'soft',
+
+          anim: 'site',
         },
       },
     ],
@@ -117,6 +125,8 @@ const pages: SeedPage[] = [
           image: null,
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
           style: 'brand',
+
+          anim: 'site',
           align: 'center',
           height: 'normal',
           highlight: '',
@@ -132,6 +142,8 @@ const pages: SeedPage[] = [
           column2: [columnText('coluna-2')],
           column3: [columnText('coluna-3')],
           style: 'light',
+
+          anim: 'site',
         },
       },
       {
@@ -143,6 +155,8 @@ const pages: SeedPage[] = [
           text: 'Este botão leva para uma página em rascunho, então ele não aparece no site.',
           button: { label: 'Ver novidades', link: { kind: 'page', pageId: ids.novidades } },
           style: 'soft',
+
+          anim: 'site',
         },
       },
     ],
@@ -161,6 +175,8 @@ const pages: SeedPage[] = [
           image: photo(1),
           button: { label: 'Fale com a gente', link: whatsapp },
           style: 'image',
+
+          anim: 'site',
           align: 'left',
           height: 'normal',
           highlight: '',
@@ -176,6 +192,8 @@ const pages: SeedPage[] = [
           image: photo(0),
           side: 'left',
           style: 'light',
+
+          anim: 'site',
         },
       },
       {
@@ -191,6 +209,8 @@ const pages: SeedPage[] = [
             icon: 'check' as const,
           })),
           style: 'light',
+
+          anim: 'site',
         },
       },
       {
@@ -204,6 +224,8 @@ const pages: SeedPage[] = [
             { quote: L_M, name: 'Dolor Amet', photo: null },
           ],
           style: 'soft',
+
+          anim: 'site',
         },
       },
       {
@@ -214,6 +236,8 @@ const pages: SeedPage[] = [
           title: 'Dolor Amet',
           images: [photo(0), photo(1), photo(2)].filter((ref) => ref !== null),
           style: 'light',
+
+          anim: 'site',
         },
       },
       {
@@ -225,6 +249,8 @@ const pages: SeedPage[] = [
           text: L_S,
           button: { label: 'Ver endereço', link: { kind: 'page', pageId: ids.contato } },
           style: 'brand',
+
+          anim: 'site',
         },
       },
     ],
@@ -246,6 +272,8 @@ const pages: SeedPage[] = [
             link: { kind: 'page', pageId: ids['nossos-cafes'] },
           },
           style: 'image',
+
+          anim: 'site',
           align: 'left',
           height: 'normal',
           highlight: '',
@@ -261,6 +289,8 @@ const pages: SeedPage[] = [
           image: photo(1),
           side: 'right',
           style: 'soft',
+
+          anim: 'site',
         },
       },
       {
@@ -272,6 +302,8 @@ const pages: SeedPage[] = [
           text: L_S,
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
           style: 'brand',
+
+          anim: 'site',
         },
       },
     ],

@@ -1017,6 +1017,10 @@ export interface Site {
    */
   personality?: ('classico' | 'vitrine' | 'aconchego' | 'editorial') | null;
   /**
+   * Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode ter a sua própria animação ou ficar sem. Quem pediu ao celular para reduzir movimentos vê só um esmaecer.
+   */
+  motion?: ('nenhum' | 'suave' | 'marcante') | null;
+  /**
    * A cor do texto dos botões e do rodapé é escolhida sozinha, para ficar fácil de ler.
    */
   colors: {
@@ -1154,6 +1158,7 @@ export interface SiteSelect<T extends boolean = true> {
   homepage?: T;
   privacyPage?: T;
   personality?: T;
+  motion?: T;
   colors?:
     | T
     | {

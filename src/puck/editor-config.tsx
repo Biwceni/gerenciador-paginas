@@ -14,7 +14,9 @@ import {
   StackedChoiceField,
   VideoField,
 } from '@/components/editor/fields'
+import { AnimField } from '@/components/editor/AnimField'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
+import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
@@ -132,6 +134,23 @@ const featureItems: Field = {
   getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
 }
 
+/** Animação da seção (redesign v3, entrega 2): no fim das opções, escolhida por miniatura. */
+const animField = <K extends AnimatedSection>(section: K): CustomField<SectionAnimOf<K>> => ({
+  type: 'custom',
+  label: 'Animação',
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <AnimField
+        name={name}
+        onChange={(next) => onChange(next as SectionAnimOf<K>)}
+        readOnly={readOnly}
+        section={section}
+        value={value}
+      />
+    </FieldLabel>
+  ),
+})
+
 const notice = (message: string): CustomField<undefined> => ({
   type: 'custom',
   render: () => <Notice>{message}</Notice>,
@@ -187,8 +206,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Compacto', value: 'compact' },
         ],
       },
+      anim: animField('Hero'),
     },
     defaultProps: {
+      anim: 'site',
       title: 'Escreva aqui um título chamativo',
       text: 'Uma frase curta que explica o que você oferece.',
       button: { label: 'Fale com a gente', link: whatsapp },
@@ -215,8 +236,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       style: sectionStyle,
       menuLabel,
+      anim: animField('TextImage'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Conte um pouco mais',
       text: 'Use este espaço para explicar com calma. Clique no texto para mudar.',
@@ -232,8 +255,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       items: featureItems,
       style: sectionStyle,
       menuLabel,
+      anim: animField('Features'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Por que escolher a gente',
       marker: 'none',
@@ -267,8 +292,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       style: sectionStyle,
       menuLabel,
+      anim: animField('Testimonials'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'O que dizem nossos clientes',
       items: [
@@ -300,8 +327,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       style: sectionStyle,
       menuLabel,
+      anim: animField('Faq'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Perguntas frequentes',
       items: [
@@ -332,8 +361,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       style: sectionStyle,
       menuLabel,
+      anim: animField('Gallery'),
     },
-    defaultProps: { menuLabel: '', title: 'Nosso dia a dia', images: [], style: 'light' },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Nosso dia a dia',
+      images: [],
+      style: 'light',
+    },
   },
   CallToAction: {
     fields: {
@@ -342,8 +378,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       button,
       style: sectionStyle,
       menuLabel,
+      anim: animField('CallToAction'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Vamos conversar?',
       text: 'Chame a gente no WhatsApp.',
@@ -364,8 +402,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       } as object),
       style: sectionStyle,
       menuLabel,
+      anim: animField('Contact'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Venha nos visitar',
       text: 'Será um prazer receber você.',
@@ -386,8 +426,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
         getItemSummary: (item) => item.label || 'Link',
       },
       style: sectionStyle,
+      anim: animField('LinkList'),
     },
     defaultProps: {
+      anim: 'site',
       title: 'Nome do seu negócio',
       text: 'Uma frase curta sobre você.',
       items: [
@@ -414,8 +456,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       column1: { type: 'slot', allow: [...COLUMN_PIECES] },
       column2: { type: 'slot', allow: [...COLUMN_PIECES] },
       column3: { type: 'slot', allow: [...COLUMN_PIECES] },
+      anim: animField('Columns'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       layout: 'half',
       style: 'light',
@@ -458,8 +502,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       style: sectionStyle,
       menuLabel,
+      anim: animField('RichText'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Título do texto',
       body: '<p>Escreva aqui. Dá para usar <strong>negrito</strong>, <em>itálico</em>, listas e links.</p>',
@@ -482,8 +528,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       cover: photo('Foto de capa (opcional)'),
       style: sectionStyle,
       menuLabel,
+      anim: animField('Video'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Assista ao nosso vídeo',
       videoId: '',
@@ -510,8 +558,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       successMessage: { type: 'custom', render: () => <></> },
       style: sectionStyle,
       menuLabel,
+      anim: animField('Form'),
     },
     defaultProps: {
+      anim: 'site',
       menuLabel: '',
       title: 'Fale com a gente',
       text: 'Deixe seus dados e respondemos em pouco tempo.',
@@ -531,8 +581,9 @@ const sections: { [K in keyof Components]: Section<K> } = {
       } as object),
       style: sectionStyle,
       menuLabel,
+      anim: animField('Privacy'),
     },
-    defaultProps: { menuLabel: '', title: PRIVACY_TITLE, style: 'light' },
+    defaultProps: { anim: 'site', menuLabel: '', title: PRIVACY_TITLE, style: 'light' },
   },
   ColumnText: {
     fields: { title: text('Título'), text: textarea('Texto') },

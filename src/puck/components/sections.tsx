@@ -3,6 +3,13 @@ import React from 'react'
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
 import { mapsURL, telHref, whatsAppURL } from '@/lib/links'
+import {
+  type Anim,
+  animClass,
+  type AnimatedSection,
+  resolveAnim,
+  splitTitleLines,
+} from '@/lib/motion'
 import { privacyBlocks } from '@/lib/privacy'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
@@ -30,6 +37,7 @@ import type {
 } from '../schema'
 import { SectionButton } from './Button'
 import { EditorHighlight } from './EditorHighlight'
+import { GalleryGrid } from './GalleryGrid'
 import { ContactIcon, type ContactIconName, FeatureIcon } from './FeatureIcon'
 import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
@@ -37,7 +45,11 @@ import { VideoPlayer } from './VideoPlayer'
 // Desenho das seções conforme o protótipo navegável. Serve no site e na prévia do editor
 // (`metadata.editing`): lá, o que está vazio aparece com um aviso, para dar para clicar e preencher.
 
-type WithMetadata<P> = P & { metadata: ContentMetadata }
+// A animação é opcional aqui: sem ela, vale "Igual ao site" (como numa página antiga).
+type WithMetadata<P> = Omit<P, 'anim'> & {
+  anim?: P extends { anim: infer A } ? A : never
+  metadata: ContentMetadata
+}
 
 /**
  * No editor, o Puck troca os textos editáveis por um elemento (a edição no lugar); no site, são
@@ -70,27 +82,96 @@ function EditorPlaceholder({ children }: { children: React.ReactNode }) {
   return <div className="editor-placeholder">{children}</div>
 }
 
-/** Caixa da seção: fundo, margens e a âncora do "Nome no menu". */
+/**
+ * Animação que a seção mostra: a dela ou, em "Igual ao site", a da Animação do site
+ * (`lib/motion.ts`). Vira a classe `anim--<nome>`; o movimento em si é todo CSS (`styles.css`).
+ */
+function sectionAnim(
+  type: AnimatedSection,
+  anim: string | undefined,
+  metadata: ContentMetadata,
+): Anim | 'none' {
+  return resolveAnim({ type, anim }, metadata.site.motion)
+}
+
+/** Posição do item, para as animações em sequência (cada item entra um pouco depois). */
+const order = (index: number) => ({ '--i': index }) as React.CSSProperties
+
+/** Caixa da seção: fundo, margens, a âncora do "Nome no menu" e a animação. */
 function Section({
   id,
   metadata,
   style,
+  anim = 'none',
   children,
 }: {
   id: string
   metadata: ContentMetadata
   style: string
+  anim?: Anim | 'none'
   children: React.ReactNode
 }) {
+  const classes = ['section', `section--${style}`, animClass(anim)]
   return (
-    <section className={`section section--${style}`} id={metadata.anchors[id]}>
+    <section className={classes.filter(Boolean).join(' ')} id={metadata.anchors[id]}>
       {children}
     </section>
   )
 }
 
+/**
+ * Título que sobe de dentro de uma máscara, linha por linha (Banner com "Linhas e cortina", Chamada
+ * com "Título sobe"). No site, o título é dividido em linhas (`splitTitleLines`), com as palavras em
+ * destaque; no editor, o título é o campo do Puck e sobe inteiro.
+ */
+function LinedTitle({ title, words = '' }: { title: React.ReactNode; words?: string }) {
+  if (typeof title !== 'string') {
+    return (
+      <span className="line">
+        <span className="anim-part">{title}</span>
+      </span>
+    )
+  }
+  const lines = splitTitleLines(title)
+  // O destaque é procurado no título já dividido (espaços iguais aos das linhas).
+  const parts = splitHighlight(lines.join(' '), words.replace(/\s+/g, ' '))
+  const from = parts ? parts[0].length : -1
+  const to = parts ? from + parts[1].length : -1
+  // Onde cada linha começa no título (as linhas são separadas por um espaço).
+  const starts = lines.map((_, index) =>
+    lines.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0),
+  )
+  return (
+    <>
+      {lines.map((line, index) => {
+        const offset = starts[index]
+        const end = offset + line.length
+        const a = Math.min(Math.max(from, offset), end) - offset
+        const b = Math.min(Math.max(to, offset), end) - offset
+        return (
+          <span className="line" key={index} style={order(index)}>
+            <span className="anim-part">
+              {parts && b > a ? (
+                <>
+                  {line.slice(0, a)}
+                  <em>{line.slice(a, b)}</em>
+                  {line.slice(b)}
+                </>
+              ) : (
+                line
+              )}
+              {/* Espaço entre as linhas, para o leitor de tela e para copiar o título. */}
+              {index < lines.length - 1 && ' '}
+            </span>
+          </span>
+        )
+      })}
+    </>
+  )
+}
+
 function SectionTitle({ title }: { title: React.ReactNode }) {
-  return filled(title) ? <h2 className="section-title">{title}</h2> : null
+  return filled(title) ? <h2 className="section-title anim-part">{title}</h2> : null
 }
 
 /**
@@ -128,6 +209,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
   const align = style === 'side' ? 'left' : props.align
   const isMain = metadata.mainHeadingId === id
   const Heading = isMain ? 'h1' : 'h2'
+  const anim = sectionAnim('Hero', props.anim, metadata)
   const classes = [
     'section',
     style === 'side' ? 'section--soft hero--side' : `section--${style}`,
@@ -135,6 +217,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
     align === 'center' && 'hero--center',
     !photo && 'hero--plain',
     props.height === 'compact' && 'hero--compact',
+    animClass(anim),
   ]
 
   return (
@@ -142,7 +225,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
       {style === 'image' && photo && (
         <>
           <Photo
-            className="hero__bg"
+            className="hero__bg anim-part"
             fill
             media={photo}
             priority={isMain && !metadata.editing}
@@ -152,19 +235,24 @@ export function Hero(props: WithMetadata<HeroProps>) {
         </>
       )}
       <div className="container hero__container">
-        <div className="hero__inner">
+        <div className="hero__inner anim-part">
           {filled(title) && (
             <Heading className="hero__title">
-              <HighlightedTitle title={title} words={highlight} />
+              {anim === 'linhas' ? (
+                <LinedTitle title={title} words={highlight} />
+              ) : (
+                <HighlightedTitle title={title} words={highlight} />
+              )}
             </Heading>
           )}
           {metadata.editing && highlight.trim() && <EditorHighlight words={highlight} />}
-          {filled(text) && <p className="hero__text">{text}</p>}
-          <SectionButton button={button} metadata={metadata} />
+          {filled(text) && <p className="hero__text anim-part">{text}</p>}
+          <SectionButton button={button} className="anim-part" metadata={metadata} />
         </div>
         {style === 'side' && photo && (
-          <div className="hero__photo">
+          <div className="hero__photo anim-part">
             <Photo
+              className="anim-part"
               fill
               media={photo}
               priority={isMain && !metadata.editing}
@@ -184,20 +272,28 @@ export function TextImage({
   image,
   side,
   style,
+  anim,
   metadata,
 }: WithMetadata<TextImageProps>) {
   const photo = getPhoto(metadata, image)
   if (!metadata.editing && !filled(title) && !filled(text) && !photo) return null
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className={`container text-image${side === 'left' ? ' text-image--left' : ''}`}>
-        <div className="text-image__text">
+    <Section
+      anim={sectionAnim('TextImage', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div
+        className={`container text-image anim-part${side === 'left' ? ' text-image--left' : ''}`}
+      >
+        <div className="text-image__text anim-part">
           {filled(title) && <h2>{title}</h2>}
           <Paragraphs text={text} />
         </div>
         {(photo || metadata.editing) && (
-          <div className="text-image__photo">
+          <div className="text-image__photo anim-part">
             {photo ? (
               <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 540px" />
             ) : (
@@ -220,6 +316,7 @@ export function Features({
   items,
   marker = 'none',
   style,
+  anim,
   metadata,
 }: WithMetadata<FeaturesProps>) {
   const shown = metadata.editing
@@ -230,12 +327,17 @@ export function Features({
   const List = marker === 'number' ? 'ol' : 'ul'
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container">
+    <Section
+      anim={sectionAnim('Features', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container anim-part">
         <SectionTitle title={title} />
         <List className={`features${two ? ' features--two' : ''}`}>
           {shown.map((item, index) => (
-            <li className="features__item" key={index}>
+            <li className="features__item anim-part" key={index} style={order(index)}>
               {marker === 'number' && (
                 <span aria-hidden="true" className="features__number">
                   {index + 1}
@@ -257,20 +359,26 @@ export function Testimonials({
   title,
   items,
   style,
+  anim,
   metadata,
 }: WithMetadata<TestimonialsProps>) {
   const shown = metadata.editing ? items : items.filter((item) => filled(item.quote))
   if (!shown.length) return null
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container">
+    <Section
+      anim={sectionAnim('Testimonials', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container anim-part">
         <SectionTitle title={title} />
         <ul className="testimonials">
           {shown.map((item, index) => {
             const photo = getPhoto(metadata, item.photo ?? null)
             return (
-              <li key={index}>
+              <li className="anim-part" key={index} style={order(index)}>
                 <figure>
                   <span aria-hidden="true" className="testimonials__mark">
                     “
@@ -299,13 +407,13 @@ export function Testimonials({
 }
 
 /** Perguntas que abrem a resposta ao clicar (sem JavaScript: `details`). */
-export function Faq({ id, title, items, style, metadata }: WithMetadata<FaqProps>) {
+export function Faq({ id, title, items, style, anim, metadata }: WithMetadata<FaqProps>) {
   const shown = metadata.editing ? items : items.filter((item) => filled(item.question))
   if (!shown.length) return null
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container">
+    <Section anim={sectionAnim('Faq', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
         <SectionTitle title={title} />
         <div className="faq">
           {shown.map((item, index) => (
@@ -339,23 +447,23 @@ export function Faq({ id, title, items, style, metadata }: WithMetadata<FaqProps
   )
 }
 
-export function Gallery({ id, title, images, style, metadata }: WithMetadata<GalleryProps>) {
+export function Gallery({ id, title, images, style, anim, metadata }: WithMetadata<GalleryProps>) {
   // Fotos apagadas da biblioteca somem da galeria; sem nenhuma, a seção some.
   const photos = images.flatMap((ref) => getPhoto(metadata, ref) ?? [])
   if (!photos.length && !metadata.editing) return null
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container">
+    <Section
+      anim={sectionAnim('Gallery', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container anim-part">
         <SectionTitle title={title} />
         {photos.length ? (
-          <ul className={`gallery${photos.length % 2 ? ' gallery--odd' : ''}`}>
-            {photos.map((photo, index) => (
-              <li key={`${photo.id}-${index}`}>
-                <Photo fill media={photo} sizes="(max-width: 720px) 50vw, 340px" />
-              </li>
-            ))}
-          </ul>
+          // No site, cada foto abre em tela cheia (GalleryGrid); no editor, o clique escolhe a seção.
+          <GalleryGrid photos={photos} viewer={!metadata.editing} />
         ) : (
           <EditorPlaceholder>Escolha as fotos da galeria nas opções da seção</EditorPlaceholder>
         )}
@@ -370,14 +478,16 @@ export function CallToAction({
   text,
   button,
   style,
+  anim,
   metadata,
 }: WithMetadata<CallToActionProps>) {
+  const shown = sectionAnim('CallToAction', anim, metadata)
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container cta">
-        {filled(title) && <h2>{title}</h2>}
-        {filled(text) && <p>{text}</p>}
-        <SectionButton button={button} metadata={metadata} />
+    <Section anim={shown} id={id} metadata={metadata} style={style}>
+      <div className="container cta anim-part">
+        {filled(title) && <h2>{shown === 'subir' ? <LinedTitle title={title} /> : title}</h2>}
+        {filled(text) && <p className="anim-part">{text}</p>}
+        <SectionButton button={button} className="anim-part" metadata={metadata} />
       </div>
     </Section>
   )
@@ -386,7 +496,7 @@ export function CallToAction({
 export { mapsURL }
 
 /** Contato e endereço: os dados vêm das configurações e mudam no site todo. */
-export function Contact({ id, title, text, style, metadata }: WithMetadata<ContactProps>) {
+export function Contact({ id, title, text, style, anim, metadata }: WithMetadata<ContactProps>) {
   const { whatsapp, phone, email, address, hours } = metadata.site.contact
   const whatsappHref = whatsAppURL(whatsapp)
   type Item = { icon: ContactIconName; label: string; value: string; href?: string; extra?: string }
@@ -416,8 +526,13 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
   if (hours) items.push({ icon: 'clock', label: 'Horário', value: hours })
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container contact">
+    <Section
+      anim={sectionAnim('Contact', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container contact anim-part">
         <div className="contact__intro">
           {filled(title) && <h2 className="section-title">{title}</h2>}
           <Paragraphs text={text} />
@@ -465,12 +580,17 @@ export function Contact({ id, title, text, style, metadata }: WithMetadata<Conta
 }
 
 /** Política de privacidade: o texto sai das configurações na hora de mostrar (`lib/privacy.ts`). */
-export function Privacy({ id, title, style, metadata }: WithMetadata<PrivacyProps>) {
+export function Privacy({ id, title, style, anim, metadata }: WithMetadata<PrivacyProps>) {
   const Heading = metadata.mainHeadingId === id ? 'h1' : 'h2'
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container rich-text">
+    <Section
+      anim={sectionAnim('Privacy', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container rich-text anim-part">
         {filled(title) && <Heading className="section-title">{title}</Heading>}
         <div>
           {privacyBlocks(metadata.site).map((block, index) => (
@@ -505,8 +625,13 @@ export function Form(props: WithMetadata<FormProps>) {
   const definition = form ? metadata.forms[form.formId] : undefined
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container form-section">
+    <Section
+      anim={sectionAnim('Form', props.anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container form-section anim-part">
         <div className="form-section__intro">
           <SectionTitle title={title} />
           <Paragraphs text={text} />
@@ -532,7 +657,15 @@ export function Form(props: WithMetadata<FormProps>) {
 }
 
 /** Lista de links, como o "link na bio": logo ou iniciais, título, frase e botões grandes. */
-export function LinkList({ id, title, text, items, style, metadata }: WithMetadata<LinkListProps>) {
+export function LinkList({
+  id,
+  title,
+  text,
+  items,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<LinkListProps>) {
   const { logo, name } = metadata.site
   const Heading = metadata.mainHeadingId === id ? 'h1' : 'h2'
   // No editor aparecem todos (o texto é editado ali mesmo); no site, só os que têm destino no ar.
@@ -544,8 +677,13 @@ export function LinkList({ id, title, text, items, style, metadata }: WithMetada
   })
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container link-list">
+    <Section
+      anim={sectionAnim('LinkList', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container link-list anim-part">
         <span aria-hidden="true" className="link-list__avatar">
           {logo ? <Photo fill media={logo} sizes="88px" /> : initials(name)}
         </span>
@@ -554,7 +692,7 @@ export function LinkList({ id, title, text, items, style, metadata }: WithMetada
         {links.length > 0 && (
           <ul className="link-list__links">
             {links.map((link, index) => (
-              <li key={index}>
+              <li className="anim-part" key={index} style={order(index)}>
                 {metadata.editing ? (
                   <span className="link-list__button">{link.label}</span>
                 ) : (
@@ -576,16 +714,22 @@ export function Columns({
   id,
   layout,
   style,
+  anim,
   columns,
   metadata,
 }: Omit<WithMetadata<ColumnsProps>, 'column1' | 'column2' | 'column3'> & {
   columns: React.ReactNode[]
 }) {
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className={`container columns columns--${layout}`}>
+    <Section
+      anim={sectionAnim('Columns', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className={`container columns columns--${layout} anim-part`}>
         {columns.slice(0, COLUMN_COUNT[layout]).map((column, index) => (
-          <div className="columns__column" key={index}>
+          <div className="columns__column anim-part" key={index} style={order(index)}>
             {column}
           </div>
         ))}
@@ -629,11 +773,16 @@ export function ColumnButton({ button, metadata }: WithMetadata<ColumnButtonProp
 }
 
 /** Texto simples. O HTML já chega limpo (lista fechada de marcações, em `schema.ts`). */
-export function RichText({ id, title, body, style, metadata }: WithMetadata<RichTextProps>) {
+export function RichText({ id, title, body, style, anim, metadata }: WithMetadata<RichTextProps>) {
   if (!metadata.editing && !filled(title) && !filled(body)) return null
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container rich-text">
+    <Section
+      anim={sectionAnim('RichText', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container rich-text anim-part">
         <SectionTitle title={title} />
         {/* No editor, o Puck entrega o próprio editor de texto no lugar do HTML. */}
         {typeof body === 'string' ? (
@@ -653,6 +802,7 @@ export function Video({
   caption,
   cover,
   style,
+  anim,
   metadata,
 }: WithMetadata<VideoProps>) {
   if (!videoId && !metadata.editing) return null
@@ -662,11 +812,11 @@ export function Video({
   ) : null
 
   return (
-    <Section id={id} metadata={metadata} style={style}>
-      <div className="container video">
+    <Section anim={sectionAnim('Video', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container video anim-part">
         <SectionTitle title={title} />
         <figure>
-          <div className="video__box">
+          <div className="video__box anim-part">
             {metadata.editing ? (
               // No editor o vídeo não toca: aparece a capa e um aviso.
               <>

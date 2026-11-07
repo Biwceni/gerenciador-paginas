@@ -146,7 +146,7 @@ describe('seções da fase 2', () => {
 describe('âncoras das seções', () => {
   const item = (id: string, menuLabel: string) => ({
     type: 'Contact' as const,
-    props: { id, menuLabel, title: '', text: '', style: 'light' as const },
+    props: { id, menuLabel, title: '', text: '', style: 'light' as const, anim: 'site' as const },
   })
 
   it('vêm do nome no menu, sem acento, e nomes repetidos ganham número', () => {

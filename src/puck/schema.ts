@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { isSafeURL } from '../lib/links'
+import { type Anim, SECTION_ANIMS } from '../lib/motion'
 import { sanitizeRichText } from '../lib/richtext'
 import { YOUTUBE_ID } from '../lib/youtube'
 
@@ -55,6 +56,15 @@ const menuLabel = z.string().max(40)
 
 const title = z.string().max(120)
 
+/**
+ * Animação da seção (redesign v3, entrega 2): "Igual ao site" (padrão), "Sem animação" ou uma das
+ * pensadas para a seção (`lib/motion.ts`). Campo novo com padrão, e valor desconhecido também vira
+ * "Igual ao site": páginas antigas continuam válidas e iguais, e a versão continua a 2.
+ */
+const anim = <const T extends readonly Anim[]>(options: T) =>
+  // Com a lista genérica, o TypeScript não vê que 'site' está nela (está: é o primeiro item).
+  z.enum(['site', 'none', ...options] as ['site', 'none', ...T]).catch('site' as never)
+
 export const heroPropsSchema = z.object({
   id: componentId,
   title,
@@ -69,6 +79,7 @@ export const heroPropsSchema = z.object({
   height: z.enum(['normal', 'compact']).default('normal'),
   // Palavras do título em itálico, na cor do site (redesign v3; com padrão: a versão continua 2).
   highlight: z.string().max(120).default(''),
+  anim: anim(SECTION_ANIMS.Hero),
 })
 
 export const textImagePropsSchema = z.object({
@@ -79,6 +90,7 @@ export const textImagePropsSchema = z.object({
   image: photoRefSchema,
   side: z.enum(['left', 'right']),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.TextImage),
 })
 
 /** Ícones dos Destaques (desenhos em `components/FeatureIcon.tsx`). */
@@ -122,6 +134,7 @@ export const featuresPropsSchema = z.object({
     .min(1)
     .max(6),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Features),
 })
 
 /** Depoimentos. A foto é opcional e nova, com padrão "sem foto". */
@@ -140,6 +153,7 @@ export const testimonialsPropsSchema = z.object({
     .min(1)
     .max(8),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Testimonials),
 })
 
 export const faqPropsSchema = z.object({
@@ -151,6 +165,7 @@ export const faqPropsSchema = z.object({
     .min(1)
     .max(12),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Faq),
 })
 
 export const galleryPropsSchema = z.object({
@@ -159,6 +174,7 @@ export const galleryPropsSchema = z.object({
   title,
   images: z.array(z.object({ mediaId: id })).max(24),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Gallery),
 })
 
 export const callToActionPropsSchema = z.object({
@@ -168,6 +184,7 @@ export const callToActionPropsSchema = z.object({
   text: z.string().max(300),
   button: buttonSchema.nullable(),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.CallToAction),
 })
 
 /** Os dados de contato vêm das configurações do site; a seção só tem título e frase. */
@@ -177,6 +194,7 @@ export const contactPropsSchema = z.object({
   title,
   text: z.string().max(300),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Contact),
 })
 
 /** O texto é montado na hora, com os dados das configurações (`lib/privacy.ts`). */
@@ -185,6 +203,7 @@ export const privacyPropsSchema = z.object({
   menuLabel,
   title,
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Privacy),
 })
 
 export const linkListPropsSchema = z.object({
@@ -193,6 +212,7 @@ export const linkListPropsSchema = z.object({
   text: z.string().max(300),
   items: z.array(buttonSchema).min(1).max(12),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.LinkList),
 })
 
 /** HTML limpo no servidor (lista fechada de marcações), porque o Puck o desenha sem filtro. */
@@ -204,6 +224,7 @@ export const richTextPropsSchema = z.object({
   title,
   body: richText,
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.RichText),
 })
 
 export const videoPropsSchema = z.object({
@@ -215,6 +236,7 @@ export const videoPropsSchema = z.object({
   caption: z.string().max(200),
   cover: photoRefSchema,
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Video),
 })
 
 // Peças que só existem dentro das Colunas.
@@ -243,6 +265,7 @@ export const formPropsSchema = z.object({
   /** Frase que aparece no lugar do formulário depois de enviar. */
   successMessage: z.string().max(200),
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Form),
 })
 
 export const columnButtonPropsSchema = z.object({
@@ -277,6 +300,7 @@ export const columnsPropsSchema = z.object({
   column2: column,
   column3: column,
   style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Columns),
 })
 
 const componentSchema = z.discriminatedUnion('type', [

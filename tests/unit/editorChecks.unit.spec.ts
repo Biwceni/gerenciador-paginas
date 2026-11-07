@@ -95,6 +95,8 @@ describe('botão de WhatsApp na página', () => {
       props: {
         id: 'Columns-1',
         menuLabel: '',
+
+        anim: 'site',
         layout: 'half',
         column1: [
           {

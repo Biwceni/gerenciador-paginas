@@ -64,6 +64,8 @@ describe('textos de exemplo', () => {
       props: {
         id: 'Columns-1',
         menuLabel: '',
+
+        anim: 'site',
         layout: 'half',
         column1: [{ type: 'ColumnText', props: { id: 'c1', title: '', text: L_S } }],
         column2: [],

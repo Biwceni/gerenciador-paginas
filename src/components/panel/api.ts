@@ -31,6 +31,7 @@ export function blankContent(title: string): PageContent {
       align: 'center',
       height: 'normal',
       highlight: '',
+      anim: 'site',
     },
   })
   return content
