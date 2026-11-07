@@ -7,6 +7,7 @@ import { colorField } from '../fields/color'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
 import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
+import { DEFAULT_MOTION, MOTION_LABELS, MOTIONS } from '../lib/motion'
 import {
   DEFAULT_COLORS,
   DEFAULT_PERSONALITY,
@@ -197,6 +198,17 @@ export const Site: GlobalConfig = {
               admin: {
                 description:
                   'Muda formas, tamanhos e a arrumação do banner e das seções em todas as páginas. O conteúdo não muda.',
+              },
+            },
+            {
+              name: 'motion',
+              type: 'select',
+              label: 'Animação do site',
+              defaultValue: DEFAULT_MOTION,
+              options: MOTIONS.map((value) => ({ value, label: MOTION_LABELS[value].name })),
+              admin: {
+                description:
+                  'Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode ter a sua própria animação ou ficar sem. Quem pediu ao celular para reduzir movimentos vê só um esmaecer.',
               },
             },
             {

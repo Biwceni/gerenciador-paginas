@@ -1952,7 +1952,7 @@
         color: #fff;
         animation: site-header-solid linear both;
         animation-timeline: scroll(root);
-        animation-range: 0 160px;
+        animation-range: 0 80px;
       }
 
       &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
@@ -2120,11 +2120,647 @@
   }
 }
 
-/* Topo da Vitrine por cima da foto: fica sólido conforme a página rola (styles acima). */
+/*
+ * Topo da Vitrine por cima da foto: nos primeiros 80 px de rolagem fica sólido, com o fundo do site
+ * um pouco translúcido e a foto desfocada por trás (styles acima).
+ */
 @keyframes site-header-solid {
   to {
     border-bottom-color: var(--color-line);
-    background-color: var(--color-background);
+    background-color: color-mix(in srgb, var(--color-background) 86%, transparent);
     color: var(--color-text);
+    backdrop-filter: blur(14px) saturate(1.3);
+  }
+}
+
+/*
+ * Animação (redesign v3, entrega 2). Cada seção tem `anim anim--<nome>` (lib/motion.ts) e as peças
+ * que se movem têm `anim-part`. As regras abaixo só dizem, por animação, QUAL quadro cada peça usa
+ * (`--anim`), por quanto tempo (`--dur`), com que atraso (`--delay`) e se entra em sequência
+ * (`--stagger`, com a posição `--i` do item). Quem põe para andar são poucas regras gerais:
+ *
+ * - Banner: ao abrir a página, por tempo (funciona em todo navegador, sem JavaScript).
+ * - Outras seções: ao rolar (`animation-timeline: view()`), só onde o navegador tem suporte. Sem
+ *   suporte, a seção aparece parada e inteira: nada começa escondido.
+ * - "Ver a animação" do editor: a classe `anim-play`, por alguns segundos, toca por tempo.
+ * - Quem pediu menos movimento vê só a seção esmaecer, rápido.
+ *
+ * Só o site no ar anima sozinho (`data-animate` no `body`); as prévias do editor e do painel, não.
+ * Quadros só com transform, opacity e clip-path. Uma regra por seletor (veja EditorFrame.tsx).
+ */
+
+.site .anim-part {
+  --anim: none;
+}
+
+/* Máscara das linhas que sobem. `clip`, e não `hidden`, para não virar área de rolagem. */
+.site .line {
+  display: block;
+  overflow: clip;
+  margin: -0.1em -0.12em;
+  padding: 0.1em 0.12em;
+}
+
+.site .line > span {
+  display: block;
+}
+
+/* Banner: Linhas e cortina */
+.site .hero.anim--linhas .line > .anim-part {
+  --anim: site-rise;
+  --dur: 1s;
+  --delay: calc(var(--i, 0) * 90ms);
+}
+
+/*
+ * A cortina da foto do banner é uma camada POR CIMA da foto, que se recolhe de cima para baixo (as
+ * regras com `::after`, mais abaixo). A foto em si é pintada inteira desde o primeiro quadro: assim
+ * a animação não atrasa o maior conteúdo da tela (LCP).
+ */
+
+.site .hero.anim--linhas .hero__text {
+  --anim: site-fade;
+  --dur: 0.9s;
+  --delay: 0.35s;
+}
+
+.site .hero.anim--linhas .hero__inner > .button {
+  --anim: site-fade;
+  --dur: 0.9s;
+  --delay: 0.35s;
+}
+
+/* Banner: Foto aproxima */
+.site .hero.anim--zoom .hero__bg {
+  --anim: site-zoom;
+  --dur: 2.6s;
+}
+
+.site .hero.anim--zoom .hero__photo img {
+  --anim: site-zoom;
+  --dur: 2.6s;
+}
+
+.site .hero.anim--zoom .hero__inner {
+  --anim: site-fade;
+  --dur: 1s;
+  --delay: 0.2s;
+}
+
+/* Banner: Esmaecer */
+.site .hero.anim--esmaecer .hero__inner {
+  --anim: site-fade-only;
+  --dur: 0.8s;
+}
+
+/* A foto do banner não esmaece: quem esmaece é uma camada por cima dela (regras com ::after). */
+
+/* Esmaecer: a seção inteira */
+.site .anim--esmaecer > .container {
+  --anim: site-fade;
+}
+
+/* Um depois do outro */
+.site .anim--cascata .section-title {
+  --anim: site-fade;
+}
+
+.site .anim--cascata .features__item {
+  --anim: site-up;
+  --stagger: 1;
+}
+
+.site .anim--cascata .testimonials > li {
+  --anim: site-up;
+  --stagger: 1;
+}
+
+.site .anim--cascata .columns__column {
+  --anim: site-up;
+  --stagger: 1;
+}
+
+.site .anim--cascata .link-list__links > li {
+  --anim: site-up;
+  --stagger: 1;
+}
+
+/* Vêm do lado (Depoimentos) e Vêm dos lados (Texto com foto: a foto do lado dela). */
+.site .anim--deslizar {
+  overflow-x: clip;
+}
+
+.site .anim--deslizar .section-title {
+  --anim: site-fade;
+}
+
+.site .anim--deslizar .testimonials > li {
+  --anim: site-fromright;
+  --stagger: 1;
+}
+
+.site .anim--deslizar .text-image__photo {
+  --anim: site-fromright;
+}
+
+.site .anim--deslizar .text-image__text {
+  --anim: site-fromleft;
+}
+
+.site .anim--deslizar .text-image--left .text-image__photo {
+  --anim: site-fromleft;
+}
+
+.site .anim--deslizar .text-image--left .text-image__text {
+  --anim: site-fromright;
+}
+
+/* Fotos em sequência */
+.site .anim--sequencia .section-title {
+  --anim: site-fade;
+}
+
+.site .anim--sequencia .gallery > li {
+  --anim: site-pop;
+  --stagger: 1;
+}
+
+/* Fotos aproximam (dentro da moldura) */
+.site .anim--zoom .section-title {
+  --anim: site-fade;
+}
+
+.site .anim--zoom .gallery > li {
+  overflow: clip;
+}
+
+.site .anim--zoom .gallery img {
+  --anim: site-zoom;
+}
+
+/* Em cortina */
+.site .anim--cortina .section-title {
+  --anim: site-fade;
+}
+
+.site .anim--cortina .text-image__photo {
+  --anim: site-curtain;
+}
+
+.site .anim--cortina .video__box {
+  --anim: site-curtain;
+}
+
+.site .anim--cortina .text-image__text {
+  --anim: site-fade;
+}
+
+/* Título sobe (Chamada para ação) */
+.site .anim--subir .line > .anim-part {
+  --anim: site-rise;
+  --stagger: 1;
+}
+
+.site .anim--subir .cta > p {
+  --anim: site-fade;
+}
+
+.site .anim--subir .cta > .button {
+  --anim: site-fade;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /*
+   * Seções: ao rolar, cada uma entra enquanto aparece na tela (até 45% da entrada). Nas que entram
+   * em sequência, o atraso para no 5º item (min(--i, 4)): numa galeria grande no fim da página, o
+   * intervalo das últimas fotos passaria do fim da entrada e elas nunca terminariam de aparecer.
+   */
+  @supports (animation-timeline: view()) {
+    .site[data-animate] .anim .anim-part {
+      animation: var(--anim) linear both;
+      animation-timeline: view();
+      animation-range: entry calc(min(var(--i, 0), 4) * var(--stagger, 0) * 6%) entry
+        calc(45% + min(var(--i, 0), 4) * var(--stagger, 0) * 6%);
+    }
+
+    /* Paralaxe leve da foto de fundo do banner (até 12%), conforme ele sai da tela. */
+    .site[data-animate] .hero.section--image.anim--linhas {
+      view-timeline: --site-hero block;
+    }
+
+    .site[data-animate] .hero.section--image.anim--linhas .hero__bg {
+      animation: site-drift linear both;
+      animation-timeline: --site-hero;
+      animation-range: exit 0% exit 100%;
+    }
+  }
+
+  /* Banner: ao abrir a página, por tempo. */
+  .site[data-animate] .hero.anim .anim-part {
+    animation: var(--anim) var(--dur, 0.8s) cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s) both;
+    animation-timeline: auto;
+    animation-range: normal;
+  }
+
+  /* Cortina do banner: a camada na cor do fundo se recolhe e mostra a foto. */
+  .site[data-animate] .hero.anim--linhas .hero__shade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-deep);
+    animation: site-uncover 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .site .hero.anim--linhas.anim-play .hero__shade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-deep);
+    animation: site-uncover 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .site[data-animate] .hero.anim--linhas .hero__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface);
+    animation: site-uncover 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .site .hero.anim--linhas.anim-play .hero__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface);
+    animation: site-uncover 1.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Esmaecer do banner: a camada some aos poucos e mostra a foto. */
+  .site[data-animate] .hero.anim--esmaecer .hero__shade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-deep);
+    animation: site-cover-out 0.8s ease both;
+  }
+
+  .site .hero.anim--esmaecer.anim-play .hero__shade::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-deep);
+    animation: site-cover-out 0.8s ease both;
+  }
+
+  .site[data-animate] .hero.anim--esmaecer .hero__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface);
+    animation: site-cover-out 0.8s ease both;
+  }
+
+  .site .hero.anim--esmaecer.anim-play .hero__photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface);
+    animation: site-cover-out 0.8s ease both;
+  }
+
+  /* "Ver a animação" no editor: toca uma vez, por tempo, a seção escolhida (o mesmo teto). */
+  .site .anim-play .anim-part {
+    animation: var(--anim) var(--dur, 0.8s) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--delay, calc(min(var(--i, 0), 4) * var(--stagger, 0) * 110ms)) both;
+    animation-timeline: auto;
+    animation-range: normal;
+  }
+}
+
+/* Menos movimento: nada se move, a seção só esmaece, rápido. */
+@media (prefers-reduced-motion: reduce) {
+  .site[data-animate] .anim {
+    animation: site-fade-only 0.35s both;
+  }
+
+  .site .anim-play {
+    animation: site-fade-only 0.35s both;
+  }
+}
+
+/*
+ * Retornos ao passar o mouse (só em aparelho com mouse e sem o pedido de menos movimento): o botão
+ * sobe 2 px com uma sombra deslocada, sem brilho colorido; a foto da galeria aproxima 6%.
+ */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .site .button {
+    transition:
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .site .button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 rgb(0 0 0 / 18%);
+  }
+
+  .site .gallery__open img {
+    transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .site .gallery__open:hover img {
+    transform: scale(1.06);
+  }
+}
+
+/* Galeria: cada foto é um botão que abre a tela cheia. */
+.site .gallery__open {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.site .gallery__open:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+/* Tela cheia da galeria */
+.site .lightbox {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(10 10 10 / 94%);
+  color: #fff;
+}
+
+.site .lightbox::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
+.site .lightbox__inner {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  padding: 64px 72px 24px;
+}
+
+.site .lightbox__figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 0;
+  margin: 0;
+}
+
+.site .lightbox__photo {
+  position: relative;
+  min-height: 0;
+  view-transition-name: site-lightbox-photo;
+}
+
+.site .lightbox__photo img {
+  object-fit: contain !important;
+}
+
+.site .lightbox__caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 900px;
+  margin-inline: auto;
+  width: 100%;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.site .lightbox__count {
+  flex: none;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.site .lightbox__nav {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-top: -24px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+  cursor: pointer;
+}
+
+.site .lightbox__nav--prev {
+  left: 12px;
+}
+
+.site .lightbox__nav--next {
+  right: 12px;
+}
+
+.site .lightbox__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+  cursor: pointer;
+}
+
+.site .lightbox__nav:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.site .lightbox__close:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .site .lightbox__inner {
+    padding: 64px 12px 16px;
+  }
+
+  .site .lightbox__nav {
+    top: auto;
+    bottom: 64px;
+    margin-top: 0;
+  }
+}
+
+/*
+ * Botão do WhatsApp que acompanha a rolagem: só no celular (site com até 760 px), longe das bordas
+ * arredondadas e da barra do aparelho. Sai da frente quando o formulário ou a chamada estão na tela.
+ */
+.site .wa-float {
+  display: none;
+}
+
+@container site (max-width: 760px) {
+  .site .wa-float {
+    position: fixed;
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 0 20px 0 16px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 22%);
+    transition:
+      opacity 0.25s,
+      transform 0.25s;
+  }
+
+  .site .wa-float .contact__icon {
+    margin: 0;
+    color: inherit;
+  }
+
+  /* O rodapé termina acima do botão: nenhum link fica por baixo dele. */
+  .site:has(> .wa-float) > .site-footer {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .site .wa-float[data-hidden] {
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+  }
+
+  .site .wa-float:focus-visible {
+    outline: 3px solid var(--color-text);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site .wa-float {
+    transition: opacity 0.2s;
+  }
+
+  .site .wa-float[data-hidden] {
+    transform: none;
+  }
+}
+
+@keyframes site-rise {
+  from {
+    transform: translateY(105%);
+  }
+}
+
+@keyframes site-curtain {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes site-cover-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes site-uncover {
+  from {
+    clip-path: inset(0);
+  }
+
+  to {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+/*
+ * Esmaecer começa em 0,01, e não em 0: invisível ao olho, mas o navegador já conta o texto como
+ * pintado. Começando em 0, ele só conta no fim, e o maior conteúdo da tela (LCP) atrasaria.
+ */
+@keyframes site-fade {
+  from {
+    opacity: 0.01;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes site-fade-only {
+  from {
+    opacity: 0.01;
+  }
+}
+
+@keyframes site-up {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+
+@keyframes site-fromleft {
+  from {
+    opacity: 0;
+    transform: translateX(-56px);
+  }
+}
+
+@keyframes site-fromright {
+  from {
+    opacity: 0;
+    transform: translateX(56px);
+  }
+}
+
+@keyframes site-zoom {
+  from {
+    transform: scale(1.18);
+  }
+}
+
+@keyframes site-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes site-drift {
+  to {
+    transform: translateY(12%);
   }
 }

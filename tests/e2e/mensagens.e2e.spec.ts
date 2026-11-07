@@ -160,6 +160,8 @@ test.describe.serial('mensagens e formulários', () => {
       props: {
         id: 'Form-1',
         menuLabel: '',
+
+        anim: 'site',
         title: 'Fale',
         text: '',
         form: { formId },

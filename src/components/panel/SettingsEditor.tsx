@@ -19,6 +19,7 @@ import {
 import { themeStyle } from '@/components/site/theme'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
 import { whatsAppURL } from '@/lib/links'
+import { MOTION_LABELS, MOTIONS } from '@/lib/motion'
 import { panelHref } from '@/lib/panel'
 import {
   COLOR_FIELDS,
@@ -610,6 +611,32 @@ export function SettingsEditor({
                 onChange={(personality) => update({ personality })}
                 value={state.personality}
               />
+
+              <fieldset className="gp-choices gp-field">
+                <legend className="gp-label">Animação do site</legend>
+                <span className="gp-hint">
+                  Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode
+                  ter a sua própria animação ou ficar sem. Quem pediu ao celular para reduzir
+                  movimentos vê só um esmaecer.
+                </span>
+                <div className="gp-choices__list">
+                  {MOTIONS.map((motion) => (
+                    <label className="gp-choice" key={motion}>
+                      <input
+                        checked={state.motion === motion}
+                        name="st-motion"
+                        onChange={() => update({ motion })}
+                        type="radio"
+                        value={motion}
+                      />
+                      <span>
+                        <b>{MOTION_LABELS[motion].name}</b>
+                        <span className="gp-hint">{MOTION_LABELS[motion].description}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <div className="gp-field">
                 <span className="gp-label">Combinações prontas</span>

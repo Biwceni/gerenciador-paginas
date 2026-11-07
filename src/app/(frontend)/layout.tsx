@@ -74,7 +74,13 @@ ${fallbacks}`),
           />
         ) : null}
       </head>
-      <body className="site" data-personality={sitePersonality(site)} style={themeStyle(site)}>
+      {/* `data-animate`: só o site no ar anima sozinho; as prévias do editor e do painel, não. */}
+      <body
+        className="site"
+        data-animate=""
+        data-personality={sitePersonality(site)}
+        style={themeStyle(site)}
+      >
         <a className="skip-link" href="#conteudo">
           Pular para o conteúdo
         </a>

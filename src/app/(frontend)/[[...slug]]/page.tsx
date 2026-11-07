@@ -9,6 +9,7 @@ import { Photo } from '@/components/site/Photo'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteLink } from '@/components/site/SiteLink'
+import { WhatsAppFloat } from '@/components/site/WhatsAppFloat'
 import {
   getHomepage,
   getPageBySlug,
@@ -190,6 +191,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
         <Render config={renderConfig} data={data} metadata={metadata} />
       </main>
       <SiteFooter campaign={campaign} />
+      {metadata.whatsappHref && <WhatsAppFloat href={metadata.whatsappHref} />}
     </>
   )
 }

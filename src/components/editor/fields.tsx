@@ -553,3 +553,41 @@ export function StackedChoiceField({
     </div>
   )
 }
+
+type ThumbOption = { value: string; label: string; hint?: string; thumb: React.ReactNode }
+
+/**
+ * Escolha única por miniatura (um desenho de cada opção), em grade de dois. Serve às escolhas
+ * visuais das seções, como a Animação. Por baixo, botões de rádio: as setas do teclado trocam.
+ */
+export function ThumbChoiceField({
+  name,
+  onChange,
+  options,
+  readOnly,
+  value,
+  label,
+}: FieldProps<string> & { name: string; options: ThumbOption[]; label?: string }) {
+  return (
+    <div aria-label={label} className="ed-thumbs" role="radiogroup">
+      {options.map((option) => (
+        <label className="ed-thumb" key={option.value}>
+          <input
+            checked={value === option.value}
+            className="ed-thumb__input"
+            disabled={readOnly}
+            name={name}
+            onChange={() => onChange(option.value)}
+            type="radio"
+            value={option.value}
+          />
+          {option.thumb}
+          <span className="ed-thumb__text">
+            <b>{option.label}</b>
+            {option.hint && <span className="ed-hint">{option.hint}</span>}
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}

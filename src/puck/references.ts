@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 
 import { type FormDefinition, toFormDefinition } from '../lib/forms'
 import { relationID } from '../lib/relations'
+import type { Motion } from '../lib/motion'
 import type { Media, Site } from '../payload-types'
 import { sectionAnchors } from './anchors'
 import { type LinkRef, parsePageContent, type PhotoRef, type PuckPageData } from './schema'
@@ -37,6 +38,8 @@ export type SiteInfo = {
   contact: NonNullable<Site['contact']>
   /** Endereço da página de privacidade, só quando ela está no ar. */
   privacyHref?: string | null
+  /** Animação do site: vale nas seções em "Igual ao site" (`lib/motion.ts`). Sem ela, a padrão. */
+  motion?: Motion
 }
 
 type References = {
