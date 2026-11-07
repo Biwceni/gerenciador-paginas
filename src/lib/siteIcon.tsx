@@ -7,18 +7,18 @@ import { siteInitials } from './initials'
 import { FALLBACK_SITE_NAME, getServerURL } from './site'
 import { DEFAULT_COLORS } from './theme'
 
-/** O logo das configurações, recortado em quadrado pelo centro, em PNG. Nada se não der. */
-async function logoIcon(url: string, size: number): Promise<Buffer | null> {
+/**
+ * O logo das configurações num quadrado, inteiro, sobre a cor de fundo do site (um logo largo, com o
+ * nome por extenso, não perde as pontas). Em PNG; nada se não der.
+ */
+async function logoIcon(url: string, size: number, background: string): Promise<Buffer | null> {
   try {
     const response = await fetch(new URL(url, getServerURL()), {
       signal: AbortSignal.timeout(8_000),
     })
     if (!response.ok) return null
     const file = Buffer.from(await response.arrayBuffer())
-    return await sharp(file)
-      .resize(size, size, { fit: 'cover', position: 'centre' })
-      .png()
-      .toBuffer()
+    return await sharp(file).resize(size, size, { fit: 'contain', background }).png().toBuffer()
   } catch {
     return null
   }
@@ -32,7 +32,8 @@ async function logoIcon(url: string, size: number): Promise<Buffer | null> {
 export async function siteIconResponse(size: number): Promise<Response> {
   const site = await getSite()
   const logo = populatedMedia(site.logo)
-  const png = logo?.url ? await logoIcon(logo.url, size) : null
+  const backdrop = safeColor(site.colors?.background, DEFAULT_COLORS.background)
+  const png = logo?.url ? await logoIcon(logo.url, size, backdrop) : null
   if (png) {
     return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } })
   }

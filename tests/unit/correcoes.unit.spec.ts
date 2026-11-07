@@ -37,6 +37,12 @@ describe('topo do celular', () => {
     expect(mobileCtaMode('Café Grão', { label: 'Encomendar', href: '/encomendas' })).toBe('text')
   })
 
+  it('com logo, sobra menos espaço para o texto do botão', () => {
+    const button = { label: 'Encomendar', href: 'https://wa.me/5531999990000' }
+    expect(mobileCtaMode('Doces da Ana Luiza', button)).toBe('text')
+    expect(mobileCtaMode('Doces da Ana Luiza', button, true)).toBe('icon')
+  })
+
   it('sem espaço, fica só o ícone, se o destino tiver um', () => {
     const name = 'Mrs. Kluana Confeitaria Artesanal'
     expect(mobileCtaMode(name, { label: 'Pedir', href: 'https://wa.me/5511999990000' })).toBe(

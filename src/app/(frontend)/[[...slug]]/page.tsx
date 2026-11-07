@@ -156,30 +156,24 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
   )
   const campaign = Boolean(page.campaign)
 
-  // Dados para o Google: o negócio na página inicial e o caminho a partir do Início em todas.
+  // Dados para o Google: o negócio na página inicial e, nas outras, o caminho a partir do Início
+  // (o Google pede pelo menos dois itens, então a inicial fica sem).
   const name = site.name || FALLBACK_SITE_NAME
   const homeURL = new URL('/', getServerURL()).toString()
-  const structuredData = [
-    ...(isHome
-      ? [
-          localBusinessJsonLd({
-            site,
-            name,
-            url: homeURL,
-            logo: populatedMedia(site.logo),
-            image: populatedMedia(site.shareImage),
-            sameAs: footerSocial(site).map((social) => social.url),
-          }),
-        ]
-      : []),
-    breadcrumbJsonLd({
-      homeName: name,
-      homeURL,
-      page: isHome
-        ? null
-        : { title: page.title, url: new URL(`/${page.slug}`, homeURL).toString() },
-    }),
-  ]
+  const structuredData = isHome
+    ? localBusinessJsonLd({
+        site,
+        name,
+        url: homeURL,
+        logo: populatedMedia(site.logo),
+        image: populatedMedia(site.shareImage),
+        sameAs: footerSocial(site).map((social) => social.url),
+      })
+    : breadcrumbJsonLd({
+        homeName: name,
+        homeURL,
+        page: { title: page.title, url: new URL(`/${page.slug}`, homeURL).toString() },
+      })
 
   return (
     <>

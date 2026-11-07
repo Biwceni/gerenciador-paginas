@@ -70,14 +70,16 @@ export function localBusinessJsonLd({
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined))
 }
 
-/** Caminho da página a partir do Início. Na própria página inicial, só ela. */
+/** Caminho da página a partir do Início (só fora da página inicial: o Google pede dois itens). */
 export function breadcrumbJsonLd(input: {
   homeName: string
   homeURL: string
-  page: { title: string; url: string } | null
+  page: { title: string; url: string }
 }): JsonLd {
-  const items = [{ name: input.homeName, url: input.homeURL }]
-  if (input.page) items.push({ name: input.page.title, url: input.page.url })
+  const items = [
+    { name: input.homeName, url: input.homeURL },
+    { name: input.page.title, url: input.page.url },
+  ]
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -91,8 +93,8 @@ export function breadcrumbJsonLd(input: {
 }
 
 /**
- * Texto do `<script type="application/ld+json">`. O `<` vira `<`, para um nome ou frase com
- * "</script>" não fechar a tag antes da hora.
+ * Texto do `<script type="application/ld+json">`. O `<` vira o escape Unicode dele (o `replace`
+ * abaixo), para um nome ou frase com "</script>" não fechar a tag antes da hora.
  */
 export function jsonLdText(data: JsonLd | JsonLd[]): string {
   return JSON.stringify(data).replace(/</g, '\\u003c')

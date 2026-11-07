@@ -30,18 +30,25 @@ function metricsByName() {
 export async function fallbackFontFaces(names: (string | null | undefined)[]): Promise<string> {
   const wanted = [...new Set(names.flatMap((name) => name?.trim() || []))]
   if (!wanted.length) return ''
-  const metrics = await metricsByName()
-  const serif = metrics.get('times new roman')
-  const sans = metrics.get('arial')
-  if (!serif || !sans) return ''
+  // A reserva é só um ganho: se a tabela não carregar ou a conta falhar, o site sai sem ela (e a
+  // próxima página tenta carregar a tabela de novo).
+  try {
+    const metrics = await metricsByName()
+    const serif = metrics.get('times new roman')
+    const sans = metrics.get('arial')
+    if (!serif || !sans) return ''
 
-  return wanted
-    .flatMap((name) => {
-      const font = metrics.get(name.toLowerCase())
-      if (!font) return []
-      const base = font.category === 'serif' ? serif : sans
-      const { fontFaces } = createFontStack([{ ...font, familyName: name }, base])
-      return [fontFaces]
-    })
-    .join('\n')
+    return wanted
+      .flatMap((name) => {
+        const font = metrics.get(name.toLowerCase())
+        if (!font) return []
+        const base = font.category === 'serif' ? serif : sans
+        const { fontFaces } = createFontStack([{ ...font, familyName: name }, base])
+        return [fontFaces]
+      })
+      .join('\n')
+  } catch {
+    byName = null
+    return ''
+  }
 }

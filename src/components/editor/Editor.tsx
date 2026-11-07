@@ -412,6 +412,22 @@ export function Editor(props: EditorProps) {
     return () => window.removeEventListener('beforeunload', warn)
   }, [])
 
+  // O indicador de carregamento do Puck é um `<span aria-label>` sem papel (axe
+  // aria-prohibited-attr) e não tem override: ganha `role="status"` assim que aparece.
+  useEffect(() => {
+    const root = document.querySelector('.ed-root')
+    if (!root) return
+    const fix = () => {
+      for (const loader of root.querySelectorAll('[class*="Loader"][aria-label]:not([role])')) {
+        loader.setAttribute('role', 'status')
+      }
+    }
+    fix()
+    const observer = new MutationObserver(fix)
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
   const onAction = useCallback(
     (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
@@ -616,8 +632,6 @@ export function Editor(props: EditorProps) {
                 metadata={metadata}
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
-                // O indicador de carregamento do Puck é um `<span aria-label>` sem papel (axe
-                // aria-prohibited-attr): vem de dentro do pacote, sem override para trocar.
                 overrides={{
                   header: EditorHeader,
                   iframe: EditorFrame,

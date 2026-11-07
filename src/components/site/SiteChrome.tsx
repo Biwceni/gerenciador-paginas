@@ -30,11 +30,17 @@ export function hasCtaIcon(href: string): boolean {
 /**
  * Como o botão de destaque aparece no topo do celular, decidido já no servidor (assim o topo não
  * muda de tamanho depois que a página carrega): com o texto, se ele e o nome do site cabem; só com
- * o ícone, se o destino tem um; senão, só dentro do ☰. Nunca uma seta sem texto.
+ * o ícone, se o destino tem um; senão, só dentro do ☰. Nunca uma seta sem texto. O logo (38 px e
+ * o espaço até o nome) ocupa o lugar de umas 6 letras.
  */
-export function mobileCtaMode(name: string, button: { label: string; href: string }) {
+export function mobileCtaMode(
+  name: string,
+  button: { label: string; href: string },
+  hasLogo = false,
+) {
   const label = button.label.trim()
-  if (label.length <= 12 && name.length + label.length <= 30) return 'text'
+  const room = hasLogo ? 24 : 30
+  if (label.length <= 12 && name.length + label.length <= room) return 'text'
   return hasCtaIcon(button.href) ? 'icon' : 'menu'
 }
 
@@ -96,7 +102,7 @@ export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderPr
   return (
     <header
       className="site-header"
-      data-cta={button && hasNav ? mobileCtaMode(name, button) : undefined}
+      data-cta={button && hasNav ? mobileCtaMode(name, button, Boolean(logo)) : undefined}
     >
       <div className="container site-header__bar">
         <Link className="site-header__brand" href="/">
