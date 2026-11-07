@@ -64,7 +64,8 @@ function siteRules(rules: CSSRule[]): string[] {
         : rule instanceof CSSSupportsRule
           ? `@supports ${rule.conditionText}`
           : typeof CSSContainerRule !== 'undefined' && rule instanceof CSSContainerRule
-            ? `@container ${rule.containerName} ${rule.conditionText}`
+            ? // O texto da condição já traz o nome do contêiner ("site (max-width: 720px)").
+              `@container ${rule.conditionText}`
             : null
     if (!prelude || !('cssRules' in rule)) return []
     const inner = siteRules(Array.from((rule as CSSGroupingRule).cssRules))

@@ -14,8 +14,22 @@ const SUFFIX = Date.now()
 const WIDTHS = [390, 768, 1024, 1440]
 const PERSONALITIES = ['classico', 'vitrine', 'aconchego', 'editorial'] as const
 
+const COVER_SLUG = `vitrine-${SUFFIX}`
+
+// PNG de 1 pixel, que o servidor consegue ler.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/p+Fn4QAAAABJRU5ErkJggg==',
+  'base64',
+)
+
 let homeId: number
+let coverId: number
+let photoId: number
 let previous: object | null = null
+
+/** Fundo do topo do site, como o visitante vê. */
+const headerBackground = (page: Page) =>
+  page.locator('.site-header').evaluate((header) => getComputedStyle(header).backgroundColor)
 
 async function open(page: Page, path: string) {
   await page.goto(`${BASE}${path}`)
@@ -84,6 +98,56 @@ test.describe.serial('personalidades do site', () => {
       overrideAccess: true,
     })
     homeId = home.id
+    const photo = await payload.create({
+      collection: 'media',
+      data: { alt: 'Xícara de café' },
+      file: { data: PNG, mimetype: 'image/png', name: `vitrine-${SUFFIX}.png`, size: PNG.length },
+      overrideAccess: true,
+    })
+    photoId = photo.id
+    // Banner "Foto" no topo da página: é onde a Vitrine põe o topo por cima da foto.
+    const cover = await payload.create({
+      collection: 'pages',
+      data: {
+        title: `Vitrine ${SUFFIX}`,
+        slug: COVER_SLUG,
+        content: {
+          version: CONTENT_VERSION,
+          data: {
+            root: { props: {} },
+            content: [
+              {
+                type: 'Hero',
+                props: {
+                  id: 'Hero-capa',
+                  title: 'Café da Serra',
+                  highlight: '',
+                  text: 'Torrado toda semana.',
+                  image: { mediaId: photo.id },
+                  button: null,
+                  style: 'image',
+                  align: 'left',
+                  height: 'normal',
+                },
+              },
+              {
+                type: 'RichText',
+                props: {
+                  id: 'RichText-capa',
+                  menuLabel: '',
+                  title: 'Nossa história',
+                  body: `<p>${'Texto para a página ter o que rolar. '.repeat(60)}</p>`,
+                  style: 'light',
+                },
+              },
+            ],
+          },
+        },
+        _status: 'published',
+      },
+      overrideAccess: true,
+    })
+    coverId = cover.id
     const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true })
     previous = {
       ...(site.name ? { name: site.name } : {}),
@@ -108,14 +172,16 @@ test.describe.serial('personalidades do site', () => {
         overrideAccess: true,
       })
     }
-    if (homeId) {
+    for (const id of [homeId, coverId]) {
+      if (!id) continue
       await payload.delete({
         collection: 'pages',
-        id: homeId,
+        id,
         overrideAccess: true,
         context: { seedRecreate: true },
       })
     }
+    if (photoId) await payload.delete({ collection: 'media', id: photoId, overrideAccess: true })
     await page?.close()
     await cleanupTestUser()
   })
@@ -157,6 +223,45 @@ test.describe.serial('personalidades do site', () => {
       document.body.style.width = '400px'
     })
     expect(new Set(await lefts()).size).toBe(1)
+  })
+
+  test('Vitrine: topo por cima da foto fica sólido ao rolar; com menos movimento, topo de sempre', async () => {
+    await publishPersonality('vitrine')
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await open(page, `/${COVER_SLUG}`)
+    await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky')
+    expect(await headerBackground(page)).toBe('rgba(0, 0, 0, 0)')
+    // O topo cobre o começo da foto: o banner sobe até o alto da página.
+    const [header, hero] = await Promise.all(
+      ['.site-header', '.hero'].map((selector) => page.locator(selector).boundingBox()),
+    )
+    expect(Math.round(hero!.y)).toBe(Math.round(header!.y))
+
+    await page.mouse.wheel(0, 600)
+    await expect.poll(() => headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
+
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await open(page, `/${COVER_SLUG}`)
+    await expect(page.locator('.site-header')).toHaveCSS('position', 'relative')
+    expect(await headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
+    await page.emulateMedia({ reducedMotion: null })
+  })
+
+  test('editor: a prévia do celular usa a arrumação de celular', async () => {
+    await publishPersonality('editorial')
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(`${BASE}/admin/editor/${homeId}`)
+    const items = page.frameLocator('#preview-frame').locator('.features__item')
+    await expect(items).toHaveCount(3, { timeout: 120_000 })
+    const columns = async () =>
+      new Set(
+        await items.evaluateAll((list) =>
+          list.map((item) => Math.round(item.getBoundingClientRect().left)),
+        ),
+      ).size
+    await expect.poll(columns).toBe(3)
+    await page.getByRole('button', { name: 'Ver como celular' }).click()
+    await expect.poll(columns).toBe(1)
   })
 
   test('Configurações: escolher a personalidade muda a prévia e só vai ao ar ao publicar', async () => {
