@@ -2136,6 +2136,59 @@ textarea.gp-input {
   }
 }
 
+// Personalidade do site: miniatura nas cores escolhidas, nome e uma frase. Duas por linha.
+.gp-personality {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  &__option {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 8px 12px;
+    border: 1px solid var(--gp-line-strong);
+    border-radius: 12px;
+    background: var(--gp-surface);
+    color: var(--gp-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--gp-accent);
+      background: var(--gp-accent-soft);
+      box-shadow: inset 0 0 0 1px var(--gp-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--gp-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  &__thumb {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px var(--gp-line);
+  }
+
+  &__text {
+    display: grid;
+    gap: 2px;
+    padding-inline: 4px;
+    font-size: var(--gp-fs-help);
+    line-height: 1.35;
+
+    b {
+      font-size: var(--gp-fs-card);
+    }
+  }
+}
+
 // Frase de exemplo na fonte digitada, embaixo do campo.
 .gp-fontsample {
   font-size: var(--gp-fs-card);

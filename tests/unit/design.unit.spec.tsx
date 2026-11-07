@@ -110,6 +110,7 @@ describe('Banner: Foto ao lado', () => {
     style: 'side' as const,
     align: 'center' as const,
     height: 'normal' as const,
+    highlight: '',
   }
 
   it('é aceito pelo esquema sem mudar a versão do conteúdo', () => {

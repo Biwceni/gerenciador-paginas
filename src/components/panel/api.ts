@@ -30,6 +30,7 @@ export function blankContent(title: string): PageContent {
       style: 'soft',
       align: 'center',
       height: 'normal',
+      highlight: '',
     },
   })
   return content

@@ -1,17 +1,39 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { shortTagline } from '@/lib/highlight'
 import { instagramLink, mapsURL, whatsAppURL } from '@/lib/links'
+import type { Personality } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
 import { Photo } from './Photo'
 import { SiteLink } from './SiteLink'
+import { sitePersonality } from './theme'
 
 // Desenho do topo e do rodapé, só a partir dos dados. O site passa o que está publicado
 // (`SiteHeader`, `SiteFooter`); a tela "Menu e rodapé" do painel passa o rascunho, na prévia.
 
 export type MenuItem = { id: string; label: string; href: string; current: boolean }
+
+/**
+ * O que muda no topo e no rodapé com a personalidade (redesign v3). No Clássico, nada: o topo e o
+ * rodapé ficam como antes. Nas outras, o logo cresce (redondo, quando é quadrado ou em pé), a frase
+ * de apresentação curta vai embaixo do nome e o logo aparece também no rodapé.
+ */
+export type SiteBrand = { personality: Personality; tagline: string | null }
+
+export function siteBrand(site: Partial<Site>): SiteBrand {
+  return { personality: sitePersonality(site), tagline: shortTagline(site.tagline) }
+}
+
+/** Logo quadrado ou em pé: fica redondo (o deitado, com o nome escrito, fica inteiro). */
+export function isRoundLogo(logo: Media): boolean {
+  return Boolean(logo.width && logo.height && logo.width <= logo.height * 1.15)
+}
+
+const isBranded = (brand: SiteBrand | undefined): brand is SiteBrand =>
+  Boolean(brand && brand.personality !== 'classico')
 
 type HeaderProps = {
   name: string
@@ -20,6 +42,7 @@ type HeaderProps = {
   button: { label: string; href: string } | null
   /** Página de campanha: só a marca, sem menu, para o visitante não sair da página. */
   campaign?: boolean
+  brand?: SiteBrand
 }
 
 /** O destino do botão tem um ícone que diz o que ele faz (WhatsApp, telefone, e-mail). */
@@ -77,8 +100,16 @@ function CtaIcon({ href }: { href: string }) {
   )
 }
 
-export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderProps) {
+export function SiteHeaderView({ name, logo, items, button, campaign, brand }: HeaderProps) {
   const hasNav = !campaign && (items.length > 0 || button)
+  const branded = isBranded(brand)
+  const tagline = branded ? brand.tagline : null
+  const brandClass = [
+    'site-header__brand',
+    tagline && 'site-header__brand--tagline',
+    tagline && logo && 'site-header__brand--logo',
+  ]
+  const round = branded && logo && isRoundLogo(logo)
 
   const navContent = (
     <>
@@ -105,9 +136,16 @@ export function SiteHeaderView({ name, logo, items, button, campaign }: HeaderPr
       data-cta={button && hasNav ? mobileCtaMode(name, button, Boolean(logo)) : undefined}
     >
       <div className="container site-header__bar">
-        <Link className="site-header__brand" href="/">
-          {logo && <Photo className="site-header__logo" media={logo} sizes="160px" />}
+        <Link className={brandClass.filter(Boolean).join(' ')} href="/">
+          {logo && (
+            <Photo
+              className={round ? 'site-header__logo site-header__logo--round' : 'site-header__logo'}
+              media={logo}
+              sizes="160px"
+            />
+          )}
           <span>{name}</span>
+          {tagline && <small className="site-header__tagline">{tagline}</small>}
         </Link>
         {hasNav && (
           <>
@@ -187,6 +225,9 @@ type FooterProps = {
   campaign?: boolean
   /** Página de privacidade, só quando está no ar. */
   privacyHref?: string | null
+  /** Logo do site: aparece no rodapé nas personalidades novas. */
+  logo?: Media | null
+  brand?: SiteBrand
 }
 
 export function SiteFooterView({
@@ -198,6 +239,8 @@ export function SiteFooterView({
   social,
   campaign,
   privacyHref,
+  logo,
+  brand,
 }: FooterProps) {
   const year = new Date().getFullYear()
   const privacy = privacyHref && (
@@ -233,6 +276,17 @@ export function SiteFooterView({
       <div className="container">
         <div className="site-footer__cols">
           <div>
+            {isBranded(brand) && logo && (
+              <Photo
+                className={
+                  isRoundLogo(logo)
+                    ? 'site-footer__logo site-footer__logo--round'
+                    : 'site-footer__logo'
+                }
+                media={logo}
+                sizes="200px"
+              />
+            )}
             <h2 className="site-footer__title">{name}</h2>
             {text && <p>{text}</p>}
           </div>

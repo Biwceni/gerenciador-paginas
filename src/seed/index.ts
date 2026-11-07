@@ -78,6 +78,7 @@ const pages: SeedPage[] = [
           style: 'soft',
           align: 'left',
           height: 'normal',
+          highlight: '',
         },
       },
       {
@@ -118,6 +119,7 @@ const pages: SeedPage[] = [
           style: 'brand',
           align: 'center',
           height: 'normal',
+          highlight: '',
         },
       },
       {
@@ -161,6 +163,7 @@ const pages: SeedPage[] = [
           style: 'image',
           align: 'left',
           height: 'normal',
+          highlight: '',
         },
       },
       {
@@ -245,6 +248,7 @@ const pages: SeedPage[] = [
           style: 'image',
           align: 'left',
           height: 'normal',
+          highlight: '',
         },
       },
       {

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect } from 'react'
 
+import { applySiteTheme } from '@/components/site/theme'
 import { safeStyleText } from '@/lib/theme'
 
 type FrameStyle = {
@@ -40,17 +41,36 @@ export function siteCSS(): string {
       // Folha de outro domínio: o navegador não deixa ler, e ela não é a do site.
       continue
     }
-    for (const rule of rules) {
-      if (isSiteRule(rule)) parts.push(rule.cssText)
-      else if (rule instanceof CSSMediaRule) {
-        const inner = Array.from(rule.cssRules).filter(isSiteRule)
-        if (inner.length) {
-          parts.push(`@media ${rule.conditionText}{${inner.map((r) => r.cssText).join('')}}`)
-        }
-      }
-    }
+    parts.push(...siteRules(rules))
   }
   return parts.join('\n')
+}
+
+/** Quadros de animação do site: os nomes começam com `site-` (ficam fora do `.site`). */
+const SITE_KEYFRAMES = /^site-/
+
+/**
+ * As regras do site de uma lista, com as condições em volta (`@media`, `@container`,
+ * `@supports`, uma dentro da outra), e os quadros de animação do site.
+ */
+function siteRules(rules: CSSRule[]): string[] {
+  return rules.flatMap((rule) => {
+    if (isSiteRule(rule)) return [rule.cssText]
+    if (rule instanceof CSSKeyframesRule)
+      return SITE_KEYFRAMES.test(rule.name) ? [rule.cssText] : []
+    const prelude =
+      rule instanceof CSSMediaRule
+        ? `@media ${rule.conditionText}`
+        : rule instanceof CSSSupportsRule
+          ? `@supports ${rule.conditionText}`
+          : typeof CSSContainerRule !== 'undefined' && rule instanceof CSSContainerRule
+            ? // O texto da condição já traz o nome do contêiner ("site (max-width: 720px)").
+              `@container ${rule.conditionText}`
+            : null
+    if (!prelude || !('cssRules' in rule)) return []
+    const inner = siteRules(Array.from((rule as CSSGroupingRule).cssRules))
+    return inner.length ? [`${prelude}{${inner.join('')}}`] : []
+  })
 }
 
 /** Moldura e barra da seção escolhida no verde do painel, como fora da prévia. */
@@ -85,7 +105,7 @@ export function EditorFrame({
     frame.defaultView?.frameElement?.setAttribute('title', 'Prévia da página')
     frame.documentElement.setAttribute('lang', 'pt-BR')
     frame.body.classList.add('site')
-    for (const [name, value] of Object.entries(theme)) frame.body.style.setProperty(name, value)
+    applySiteTheme(frame.body, theme)
 
     const added: Element[] = []
     const addStyle = (css: string) => {

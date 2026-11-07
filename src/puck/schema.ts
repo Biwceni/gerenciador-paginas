@@ -67,6 +67,8 @@ export const heroPropsSchema = z.object({
   align: z.enum(['left', 'center']),
   // `compact`: banner baixo, para páginas como Contato (opção nova, com padrão: a versão continua 2).
   height: z.enum(['normal', 'compact']).default('normal'),
+  // Palavras do título em itálico, na cor do site (redesign v3; com padrão: a versão continua 2).
+  highlight: z.string().max(120).default(''),
 })
 
 export const textImagePropsSchema = z.object({

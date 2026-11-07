@@ -10,7 +10,12 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
-import { footerSocial, SiteFooterView, SiteHeaderView } from '@/components/site/SiteChrome'
+import {
+  footerSocial,
+  siteBrand,
+  SiteFooterView,
+  SiteHeaderView,
+} from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
 import { whatsAppURL } from '@/lib/links'
@@ -32,6 +37,7 @@ import { discardSettings, publishSettings, saveGlobalDraft } from './api'
 import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
+import { PersonalityPicker } from './PersonalityPicker'
 import { PhotoChooser } from './PhotoChooser'
 import { SaveStatus } from './SaveStatus'
 import { type SettingsState, toSiteData, validateSettings } from './settings'
@@ -265,7 +271,12 @@ export function SettingsEditor({
   }
 
   const contrast = contrastWarnings(state.colors)
-  const previewSite = { colors: state.colors, fonts: state.fonts } as Partial<Site>
+  const previewSite = {
+    colors: state.colors,
+    fonts: state.fonts,
+    personality: state.personality,
+  } as Partial<Site>
+  const previewBrand = siteBrand({ personality: state.personality, tagline: state.tagline })
   const previewFonts = [...new Set([state.fonts.headings, state.fonts.body].filter(Boolean))]
   const changed = pending || save !== 'idle'
   const hasErrors = Object.keys(errors).length > 0
@@ -344,6 +355,7 @@ export function SettingsEditor({
   const preview = (
     <>
       <SiteHeaderView
+        brand={previewBrand}
         button={{ label: 'Fale conosco', href: '/' }}
         items={['Início', 'Sobre', 'Contato'].map((label) => ({
           id: label,
@@ -354,15 +366,31 @@ export function SettingsEditor({
         logo={logo}
         name={state.name || 'Meu site'}
       />
+      {/* Banner com "foto ao lado": a foto é um bloco na cor do site, para mostrar o formato. */}
+      <section className="section section--soft hero hero--side">
+        <div className="container hero__container">
+          <div className="hero__inner">
+            <h2 className="hero__title">
+              {state.tagline.split('.')[0] || 'Assim fica o seu site'}
+            </h2>
+            <p className="hero__text">
+              Assim ficam os textos do seu site, com as letras e as cores que você escolheu.
+            </p>
+            <span className="button">Conheça</span>
+          </div>
+          <div
+            aria-hidden="true"
+            className="hero__photo"
+            style={{
+              background: 'linear-gradient(160deg, var(--color-primary), var(--color-deep) 85%)',
+            }}
+          />
+        </div>
+      </section>
       <section className="section section--light">
         <div className="container">
-          <h2 className="section-title">
-            {state.tagline.split('.')[0] || 'Assim fica o seu site'}
-          </h2>
-          <p>Assim ficam os textos do seu site, com as letras e as cores que você escolheu.</p>
-          <p style={{ marginTop: 20 }}>
-            <span className="button">Conheça</span>
-          </p>
+          <h2 className="section-title">Títulos das seções</h2>
+          <p>Cada seção do site segue este jeito: tamanhos, espaços e cantos.</p>
         </div>
       </section>
       <section className="section section--soft" style={{ paddingBlock: 28 }}>
@@ -374,6 +402,7 @@ export function SettingsEditor({
         </div>
       </section>
       <SiteFooterView
+        brand={previewBrand}
         contact={{
           whatsapp: state.contact.whatsapp || null,
           whatsappHref: whatsAppURL(state.contact.whatsapp),
@@ -381,6 +410,7 @@ export function SettingsEditor({
           address: state.contact.address || null,
           hours: state.contact.hours || null,
         }}
+        logo={logo}
         menu={[]}
         name={state.name || 'Meu site'}
         showContact
@@ -575,6 +605,12 @@ export function SettingsEditor({
           </div>
           <div className="gp-style">
             <div className="gp-style__controls">
+              <PersonalityPicker
+                colors={state.colors}
+                onChange={(personality) => update({ personality })}
+                value={state.personality}
+              />
+
               <div className="gp-field">
                 <span className="gp-label">Combinações prontas</span>
                 <span className="gp-hint">

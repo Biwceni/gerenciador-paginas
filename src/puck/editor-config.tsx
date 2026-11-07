@@ -149,6 +149,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
   Hero: {
     fields: {
       title: text('Título'),
+      // Não é escrito na página: são palavras que já estão no título.
+      highlight: { type: 'text', label: 'Palavras em destaque (opcional)' },
+      // Campo que não guarda nada: só a explicação do destaque.
+      ...({
+        highlightHint: notice(
+          'Copie do título as palavras que devem ficar em itálico, na cor do site. Ex.: “feito à mão”.',
+        ),
+      } as object),
       text: textarea('Frase'),
       button,
       style: {
@@ -188,6 +196,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       style: 'image',
       align: 'left',
       height: 'normal',
+      highlight: '',
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },

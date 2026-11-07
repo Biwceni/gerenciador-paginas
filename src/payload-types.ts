@@ -1013,6 +1013,10 @@ export interface Site {
    */
   privacyPage?: (number | null) | Page;
   /**
+   * Muda formas, tamanhos e a arrumação do banner e das seções em todas as páginas. O conteúdo não muda.
+   */
+  personality?: ('classico' | 'vitrine' | 'aconchego' | 'editorial') | null;
+  /**
    * A cor do texto dos botões e do rodapé é escolhida sozinha, para ficar fácil de ler.
    */
   colors: {
@@ -1149,6 +1153,7 @@ export interface SiteSelect<T extends boolean = true> {
   logo?: T;
   homepage?: T;
   privacyPage?: T;
+  personality?: T;
   colors?:
     | T
     | {

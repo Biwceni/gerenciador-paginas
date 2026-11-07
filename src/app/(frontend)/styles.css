@@ -20,6 +20,11 @@
   --fs-h1: clamp(34px, 21.6px + 3.19vw, 56px);
   /* Linha de texto corrido com ~65 letras. */
   --measure: 65ch;
+  /*
+   * O site é o "contêiner" das seções: elas mudam de arrumação pela largura do site (`@container
+   * site`), e não da janela. Assim a prévia do editor e as do painel respondem ao tamanho delas.
+   */
+  container: site / inline-size;
   box-sizing: border-box;
   margin: 0;
   font-family: var(--font-body);
@@ -48,6 +53,13 @@
     font-family: var(--font-headings);
     line-height: 1.15;
     text-wrap: balance;
+  }
+
+  /* Peso e espaço entre letras dos títulos grandes: da personalidade (theme.ts). */
+  & h1,
+  & h2 {
+    font-weight: var(--heading-weight, 700);
+    letter-spacing: var(--heading-tracking, normal);
   }
 
   & h3 {
@@ -100,13 +112,13 @@
   /* Margens em todas as seções: nada encostado na borda da tela (problema da POC). */
   .container {
     width: 100%;
-    max-width: 1080px;
+    max-width: var(--container, 1080px);
     margin: 0 auto;
     padding-inline: clamp(18px, 5vw, 48px);
   }
 
   .section {
-    padding-block: clamp(44px, 8vw, 88px);
+    padding-block: var(--section-pad, clamp(44px, 8vw, 88px));
   }
 
   .section--light {
@@ -161,7 +173,7 @@
   .section-title {
     margin-bottom: 28px;
     font-size: var(--fs-h2);
-    font-weight: 700;
+    font-weight: var(--heading-weight, 700);
   }
 
   .page-title {
@@ -177,7 +189,7 @@
     gap: 8px;
     padding: 11px 22px;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius, 999px);
     background: var(--color-primary);
     color: var(--color-on-primary);
     font-size: 15px;
@@ -229,7 +241,7 @@
   }
 
   /* No computador o nome fica numa linha: o topo mede se ele e o menu cabem (HeaderMenu). */
-  @media (min-width: 721px) {
+  @container site (min-width: 721px) {
     .site-header__brand span {
       white-space: nowrap;
     }
@@ -359,7 +371,7 @@
     display: grid;
   }
 
-  @media (min-width: 721px) and (max-width: 1023px) {
+  @container site (min-width: 721px) and (max-width: 1023px) {
     .site-header:not(.site-header--full) .site-header__nav {
       position: absolute;
       top: 0;
@@ -452,7 +464,7 @@
    * O nome do site vai em até duas linhas, com letra menor; o botão de destaque segue o `data-cta`
    * (texto, só o ícone ou só dentro do ☰), calculado pelo tamanho do nome e do texto do botão.
    */
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .site-header__bar {
       gap: 12px;
       padding-block: 10px;
@@ -549,6 +561,8 @@
   .site-footer__title {
     margin-bottom: 10px;
     font-size: 16px;
+    font-weight: 700;
+    letter-spacing: normal;
   }
 
   .site-footer ul {
@@ -588,7 +602,7 @@
    * Celular: cada link do rodapé com 44 px de altura de verdade. Uma área invisível maior que o
    * link (com a lista a 29 px) invadia o link de baixo; assim, nenhuma passa por cima de outra.
    */
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .site-footer li > a,
     .site-footer--campaign a {
       display: flex;
@@ -642,7 +656,7 @@
     padding: 0;
   }
 
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .site-footer__cols {
       grid-template-columns: 1fr;
     }
@@ -697,7 +711,32 @@
 
   .hero__title {
     font-size: var(--fs-h1);
-    font-weight: 700;
+    font-weight: var(--heading-weight, 700);
+  }
+
+  /*
+   * Palavras em destaque no título: itálico, na cor do site com contraste de leitura em cada fundo
+   * (theme.ts). Na prévia do editor, só a cor (`::highlight`, EditorHighlight.tsx).
+   */
+  .hero {
+    --hero-em: var(--color-accent-text);
+  }
+
+  .hero.section--image {
+    --hero-em: var(--color-accent-on-photo);
+  }
+
+  .hero.section--brand {
+    --hero-em: currentColor;
+  }
+
+  .hero__title em {
+    font-style: italic;
+    color: var(--hero-em);
+  }
+
+  & ::highlight(site-highlight) {
+    color: var(--hero-em);
   }
 
   .hero__text {
@@ -711,7 +750,7 @@
 
   /* Celular: a película fica mais escura, para o título branco não passar por cima de rostos e de
      partes claras da foto. */
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .hero__shade {
       background: linear-gradient(180deg, rgba(24, 14, 8, 0.62), rgba(24, 14, 8, 0.8));
     }
@@ -762,10 +801,10 @@
     position: relative;
     aspect-ratio: 4 / 3;
     overflow: hidden;
-    border-radius: 20px;
+    border-radius: calc(var(--radius-media, 16px) + 4px);
   }
 
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .hero--side .hero__container {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -796,7 +835,7 @@
   .text-image__photo {
     position: relative;
     aspect-ratio: 4 / 3;
-    border-radius: 16px;
+    border-radius: var(--radius-media, 16px);
     overflow: hidden;
   }
 
@@ -814,7 +853,7 @@
   .gallery li {
     position: relative;
     aspect-ratio: 1;
-    border-radius: 14px;
+    border-radius: calc(var(--radius-media, 16px) - 2px);
     overflow: hidden;
   }
 
@@ -897,7 +936,7 @@
     font-size: var(--fs-h2);
   }
 
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .text-image {
       grid-template-columns: 1fr;
     }
@@ -1240,7 +1279,7 @@
   .link-list__button {
     display: block;
     padding: 16px;
-    border-radius: 14px;
+    border-radius: min(var(--radius, 999px), 14px);
     background: var(--color-primary);
     color: var(--color-on-primary);
     font-weight: 600;
@@ -1305,7 +1344,7 @@
   .column-image img {
     display: block;
     width: 100%;
-    border-radius: 14px;
+    border-radius: calc(var(--radius-media, 16px) - 2px);
   }
 
   .column-image figcaption {
@@ -1365,7 +1404,7 @@
   .video__box {
     position: relative;
     aspect-ratio: 16 / 9;
-    border-radius: 16px;
+    border-radius: var(--radius-media, 16px);
     overflow: hidden;
     background: var(--color-primary);
   }
@@ -1411,7 +1450,7 @@
     outline-offset: -6px;
   }
 
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .features,
     .features--two,
     .testimonials,
@@ -1460,7 +1499,7 @@
     box-sizing: border-box;
     padding: 12px 14px;
     border: 1px solid var(--color-line);
-    border-radius: 12px;
+    border-radius: min(var(--radius, 999px), 12px);
     background: var(--color-background);
     color: var(--color-text);
     font: inherit;
@@ -1521,7 +1560,7 @@
     color: var(--color-on-primary);
   }
 
-  @media (max-width: 720px) {
+  @container site (max-width: 720px) {
     .form-section {
       grid-template-columns: minmax(0, 1fr);
     }
@@ -1599,5 +1638,493 @@
   & [contenteditable]:empty::before {
     content: 'Clique para escrever';
     opacity: 0.5;
+  }
+
+  /*
+   * Personalidades (redesign v3). O Clássico é o visual de antes: nada daqui vale para ele. As
+   * medidas (letras, cantos, espaços, largura) vêm das variáveis de theme.ts; aqui fica o que muda
+   * a arrumação. Uma regra por seletor (ver o aviso lá em cima).
+   */
+
+  /* Vitrine, Aconchego e Editorial: títulos maiores, mais ar e topo e rodapé com mais marca. */
+  &[data-personality]:not([data-personality='classico']) {
+    .section-title {
+      max-width: 18ch;
+      margin-bottom: clamp(28px, 4.5cqi, 52px);
+      line-height: 1.04;
+    }
+
+    .text-image__text h2 {
+      line-height: 1.04;
+    }
+
+    .cta {
+      max-width: 880px;
+      gap: 20px;
+    }
+
+    .cta h2 {
+      max-width: 16ch;
+      line-height: 1.04;
+    }
+
+    /* Botões das seções com 48 px de altura (o do topo continua o de antes). */
+    .section .button {
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 24px;
+    }
+
+    /* Banner */
+
+    .hero__inner {
+      gap: 22px;
+      max-width: 780px;
+    }
+
+    .hero__title {
+      line-height: 0.98;
+    }
+
+    .hero--plain .hero__title {
+      max-width: 18ch;
+    }
+
+    .hero--plain .hero__text {
+      max-width: 52ch;
+    }
+
+    .hero.section--image {
+      min-height: clamp(380px, 52cqi, 640px);
+    }
+
+    .hero__shade {
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-deep) 86%, transparent),
+        color-mix(in srgb, var(--color-deep) 30%, transparent)
+      );
+    }
+
+    .hero--side .hero__photo {
+      aspect-ratio: 4 / 5;
+      max-height: 640px;
+    }
+
+    /* Texto com foto: a foto ganha um par deslocado atrás dela, na cor do site. */
+    .text-image {
+      --pair-x: clamp(12px, 2cqi, 24px);
+      --pair-color: color-mix(in srgb, var(--color-primary) 24%, transparent);
+      gap: clamp(28px, 6cqi, 88px);
+    }
+
+    .section--brand .text-image {
+      --pair-color: color-mix(in srgb, var(--color-on-primary) 28%, transparent);
+    }
+
+    .text-image__photo {
+      aspect-ratio: 4 / 5;
+      box-shadow: var(--pair-x) var(--pair-x) 0 0 var(--pair-color);
+    }
+
+    .text-image--left .text-image__photo {
+      box-shadow: calc(-1 * var(--pair-x)) var(--pair-x) 0 0 var(--pair-color);
+    }
+
+    /* Texto simples: o título de um lado e o texto do outro, quando cabe. */
+    @container site (min-width: 900px) {
+      .rich-text:has(> .section-title) {
+        display: grid;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        column-gap: clamp(32px, 5cqi, 72px);
+        align-items: start;
+      }
+
+      .rich-text > .section-title {
+        margin-bottom: 0;
+      }
+    }
+
+    /* Título ao lado do conteúdo (Contato, Formulário): sem o espaço de baixo dos outros. */
+    .contact__intro .section-title {
+      margin-bottom: 0;
+    }
+
+    .form-section__intro .section-title {
+      margin-bottom: 0;
+    }
+
+    /* Topo: logo maior (redondo quando é quadrado ou em pé) e a frase curta embaixo do nome. */
+
+    .site-header__logo {
+      height: 52px;
+      border-radius: min(var(--radius-media), 10px);
+    }
+
+    .site-header__logo--round {
+      width: 52px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .site-header__brand {
+      gap: 12px;
+    }
+
+    .site-header__brand--tagline {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 3px;
+    }
+
+    .site-header__brand--logo {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 12px;
+    }
+
+    .site-header__brand--logo .site-header__logo {
+      grid-row: span 2;
+    }
+
+    .site-header__brand--tagline > span {
+      align-self: end;
+    }
+
+    .site-header__tagline {
+      grid-column: -2;
+      align-self: start;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      line-height: 1.3;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+
+    /* Com o ☰ (o topo não coube), a frase sai: o nome fica com o espaço todo. */
+    .site-header--compact .site-header__tagline {
+      display: none;
+    }
+
+    @container site (min-width: 721px) and (max-width: 1023px) {
+      .site-header:not(.site-header--full) .site-header__tagline {
+        display: none;
+      }
+    }
+
+    @container site (max-width: 720px) {
+      .site-header__logo {
+        height: 40px;
+      }
+
+      .site-header__logo--round {
+        width: 40px;
+      }
+
+      .site-header__tagline {
+        display: none;
+      }
+    }
+
+    /* Rodapé: logo grande e links sempre sublinhados (não dependem só da cor). */
+
+    .site-footer__logo {
+      display: block;
+      width: auto;
+      height: 72px;
+      margin-bottom: 14px;
+      border-radius: min(var(--radius-media), 12px);
+    }
+
+    .site-footer__logo--round {
+      width: 72px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .site-footer a {
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+      text-underline-offset: 4px;
+    }
+
+    .site-footer a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    @container site (max-width: 720px) {
+      .text-image__photo {
+        aspect-ratio: 4 / 3;
+      }
+
+      .hero--side .hero__photo {
+        aspect-ratio: 4 / 3;
+      }
+    }
+  }
+
+  /* Vitrine e Editorial: o 2º destaque de cada linha desce um pouco, como numa vitrine. */
+
+  &[data-personality='vitrine'] .features:not(.features--two) > .features__item:nth-child(3n + 2) {
+    margin-top: clamp(0px, 6cqi, 72px);
+  }
+
+  &[data-personality='vitrine'] .features--two > .features__item:nth-child(2n) {
+    margin-top: clamp(0px, 6cqi, 72px);
+  }
+
+  &[data-personality='editorial']
+    .features:not(.features--two)
+    > .features__item:nth-child(3n + 2) {
+    margin-top: clamp(0px, 8cqi, 96px);
+  }
+
+  &[data-personality='editorial'] .features--two > .features__item:nth-child(2n) {
+    margin-top: clamp(0px, 8cqi, 96px);
+  }
+
+  /* Numa coluna só, todos alinhados (os mesmos seletores, para valer por cima). */
+  @container site (max-width: 720px) {
+    &[data-personality='vitrine']
+      .features:not(.features--two)
+      > .features__item:nth-child(3n + 2) {
+      margin-top: 0;
+    }
+
+    &[data-personality='vitrine'] .features--two > .features__item:nth-child(2n) {
+      margin-top: 0;
+    }
+
+    &[data-personality='editorial']
+      .features:not(.features--two)
+      > .features__item:nth-child(3n + 2) {
+      margin-top: 0;
+    }
+
+    &[data-personality='editorial'] .features--two > .features__item:nth-child(2n) {
+      margin-top: 0;
+    }
+  }
+
+  /*
+   * Vitrine: o banner com foto cobre a tela, com o texto no pé e o título enorme. O topo fica
+   * transparente por cima da foto e sólido ao rolar (só onde o navegador acompanha a rolagem pelo
+   * CSS; nos outros, o topo é o de sempre, em cima do banner). Só no site: na prévia do editor o
+   * topo é outra peça.
+   */
+
+  &[data-personality='vitrine'] .hero.section--image {
+    min-height: min(86vh, 760px);
+    align-items: end;
+    padding-top: clamp(120px, 16cqi, 180px);
+    padding-bottom: clamp(40px, 7cqi, 88px);
+  }
+
+  &[data-personality='vitrine'] .hero.hero--compact.section--image {
+    min-height: min(52vh, 460px);
+  }
+
+  &[data-personality='vitrine'] .hero.section--image .hero__inner {
+    max-width: 980px;
+  }
+
+  &[data-personality='vitrine'] .hero.section--image .hero__shade {
+    background: linear-gradient(
+      180deg,
+      rgb(0 0 0 / 42%) 0%,
+      rgb(0 0 0 / 22%) 28%,
+      color-mix(in srgb, var(--color-deep) 80%, transparent) 60%,
+      color-mix(in srgb, var(--color-deep) 94%, transparent) 100%
+    );
+  }
+
+  /* Quem pediu menos movimento vê o topo de sempre, sólido, sem a troca ao rolar. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        border-bottom-color: transparent;
+        background: transparent;
+        color: #fff;
+        animation: site-header-solid linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 160px;
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > .site-header
+        .site-header__bar {
+        min-height: 80px;
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > .site-header
+        .site-header__burger {
+        border-color: color-mix(in srgb, currentColor 40%, transparent);
+        color: inherit;
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > .site-header
+        .site-header__nav
+        ul
+        a[aria-current='page'] {
+        color: inherit;
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > .site-header
+        .site-header__mobile {
+        color: var(--color-text);
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+        > main
+        > .hero.section--image:first-of-type {
+        margin-top: -81px;
+      }
+
+      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type) section[id] {
+        scroll-margin-top: 96px;
+      }
+
+      @container site (max-width: 720px) {
+        &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+          > .site-header
+          .site-header__bar {
+          min-height: 64px;
+        }
+
+        &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
+          > main
+          > .hero.section--image:first-of-type {
+          margin-top: -65px;
+        }
+      }
+    }
+  }
+
+  /* Aconchego: formas redondas, fotos em arco, títulos das seções no centro. */
+
+  &[data-personality='aconchego'] .hero--side .hero__photo {
+    border-radius: 999px 999px 28px 28px;
+  }
+
+  &[data-personality='aconchego'] .text-image__photo {
+    border-radius: 999px 999px 28px 28px;
+  }
+
+  &[data-personality='aconchego'] .container:not(.rich-text) > .section-title {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  &[data-personality='aconchego'] .testimonials figure {
+    height: 100%;
+    padding: clamp(20px, 3cqi, 32px);
+    border-radius: 24px;
+    background: var(--color-surface);
+  }
+
+  &[data-personality='aconchego'] .section--soft .testimonials figure {
+    background: var(--color-background);
+  }
+
+  &[data-personality='aconchego'] .section--brand .testimonials figure {
+    background: color-mix(in srgb, var(--color-on-primary) 12%, transparent);
+  }
+
+  /*
+   * Editorial: grade de revista. Banner com foto ao lado em 12 colunas (título em 7, foto 3:4 nas 5
+   * da direita, alinhada pela base), fios em cima dos títulos e numeração das seções.
+   */
+
+  &[data-personality='editorial'] .hero--side {
+    padding-bottom: 0;
+  }
+
+  &[data-personality='editorial'] .hero--side .hero__container {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: clamp(16px, 2.4cqi, 32px);
+    align-items: end;
+  }
+
+  &[data-personality='editorial'] .hero--side .hero__inner {
+    grid-column: 1 / span 7;
+    max-width: none;
+    padding-bottom: clamp(40px, 6cqi, 72px);
+  }
+
+  &[data-personality='editorial'] .hero.hero--side .hero__photo {
+    grid-column: 8 / span 5;
+    aspect-ratio: 3 / 4;
+  }
+
+  &[data-personality='editorial'] .hero__title {
+    line-height: 0.95;
+  }
+
+  @container site (max-width: 720px) {
+    &[data-personality='editorial'] .hero--side .hero__container {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &[data-personality='editorial'] .hero--side .hero__inner {
+      grid-column: 1 / -1;
+      padding-bottom: 0;
+    }
+
+    &[data-personality='editorial'] .hero.hero--side .hero__photo {
+      grid-column: 1 / -1;
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  &[data-personality='editorial'] main {
+    counter-reset: site-section;
+  }
+
+  &[data-personality='editorial'] .container > .section-title {
+    max-width: none;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  }
+
+  /* O número é enfeite: o leitor de tela não o lê (texto alternativo vazio depois da barra). */
+  &[data-personality='editorial'] .container > .section-title::before {
+    counter-increment: site-section;
+    content: counter(site-section, decimal-leading-zero);
+    content: counter(site-section, decimal-leading-zero) / '';
+    display: block;
+    margin-bottom: 14px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    opacity: 0.8;
+  }
+
+  &[data-personality='editorial'] .features__item {
+    padding-top: 16px;
+    border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  }
+
+  &[data-personality='editorial'] .testimonials figure {
+    padding-top: 20px;
+    border-top: 2px solid currentColor;
+  }
+}
+
+/* Topo da Vitrine por cima da foto: fica sólido conforme a página rola (styles acima). */
+@keyframes site-header-solid {
+  to {
+    border-bottom-color: var(--color-line);
+    background-color: var(--color-background);
+    color: var(--color-text);
   }
 }

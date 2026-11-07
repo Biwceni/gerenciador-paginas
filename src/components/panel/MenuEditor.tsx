@@ -10,6 +10,7 @@ import {
   type FooterContact,
   type FooterSocial,
   type MenuItem,
+  type SiteBrand,
   SiteFooterView,
   SiteHeaderView,
 } from '@/components/site/SiteChrome'
@@ -50,6 +51,7 @@ type Props = {
     privacyHref: string | null
     theme: Record<string, string>
     fontFaces: string | null
+    brand: SiteBrand
   }
 }
 
@@ -523,6 +525,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             >
               {part !== 'footer' && (
                 <SiteHeaderView
+                  brand={site.brand}
                   button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
                   items={previewItems}
                   logo={site.logo}
@@ -544,7 +547,9 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               )}
               {part !== 'header' && (
                 <SiteFooterView
+                  brand={site.brand}
                   contact={site.contact}
+                  logo={site.logo}
                   menu={footer.showMenu ? previewItems : []}
                   name={site.name}
                   privacyHref={site.privacyHref}
