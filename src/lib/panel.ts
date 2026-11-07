@@ -133,7 +133,9 @@ export function sortPagesForList<T extends ListedPage>(pages: T[], menuOrder: nu
     return index >= 0 ? index : Number.MAX_SAFE_INTEGER
   }
   return [...pages].sort(
-    (a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }),
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (a.title ?? '').localeCompare(b.title ?? '', 'pt-BR', { sensitivity: 'base' }),
   )
 }
 

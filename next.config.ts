@@ -45,10 +45,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
-  // Links de senha mandados antes da v2 apontam para a tela do Payload; a nossa é /nova-senha.
   async redirects() {
     return [
+      // Links de senha mandados antes da v2 apontam para a tela do Payload; a nossa é /nova-senha.
       { source: '/admin/reset/:token', destination: '/admin/nova-senha/:token', permanent: false },
+      // Telas padrão das páginas levam às nossas. A de criar fazia um rascunho sem nome a cada
+      // visita (autosave), e esse rascunho derrubava as listas do painel.
+      { source: '/admin/collections/pages', destination: '/admin/paginas', permanent: false },
+      {
+        source: '/admin/collections/pages/create',
+        destination: '/admin/paginas/nova',
+        permanent: false,
+      },
+      {
+        source: '/admin/collections/pages/:id(\\d+)',
+        destination: '/admin/editor/:id',
+        permanent: false,
+      },
     ]
   },
   webpack: (webpackConfig) => {

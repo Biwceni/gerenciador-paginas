@@ -70,20 +70,31 @@ export function EditorDrawerItem({ name }: { name: string; children?: React.Reac
   }
 
   return (
+    // O botão (foco, papel e nome) é o item do Puck em volta deste, que o dnd-kit já deixa focável:
+    // um segundo botão aqui dentro seria um botão dentro de outro (axe nested-interactive).
     <div
       className="ed-palitem"
       onClick={add}
-      onKeyDown={(event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return
-        event.preventDefault()
-        add()
-      }}
-      // O Puck desenha cada item duas vezes: a cópia de trás é só o que fica no lugar ao arrastar.
       ref={(element) => {
-        if (element?.closest('[class*="Drawer-draggableBg"]')) element.setAttribute('inert', '')
+        if (!element) return
+        // O Puck desenha cada item duas vezes: a cópia de trás é só o que fica no lugar ao arrastar.
+        if (element.closest('[class*="Drawer-draggableBg"]')) {
+          element.setAttribute('inert', '')
+          return
+        }
+        // Enter e espaço no item colocam a seção, como o clique (sem isto, o dnd-kit começaria a
+        // arrastar pelo teclado). Escuta na captura, antes do dnd-kit, no próprio item do Puck.
+        const item = element.closest<HTMLElement>('[data-puck-drawer-item]')
+        if (!item) return
+        const onKey = (event: KeyboardEvent) => {
+          if (event.target !== item || (event.key !== 'Enter' && event.key !== ' ')) return
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          add()
+        }
+        item.addEventListener('keydown', onKey, { capture: true })
+        return () => item.removeEventListener('keydown', onKey, { capture: true })
       }}
-      role="button"
-      tabIndex={0}
     >
       <SectionThumb type={name as keyof Components} />
       <span>

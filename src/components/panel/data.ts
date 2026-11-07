@@ -14,6 +14,7 @@ import {
   messageWhatsApp,
   UNREAD,
 } from '@/lib/messages'
+import { pageTitle } from '@/lib/pageTitle'
 import { type FinishInput, NOT_ARCHIVED, pageStatus, type PageStatus, timeAgo } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
 import type { FormSubmission } from '@/payload-types'
@@ -30,6 +31,11 @@ export type PageRow = {
   /** Guardada em "Arquivadas": fora do site, do menu e da contagem de páginas. */
   archived: boolean
   updatedAt: string
+  /**
+   * "há 5 min", calculado aqui no servidor: a lista de páginas também é desenhada no navegador, e
+   * o relógio de lá dava outro texto (erro de hidratação).
+   */
+  editedAgo: string
 }
 
 /**
@@ -67,13 +73,14 @@ export async function loadPageRows(payload: Payload, user: TypedUser): Promise<P
 
   return latest.docs.map((doc) => ({
     id: doc.id,
-    title: doc.title,
+    title: pageTitle(doc.title),
     slug: doc.slug,
     path: pageHref(doc, homepageId),
     status: pageStatus(doc._status, liveIds.has(doc.id)),
     home: doc.id === homepageId,
     archived: Boolean(doc.archived),
     updatedAt: doc.updatedAt,
+    editedAgo: timeAgo(doc.updatedAt),
   }))
 }
 
@@ -265,7 +272,7 @@ async function toInboxMessages(
         user,
       })
     : null
-  const titles = new Map((pages?.docs ?? []).map((page) => [page.id, page.title]))
+  const titles = new Map((pages?.docs ?? []).map((page) => [page.id, pageTitle(page.title)]))
   return docs.map((doc) => toInboxMessage(doc, forms, titles))
 }
 

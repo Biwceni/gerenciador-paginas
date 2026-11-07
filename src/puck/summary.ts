@@ -1,3 +1,4 @@
+import { pageTitle } from '../lib/pageTitle'
 import { sectionAnchors } from './anchors'
 import { parsePageContent } from './schema'
 
@@ -13,7 +14,13 @@ export type PageSummary = {
 }
 
 export function pageSummary(
-  doc: { id: number; title: string; slug: string; content?: unknown; archived?: boolean | null },
+  doc: {
+    id: number
+    title: string | null
+    slug: string
+    content?: unknown
+    archived?: boolean | null
+  },
   published: boolean,
 ): PageSummary {
   const parsed = parsePageContent(doc.content)
@@ -28,7 +35,7 @@ export function pageSummary(
     : {}
   return {
     id: doc.id,
-    title: doc.title,
+    title: pageTitle(doc.title),
     slug: doc.slug,
     published,
     archived: Boolean(doc.archived),

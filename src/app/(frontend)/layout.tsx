@@ -3,8 +3,10 @@ import React from 'react'
 
 import { themeStyle } from '@/components/site/theme'
 import { getSite, populatedMedia } from '@/lib/content'
+import { fallbackFontFaces } from '@/lib/fontFallback'
+import { preloadFontFiles } from '@/lib/fontPreload'
 import { FALLBACK_SITE_NAME, getServerURL, isIndexable } from '@/lib/site'
-import { safeStyleText } from '@/lib/theme'
+import { FONT_NAME_PATTERN, safeStyleText } from '@/lib/theme'
 
 import './styles.css'
 
@@ -34,13 +36,42 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const site = await getSite()
 
+  // As fontes do site começam a baixar junto com a página: o texto não muda de tamanho depois.
+  const fontFiles = preloadFontFiles(site.fontFaces, site.fonts)
+  // E a reserva de cada uma tem o mesmo tamanho dela: quando a fonte chega, nada muda de lugar.
+  const fallbacks = site.fontFaces
+    ? await fallbackFontFaces(
+        [site.fonts?.headings || site.fonts?.body, site.fonts?.body].filter(
+          (name): name is string => Boolean(name && FONT_NAME_PATTERN.test(name)),
+        ),
+      )
+    : ''
+
   return (
     <html lang="pt-BR">
       <head>
+        {fontFiles[0] && (
+          <link crossOrigin="anonymous" href={fontFiles[0].origin} rel="preconnect" />
+        )}
+        {fontFiles.map((file) => (
+          <link
+            as="font"
+            crossOrigin="anonymous"
+            href={file.href}
+            key={file.href}
+            rel="preload"
+            type="font/woff2"
+          />
+        ))}
         {/* CSS montado pelo servidor ao publicar as configurações, com as fontes no nosso Storage. */}
         {/* Sem fontes copiadas, o texto é vazio: um "" solto aqui quebraria a hidratação da página. */}
         {site.fontFaces ? (
-          <style dangerouslySetInnerHTML={{ __html: safeStyleText(site.fontFaces) }} />
+          <style
+            dangerouslySetInnerHTML={{
+              __html: safeStyleText(`${site.fontFaces}
+${fallbacks}`),
+            }}
+          />
         ) : null}
       </head>
       <body className="site" style={themeStyle(site)}>

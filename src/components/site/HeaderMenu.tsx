@@ -11,7 +11,9 @@ import { createPortal } from 'react-dom'
  * menu não se sobrepõem); entre 721 e 1023 px, o `--full` devolve o menu inteiro quando ele cabe.
  *
  * Com o ☰, o botão de destaque fica ao lado dele, compacto. Se o nome do site e o botão com texto
- * não couberem juntos, o botão fica só com o ícone (`--cta-icon`): o nome nunca é cortado.
+ * não couberem juntos, o botão fica só com o ícone (`--cta-icon`) ou, sem ícone que diga o destino,
+ * só dentro do ☰. Até 720 px isso já vem do servidor (`data-cta` em `SiteHeaderView`), para o topo
+ * não mudar de tamanho depois que a página carrega.
  */
 function useCompactHeader(button: React.RefObject<HTMLButtonElement | null>) {
   const [compact, setCompact] = useState(false)
@@ -44,9 +46,10 @@ function useCompactHeader(button: React.RefObject<HTMLButtonElement | null>) {
       // As duas classes: entre 721 e 1023 px o CSS já começa com o ☰ e espera o `--full`.
       header.classList.toggle('site-header--compact', next)
       header.classList.toggle('site-header--full', !next)
+      // No celular quem decide é o servidor (`data-cta`): mudar aqui deslocava a página.
       header.classList.toggle(
         'site-header--cta-icon',
-        brandWidth + gap + ctaWidth + gap + burgerWidth > width,
+        !navHidden && brandWidth + gap + ctaWidth + gap + burgerWidth > width,
       )
       setCompact(next)
     }

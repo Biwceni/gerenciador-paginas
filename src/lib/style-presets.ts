@@ -1,4 +1,4 @@
-import { contrastRatio, readableTextColor } from './colors'
+import { blendColors, contrastRatio, readableTextColor } from './colors'
 
 // Atalhos do visual do site (do protótipo): só pontos de partida, as cores e fontes continuam livres.
 
@@ -44,7 +44,7 @@ export const COLOR_PRESETS: { name: string; colors: SiteColors }[] = [
   {
     name: 'Terracota',
     colors: {
-      primary: '#b4532a',
+      primary: '#aa4e28',
       surface: '#f8e9e1',
       background: '#fffaf6',
       text: '#2d1d16',
@@ -158,6 +158,15 @@ export function normalizeFontName(value: string): string {
 
 export type ContrastWarning = { label: string; ratio: number; hint: string }
 
+/** A frase do banner é um pouco mais clara que o título (`.hero__text` no `styles.css`). */
+export const BANNER_TEXT_OPACITY = 0.92
+
+/** Contraste da frase do banner quando o fundo dele é a cor principal. */
+export function bannerTextRatio(primary: string): number {
+  const text = blendColors(readableTextColor(primary), primary, BANNER_TEXT_OPACITY)
+  return contrastRatio(text, primary)
+}
+
 /**
  * Combinações difíceis de ler (contraste abaixo de 4,5:1, o mínimo da WCAG para texto). Só avisam:
  * as cores são livres. A cor das letras de botões e rodapé já é a mais legível possível.
@@ -178,6 +187,16 @@ export function contrastWarnings(colors: SiteColors): ContrastWarning[] {
       label: 'Letras dos botões',
       ratio: contrastRatio(readableTextColor(colors.primary), colors.primary),
       hint: 'A cor principal está num tom médio. Um pouco mais escura ou mais clara ajuda.',
+    },
+    {
+      label: 'Frase do banner na cor principal',
+      ratio: bannerTextRatio(colors.primary),
+      hint: 'A cor principal está num tom médio. Um pouco mais escura ou mais clara ajuda.',
+    },
+    {
+      label: 'Links e item do menu na cor principal',
+      ratio: contrastRatio(colors.primary, colors.background),
+      hint: 'A cor principal fica parecida com o fundo. Escureça a cor principal ou clareie o fundo.',
     },
     {
       label: 'Letras do rodapé',

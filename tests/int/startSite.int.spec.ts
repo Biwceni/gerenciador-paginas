@@ -148,6 +148,67 @@ describe('aplicar um modelo de site', () => {
     })
     expect(archived.archived).toBe(true)
   })
+
+  it('aplicar o mesmo modelo 3 vezes não cria endereço com -2 nem formulário repetido', async () => {
+    await removePages()
+    const formTitle = `Fale conosco ${Date.now()}`
+    const withForm = {
+      ...template,
+      forms: [
+        {
+          title: formTitle,
+          submitButtonLabel: 'Enviar',
+          fields: [{ type: 'text', name: 'nome', label: 'Nome', required: true }],
+        },
+      ],
+    } as unknown as Template
+    const applyWithForm = async () =>
+      applySiteTemplate(await createLocalReq({ user: admin as never }, payload), withForm, {
+        name: 'Café Teste',
+        tagline: '',
+        whatsapp: '',
+      })
+    const slugsOf = async (ids: number[]) =>
+      Promise.all(
+        ids.map(
+          async (id) =>
+            (await payload.findByID({ collection: 'pages', id, draft: true, overrideAccess: true }))
+              .slug,
+        ),
+      )
+    const countForms = async () =>
+      (
+        await payload.count({
+          collection: 'forms',
+          where: { title: { equals: formTitle } },
+          overrideAccess: true,
+        })
+      ).totalDocs
+
+    try {
+      // A 1ª vez é o primeiro site; a 2ª e a 3ª, "Começar de novo".
+      for (let round = 0; round < 3; round++) {
+        const { pages } = await applyWithForm()
+        expect(await slugsOf(pages)).toEqual(['inicio', 'sobre'])
+        expect(await countForms()).toBe(1)
+      }
+      const { docs: archived } = await payload.find({
+        collection: 'pages',
+        where: { archived: { equals: true } },
+        draft: true,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(archived).toHaveLength(4)
+      expect(archived.every((page) => /-arquivada-\d+$/.test(page.slug))).toBe(true)
+    } finally {
+      await payload.delete({
+        collection: 'forms',
+        where: { title: { equals: formTitle } },
+        overrideAccess: true,
+      })
+    }
+  })
 })
 
 describe('foto de exemplo trocada', () => {

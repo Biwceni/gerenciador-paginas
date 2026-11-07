@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import React, { cache } from 'react'
 
 import { PanelBar } from '@/components/site/PanelBar'
+import { footerSocial } from '@/components/site/SiteChrome'
 import { Photo } from '@/components/site/Photo'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
@@ -19,7 +20,8 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
-import { FALLBACK_SITE_NAME } from '@/lib/site'
+import { FALLBACK_SITE_NAME, getServerURL } from '@/lib/site'
+import { breadcrumbJsonLd, jsonLdText, localBusinessJsonLd } from '@/lib/structuredData'
 import type { Media, Page } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import { resolveReferences } from '@/puck/references'
@@ -154,8 +156,31 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
   )
   const campaign = Boolean(page.campaign)
 
+  // Dados para o Google: o negócio na página inicial e, nas outras, o caminho a partir do Início
+  // (o Google pede pelo menos dois itens, então a inicial fica sem).
+  const name = site.name || FALLBACK_SITE_NAME
+  const homeURL = new URL('/', getServerURL()).toString()
+  const structuredData = isHome
+    ? localBusinessJsonLd({
+        site,
+        name,
+        url: homeURL,
+        logo: populatedMedia(site.logo),
+        image: populatedMedia(site.shareImage),
+        sameAs: footerSocial(site).map((social) => social.url),
+      })
+    : breadcrumbJsonLd({
+        homeName: name,
+        homeURL,
+        page: { title: page.title, url: new URL(`/${page.slug}`, homeURL).toString() },
+      })
+
   return (
     <>
+      <script
+        dangerouslySetInnerHTML={{ __html: jsonLdText(structuredData) }}
+        type="application/ld+json"
+      />
       <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={page.id} />
       <SiteHeader campaign={campaign} currentPageId={page.id} />
       <main id="conteudo">

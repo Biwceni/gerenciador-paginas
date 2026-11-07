@@ -2,6 +2,7 @@ import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
 import { exampleTagline } from '@/lib/examples'
+import { pageTitle } from '@/lib/pageTitle'
 import { PANEL_PATHS } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
 import { getServerURL } from '@/lib/site'
@@ -90,9 +91,11 @@ export async function SettingsView(props: AdminViewServerProps) {
         domain={new URL(getServerURL()).host}
         fontFaces={site.fontFaces ?? null}
         initial={initial}
-        draftHome={draftHome ? { id: draftHome.id, title: draftHome.title } : null}
-        draftPrivacy={draftPrivacy ? { id: draftPrivacy.id, title: draftPrivacy.title } : null}
-        livePages={live.docs.map(({ id, title }) => ({ id, title }))}
+        draftHome={draftHome ? { id: draftHome.id, title: pageTitle(draftHome.title) } : null}
+        draftPrivacy={
+          draftPrivacy ? { id: draftPrivacy.id, title: pageTitle(draftPrivacy.title) } : null
+        }
+        livePages={live.docs.map(({ id, title }) => ({ id, title: pageTitle(title) }))}
         taglineHint={exampleTagline(site.colors, models.docs)}
         pending={site._status === 'draft'}
         people={
