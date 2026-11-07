@@ -12,7 +12,7 @@ import {
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Site } from '@/payload-types'
 
-import { type MenuItem, SiteHeaderView } from './SiteChrome'
+import { type MenuItem, siteBrand, SiteHeaderView } from './SiteChrome'
 
 export type { MenuItem }
 
@@ -61,6 +61,7 @@ export async function SiteHeader({ currentPageId, campaign, site: draftSite }: P
 
   return (
     <SiteHeaderView
+      brand={siteBrand(site)}
       button={buttonHref ? { label: header.button?.label ?? '', href: buttonHref } : null}
       campaign={campaign}
       items={items}

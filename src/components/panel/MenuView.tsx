@@ -1,7 +1,7 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
-import { footerContact, footerSocial } from '@/components/site/SiteChrome'
+import { footerContact, footerSocial, siteBrand } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import { populatedMedia, privacyHref, siteLinks } from '@/lib/content'
 import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
@@ -74,6 +74,7 @@ export async function MenuView(props: AdminViewServerProps) {
           privacyHref: privacyHref(site),
           theme: themeStyle(site) as Record<string, string>,
           fontFaces: previewFontFaces(site),
+          brand: siteBrand(site),
         }}
       />
     </PanelTemplate>

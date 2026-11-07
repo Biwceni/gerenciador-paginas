@@ -8,6 +8,29 @@ export const DEFAULT_COLORS = {
   footer: '#111827',
 } as const
 
+/**
+ * Personalidade do site (redesign v3): muda formas, tamanhos e a arrumação das seções, sem mexer no
+ * conteúdo. `classico` é o visual de antes, o padrão: nenhum site muda sozinho.
+ */
+export const PERSONALITIES = ['classico', 'vitrine', 'aconchego', 'editorial'] as const
+
+export type Personality = (typeof PERSONALITIES)[number]
+
+export const DEFAULT_PERSONALITY: Personality = 'classico'
+
+/** Nome e descrição de cada personalidade, para o painel. */
+export const PERSONALITY_LABELS: Record<Personality, { name: string; description: string }> = {
+  classico: { name: 'Clássico', description: 'Limpo e direto, como o site sempre foi.' },
+  vitrine: { name: 'Vitrine', description: 'Foto grande, letras enormes, cara de loja.' },
+  aconchego: { name: 'Aconchego', description: 'Formas redondas e fotos em arco.' },
+  editorial: { name: 'Editorial', description: 'Grade de revista, títulos gigantes e fios.' },
+}
+
+/** A personalidade guardada, ou a padrão se vier vazia ou desconhecida. */
+export function safePersonality(value: string | null | undefined): Personality {
+  return PERSONALITIES.includes(value as Personality) ? (value as Personality) : DEFAULT_PERSONALITY
+}
+
 // Só letras, números e espaços: o nome vai para o CSS do site.
 export const FONT_NAME_PATTERN = /^[A-Za-z0-9 ]{1,60}$/
 

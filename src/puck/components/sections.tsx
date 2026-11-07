@@ -4,6 +4,7 @@ import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
 import { mapsURL, telHref, whatsAppURL } from '@/lib/links'
 import { privacyBlocks } from '@/lib/privacy'
+import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 
 import { type ContentMetadata, getHref, getPhoto } from '../references'
@@ -28,6 +29,7 @@ import type {
   VideoProps,
 } from '../schema'
 import { SectionButton } from './Button'
+import { EditorHighlight } from './EditorHighlight'
 import { ContactIcon, type ContactIconName, FeatureIcon } from './FeatureIcon'
 import { SiteForm } from './SiteForm'
 import { VideoPlayer } from './VideoPlayer'
@@ -95,8 +97,22 @@ function SectionTitle({ title }: { title: React.ReactNode }) {
  * Banner principal. No estilo "foto", a foto cobre o fundo, escurecida, com o texto em branco; em
  * "foto ao lado", o texto fica à esquerda e a foto à direita (embaixo do botão, no celular).
  */
+/** Título com as palavras em destaque num `<em>` (no site; no editor o título é o campo do Puck). */
+function HighlightedTitle({ title, words }: { title: React.ReactNode; words: string }) {
+  const parts = typeof title === 'string' ? splitHighlight(title, words) : null
+  if (!parts) return <>{title}</>
+  return (
+    <>
+      {parts[0]}
+      <em>{parts[1]}</em>
+      {parts[2]}
+    </>
+  )
+}
+
 export function Hero(props: WithMetadata<HeroProps>) {
   const { id, title, text, image, button, metadata } = props
+  const highlight = props.highlight ?? ''
   const photo = getPhoto(metadata, image)
   // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível, e
   // "foto ao lado" vira o fundo suave.
@@ -137,7 +153,12 @@ export function Hero(props: WithMetadata<HeroProps>) {
       )}
       <div className="container hero__container">
         <div className="hero__inner">
-          {filled(title) && <Heading className="hero__title">{title}</Heading>}
+          {filled(title) && (
+            <Heading className="hero__title">
+              <HighlightedTitle title={title} words={highlight} />
+            </Heading>
+          )}
+          {metadata.editing && highlight.trim() && <EditorHighlight words={highlight} />}
           {filled(text) && <p className="hero__text">{text}</p>}
           <SectionButton button={button} metadata={metadata} />
         </div>

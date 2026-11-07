@@ -68,6 +68,7 @@ export function pageBuilder() {
         style: o.style ?? 'image',
         align: o.align ?? 'left',
         height: o.height ?? 'normal',
+        highlight: '',
       },
     }),
     textImage: (o: Common & { image?: number; side?: 'left' | 'right' }): PageComponent => ({

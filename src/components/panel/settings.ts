@@ -1,7 +1,7 @@
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '@/lib/links'
 import { relationID } from '@/lib/relations'
 import type { SiteColors } from '@/lib/style-presets'
-import { DEFAULT_COLORS } from '@/lib/theme'
+import { DEFAULT_COLORS, type Personality, safePersonality } from '@/lib/theme'
 import type { Site } from '@/payload-types'
 
 // Estado da tela Configurações e a conversão de/para o global `site`. Fica fora do componente
@@ -14,6 +14,7 @@ export type SettingsState = {
   homepage: number | null
   privacyPage: number | null
   colors: SiteColors
+  personality: Personality
   fonts: { headings: string; body: string }
   contact: { whatsapp: string; phone: string; email: string; address: string; hours: string }
   social: { instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
@@ -30,6 +31,7 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
     homepage: relationID(site.homepage),
     privacyPage: relationID(site.privacyPage),
     colors: { ...DEFAULT_COLORS, ...site.colors },
+    personality: safePersonality(site.personality),
     fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
     contact: {
       whatsapp: site.contact?.whatsapp ?? '',
@@ -60,6 +62,7 @@ export function toSiteData(state: SettingsState) {
     homepage: state.homepage,
     privacyPage: state.privacyPage,
     colors: state.colors,
+    personality: state.personality,
     fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
     contact: {
       whatsapp: orNull(state.contact.whatsapp),

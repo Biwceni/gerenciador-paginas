@@ -14,6 +14,7 @@ import * as migration_20261101_165921_campo_telefone from './20261101_165921_cam
 import * as migration_20261101_170000_converter_whatsapp from './20261101_170000_converter_whatsapp';
 import * as migration_20261101_190417_descricao_foto_opcional from './20261101_190417_descricao_foto_opcional';
 import * as migration_20261101_190421_pagina_de_privacidade from './20261101_190421_pagina_de_privacidade';
+import * as migration_20261107_180330_personalidade_do_site from './20261107_180330_personalidade_do_site';
 
 export const migrations = [
   {
@@ -94,6 +95,11 @@ export const migrations = [
   {
     up: migration_20261101_190421_pagina_de_privacidade.up,
     down: migration_20261101_190421_pagina_de_privacidade.down,
-    name: '20261101_190421_pagina_de_privacidade'
+    name: '20261101_190421_pagina_de_privacidade',
+  },
+  {
+    up: migration_20261107_180330_personalidade_do_site.up,
+    down: migration_20261107_180330_personalidade_do_site.down,
+    name: '20261107_180330_personalidade_do_site'
   },
 ];

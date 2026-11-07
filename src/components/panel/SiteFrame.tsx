@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { siteCSS } from '@/components/editor/EditorFrame'
+import { applySiteTheme } from '@/components/site/theme'
 import { safeStyleText } from '@/lib/theme'
 
 type Props = {
@@ -60,7 +61,7 @@ export function SiteFrame({ title, theme, fontFaces, stylesheets, width, childre
 
   useEffect(() => {
     if (!body) return
-    for (const [name, value] of Object.entries(theme)) body.style.setProperty(name, value)
+    applySiteTheme(body, theme)
   }, [body, theme])
 
   // Em texto, para o efeito só rodar quando a lista mudar de verdade.

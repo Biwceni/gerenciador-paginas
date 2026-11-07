@@ -1,10 +1,10 @@
 import React from 'react'
 
-import { getFooter, getSite, privacyHref } from '@/lib/content'
+import { getFooter, getSite, populatedMedia, privacyHref } from '@/lib/content'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Site } from '@/payload-types'
 
-import { footerContact, footerSocial, SiteFooterView } from './SiteChrome'
+import { footerContact, footerSocial, siteBrand, SiteFooterView } from './SiteChrome'
 import { getMenuItems } from './SiteHeader'
 
 /**
@@ -22,7 +22,9 @@ export async function SiteFooter({
 
   return (
     <SiteFooterView
+      brand={siteBrand(site)}
       campaign={campaign}
+      logo={populatedMedia(site.logo)}
       contact={footerContact(site)}
       menu={!campaign && footer.showMenu !== false ? await getMenuItems(null, draftSite) : []}
       name={site.name || FALLBACK_SITE_NAME}

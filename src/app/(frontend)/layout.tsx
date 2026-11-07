@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
-import { themeStyle } from '@/components/site/theme'
+import { sitePersonality, themeStyle } from '@/components/site/theme'
 import { getSite, populatedMedia } from '@/lib/content'
 import { fallbackFontFaces } from '@/lib/fontFallback'
 import { preloadFontFiles } from '@/lib/fontPreload'
@@ -74,7 +74,7 @@ ${fallbacks}`),
           />
         ) : null}
       </head>
-      <body className="site" style={themeStyle(site)}>
+      <body className="site" data-personality={sitePersonality(site)} style={themeStyle(site)}>
         <a className="skip-link" href="#conteudo">
           Pular para o conteúdo
         </a>

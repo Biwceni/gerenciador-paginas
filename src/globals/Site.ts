@@ -7,7 +7,13 @@ import { colorField } from '../fields/color'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
 import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
-import { DEFAULT_COLORS, FONT_NAME_PATTERN } from '../lib/theme'
+import {
+  DEFAULT_COLORS,
+  DEFAULT_PERSONALITY,
+  FONT_NAME_PATTERN,
+  PERSONALITIES,
+  PERSONALITY_LABELS,
+} from '../lib/theme'
 
 const fontField = (name: string, label: string): TextField => ({
   name,
@@ -179,6 +185,20 @@ export const Site: GlobalConfig = {
         {
           label: 'Cores e fontes',
           fields: [
+            {
+              name: 'personality',
+              type: 'select',
+              label: 'Personalidade do site',
+              defaultValue: DEFAULT_PERSONALITY,
+              options: PERSONALITIES.map((value) => ({
+                value,
+                label: PERSONALITY_LABELS[value].name,
+              })),
+              admin: {
+                description:
+                  'Muda formas, tamanhos e a arrumação do banner e das seções em todas as páginas. O conteúdo não muda.',
+              },
+            },
             {
               name: 'colors',
               type: 'group',
