@@ -340,7 +340,89 @@ test.describe.serial('animação do site e das seções', () => {
     await visitor.keyboard.press('Escape')
     await expect(viewer).toBeHidden()
     await expect(first).toBeFocused()
+
+    // Clique no fundo escuro também fecha; clique na foto, não.
+    const second = visitor.getByRole('button', { name: /Ver foto 2 de 2 em tela cheia/ })
+    await second.click()
+    await expect(viewer).toBeVisible()
+    await viewer.locator('.lightbox__photo').click()
+    await expect(viewer).toBeVisible()
+    // Canto de cima, à esquerda: só o fundo (o "Fechar" fica à direita, as setas no meio).
+    await visitor.mouse.click(20, 20)
+    await expect(viewer).toBeHidden()
+    await expect(second).toBeFocused()
     await context.close()
+  })
+
+  test('galeria grande no fim da página: todas as fotos terminam de aparecer', async ({
+    browser,
+  }) => {
+    await publishMotion('marcante')
+    const payload = await panel()
+    const slug = `${SLUG}-galeria`
+    const big = await payload.create({
+      collection: 'pages',
+      data: {
+        title: `Galeria grande ${SUFFIX}`,
+        slug,
+        // Página de campanha: rodapé curto, então quase nada vem depois da galeria. Com o rodapé
+        // normal, a folga embaixo bastava para as últimas fotos terminarem mesmo sem o teto.
+        campaign: true,
+        content: {
+          version: CONTENT_VERSION,
+          data: {
+            root: { props: {} },
+            content: [
+              {
+                type: 'RichText',
+                props: {
+                  id: 'RichText-g',
+                  menuLabel: '',
+                  title: 'Antes da galeria',
+                  body: `<p>${'Texto para a galeria ficar no fim da página. '.repeat(60)}</p>`,
+                  style: 'light',
+                },
+              },
+              {
+                type: 'Gallery',
+                props: {
+                  id: 'Gallery-g',
+                  menuLabel: '',
+                  title: 'Todas as fotos',
+                  // O máximo da galeria, revezando as duas fotos do teste.
+                  images: Array.from({ length: 24 }, (_, i) => ({ mediaId: photoIds[i % 2] })),
+                  style: 'light',
+                },
+              },
+            ],
+          },
+        },
+        _status: 'published',
+      },
+      overrideAccess: true,
+    })
+    try {
+      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+      const visitor = await context.newPage()
+      await visitor.goto(`${BASE}/${slug}`)
+      const items = visitor.locator('.gallery > li')
+      await expect(items).toHaveCount(24)
+      await expect(visitor.locator('.section', { has: items.first() })).toHaveClass(
+        /anim--sequencia/,
+      )
+      await visitor.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+      await expect
+        .poll(() => items.evaluateAll((all) => all.map((li) => getComputedStyle(li).opacity)))
+        .toEqual(Array(24).fill('1'))
+      await context.close()
+    } finally {
+      await payload.delete({
+        collection: 'pages',
+        id: big.id,
+        overrideAccess: true,
+        context: { seedRecreate: true },
+      })
+    }
   })
 
   test('botão do WhatsApp só no celular, e sai da frente na chamada final', async ({ browser }) => {

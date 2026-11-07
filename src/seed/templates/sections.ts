@@ -66,7 +66,6 @@ export function pageBuilder() {
         image: o.image ? photo(o.image) : null,
         button: o.button ? button(o.button, o.link) : null,
         style: o.style ?? 'image',
-
         anim: 'site',
         align: o.align ?? 'left',
         height: o.height ?? 'normal',
@@ -83,7 +82,6 @@ export function pageBuilder() {
         image: o.image ? photo(o.image) : null,
         side: o.side ?? 'right',
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -103,7 +101,6 @@ export function pageBuilder() {
           icon: o.icons?.[i % o.icons.length] ?? 'check',
         })),
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -119,7 +116,6 @@ export function pageBuilder() {
           photo: null,
         })),
         style: o.style ?? 'soft',
-
         anim: 'site',
       },
     }),
@@ -131,7 +127,6 @@ export function pageBuilder() {
         title: 'Perguntas frequentes',
         items: items(o.count ?? 3, () => ({ question: `${nextTitle()}?`, answer: L_M })),
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -143,7 +138,6 @@ export function pageBuilder() {
         title: nextTitle(),
         images: o.images.map(photo),
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -156,7 +150,6 @@ export function pageBuilder() {
         text: L_S,
         button: button(o.button, o.link),
         style: o.style ?? 'brand',
-
         anim: 'site',
       },
     }),
@@ -168,7 +161,6 @@ export function pageBuilder() {
         title: nextTitle(),
         text: L_S,
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -180,7 +172,6 @@ export function pageBuilder() {
         menuLabel: o.menu ?? '',
         title: PRIVACY_TITLE,
         style: o.style ?? 'light',
-
         anim: 'site',
       },
     }),
@@ -194,7 +185,6 @@ export function pageBuilder() {
         form: { formId: o.form },
         successMessage: 'Recebemos seus dados. Obrigado!',
         style: o.style ?? 'soft',
-
         anim: 'site',
       },
     }),
@@ -207,7 +197,6 @@ export function pageBuilder() {
         text: L_S,
         items: o.items.map((item) => button(item.label, item.link)),
         style: o.style ?? 'soft',
-
         anim: 'site',
       },
     }),

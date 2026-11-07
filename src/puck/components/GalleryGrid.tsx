@@ -88,8 +88,16 @@ export function GalleryGrid({ photos, viewer }: Props) {
           aria-label="Fotos da galeria"
           className="lightbox"
           onClick={(event) => {
-            // Clique fora da foto (no fundo escuro) fecha.
-            if (event.target === event.currentTarget) close()
+            // Clique no fundo escuro fecha. O fundo é a própria janela ou as caixas que cobrem a tela
+            // inteira em volta da foto; a foto, a legenda e os botões não fecham.
+            const target = event.target as Element
+            if (
+              target === event.currentTarget ||
+              target.classList.contains('lightbox__inner') ||
+              target.classList.contains('lightbox__figure')
+            ) {
+              close()
+            }
           }}
           onClose={() => {
             setCurrent(null)
