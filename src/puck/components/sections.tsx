@@ -203,13 +203,17 @@ export function Hero(props: WithMetadata<HeroProps>) {
   const { id, title, text, image, button, metadata } = props
   const highlight = props.highlight ?? ''
   const photo = getPhoto(metadata, image)
+  // Banner que pede foto e ainda não tem (como os dos modelos): no editor, o aviso "Escolha uma foto
+  // sua" fica no lugar dela.
+  const photoSlot =
+    metadata.editing && !photo && (props.style === 'image' || props.style === 'side')
   // Sem foto, o estilo "foto" vira fundo na cor principal, para o texto branco continuar legível, e
-  // "foto ao lado" vira o fundo suave.
+  // "foto ao lado" vira o fundo suave (no editor, continua ao lado, com o aviso).
   const style =
     props.style === 'image' && !photo
       ? 'brand'
       : props.style === 'side'
-        ? photo
+        ? photo || photoSlot
           ? 'side'
           : 'soft'
         : props.style
@@ -256,6 +260,13 @@ export function Hero(props: WithMetadata<HeroProps>) {
           {metadata.editing && highlight.trim() && <EditorHighlight words={highlight} />}
           {filled(text) && <p className="hero__text anim-part">{text}</p>}
           <SectionButton button={button} className="anim-part" metadata={metadata} />
+          {photoSlot && props.style === 'image' && (
+            <div className="hero__slot">
+              <EditorPlaceholder>
+                Escolha uma foto sua para o fundo, nas opções da seção
+              </EditorPlaceholder>
+            </div>
+          )}
         </div>
         {style === 'side' && photo && (
           <div className="hero__photo anim-part">
@@ -266,6 +277,11 @@ export function Hero(props: WithMetadata<HeroProps>) {
               priority={isMain && !metadata.editing}
               sizes="(max-width: 720px) 100vw, 480px"
             />
+          </div>
+        )}
+        {style === 'side' && photoSlot && (
+          <div className="hero__photo anim-part">
+            <EditorPlaceholder>Escolha uma foto sua nas opções da seção</EditorPlaceholder>
           </div>
         )}
       </div>
@@ -311,7 +327,7 @@ export function TextImage({
             {photo ? (
               <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 540px" />
             ) : (
-              <EditorPlaceholder>Escolha uma foto nas opções da seção</EditorPlaceholder>
+              <EditorPlaceholder>Escolha uma foto sua nas opções da seção</EditorPlaceholder>
             )}
           </div>
         )}
@@ -525,7 +541,9 @@ export function Gallery({
             viewer={!metadata.editing}
           />
         ) : (
-          <EditorPlaceholder>Escolha as fotos da galeria nas opções da seção</EditorPlaceholder>
+          <EditorPlaceholder>
+            Escolha suas fotos para a galeria, nas opções da seção
+          </EditorPlaceholder>
         )}
       </div>
     </Section>
@@ -988,7 +1006,7 @@ export function Products({
                       sizes={PRODUCT_PHOTO_SIZES[layout]}
                     />
                   ) : (
-                    <EditorPlaceholder>Escolha a foto do produto</EditorPlaceholder>
+                    <EditorPlaceholder>Escolha uma foto sua do produto</EditorPlaceholder>
                   )}
                 </div>
                 <div className="product__body">

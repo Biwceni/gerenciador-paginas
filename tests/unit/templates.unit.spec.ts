@@ -1,33 +1,76 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import path from 'node:path'
+
 import type { PayloadRequest } from 'payload'
 import { describe, expect, it } from 'vitest'
 
 import { applyPageTemplate, applySiteTemplate } from '@/lib/applyTemplate'
+import { FONT_PAIRS } from '@/lib/fontPairs'
+import { contrastWarnings } from '@/lib/style-presets'
 import {
+  BUSINESSES,
   checkTemplateReferences,
+  fillExamples,
+  fillExampleText,
   isTemplatePhotoURL,
   remapTemplateContent,
-  SEGMENTS,
   SITE_TYPES,
+  templateBusiness,
+  templatePersonality,
 } from '@/lib/templates'
 import type { Template } from '@/payload-types'
+import { collectReferences } from '@/puck/references'
 import { parsePageContent, type PuckPageData } from '@/puck/schema'
 import { templateSeeds } from '@/seed/templates/data'
 
 const asTemplate = (seed: (typeof templateSeeds)[number], id = 1) =>
   ({ ...seed, id, updatedAt: '', createdAt: '' }) as Template
 
-describe('modelos da estreia', () => {
-  const sites = templateSeeds.filter((seed) => seed.kind === 'site')
+const contentOf = (page: NonNullable<Template['pages']>[number]) =>
+  (page.content as { data: PuckPageData }).data
 
-  it('têm 2 modelos para cada tipo e para cada ramo do site da empresa', () => {
+const sites = templateSeeds.filter((seed) => seed.kind === 'site')
+const pageModels = templateSeeds.filter((seed) => seed.kind === 'page')
+
+describe('modelos por ramo (entrega 6)', () => {
+  it('têm 2 modelos para cada ramo do site da empresa e para cada outro tipo de site', () => {
+    for (const business of BUSINESSES) {
+      const found = sites.filter((seed) => templateBusiness(seed) === business.value)
+      expect(found, business.value).toHaveLength(2)
+      // O campo do banco guarda o grupo do ramo (sem migração).
+      for (const seed of found) expect(seed.segment).toBe(business.segment)
+    }
     for (const type of SITE_TYPES.filter((item) => item.value !== 'institucional')) {
       expect(sites.filter((seed) => seed.siteType === type.value)).toHaveLength(2)
     }
-    for (const segment of SEGMENTS) {
-      expect(sites.filter((seed) => seed.segment === segment.value)).toHaveLength(2)
-    }
-    expect(templateSeeds.filter((seed) => seed.kind === 'page')).toHaveLength(5)
+    expect(pageModels).toHaveLength(9)
     expect(new Set(templateSeeds.map((seed) => seed.key)).size).toBe(templateSeeds.length)
+  })
+
+  it('cada modelo de site sugere uma personalidade, e os dois de um ramo são diferentes', () => {
+    const byPrefix = new Map<string, string[]>()
+    for (const seed of sites) {
+      const personality = templatePersonality(seed.key)
+      expect(personality, seed.key).not.toBeNull()
+      const prefix = seed.key.split('-')[0]
+      byPrefix.set(prefix, [...(byPrefix.get(prefix) ?? []), personality!])
+    }
+    for (const [prefix, list] of byPrefix) expect(new Set(list).size, prefix).toBe(2)
+  })
+
+  it('as letras sugeridas são um dos pares do ramo', () => {
+    for (const seed of sites) {
+      const prefix = seed.key.split('-')[0] as keyof typeof FONT_PAIRS
+      const pairs = FONT_PAIRS[prefix].map((pair) => `${pair.headings}/${pair.body}`)
+      expect(pairs, seed.key).toContain(`${seed.site?.fonts?.headings}/${seed.site?.fonts?.body}`)
+    }
+  })
+
+  it('as cores sugeridas passam no contraste (texto, botões, faixa e rodapé)', () => {
+    for (const seed of sites) {
+      const colors = seed.site!.colors as Parameters<typeof contrastWarnings>[0]
+      expect(contrastWarnings(colors), seed.key).toEqual([])
+    }
   })
 
   it('passam pelo esquema das páginas e só citam o que o modelo tem', () => {
@@ -43,8 +86,66 @@ describe('modelos da estreia', () => {
         }
         expect(checkTemplateReferences(parsed.data.data, counts), seed.key).toBe(true)
       }
-      for (const photo of seed.photos ?? []) expect(isTemplatePhotoURL(photo.url)).toBe(true)
     }
+  })
+
+  it('não trazem foto de banco: o lugar de cada foto fica para a pessoa', () => {
+    for (const seed of templateSeeds) {
+      expect(seed.photos, seed.key).toEqual([])
+      for (const page of seed.pages ?? []) {
+        expect(collectReferences(contentOf(page)).mediaIds, seed.key).toEqual([])
+      }
+    }
+  })
+
+  it('o site da empresa tem a inicial e mais 2 ou 3 páginas do ramo, todas no menu', () => {
+    for (const seed of sites.filter((item) => item.siteType === 'institucional')) {
+      const pages = seed.pages ?? []
+      expect(pages.length, seed.key).toBeGreaterThanOrEqual(3)
+      expect(pages.length, seed.key).toBeLessThanOrEqual(4)
+      expect(seed.header?.items?.map((item) => item.label)).toEqual(pages.map((page) => page.title))
+    }
+  })
+
+  it('cada ramo tem a sua própria sequência de seções na página inicial', () => {
+    const sequences = BUSINESSES.map((business) => {
+      const seed = sites.find((item) => templateBusiness(item) === business.value)!
+      return contentOf(seed.pages![0])
+        .content.map((item) => item.type)
+        .join(' > ')
+    })
+    expect(new Set(sequences).size).toBe(BUSINESSES.length)
+    // E nenhum é mais o esqueleto de antes (banner, destaques, texto com foto, depoimentos, chamada).
+    expect(sequences).not.toContain('Hero > Features > TextImage > Testimonials > CallToAction')
+  })
+
+  it('as sequências seguem o que o ramo pede', () => {
+    const home = (business: string) =>
+      contentOf(sites.find((item) => templateBusiness(item) === business)!.pages![0]).content.map(
+        (item) => item.type,
+      )
+    // Confeitaria: faixa de aviso e vitrine; loja: vitrine logo depois do banner.
+    expect(home('confeitaria').slice(0, 3)).toEqual(['Announcement', 'Hero', 'Products'])
+    expect(home('loja').slice(0, 2)).toEqual(['Hero', 'Products'])
+    // Saúde: contato e perguntas no alto, sem depoimentos.
+    expect(home('saude').slice(0, 3)).toEqual(['Hero', 'Contact', 'Faq'])
+    expect(home('saude')).not.toContain('Testimonials')
+    // Evento: a faixa com a data no alto.
+    const event = sites.find((item) => item.siteType === 'evento')!
+    expect(contentOf(event.pages![0]).content[0].type).toBe('Announcement')
+  })
+
+  it('os textos de exemplo do site da empresa usam o nome e a cidade', () => {
+    for (const seed of sites.filter((item) => item.siteType === 'institucional')) {
+      const text = JSON.stringify(seed.pages)
+      expect(text, seed.key).toContain('{nome}')
+      expect(text, seed.key).toContain('{cidade}')
+    }
+  })
+
+  it('os modelos de página não usam a cidade (ela só é perguntada no Começar)', () => {
+    for (const seed of pageModels)
+      expect(JSON.stringify(seed.pages), seed.key).not.toContain('{cidade}')
   })
 
   it('apontam o menu para seções que existem na página', () => {
@@ -56,10 +157,62 @@ describe('modelos da estreia', () => {
       for (const link of links) {
         if (link?.kind !== 'section') continue
         const page = seed.pages?.[(link.page ?? 0) - 1]
-        const ids = (page?.content as { data: PuckPageData }).data.content.map((c) => c.props.id)
+        const ids = contentOf(page!).content.map((c) => c.props.id)
         expect(ids, seed.key).toContain(link.section)
       }
     }
+  })
+})
+
+describe('sem Lorem Ipsum', () => {
+  const files = (dir: string): string[] =>
+    readdirSync(dir).flatMap((name) => {
+      const full = path.join(dir, name)
+      return statSync(full).isDirectory() ? files(full) : [full]
+    })
+
+  it('nenhum arquivo de src/seed tem "Lorem"', () => {
+    const found = files(path.resolve('src/seed')).filter((file) =>
+      /lorem/i.test(readFileSync(file, 'utf8')),
+    )
+    expect(found).toEqual([])
+  })
+
+  it('nem os modelos prontos', () => {
+    expect(JSON.stringify(templateSeeds)).not.toMatch(/lorem|ipsum/i)
+  })
+})
+
+describe('nome e cidade nos textos de exemplo', () => {
+  it('trocam os marcadores', () => {
+    expect(
+      fillExampleText('Entregamos em {cidade}', { name: 'Doces da Ana', city: 'Uberlândia' }),
+    ).toBe('Entregamos em Uberlândia')
+    expect(
+      fillExamples(
+        { a: ['{nome} em {cidade}'], b: 2 },
+        { name: 'Doces da Ana', city: 'Uberlândia' },
+      ),
+    ).toEqual({ a: ['Doces da Ana em Uberlândia'], b: 2 })
+  })
+
+  it('sem resposta, usam um texto que ainda se lê', () => {
+    expect(fillExampleText('{nome} em {cidade}', { name: ' ', city: '' })).toBe(
+      'Seu negócio em sua cidade',
+    )
+  })
+})
+
+describe('identificador do modelo', () => {
+  it('leva o ramo (só no site da empresa) e a personalidade', () => {
+    expect(templateBusiness({ key: 'confeitaria-vitrine', siteType: 'institucional' })).toBe(
+      'confeitaria',
+    )
+    expect(templateBusiness({ key: 'evento-vitrine', siteType: 'evento' })).toBeNull()
+    expect(templateBusiness({ key: 'cafe-aconchegante', siteType: 'institucional' })).toBeNull()
+    expect(templatePersonality('saude-aconchego')).toBe('aconchego')
+    expect(templatePersonality('cafe-aconchegante')).toBeNull()
+    expect(templatePersonality(null)).toBeNull()
   })
 })
 
@@ -70,7 +223,6 @@ describe('páginas dos modelos (crítica de design)', () => {
   }
   const itemsOf = (page: NonNullable<Template['pages']>[number]) =>
     (page.content as { data: { content: Item[] } }).data.content
-  const sites = templateSeeds.filter((seed) => seed.kind === 'site')
 
   it('C5: toda página interna termina com uma chamada para a ação ou um formulário', () => {
     for (const seed of sites) {
@@ -87,6 +239,7 @@ describe('páginas dos modelos (crítica de design)', () => {
       if (!top?.label || top.link?.kind !== 'whatsapp') continue
       for (const page of seed.pages ?? []) {
         for (const item of itemsOf(page)) {
+          if (item.type === 'Products') continue
           if (item.props.button?.link?.kind === 'whatsapp') {
             expect(item.props.button.label, `${seed.key} › ${page.title}`).toBe(top.label)
           }
@@ -96,14 +249,14 @@ describe('páginas dos modelos (crítica de design)', () => {
   })
 
   it('C3: a página Contato tem banner compacto e o "Fale conosco" depois do Contato', () => {
-    const dentist = templateSeeds.find((seed) => seed.key === 'saude-leve')!
-    const contact = dentist.pages!.find((page) => page.title === 'Contato')!
+    const clinic = templateSeeds.find((seed) => seed.key === 'saude-classico')!
+    const contact = clinic.pages!.find((page) => page.title === 'Contato')!
     const items = itemsOf(contact)
     expect(items.map((item) => item.type)).toEqual(['Hero', 'Contact', 'Form'])
     expect(items[0].props.height).toBe('compact')
-    expect(dentist.forms?.map((form) => form.title)).toEqual(['Fale conosco'])
+    expect(clinic.forms?.map((form) => form.title)).toEqual(['Fale conosco'])
     // A página inicial continua com o banner normal.
-    expect(itemsOf(dentist.pages![0])[0].props.height).toBe('normal')
+    expect(itemsOf(clinic.pages![0])[0].props.height).toBe('normal')
   })
 })
 
@@ -221,9 +374,14 @@ function fakeReq({ pages = [] as object[], live = [] as object[], site = {} as o
 }
 
 describe('aplicar um modelo de site', () => {
-  // Sem fotos, para não baixar nada no teste.
-  const seed = templateSeeds.find((item) => item.key === 'cafe-aconchegante')!
-  const template = asTemplate({ ...seed, photos: [] })
+  const seed = templateSeeds.find((item) => item.key === 'confeitaria-vitrine')!
+  const template = asTemplate(seed)
+  const answers = {
+    name: 'Padaria da Ana',
+    tagline: 'Pão quentinho',
+    whatsapp: '(31) 99999-0000',
+    city: 'Uberlândia',
+  }
 
   it('cria as páginas, publica as configurações e arquiva as antigas', async () => {
     const old = { id: 5, title: 'Antiga', slug: 'inicio', content: {}, seo: {} }
@@ -236,37 +394,41 @@ describe('aplicar um modelo de site', () => {
         social: { instagram: '@publicado' },
         seoDescription: 'No ar',
         shareImage: 4,
+        motion: 'suave',
+        personality: 'classico',
       },
     })
-    const result = await applySiteTemplate(req, template, {
-      name: 'Padaria da Ana',
-      tagline: 'Pão quentinho',
-      whatsapp: '(31) 99999-0000',
-    })
+    const result = await applySiteTemplate(req, template, answers)
 
     const created = calls.filter((c) => c.op === 'create' && c.args.collection === 'pages')
     expect(created.map((c) => (c.args.data as { slug: string }).slug)).toEqual([
       'inicio-2',
-      'sobre',
-      'nossos-cafes',
-      'contato',
+      'cardapio',
+      'galeria',
+      'encomendas',
     ])
     expect(result.homepage).toBe(100)
 
     const home = calls.find((c) => c.op === 'update' && c.args.id === 100)!
     const homeData = (home.args.data as { content: { data: PuckPageData } }).content.data
-    expect(homeData.content[0].props).toMatchObject({
-      text: 'Pão quentinho',
-      // O botão do banner leva à 3ª página do modelo.
-      button: { link: { kind: 'page', pageId: 102 } },
-    })
+    // A faixa de aviso vem antes do banner; a frase respondida vai para o banner.
+    expect(homeData.content[0].type).toBe('Announcement')
+    expect(homeData.content[1].props).toMatchObject({ text: 'Pão quentinho' })
+    // A cidade e o nome entram nos textos de exemplo.
+    const text = JSON.stringify(homeData)
+    expect(text).toContain('Entregamos em Uberlândia')
+    expect(text).toContain('Padaria da Ana começou na cozinha de casa')
+    expect(text).not.toMatch(/\{nome\}|\{cidade\}/)
 
     const globals = calls.filter((c) => c.op === 'updateGlobal')
     const site = globals.find((c) => c.args.slug === 'site')!.args.data as Record<string, unknown>
     expect(site).toMatchObject({
       name: 'Padaria da Ana',
       homepage: 100,
-      fonts: { headings: 'Lora', body: 'Figtree' },
+      fonts: { headings: 'Cormorant Garamond', body: 'Montserrat' },
+      // A personalidade sugerida pelo modelo; a animação do site continua a de antes.
+      personality: 'vitrine',
+      motion: 'suave',
       contact: { email: 'dono@site.com', address: 'Rua Real, 1', whatsapp: '(31) 99999-0000' },
       // O que o modelo não troca vai do que está no ar: senão o Payload completaria com o rascunho.
       logo: 9,
@@ -278,7 +440,9 @@ describe('aplicar um modelo de site', () => {
     const header = globals.find((c) => c.args.slug === 'header')!.args.data as {
       items: { label: string; link: unknown }[]
     }
-    expect(header.items[1]).toEqual({ label: 'Sobre nós', link: { kind: 'page', page: 101 } })
+    expect(header.items[1]).toEqual({ label: 'Cardápio', link: { kind: 'page', page: 101 } })
+    const footer = globals.find((c) => c.args.slug === 'footer')!.args.data as { text: string }
+    expect(footer.text).toBe('Bolos, doces e tortas sob encomenda em Uberlândia.')
 
     // A antiga vai para "Arquivadas" (fora do ar) depois de a página inicial e o menu mudarem:
     // as regras do servidor recusam arquivar a página inicial e as do menu.
@@ -304,20 +468,28 @@ describe('aplicar um modelo de site', () => {
     for (const call of calls.filter((c) => c.args.collection === 'pages')) {
       expect(call.args.overrideAccess).toBe(false)
     }
+    // Nenhuma foto para copiar.
+    expect(result.missingPhotos).toBe(0)
+    expect(calls.some((c) => c.args.collection === 'media')).toBe(false)
   })
 
   it('não arquiva de novo as que já estão arquivadas', async () => {
     const { req, calls } = fakeReq({
       pages: [{ id: 6, title: 'Guardada', slug: 'guardada', archived: true, content: {}, seo: {} }],
     })
-    await applySiteTemplate(req, template, { name: 'Café', tagline: '', whatsapp: '' })
+    await applySiteTemplate(req, template, { ...answers, tagline: '', whatsapp: '' })
     expect(calls.some((c) => c.op === 'update' && c.args.id === 6)).toBe(false)
   })
 
   it('não leva a frase, o endereço e o horário de exemplo para o site', async () => {
     expect(template.site?.tagline).toBeTruthy()
     const { req, calls } = fakeReq({ site: { contact: { email: 'dono@site.com' } } })
-    await applySiteTemplate(req, template, { name: 'Café', tagline: '', whatsapp: '' })
+    await applySiteTemplate(req, template, {
+      name: 'Café',
+      tagline: '',
+      whatsapp: '',
+      city: 'Belém',
+    })
     const site = calls.find((c) => c.op === 'updateGlobal' && c.args.slug === 'site')!.args
       .data as { tagline: unknown; contact: Record<string, unknown> }
     expect(site.tagline).toBeNull()
@@ -327,48 +499,65 @@ describe('aplicar um modelo de site', () => {
       hours: null,
       whatsapp: null,
     })
-    // Também a abertura da página inicial fica com o texto do modelo (Lorem Ipsum), não com a
-    // frase de exemplo.
+    // A abertura da página inicial fica com o texto de exemplo do ramo, não com a frase de exemplo.
     const home = calls.find((c) => c.op === 'update' && c.args.id === 100)!
     const homeData = (home.args.data as { content: { data: PuckPageData } }).content.data
     expect(JSON.stringify(homeData)).not.toContain(template.site!.tagline!)
+    expect(JSON.stringify(homeData)).toContain('aqui em Belém')
   })
 
   it('cria o formulário do modelo e põe o nome do site na página de links', async () => {
-    const landing = asTemplate(templateSeeds.find((item) => item.key === 'landing-energia')!)
+    const landing = asTemplate(templateSeeds.find((item) => item.key === 'landing-vitrine')!)
     const { req, calls } = fakeReq()
-    await applySiteTemplate(
-      req,
-      { ...landing, photos: [] },
-      { name: 'Aula', tagline: '', whatsapp: '' },
-    )
+    await applySiteTemplate(req, landing, {
+      name: 'Aula',
+      tagline: '',
+      whatsapp: '',
+      city: 'Recife',
+    })
     expect(calls.some((c) => c.op === 'create' && c.args.collection === 'forms')).toBe(true)
 
-    const links = asTemplate(templateSeeds.find((item) => item.key === 'links-cafe')!)
+    const links = asTemplate(templateSeeds.find((item) => item.key === 'links-aconchego')!)
     const second = fakeReq()
-    await applySiteTemplate(second.req, links, { name: 'Loja da Bia', tagline: '', whatsapp: '' })
+    await applySiteTemplate(second.req, links, {
+      name: 'Loja da Bia',
+      tagline: '',
+      whatsapp: '',
+      city: 'Recife',
+    })
     const update = second.calls.find((c) => c.op === 'update')!
     const data = (update.args.data as { content: { data: PuckPageData } }).content.data
     expect(data.content[0].props).toMatchObject({ title: 'Loja da Bia' })
+    expect(JSON.stringify(data)).toContain('encomendas em Recife')
   })
 })
 
 describe('fotos que não deu para copiar', () => {
   it('ficam vazias e são contadas para o aviso', async () => {
+    // Um modelo feito à mão no painel ainda pode trazer foto do Pexels.
     const seed = templateSeeds.find((item) => item.key === 'pagina-contato')!
+    const page = seed.pages![0]
+    const data = structuredClone(contentOf(page))
+    const hero = data.content[0]
+    if (hero.type !== 'Hero') throw new Error('esperava um banner')
+    hero.props.image = { mediaId: 1 }
+    const withPhoto = asTemplate({
+      ...seed,
+      photos: [{ url: 'https://images.pexels.com/photos/1/pexels-photo-1.jpeg', alt: 'Loja' }],
+      pages: [{ ...page, content: { version: 2, data } }],
+    })
     const original = globalThis.fetch
     globalThis.fetch = (async () => {
       throw new Error('sem rede')
     }) as typeof fetch
     try {
       const { req, calls } = fakeReq()
-      const result = await applyPageTemplate(req, asTemplate(seed), { title: 'Fale', slug: 'fale' })
-      // O modelo de contato usa 1 das 4 fotos: só ela conta.
+      const result = await applyPageTemplate(req, withPhoto, { title: 'Fale', slug: 'fale' })
       expect(result.missingPhotos).toBe(1)
       expect(calls.some((c) => c.op === 'create' && c.args.collection === 'media')).toBe(false)
       const create = calls.find((c) => c.op === 'create' && c.args.collection === 'pages')!
-      const data = create.args.data as { content: { data: PuckPageData } }
-      expect(data.content.data.content[0].props).toMatchObject({ image: null })
+      const created = create.args.data as { content: { data: PuckPageData } }
+      expect(created.content.data.content[0].props).toMatchObject({ image: null })
     } finally {
       globalThis.fetch = original
     }
@@ -376,17 +565,30 @@ describe('fotos que não deu para copiar', () => {
 })
 
 describe('página a partir de um modelo', () => {
-  it('cria um rascunho com o nome no banner', async () => {
-    const seed = templateSeeds.find((item) => item.key === 'pagina-promocao')!
-    const { req, calls } = fakeReq()
-    await applyPageTemplate(req, asTemplate({ ...seed, photos: [] }), {
-      title: 'Promoção de inverno',
-      slug: 'promocao-de-inverno',
-    })
+  it('cria um rascunho com o nome no banner e o nome do site nos textos', async () => {
+    const seed = templateSeeds.find((item) => item.key === 'pagina-sobre')!
+    const { req, calls } = fakeReq({ site: { name: 'Loja da Bia' } })
+    await applyPageTemplate(req, asTemplate(seed), { title: 'Quem somos nós', slug: 'quem-somos' })
     const create = calls.find((c) => c.op === 'create' && c.args.collection === 'pages')!
     expect(create.args).toMatchObject({ draft: true, overrideAccess: false })
     const data = create.args.data as { _status: string; content: { data: PuckPageData } }
     expect(data._status).toBe('draft')
-    expect(data.content.data.content[0].props).toMatchObject({ title: 'Promoção de inverno' })
+    expect(data.content.data.content[0].props).toMatchObject({ title: 'Quem somos nós' })
+    expect(JSON.stringify(data.content.data)).toContain('quem está por trás de Loja da Bia')
+    expect(JSON.stringify(data.content.data)).not.toContain('{nome}')
+  })
+
+  it('a promoção começa pela faixa de aviso e põe o nome no banner', async () => {
+    const seed = templateSeeds.find((item) => item.key === 'pagina-promocao')!
+    const { req, calls } = fakeReq()
+    await applyPageTemplate(req, asTemplate(seed), {
+      title: 'Promoção de inverno',
+      slug: 'promocao-de-inverno',
+    })
+    const create = calls.find((c) => c.op === 'create' && c.args.collection === 'pages')!
+    const data = create.args.data as { content: { data: PuckPageData } }
+    const [first, second] = data.content.data.content
+    expect(first.type).toBe('Announcement')
+    expect(second.props).toMatchObject({ title: 'Promoção de inverno' })
   })
 })

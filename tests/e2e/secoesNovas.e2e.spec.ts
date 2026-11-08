@@ -364,7 +364,7 @@ test.describe.serial('seções novas (entrega 4)', () => {
 
     // Na prévia, o aviso no lugar da foto que falta.
     const preview = page.frameLocator('iframe')
-    await expect(preview.getByText('Escolha a foto do produto').first()).toBeVisible()
+    await expect(preview.getByText('Escolha uma foto sua do produto').first()).toBeVisible()
     // Arrumação por miniatura.
     const layout = page.getByRole('radiogroup', { name: 'Arrumação' })
     await expect(layout.getByRole('radio', { name: /3 por linha/ })).toBeChecked()

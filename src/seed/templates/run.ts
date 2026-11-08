@@ -1,6 +1,7 @@
 // Uso: npm run modelos (grava na coleção Modelos os modelos que ainda não existem).
 // npm run modelos -- atualizar regrava também os que já existem (pelo identificador), desfazendo o
-// que tiver sido mudado neles pelo painel.
+// que tiver sido mudado neles pelo painel, e apaga os modelos que saíram da lista (como os de antes
+// dos ramos da entrega 6). Nenhuma página guarda de qual modelo veio, então apagar não afeta sites.
 //
 // Os modelos não são conteúdo de teste: são parte do produto e não aparecem no site enquanto
 // ninguém os aplica. Por isso, ao contrário do `seed`, não pedem SEED_PERMITIDO.
@@ -36,7 +37,17 @@ for (const seed of templateSeeds) {
   }
 }
 
+let removed = 0
+if (update) {
+  const { docs } = await payload.delete({
+    collection: 'templates',
+    where: { key: { not_in: templateSeeds.map((seed) => seed.key) } },
+    overrideAccess: true,
+  })
+  removed = docs.length
+}
+
 payload.logger.info(
-  `Modelos: ${created} criados, ${updated} atualizados, ${templateSeeds.length - created - updated} sem mudança.`,
+  `Modelos: ${created} criados, ${updated} atualizados, ${removed} apagados, ${templateSeeds.length - created - updated} sem mudança.`,
 )
 process.exit(0)

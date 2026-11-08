@@ -7,7 +7,7 @@ import { applySiteTemplate } from '@/lib/applyTemplate'
 import config from '@/payload.config'
 import type { Template } from '@/payload-types'
 import { CONTENT_VERSION, emptyPageContent } from '@/puck/schema'
-import { L_S, pageBuilder } from '@/seed/templates/sections'
+import { pageBuilder } from '@/seed/templates/sections'
 
 // Aplicar um modelo de site (v2, entrega 2a) no banco de TEST_DATABASE_URL.
 
@@ -21,13 +21,17 @@ const admin = {
 } as const
 
 const template = {
+  key: 'confeitaria-aconchego',
   pages: [
     {
       title: 'Início',
       slug: 'inicio',
       content: {
         version: CONTENT_VERSION,
-        data: { root: { props: {} }, content: [pageBuilder().hero({})] },
+        data: {
+          root: { props: {} },
+          content: [pageBuilder().hero({ title: 'Doces em {cidade}', text: 'Feitos por {nome}.' })],
+        },
       },
     },
     {
@@ -38,7 +42,7 @@ const template = {
   ],
   site: {},
   header: { items: [{ label: 'Sobre', link: { kind: 'page', page: 2 } }] },
-  footer: { text: L_S },
+  footer: { text: '{nome}, em {cidade}.' },
 } as unknown as Template
 
 const apply = async () =>
@@ -46,6 +50,7 @@ const apply = async () =>
     name: 'Café Teste',
     tagline: '',
     whatsapp: '',
+    city: 'Uberlândia',
   })
 
 const visitorPages = () =>
@@ -77,7 +82,7 @@ describe('aplicar um modelo de site', () => {
   afterEach(async () => {
     await payload.updateGlobal({
       slug: 'site',
-      data: { homepage: null, _status: 'published' },
+      data: { homepage: null, personality: 'classico', _status: 'published' },
       overrideAccess: true,
     })
     await payload.updateGlobal({
@@ -108,6 +113,25 @@ describe('aplicar um modelo de site', () => {
     const header = await payload.findGlobal({ slug: 'header', depth: 0, overrideAccess: false })
     expect(header._status).toBe('published')
     expect(header.items?.[0].link?.page).toBe(pages[1])
+  })
+
+  it('troca {nome} e {cidade} nos textos e usa a personalidade do modelo', async () => {
+    await removePages()
+    const { homepage } = await apply()
+    const draft = await payload.findByID({
+      collection: 'pages',
+      id: homepage,
+      draft: true,
+      overrideAccess: true,
+    })
+    const text = JSON.stringify(draft.content)
+    expect(text).toContain('Doces em Uberlândia')
+    expect(text).toContain('Feitos por Café Teste.')
+    expect(text).not.toContain('{nome}')
+    const footer = await payload.findGlobal({ slug: 'footer', depth: 0, overrideAccess: true })
+    expect(footer.text).toBe('Café Teste, em Uberlândia.')
+    const site = await payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true })
+    expect(site.personality).toBe('aconchego')
   })
 
   it('site só com páginas arquivadas também conta como primeiro início', async () => {
@@ -167,6 +191,7 @@ describe('aplicar um modelo de site', () => {
         name: 'Café Teste',
         tagline: '',
         whatsapp: '',
+        city: 'Uberlândia',
       })
     const slugsOf = async (ids: number[]) =>
       Promise.all(

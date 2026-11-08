@@ -266,7 +266,7 @@ describe('Vitrine de produtos', () => {
   it('no editor, o produto sem foto aparece com o aviso', () => {
     const html = render(true)
     expect(html).toContain('Sem foto')
-    expect(html).toContain('Escolha a foto do produto')
+    expect(html).toContain('Escolha uma foto sua do produto')
   })
 })
 

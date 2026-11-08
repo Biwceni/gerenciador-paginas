@@ -7,7 +7,14 @@ import React, { useState } from 'react'
 import { request } from '@/components/editor/api'
 import { normalizeWhatsApp } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
-import { SEGMENTS, type Segment, SITE_TYPES, type SiteType } from '@/lib/templates'
+import {
+  BUSINESSES,
+  type BusinessType,
+  SITE_TYPES,
+  type SiteType,
+  templatePersonality,
+} from '@/lib/templates'
+import { PERSONALITY_LABELS } from '@/lib/theme'
 
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
@@ -15,7 +22,12 @@ import { Tip } from './Tip'
 import { TemplatePreview, type TemplatePreviewData } from './TemplatePreview'
 import { WhyDisabled } from './WhyDisabled'
 
-export type StartTemplate = TemplatePreviewData & { siteType: SiteType; segment: Segment | null }
+export type StartTemplate = TemplatePreviewData & {
+  key: string
+  siteType: SiteType
+  /** O ramo, nos modelos do "Site da empresa" (`templateBusiness`). */
+  business: BusinessType | null
+}
 
 type Props = {
   adminRoute: string
@@ -31,15 +43,16 @@ type Props = {
   templates: StartTemplate[]
 }
 
-type Step = 'type' | 'segment' | 'model' | 'basics'
+type Step = 'type' | 'segment' | 'basics' | 'model'
 
 // Os quatro passos aparecem na barra desde o começo. O ramo só é perguntado no site da empresa;
-// nos outros tipos, ele é pulado e aparece como feito.
+// nos outros tipos, ele é pulado e aparece como feito. O básico vem antes do modelo (entrega 6):
+// as prévias dos modelos já mostram o nome do negócio e a cidade nos textos de exemplo.
 const STEP_NAMES: [Step, string][] = [
   ['type', 'Tipo de site'],
   ['segment', 'Ramo'],
-  ['model', 'Modelo'],
   ['basics', 'O básico'],
+  ['model', 'Modelo'],
 ]
 
 function StepBar({ current }: { current: Step }) {
@@ -122,10 +135,11 @@ export function StartWizard({
 }: Props) {
   const router = useRouter()
   const [type, setType] = useState<SiteType | null>(null)
-  const [segment, setSegment] = useState<Segment | null>(null)
+  const [business, setBusiness] = useState<BusinessType | null>(null)
   const [templateId, setTemplateId] = useState<number | null>(null)
   const [step, setStep] = useState(0)
   const [name, setName] = useState(initial?.name ?? '')
+  const [city, setCity] = useState('')
   const [tagline, setTagline] = useState(initial?.tagline ?? '')
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '')
   const [bigPreview, setBigPreview] = useState<StartTemplate | null>(null)
@@ -133,41 +147,41 @@ export function StartWizard({
   const [error, setError] = useState<string | null>(null)
 
   const steps: Step[] =
-    type === 'institucional' ? ['type', 'segment', 'model', 'basics'] : ['type', 'model', 'basics']
+    type === 'institucional' ? ['type', 'segment', 'basics', 'model'] : ['type', 'basics', 'model']
   const current = steps[step]
   const options = templates.filter(
-    (item) => item.siteType === type && (type !== 'institucional' || item.segment === segment),
+    (item) => item.siteType === type && (type !== 'institucional' || item.business === business),
   )
   const chosen = options.find((item) => item.id === templateId) ?? null
   const availableTypes = SITE_TYPES.filter((item) =>
     templates.some((t) => t.siteType === item.value),
   )
-  const availableSegments = SEGMENTS.filter((item) =>
-    templates.some((t) => t.siteType === 'institucional' && t.segment === item.value),
+  const availableBusinesses = BUSINESSES.filter((item) =>
+    templates.some((t) => t.business === item.value),
   )
 
   // Trocar o tipo ou o ramo escolhe o primeiro modelo da lista nova.
-  const firstOf = (nextType: SiteType, nextSegment: Segment | null) =>
+  const firstOf = (nextType: SiteType, nextBusiness: BusinessType | null) =>
     templates.find(
       (item) =>
         item.siteType === nextType &&
-        (nextType !== 'institucional' || item.segment === nextSegment),
+        (nextType !== 'institucional' || item.business === nextBusiness),
     )?.id ?? null
   const chooseType = (value: SiteType) => {
     setType(value)
-    setTemplateId(firstOf(value, segment))
+    setTemplateId(firstOf(value, business))
   }
-  const chooseSegment = (value: Segment) => {
-    setSegment(value)
+  const chooseBusiness = (value: BusinessType) => {
+    setBusiness(value)
     setTemplateId(firstOf('institucional', value))
   }
 
   const whatsappInvalid = Boolean(whatsapp.trim()) && !normalizeWhatsApp(whatsapp)
   const canGo =
     (current === 'type' && Boolean(type)) ||
-    (current === 'segment' && Boolean(segment)) ||
-    (current === 'model' && Boolean(chosen)) ||
-    (current === 'basics' && Boolean(name.trim()) && !whatsappInvalid && !busy)
+    (current === 'segment' && Boolean(business)) ||
+    (current === 'basics' && Boolean(name.trim()) && Boolean(city.trim()) && !whatsappInvalid) ||
+    (current === 'model' && Boolean(chosen) && !busy)
   // O que falta para seguir, embaixo do botão desligado.
   const missing =
     canGo || busy
@@ -178,7 +192,9 @@ export function StartWizard({
           ? 'Escolha uma opção para continuar'
           : !name.trim()
             ? 'Escreva o nome do negócio para continuar'
-            : 'Confira o número do WhatsApp para continuar'
+            : !city.trim()
+              ? 'Escreva a cidade para continuar'
+              : 'Confira o número do WhatsApp para continuar'
 
   const create = async () => {
     if (!chosen) return
@@ -192,6 +208,7 @@ export function StartWizard({
           method: 'POST',
           body: JSON.stringify({
             name: name.trim(),
+            city: city.trim(),
             tagline: tagline.trim(),
             whatsapp: whatsapp.trim(),
           }),
@@ -234,6 +251,20 @@ export function StartWizard({
     )
   }
 
+  // O que o modelo sugere para o ramo: a personalidade e o par de letras (as cores aparecem na prévia).
+  const lookNote = (template: StartTemplate) => {
+    const personality = templatePersonality(template.key)
+    const fonts = template.site?.fonts
+    const parts = [
+      personality && `Personalidade ${PERSONALITY_LABELS[personality].name}`,
+      fonts?.headings &&
+        (fonts.body && fonts.body !== fonts.headings
+          ? `letras ${fonts.headings} e ${fonts.body}`
+          : `letras ${fonts.headings}`),
+    ].filter(Boolean)
+    return parts.join(' · ')
+  }
+
   const pagesNote = (template: StartTemplate) =>
     template.pageTitles.length > 1
       ? `Os dois já vêm com ${template.pageTitles.length} páginas: ${template.pageTitles.join(', ')}.`
@@ -265,68 +296,15 @@ export function StartWizard({
             <>
               <h1>Qual é o ramo do seu negócio?</h1>
               <p className="gp-muted">
-                Usamos isso para escolher as páginas, os textos e as fotos de exemplo.
+                Usamos isso para escolher as páginas, a ordem das seções e os textos de exemplo, e
+                para sugerir cores e letras que combinam com o ramo.
               </p>
               <Choices
                 label="Ramo do negócio"
-                onChange={chooseSegment}
-                options={availableSegments}
-                value={segment}
+                onChange={chooseBusiness}
+                options={availableBusinesses}
+                value={business}
               />
-            </>
-          )}
-
-          {current === 'model' && (
-            <>
-              <h1>Escolha um modelo</h1>
-              <p className="gp-muted">
-                {options[0] && pagesNote(options[0])} Os textos são Lorem Ipsum, só para mostrar o
-                lugar de cada coisa. Você troca tudo depois.
-              </p>
-              <div aria-label="Modelos" className="gp-tplsites" role="radiogroup">
-                {options.map((option) => (
-                  <div
-                    className={`gp-tplsite${option.id === templateId ? ' is-on' : ''}`}
-                    key={option.id}
-                  >
-                    {/* Um iframe não pode ficar dentro de um botão: o cartão faz o papel dele. */}
-                    <div
-                      aria-checked={option.id === templateId}
-                      aria-label={`Escolher o modelo ${option.name}`}
-                      className="gp-tplsite__preview"
-                      onClick={() => setTemplateId(option.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          setTemplateId(option.id)
-                        }
-                      }}
-                      role="radio"
-                      tabIndex={0}
-                    >
-                      <TemplatePreview template={option} />
-                    </div>
-                    <div className="gp-tplsite__meta">
-                      <div>
-                        <b>{option.name}</b>
-                        <span className="gp-small gp-muted">{option.description}</span>
-                      </div>
-                      <button
-                        className="gp-btn gp-btn--sm"
-                        onClick={() => setBigPreview(option)}
-                        type="button"
-                      >
-                        <PanelIcon name="eye" size={14} />
-                        Ver maior
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Tip>
-                As cores e as letras do modelo são só um começo. Em Configurações você escolhe
-                quaisquer outras.
-              </Tip>
             </>
           )}
 
@@ -334,8 +312,8 @@ export function StartWizard({
             <>
               <h1>Agora, o básico</h1>
               <p className="gp-muted">
-                Usamos esses dados no topo da página, no rodapé e no Google. Dá para mudar tudo
-                depois.
+                Usamos esses dados no topo da página, no rodapé, no Google e nos textos de exemplo
+                do modelo. Dá para mudar tudo depois.
               </p>
               <div className="gp-field">
                 <label htmlFor="ob-name">{(type && NAME_LABEL[type]) || 'Nome do negócio'}</label>
@@ -347,6 +325,23 @@ export function StartWizard({
                   placeholder={chosen.site?.name ? `Ex.: ${chosen.site.name}` : undefined}
                   value={name}
                 />
+              </div>
+              <div className="gp-field">
+                <label htmlFor="ob-city">Cidade</label>
+                <input
+                  aria-describedby="ob-city-hint"
+                  autoComplete="address-level2"
+                  className="gp-input"
+                  id="ob-city"
+                  maxLength={60}
+                  onChange={(event) => setCity(event.target.value)}
+                  placeholder="Ex.: Uberlândia"
+                  value={city}
+                />
+                <span className="gp-hint" id="ob-city-hint">
+                  Entra nos textos de exemplo, como “Entregamos em Uberlândia”. Se atende só pela
+                  internet, escreva “todo o Brasil”.
+                </span>
               </div>
               <div className="gp-field">
                 <label htmlFor="ob-tagline">Em uma frase, do que se trata?</label>
@@ -383,6 +378,62 @@ export function StartWizard({
                     : 'Os botões de WhatsApp do site usam este número. Dá para pôr ou mudar depois em Configurações.'}
                 </span>
               </div>
+            </>
+          )}
+
+          {current === 'model' && (
+            <>
+              <h1>Escolha um modelo</h1>
+              <p className="gp-muted">
+                {options[0] && pagesNote(options[0])} Os textos são exemplos do seu ramo, já com o
+                nome e a cidade que você escreveu: troque pelos seus. As fotos ficam para você
+                escolher.
+              </p>
+              <div aria-label="Modelos" className="gp-tplsites" role="radiogroup">
+                {options.map((option) => (
+                  <div
+                    className={`gp-tplsite${option.id === templateId ? ' is-on' : ''}`}
+                    key={option.id}
+                  >
+                    {/* Um iframe não pode ficar dentro de um botão: o cartão faz o papel dele. */}
+                    <div
+                      aria-checked={option.id === templateId}
+                      aria-label={`Escolher o modelo ${option.name}`}
+                      className="gp-tplsite__preview"
+                      onClick={() => setTemplateId(option.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setTemplateId(option.id)
+                        }
+                      }}
+                      role="radio"
+                      tabIndex={0}
+                    >
+                      <TemplatePreview city={city} name={name} template={option} />
+                    </div>
+                    <div className="gp-tplsite__meta">
+                      <div>
+                        <b>{option.name}</b>
+                        <span className="gp-small gp-muted">{option.description}</span>
+                        <span className="gp-small gp-tplsite__look">{lookNote(option)}</span>
+                      </div>
+                      <button
+                        className="gp-btn gp-btn--sm"
+                        onClick={() => setBigPreview(option)}
+                        type="button"
+                      >
+                        <PanelIcon name="eye" size={14} />
+                        Ver maior
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Tip>
+                A personalidade, as cores e as letras do modelo são sugestões para o seu ramo. Em
+                Sua marca você escolhe quaisquer outras.
+              </Tip>
               {existingPages > 0 && (
                 <div className="gp-warnbox" role="note">
                   <b>
@@ -436,7 +487,7 @@ export function StartWizard({
                 onClick={next}
                 type="button"
               >
-                {current !== 'basics'
+                {current !== 'model'
                   ? 'Continuar'
                   : busy
                     ? 'Montando seu site…'
@@ -449,7 +500,7 @@ export function StartWizard({
           </div>
           {busy && (
             <p aria-live="polite" className="gp-small gp-muted">
-              Copiando as fotos e criando as páginas. Pode levar até um minuto.
+              Criando as páginas, o menu e os formulários. Leva alguns segundos.
             </p>
           )}
         </div>
@@ -475,11 +526,11 @@ export function StartWizard({
       {bigPreview && (
         <PanelDialog onClose={() => setBigPreview(null)} title={`Modelo ${bigPreview.name}`} wide>
           <p className="gp-small gp-muted">
-            {bigPreview.pageTitles.length > 1 ? 'Página inicial' : 'A página'} com textos e fotos de
-            exemplo.
+            {bigPreview.pageTitles.length > 1 ? 'Página inicial' : 'A página'} com textos de
+            exemplo. O desenho no lugar das fotos mostra onde vão as suas.
           </p>
           <div className="gp-bigprev">
-            <TemplatePreview template={bigPreview} />
+            <TemplatePreview city={city} name={name} template={bigPreview} />
           </div>
           <div className="gp-actions gp-actions--end">
             <button className="gp-btn" onClick={() => setBigPreview(null)} type="button">

@@ -47,7 +47,9 @@ export const applyTemplateEndpoint: Endpoint = {
     const name = text(body.name, 80)
     const tagline = text(body.tagline, 200)
     const whatsapp = text(body.whatsapp, 30)
+    const city = text(body.city, 60)
     if (!name) return fail('Escreva o nome do site.')
+    if (!city) return fail('Escreva a cidade.')
     if (whatsapp && !normalizeWhatsApp(whatsapp)) {
       return fail('Digite o WhatsApp com DDD. Ex.: (31) 99999-0000.')
     }
@@ -55,7 +57,7 @@ export const applyTemplateEndpoint: Endpoint = {
     const template = await findTemplate(req, 'site')
     if (!template) return fail('Modelo não encontrado.', 404)
     try {
-      const result = await applySiteTemplate(req, template, { name, tagline, whatsapp })
+      const result = await applySiteTemplate(req, template, { name, tagline, whatsapp, city })
       return Response.json(result)
     } catch (error) {
       return failFrom(req, error, 'Não deu para montar o site com o modelo')

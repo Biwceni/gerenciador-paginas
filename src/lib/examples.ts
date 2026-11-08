@@ -1,6 +1,7 @@
 import type { Media, Template } from '../payload-types'
 import { type PageComponent, parsePageContent, type PuckPageData } from '../puck/schema'
 import { richTextToPlain } from './richtext'
+import { EXAMPLE_PLACEHOLDERS } from './templates'
 
 // O que ainda é exemplo de um modelo (v2, entrega 2a). Nada disso tem campo próprio: é calculado na
 // hora. Os avisos só orientam, nenhum bloqueia a publicação.
@@ -23,10 +24,27 @@ const TEXT_KEYS = new Set([
   'description',
 ])
 
-// Títulos legíveis dos modelos, bons para manter: não contam como exemplo.
-const KEEPABLE_TEXTS = new Set(['perguntas frequentes', 'política de privacidade'])
+/**
+ * Títulos e nomes legíveis dos modelos, bons para manter: não contam como exemplo. Os modelos
+ * (`src/seed/templates/`) usam estes mesmos textos onde o título é genérico.
+ */
+export const KEEPABLE_TEXTS: readonly string[] = [
+  'Perguntas frequentes',
+  'Política de privacidade',
+  'Como funciona',
+  'Como chegar',
+  'Onde estamos',
+  'Fale com a gente',
+  'Galeria',
+  'Nossos trabalhos',
+  'Cardápio',
+  'Serviços e preços',
+  'Programação',
+]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()
+
+const KEEPABLE = new Set(KEEPABLE_TEXTS.map(normalize))
 
 function collectTexts(value: unknown, found: Set<string>) {
   if (Array.isArray(value)) return value.forEach((item) => collectTexts(item, found))
@@ -35,13 +53,16 @@ function collectTexts(value: unknown, found: Set<string>) {
     if (typeof field === 'string') {
       if (TEXT_KEYS.has(key) || key === 'body') {
         const text = normalize(key === 'body' ? richTextToPlain(field) : field)
-        if (text && !KEEPABLE_TEXTS.has(text)) found.add(text)
+        if (text && !KEEPABLE.has(text)) found.add(text)
       }
     } else collectTexts(field, found)
   }
 }
 
-/** Junta os textos de todos os modelos gravados. Modelo num formato inválido fica de fora. */
+/**
+ * Junta os textos de todos os modelos gravados, como estão no modelo: com `{nome}` e `{cidade}` no
+ * lugar do nome do negócio e da cidade. Modelo num formato inválido fica de fora.
+ */
 export function exampleTexts(templates: Pick<Template, 'pages'>[]): string[] {
   const found = new Set<string>()
   for (const template of templates) {
@@ -53,13 +74,46 @@ export function exampleTexts(templates: Pick<Template, 'pages'>[]): string[] {
   return [...found]
 }
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Os textos dos modelos prontos para comparar. Texto com marcador vira um padrão em que o marcador
+ * aceita qualquer nome ou cidade: "doces feitos à mão em {cidade}" reconhece "doces feitos à mão em
+ * uberlândia". Os outros são comparados por igual.
+ */
+export function exampleMatcher(texts: readonly string[]): (text: string) => boolean {
+  const exact = new Set<string>()
+  const patterns: RegExp[] = []
+  const markers = Object.values(EXAMPLE_PLACEHOLDERS)
+  for (const text of texts) {
+    if (!markers.some((marker) => text.includes(marker))) {
+      exact.add(text)
+      continue
+    }
+    // Só o nome (o título da página de links): reconheceria qualquer texto. Fica de fora.
+    const rest = markers.reduce((left, marker) => left.replaceAll(marker, ''), text)
+    if (!/\p{L}/u.test(rest)) continue
+    let source = escapeRegExp(text)
+    for (const marker of markers) source = source.replaceAll(escapeRegExp(marker), '.+?')
+    patterns.push(new RegExp(`^${source}$`, 's'))
+  }
+  return (text) => exact.has(text) || patterns.some((pattern) => pattern.test(text))
+}
+
+const matchers = new WeakMap<readonly string[], (text: string) => boolean>()
+
 /** As seções da página que ainda têm algum texto igual a um texto dos modelos. */
 export function findExampleSections(data: PuckPageData, texts: readonly string[]): PageComponent[] {
-  const known = new Set(texts)
+  // O editor confere a cada mudança, sempre com a mesma lista: os padrões são montados uma vez.
+  let isExample = matchers.get(texts)
+  if (!isExample) {
+    isExample = exampleMatcher(texts)
+    matchers.set(texts, isExample)
+  }
   return data.content.filter((section) => {
     const found = new Set<string>()
     collectTexts(section, found)
-    return [...found].some((text) => known.has(text))
+    return [...found].some(isExample)
   })
 }
 

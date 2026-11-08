@@ -9,21 +9,21 @@ import {
 } from '../puck/schema'
 
 // Páginas de teste, com exemplos das seções. Seguem o modelo "Café, Aconchegante" do
-// protótipo navegável, com Lorem Ipsum no conteúdo e nomes de página, menu e botões legíveis.
+// protótipo navegável, com textos de exemplo de uma cafeteria.
 //
 // Sem `recreate`, só cria o que ainda não existe: rodar de novo não apaga nem sobrescreve nada que
 // alguém mudou no painel. Com `recreate` (npm run seed -- recriar), apaga as páginas criadas pelo
 // script (marcadas com `createdBySeed`) e regrava as configurações, o cabeçalho e o rodapé.
 // Quem chama confere antes se o banco pode receber dados de teste (`src/seed/run.ts`).
 
-const L_S = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
-const L_M =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-const HERO_TITLE = 'Lorem ipsum dolor sit amet, consectetur'
+const SHORT = 'Café especial torrado toda semana, aqui mesmo na loja.'
+const LONG =
+  'Escolhemos os grãos direto de pequenos produtores da Serra da Mantiqueira e torramos em pequenos lotes. Assim o café chega na sua xícara com todo o aroma.'
+const HERO_TITLE = 'Café fresquinho, do jeito que você gosta'
 
-const columnText = (id: string): ColumnPiece => ({
+const columnText = (id: string, title: string): ColumnPiece => ({
   type: 'ColumnText',
-  props: { id, title: 'Dolor sit amet', text: L_M },
+  props: { id, title, text: LONG },
 })
 
 const content = (items: PageComponent[]): PageContent => ({
@@ -55,7 +55,7 @@ const pages: SeedPage[] = [
           id: 'cta-novidades',
           menuLabel: '',
           title: 'Novidades',
-          text: L_S,
+          text: SHORT,
           button: null,
           style: 'soft',
           anim: 'site',
@@ -73,7 +73,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'hero-contato',
           title: HERO_TITLE,
-          text: L_S,
+          text: SHORT,
           image: photo(2),
           button: { label: 'Chamar no WhatsApp', link: whatsapp },
           style: 'soft',
@@ -89,7 +89,7 @@ const pages: SeedPage[] = [
           id: 'contato-endereco',
           menuLabel: 'Endereço',
           title: 'Venha nos visitar',
-          text: L_S,
+          text: SHORT,
           style: 'light',
           anim: 'site',
         },
@@ -100,7 +100,14 @@ const pages: SeedPage[] = [
           id: 'contato-perguntas',
           menuLabel: 'Perguntas',
           title: 'Perguntas frequentes',
-          items: [1, 2, 3].map(() => ({ question: 'Lorem ipsum dolor sit amet?', answer: L_M })),
+          items: [
+            { question: 'Vocês entregam?', answer: 'Entregamos no centro e nos bairros vizinhos.' },
+            {
+              question: 'Tem opção sem lactose?',
+              answer: 'Temos leite vegetal de aveia e de amêndoas.',
+            },
+            { question: 'Vendem o café em grãos?', answer: LONG },
+          ],
           style: 'soft',
           anim: 'site',
         },
@@ -117,7 +124,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'hero-cafes',
           title: HERO_TITLE,
-          text: L_S,
+          text: SHORT,
           image: null,
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
           style: 'brand',
@@ -133,9 +140,9 @@ const pages: SeedPage[] = [
           id: 'colunas-cafes',
           menuLabel: '',
           layout: 'thirds',
-          column1: [columnText('coluna-1')],
-          column2: [columnText('coluna-2')],
-          column3: [columnText('coluna-3')],
+          column1: [columnText('coluna-1', 'Café da casa')],
+          column2: [columnText('coluna-2', 'Café coado')],
+          column3: [columnText('coluna-3', 'Café gelado')],
           style: 'light',
           anim: 'site',
         },
@@ -145,7 +152,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'cta-cafes',
           menuLabel: '',
-          title: 'Lorem Ipsum',
+          title: 'Novidades em breve',
           text: 'Este botão leva para uma página em rascunho, então ele não aparece no site.',
           button: { label: 'Ver novidades', link: { kind: 'page', pageId: ids.novidades } },
           style: 'soft',
@@ -164,7 +171,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'hero-sobre',
           title: HERO_TITLE,
-          text: L_S,
+          text: SHORT,
           image: photo(1),
           button: { label: 'Fale com a gente', link: whatsapp },
           style: 'image',
@@ -179,8 +186,8 @@ const pages: SeedPage[] = [
         props: {
           id: 'texto-sobre',
           menuLabel: '',
-          title: 'Lorem Ipsum',
-          text: L_M,
+          title: 'Nossa história',
+          text: LONG,
           image: photo(0),
           side: 'left',
           style: 'light',
@@ -192,11 +199,11 @@ const pages: SeedPage[] = [
         props: {
           id: 'destaques-sobre',
           menuLabel: '',
-          title: 'Lorem Ipsum',
+          title: 'Por que nosso café é diferente',
           marker: 'none',
-          items: [1, 2, 3].map(() => ({
-            title: 'Dolor sit amet',
-            text: L_S,
+          items: ['Grão escolhido', 'Torra semanal', 'Preparo na hora'].map((title) => ({
+            title,
+            text: SHORT,
             icon: 'check' as const,
             photo: null,
           })),
@@ -209,10 +216,18 @@ const pages: SeedPage[] = [
         props: {
           id: 'depoimentos-sobre',
           menuLabel: '',
-          title: 'Consectetur Adipiscing',
+          title: 'Quem já provou',
           items: [
-            { quote: L_M, name: 'Lorem Ipsum', photo: null },
-            { quote: L_M, name: 'Dolor Amet', photo: null },
+            {
+              quote: 'O melhor cappuccino da cidade. Virei cliente de todo dia.',
+              name: 'Ana P.',
+              photo: null,
+            },
+            {
+              quote: 'Compro o café em grãos toda semana. Sempre fresquinho.',
+              name: 'João M.',
+              photo: null,
+            },
           ],
           style: 'soft',
           anim: 'site',
@@ -223,7 +238,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'galeria-sobre',
           menuLabel: '',
-          title: 'Dolor Amet',
+          title: 'Nosso cantinho',
           images: [photo(0), photo(1), photo(2)]
             .filter((ref) => ref !== null)
             .map((ref) => ({ ...ref, caption: '' })),
@@ -238,8 +253,8 @@ const pages: SeedPage[] = [
         props: {
           id: 'cta-sobre',
           menuLabel: '',
-          title: 'Sit Consectetur',
-          text: L_S,
+          title: 'Venha tomar um café',
+          text: SHORT,
           button: { label: 'Ver endereço', link: { kind: 'page', pageId: ids.contato } },
           style: 'brand',
           anim: 'site',
@@ -257,7 +272,7 @@ const pages: SeedPage[] = [
         props: {
           id: 'hero-inicio',
           title: HERO_TITLE,
-          text: L_S,
+          text: SHORT,
           image: photo(0),
           button: {
             label: 'Conheça nossos cafés',
@@ -275,8 +290,8 @@ const pages: SeedPage[] = [
         props: {
           id: 'texto-inicio',
           menuLabel: '',
-          title: 'Lorem Ipsum',
-          text: L_M,
+          title: 'Do grão à xícara',
+          text: LONG,
           image: photo(1),
           side: 'right',
           style: 'soft',
@@ -288,8 +303,8 @@ const pages: SeedPage[] = [
         props: {
           id: 'cta-inicio',
           menuLabel: '',
-          title: 'Dolor Amet',
-          text: L_S,
+          title: 'Bateu a vontade?',
+          text: SHORT,
           button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
           style: 'brand',
           anim: 'site',
@@ -376,7 +391,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
       slug: 'site',
       data: {
         name: 'Café Grão Mineiro',
-        tagline: L_S,
+        tagline: SHORT,
         homepage: ids.inicio,
         colors: {
           primary: '#6b3f24',
@@ -394,7 +409,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
           hours: 'Seg a sáb, das 7h às 19h',
         },
         social: { instagram: '@cafegraomineiro' },
-        seoDescription: L_S,
+        seoDescription: SHORT,
         _status: 'published',
       },
       overrideAccess: true,
@@ -429,7 +444,7 @@ export async function seed(payload: Payload, { recreate = false } = {}): Promise
     await payload.updateGlobal({
       slug: 'footer',
       data: {
-        text: L_S,
+        text: SHORT,
         showMenu: true,
         showContact: true,
         showSocial: true,
