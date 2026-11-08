@@ -89,7 +89,6 @@ export async function SettingsView(props: AdminViewServerProps) {
         apiRoute={payload.config.routes.api}
         canStartOver={user.role === 'admin'}
         domain={new URL(getServerURL()).host}
-        fontFaces={site.fontFaces ?? null}
         initial={initial}
         draftHome={draftHome ? { id: draftHome.id, title: pageTitle(draftHome.title) } : null}
         draftPrivacy={

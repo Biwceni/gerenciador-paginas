@@ -124,6 +124,12 @@ export default buildConfig({
           exact: true,
           meta: { title: 'Nova página' },
         },
+        panelBrand: {
+          Component: '/components/panel/BrandView#BrandView',
+          path: '/sua-marca',
+          exact: true,
+          meta: { title: 'Sua marca' },
+        },
         panelPhotos: {
           Component: '/components/panel/PhotosView#PhotosView',
           path: '/fotos',

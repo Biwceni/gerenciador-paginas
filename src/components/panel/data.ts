@@ -17,7 +17,8 @@ import {
 import { pageTitle } from '@/lib/pageTitle'
 import { type FinishInput, NOT_ARCHIVED, pageStatus, type PageStatus, timeAgo } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
-import type { FormSubmission } from '@/payload-types'
+import { smallPhotos } from '@/lib/photoSize'
+import type { FormSubmission, Media } from '@/payload-types'
 import { pageHref, pagePhotoIds } from '@/puck/references'
 import { parsePageContent } from '@/puck/schema'
 
@@ -121,7 +122,7 @@ export async function loadFinishInput(
     }),
     payload.find({
       collection: 'media',
-      select: { sourceUrl: true },
+      select: { sourceUrl: true, width: true },
       depth: 0,
       limit: 1000,
       pagination: false,
@@ -132,15 +133,21 @@ export async function loadFinishInput(
   ])
 
   const examplePhotos = new Set(photos.docs.filter(isExamplePhoto).map((photo) => photo.id))
+  const photoById = new Map(photos.docs.map((photo) => [photo.id, photo]))
   const withTexts = new Set<number>()
+  const withSmallPhotos = new Set<number>()
   let examplePhotoPages = 0
   for (const doc of latest.docs) {
     const content = parsePageContent(doc.content)
-    const used = pagePhotoIds(content.success ? content.data.data : null, doc.seo?.image)
+    const data = content.success ? content.data.data : null
+    const used = pagePhotoIds(data, doc.seo?.image)
     if (used.some((id) => examplePhotos.has(id))) examplePhotoPages++
-    if (content.success && findExampleSections(content.data.data, texts).length) {
-      withTexts.add(doc.id)
-    }
+    if (data && findExampleSections(data, texts).length) withTexts.add(doc.id)
+    // As fotos de exemplo têm o próprio passo: aqui contam só as fotos da pessoa.
+    const small = smallPhotos(data, (id) => photoById.get(id)).filter(
+      ({ id }) => !examplePhotos.has(id),
+    )
+    if (small.length) withSmallPhotos.add(doc.id)
   }
 
   const home = pageOrder.find((page) => page.home)
@@ -152,8 +159,44 @@ export async function loadFinishInput(
       .filter((page) => withTexts.has(page.id))
       .map(({ id, title }) => ({ id, title })),
     examplePhotoPages,
+    smallPhotoPages: pageOrder
+      .filter((page) => withSmallPhotos.has(page.id))
+      .map(({ id, title }) => ({ id, title })),
     home: home ? { id: home.id, live: home.status !== 'draft' } : null,
   }
+}
+
+/**
+ * Fotos pequenas demais para onde estão (tela Fotos): a largura que cada uma precisaria ter. Vale o
+ * rascunho mais recente das páginas fora de "Arquivadas".
+ */
+export async function loadSmallPhotos(
+  payload: Payload,
+  user: TypedUser,
+  photos: Pick<Media, 'id' | 'width'>[],
+): Promise<Record<number, number>> {
+  const { docs } = await payload.find({
+    collection: 'pages',
+    where: NOT_ARCHIVED,
+    select: { content: true },
+    depth: 0,
+    draft: true,
+    limit: 500,
+    pagination: false,
+    overrideAccess: false,
+    user,
+  })
+  const photoById = new Map(photos.map((photo) => [photo.id, photo]))
+  const small: Record<number, number> = {}
+  for (const doc of docs) {
+    const content = parsePageContent(doc.content)
+    for (const { id, minWidth } of smallPhotos(content.success ? content.data.data : null, (id) =>
+      photoById.get(id),
+    )) {
+      small[id] = Math.max(small[id] ?? 0, minWidth)
+    }
+  }
+  return small
 }
 
 export type PendingGlobal = { slug: 'site' | 'header' | 'footer'; label: string }

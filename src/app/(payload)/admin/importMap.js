@@ -29,6 +29,7 @@ import { PanelTopBar as PanelTopBar_48da7817562abc5a67619055101871a9 } from '../
 import { HomeCrumb as HomeCrumb_580cec3ab720399681829ec037f1b618 } from '../../../components/admin/HomeCrumb'
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { PanelFonts as PanelFonts_1518cc1b7035b81b07a381805e936d5e } from '../../../components/panel/PanelFonts'
+import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { LoginView as LoginView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { ForgotView as ForgotView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { FirstUserView as FirstUserView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
@@ -37,6 +38,7 @@ import { Dashboard as Dashboard_65e8b0fdc5f8da02b62d337686836a55 } from '../../.
 import { AccountView as AccountView_545084acf205edc0b09aabb359efe2cd } from '../../../components/panel/AccountView'
 import { PagesView as PagesView_3ab2f2f957837c1342f8d935eb94cb95 } from '../../../components/panel/PagesView'
 import { NewPageView as NewPageView_1d0a38642d637525d244257b6e4edf4a } from '../../../components/panel/NewPageView'
+import { BrandView as BrandView_ff7af01bc8d76e6937bca18564324412 } from '../../../components/panel/BrandView'
 import { PhotosView as PhotosView_b45782ed4be03127f4543c2ffec78e23 } from '../../../components/panel/PhotosView'
 import { MenuView as MenuView_f138c6e65b4ec71794fced2fc63c190a } from '../../../components/panel/MenuView'
 import { SettingsView as SettingsView_558b8145a55436ce2b8bd207b9fa74ac } from '../../../components/panel/SettingsView'
@@ -47,7 +49,6 @@ import { AdvancedView as AdvancedView_ce4a6dfea9b683a2239e04c0a7b450d5 } from '.
 import { StartView as StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06 } from '../../../components/panel/StartView'
 import { EditorView as EditorView_d87577dd5d0a49997373c51582218ed3 } from '../../../components/editor/EditorView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -82,6 +83,7 @@ export const importMap = {
   "/components/admin/HomeCrumb#HomeCrumb": HomeCrumb_580cec3ab720399681829ec037f1b618,
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
   "/components/panel/PanelFonts#PanelFonts": PanelFonts_1518cc1b7035b81b07a381805e936d5e,
+  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "/components/auth/AuthViews#LoginView": LoginView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#ForgotView": ForgotView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#FirstUserView": FirstUserView_9cfb307d8750231fb68dc126ba7ee437,
@@ -90,6 +92,7 @@ export const importMap = {
   "/components/panel/AccountView#AccountView": AccountView_545084acf205edc0b09aabb359efe2cd,
   "/components/panel/PagesView#PagesView": PagesView_3ab2f2f957837c1342f8d935eb94cb95,
   "/components/panel/NewPageView#NewPageView": NewPageView_1d0a38642d637525d244257b6e4edf4a,
+  "/components/panel/BrandView#BrandView": BrandView_ff7af01bc8d76e6937bca18564324412,
   "/components/panel/PhotosView#PhotosView": PhotosView_b45782ed4be03127f4543c2ffec78e23,
   "/components/panel/MenuView#MenuView": MenuView_f138c6e65b4ec71794fced2fc63c190a,
   "/components/panel/SettingsView#SettingsView": SettingsView_558b8145a55436ce2b8bd207b9fa74ac,
@@ -99,6 +102,5 @@ export const importMap = {
   "/components/panel/AdvancedView#AdvancedView": AdvancedView_ce4a6dfea9b683a2239e04c0a7b450d5,
   "/components/panel/StartView#StartView": StartView_8b91bdd4e999d3ffdd820cd5aa8a4e06,
   "/components/editor/EditorView#EditorView": EditorView_d87577dd5d0a49997373c51582218ed3,
-  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

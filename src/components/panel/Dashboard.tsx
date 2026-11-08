@@ -98,6 +98,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             `${photos.totalDocs} ${photos.totalDocs === 1 ? 'foto' : 'fotos'} na biblioteca`,
           ] satisfies Quick,
         ]),
+    ['brand', 'palette', 'Sua marca', 'Logo, cores, letras e o jeito do site'],
     ['menu', 'layout', 'Mudar o menu', 'Os links do topo e do rodapé'],
     ['settings', 'pin', 'Telefone e endereço', 'Muda em todas as páginas'],
   ]

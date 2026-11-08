@@ -13,6 +13,8 @@ import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
 import { photoLabel } from '@/lib/photos'
+import { isSmallPhoto, SMALL_PHOTO_TEXT, SMALL_PHOTO_TITLE } from '@/lib/photoSize'
+import type { Media } from '@/payload-types'
 import { youtubeID } from '@/lib/youtube'
 import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 
@@ -35,8 +37,22 @@ type FieldProps<V> = {
   field?: { label?: string }
 }
 
-/** Uma foto da biblioteca. Guarda só o id (relação), nunca o endereço. */
-export function PhotoField({ value, onChange, readOnly }: FieldProps<PhotoRef>) {
+/** Aviso de foto pequena embaixo da foto (só orienta: a foto continua escolhida). */
+function SmallPhotoNote({ photo, minWidth }: { photo: Media | null; minWidth?: number }) {
+  if (!minWidth || !isSmallPhoto(photo, minWidth)) return null
+  return <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TEXT}</span>
+}
+
+/**
+ * Uma foto da biblioteca. Guarda só o id (relação), nunca o endereço. `minWidth`: a largura para a
+ * foto não ficar borrada no computador; menor que isso, aparece o aviso de foto pequena.
+ */
+export function PhotoField({
+  value,
+  onChange,
+  readOnly,
+  minWidth,
+}: FieldProps<PhotoRef> & { minWidth?: number }) {
   const { photoById, pickPhoto } = useEditor()
   const photo = value ? photoById[value.mediaId] : null
 
@@ -67,6 +83,7 @@ export function PhotoField({ value, onChange, readOnly }: FieldProps<PhotoRef>) 
           </button>
         )}
         {photo && <span className="ed-hint">{photo.alt?.trim() || 'Sem descrição'}</span>}
+        <SmallPhotoNote minWidth={minWidth} photo={photo} />
       </div>
     </div>
   )
@@ -77,7 +94,8 @@ export function PhotoListField({
   value = [],
   onChange,
   readOnly,
-}: FieldProps<{ mediaId: number }[]>) {
+  minWidth,
+}: FieldProps<{ mediaId: number }[]> & { minWidth?: number }) {
   const { photoById, pickPhoto } = useEditor()
   const move = (from: number, to: number) => {
     const next = [...value]
@@ -99,6 +117,9 @@ export function PhotoListField({
             )}
             <span className="ed-photo-list__name">
               {photo ? photoLabel(photo) : 'Foto apagada'}
+              {minWidth && isSmallPhoto(photo, minWidth) && (
+                <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TITLE}</span>
+              )}
             </span>
             <button
               aria-label="Subir foto"

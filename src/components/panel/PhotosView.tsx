@@ -4,6 +4,7 @@ import React from 'react'
 import { photoUsage } from '@/hooks/protectPhoto'
 import { PANEL_PATHS } from '@/lib/panel'
 
+import { loadSmallPhotos } from './data'
 import { PanelTemplate, requireUser } from './PanelTemplate'
 import { PhotosLibrary } from './PhotosLibrary'
 
@@ -22,6 +23,7 @@ export async function PhotosView(props: AdminViewServerProps) {
     }),
     photoUsage(payload, access),
   ])
+  const small = await loadSmallPhotos(payload, user, photos.docs)
 
   return (
     <PanelTemplate {...props}>
@@ -29,6 +31,7 @@ export async function PhotosView(props: AdminViewServerProps) {
         adminRoute={adminRoute}
         apiRoute={payload.config.routes.api}
         photos={photos.docs}
+        small={small}
         usage={Object.fromEntries(usage)}
       />
     </PanelTemplate>

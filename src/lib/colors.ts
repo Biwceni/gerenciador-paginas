@@ -3,7 +3,8 @@ export const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i
 const DARK_TEXT = '#111111'
 const LIGHT_TEXT = '#ffffff'
 
-function relativeLuminance(hex: string): number {
+/** Luminância relativa da WCAG: 0 é preto, 1 é branco. */
+export function relativeLuminance(hex: string): number {
   const channels = [1, 3, 5].map((start) => {
     const value = parseInt(hex.slice(start, start + 2), 16) / 255
     return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
