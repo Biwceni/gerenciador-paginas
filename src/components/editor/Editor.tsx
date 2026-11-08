@@ -46,6 +46,7 @@ import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
+import { createDraftSaver } from './draftSaver'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
@@ -537,22 +538,34 @@ export function Editor(props: EditorProps) {
               live ? '' : ' · rascunho, ainda não está no ar'
             }`
 
-  // Troca a personalidade na prévia na hora; guarda no rascunho das configurações logo em seguida.
+  // Troca a personalidade na prévia na hora; guarda no rascunho das configurações um pouco depois
+  // da última troca, um pedido por vez (as setas do teclado trocam a cada toque). Só o último pedido
+  // avisa; se ele falhar, a tela volta para a última personalidade que chegou a ser guardada.
+  const personalitySaver = useMemo(
+    () =>
+      createDraftSaver<Personality>({
+        initial: safePersonality(props.theme['--personality']),
+        save: (value) => saveSitePersonality(apiRoute, value),
+        onSaved: (value) =>
+          toast.success(
+            `Personalidade ${PERSONALITY_LABELS[value].name} guardada. O site muda quando você publicar em Sua marca.`,
+          ),
+        onFailed: (lastSaved) => {
+          setPersonality(lastSaved)
+          toast.error('Não deu para trocar a personalidade. Confira a internet e tente de novo.')
+        },
+      }),
+    // Uma fila só durante o editor aberto: o tema inicial vem do servidor uma vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apiRoute],
+  )
+  useEffect(() => () => personalitySaver.dispose(), [personalitySaver])
   const changePersonality = useCallback(
-    async (next: Personality) => {
-      const before = personality
+    (next: Personality) => {
       setPersonality(next)
-      try {
-        await saveSitePersonality(apiRoute, next)
-        toast.success(
-          `Personalidade ${PERSONALITY_LABELS[next].name} guardada. O site muda quando você publicar em Sua marca.`,
-        )
-      } catch {
-        setPersonality(before)
-        toast.error('Não deu para trocar a personalidade. Confira a internet e tente de novo.')
-      }
+      personalitySaver.change(next)
     },
-    [apiRoute, personality],
+    [personalitySaver],
   )
 
   const chrome: Chrome = {
@@ -587,10 +600,13 @@ export function Editor(props: EditorProps) {
       setUndoState(history)
       setDialog('more')
     },
-    leave: flush,
+    // Ao sair, guarda também a personalidade que ainda esperava a pausa.
+    leave: async () => {
+      await Promise.all([flush(), personalitySaver.flush()])
+    },
     connect,
     personality,
-    changePersonality: (value) => void changePersonality(value),
+    changePersonality,
   }
 
   // O que as seções precisam para desenhar na prévia. Todas as páginas contam (até rascunhos):
@@ -767,10 +783,7 @@ export function Editor(props: EditorProps) {
                   <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
                     <PanelIcon name="sliders" size={16} /> Página e Google
                   </button>
-                  <PersonalitySwitch
-                    onChange={(value) => void changePersonality(value)}
-                    value={personality}
-                  />
+                  <PersonalitySwitch onChange={changePersonality} value={personality} />
                   {live && (
                     <a className="ed-btn" href={path} rel="noopener" target="_blank">
                       <PanelIcon name="eye" size={16} /> Ver no site

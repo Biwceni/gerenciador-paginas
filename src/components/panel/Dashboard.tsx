@@ -2,13 +2,22 @@ import { Render } from '@puckeditor/core/rsc'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { AdminViewServerProps, Payload } from 'payload'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { themeStyle } from '@/components/site/theme'
 import { menuPageOrder } from '@/hooks/protectPage'
-import { getHomepage, getSite, readPageContent, siteInfo, siteLinks } from '@/lib/content'
+import {
+  getFooter,
+  getHeader,
+  getHomepage,
+  getMenuAnchors,
+  getSite,
+  readPageContent,
+  siteInfo,
+  siteLinks,
+} from '@/lib/content'
 import { editorPath } from '@/lib/editor'
 import {
   type FinishStep,
@@ -34,20 +43,34 @@ import { LiveSite } from './LiveSite'
 import { PageRowItem } from './PageRowItem'
 import { PanelIcon, type PanelIconName } from './PanelIcon'
 
+/** Lugar da miniatura enquanto ela carrega, ou quando não dá para desenhar. */
+function MiniPlaceholder({ label }: { label?: string }) {
+  return (
+    <div
+      aria-hidden={label ? undefined : true}
+      className="gp-sitecard__mini gp-sitecard__mini--soon"
+    >
+      {label && (
+        <>
+          <PanelIcon name="eye" size={22} />
+          <span>{label}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
 /**
  * Começo da página inicial publicada, como o visitante vê (lido como visitante, igual ao site):
- * topo, seções e rodapé, para a miniatura ao vivo do cartão "Seu site".
+ * topo, seções e rodapé, para a miniatura ao vivo do cartão "Seu site". Fica dentro de um
+ * `Suspense`: o início do painel aparece sem esperar por ela. Se a leitura falhar (uma referência
+ * quebrada, o Storage fora), só a miniatura some, e o resto da tela continua.
  */
 async function LiveHome({ payload }: { payload: Payload }) {
-  const [page, site] = await Promise.all([getHomepage(), getSite()])
-  if (!page) return null
-  const data = readPageContent(page)
-  const metadata = await resolveReferences(
-    payload,
-    data,
-    { ...siteLinks(site), info: siteInfo(site) },
-    page.id,
-  )
+  const home = await loadLiveHome(payload)
+  if (home === 'error') return <MiniPlaceholder />
+  if (!home) return <MiniPlaceholder label="Em construção" />
+  const { page, site, data, metadata } = home
   const campaign = Boolean(page.campaign)
   return (
     <LiveSite fontFaces={site.fontFaces ?? null} theme={themeStyle(site) as Record<string, string>}>
@@ -58,6 +81,26 @@ async function LiveHome({ payload }: { payload: Payload }) {
       <SiteFooter campaign={campaign} />
     </LiveSite>
   )
+}
+
+/** Tudo o que a miniatura lê, de uma vez; um erro na leitura vira `'error'` (e vai para o log). */
+async function loadLiveHome(payload: Payload) {
+  try {
+    const [page, site] = await Promise.all([getHomepage(), getSite()])
+    if (!page) return null
+    const data = readPageContent(page)
+    // Topo e rodapé leem o menu e o rodapé publicados: lidos aqui, um erro deles cai no `catch`.
+    const [metadata] = await Promise.all([
+      resolveReferences(payload, data, { ...siteLinks(site), info: siteInfo(site) }, page.id),
+      getHeader(),
+      getFooter(),
+      getMenuAnchors(),
+    ])
+    return { page, site, data, metadata }
+  } catch (error) {
+    payload.logger.error({ err: error, msg: 'Miniatura do site no início do painel' })
+    return 'error' as const
+  }
 }
 
 const GLOBAL_SCREEN: Record<PendingGlobal['slug'], PanelPath> = {
@@ -213,12 +256,11 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             Seu site
           </h2>
           {siteLive ? (
-            <LiveHome payload={payload} />
+            <Suspense fallback={<MiniPlaceholder />}>
+              <LiveHome payload={payload} />
+            </Suspense>
           ) : (
-            <div className="gp-sitecard__mini gp-sitecard__mini--soon">
-              <PanelIcon name="eye" size={22} />
-              <span>Em construção</span>
-            </div>
+            <MiniPlaceholder label="Em construção" />
           )}
           <div className="gp-sitecard__bar">
             {siteLive ? (

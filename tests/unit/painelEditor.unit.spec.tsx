@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CHOICE_THUMBS, ChoiceThumb } from '@/components/editor/ChoiceThumbs'
+import { createDraftSaver } from '@/components/editor/draftSaver'
 import { PUCK_COLORS } from '@/components/editor/EditorFrame'
 import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
 import { PersonalitySwitch } from '@/components/editor/PersonalitySwitch'
@@ -251,5 +252,89 @@ describe('personalidade no topo do editor', () => {
       colors: { primary: '#aa3355' },
       contact: { whatsapp: '11999990000' },
     })
+  })
+})
+
+describe('fila da personalidade (createDraftSaver)', () => {
+  afterEach(() => vi.useRealTimers())
+
+  /** Um `save` em que cada pedido só termina quando o teste manda. */
+  function slowSave() {
+    const calls: { value: string; done: () => void; fail: () => void }[] = []
+    const save = vi.fn(
+      (value: string) =>
+        new Promise<void>((resolve, reject) =>
+          calls.push({ value, done: resolve, fail: () => reject(new Error('rede')) }),
+        ),
+    )
+    return { calls, save }
+  }
+
+  it('trocas seguidas viram um pedido só, com o último valor', async () => {
+    vi.useFakeTimers()
+    const { calls, save } = slowSave()
+    const onSaved = vi.fn()
+    const saver = createDraftSaver({ initial: 'classico', save, onSaved, onFailed: vi.fn() })
+    saver.change('vitrine')
+    saver.change('aconchego')
+    saver.change('editorial')
+    await vi.advanceTimersByTimeAsync(400)
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(calls[0].value).toBe('editorial')
+    calls[0].done()
+    await vi.runAllTimersAsync()
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith('editorial')
+  })
+
+  it('o pedido antigo que responde por último não passa por cima do novo', async () => {
+    vi.useFakeTimers()
+    const { calls, save } = slowSave()
+    const onSaved = vi.fn()
+    const saver = createDraftSaver({ initial: 'classico', save, onSaved, onFailed: vi.fn() })
+    saver.change('vitrine')
+    await vi.advanceTimersByTimeAsync(400)
+    saver.change('editorial')
+    await vi.advanceTimersByTimeAsync(400)
+    // Um pedido por vez: o segundo só sai depois que o primeiro termina.
+    expect(calls.map((call) => call.value)).toEqual(['vitrine'])
+    calls[0].done()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(calls.map((call) => call.value)).toEqual(['vitrine', 'editorial'])
+    calls[1].done()
+    await vi.advanceTimersByTimeAsync(0)
+    // Só o mais recente avisa, e o último guardado é o da tela.
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith('editorial')
+  })
+
+  it('se o último pedido falha, volta para o último valor que chegou a ser guardado', async () => {
+    vi.useFakeTimers()
+    const { calls, save } = slowSave()
+    const onFailed = vi.fn()
+    const saver = createDraftSaver({ initial: 'classico', save, onSaved: vi.fn(), onFailed })
+    saver.change('vitrine')
+    await vi.advanceTimersByTimeAsync(400)
+    calls[0].done()
+    await vi.advanceTimersByTimeAsync(0)
+    saver.change('editorial')
+    await vi.advanceTimersByTimeAsync(400)
+    calls[1].fail()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(onFailed).toHaveBeenCalledExactlyOnceWith('vitrine')
+  })
+
+  it('flush manda na hora o que ainda esperava a pausa', async () => {
+    const { calls, save } = slowSave()
+    const saver = createDraftSaver({
+      initial: 'classico',
+      save,
+      onSaved: vi.fn(),
+      onFailed: vi.fn(),
+    })
+    saver.change('aconchego')
+    const done = saver.flush()
+    await Promise.resolve()
+    expect(calls.map((call) => call.value)).toEqual(['aconchego'])
+    calls[0].done()
+    await done
   })
 })
