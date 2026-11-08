@@ -41,7 +41,8 @@ type Section = { type?: unknown; props?: Record<string, unknown> }
 /**
  * Quanto cada foto da página precisa ter de largura: o banner com foto pede 1.200 px, as outras
  * seções 700 px. A foto que aparece em vários lugares fica com a maior exigência. As fotinhas
- * redondas dos depoimentos e o banner sem foto (fundo de cor) não contam.
+ * redondas dos depoimentos e dos Destaques, as do Instagram e o banner sem foto (fundo de cor) não
+ * contam.
  */
 export function photoNeeds(data: PuckPageData | null): Map<number, number> {
   const needs = new Map<number, number>()
@@ -55,7 +56,14 @@ export function photoNeeds(data: PuckPageData | null): Map<number, number> {
     if (typeof record.mediaId === 'number') add(record.mediaId, width)
     if (typeof record.type === 'string' && record.props && typeof record.props === 'object') {
       const { image, ...rest } = record.props
-      if (record.type === 'Testimonials') return
+      // Fotos pequenas de propósito: a dos depoimentos, a redonda dos Destaques e as do Instagram.
+      if (
+        record.type === 'Testimonials' ||
+        record.type === 'Features' ||
+        record.type === 'InstagramStrip'
+      ) {
+        return
+      }
       if (record.type === 'Hero') {
         if (heroShowsPhoto(record.props.style)) walk(image, BANNER_MIN_WIDTH)
         walk(rest, SECTION_MIN_WIDTH)

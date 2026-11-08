@@ -2,6 +2,7 @@ import type { Config, Fields, Slot } from '@puckeditor/core'
 import React from 'react'
 
 import {
+  Announcement,
   CallToAction,
   ColumnButton,
   ColumnImage,
@@ -13,8 +14,11 @@ import {
   Form,
   Gallery,
   Hero,
+  InstagramStrip,
   LinkList,
+  PriceList,
   Privacy,
+  Products,
   RichText,
   Testimonials,
   TextImage,
@@ -22,6 +26,7 @@ import {
 } from './components/sections'
 import type { ContentMetadata } from './references'
 import type {
+  AnnouncementProps,
   CallToActionProps,
   ColumnButtonProps,
   ColumnImageProps,
@@ -33,8 +38,11 @@ import type {
   FormProps,
   GalleryProps,
   HeroProps,
+  InstagramStripProps,
   LinkListProps,
+  PriceListProps,
   PrivacyProps,
+  ProductsProps,
   RichTextProps,
   TestimonialsProps,
   TextImageProps,
@@ -62,6 +70,10 @@ export type Components = {
   Video: Props<VideoProps>
   Form: Props<FormProps>
   Privacy: Props<PrivacyProps>
+  Products: Props<ProductsProps>
+  PriceList: Props<PriceListProps>
+  Announcement: Props<AnnouncementProps>
+  InstagramStrip: Props<InstagramStripProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
   ColumnButton: Props<ColumnButtonProps>
@@ -70,11 +82,15 @@ export type Components = {
 /** Nomes das seções, na ordem da lista "Adicionar seção". */
 export const SECTION_LABELS = {
   Hero: 'Banner principal',
+  Announcement: 'Faixa de aviso',
+  Products: 'Vitrine de produtos',
+  PriceList: 'Cardápio com preços',
   TextImage: 'Texto com foto',
   Features: 'Destaques',
   Testimonials: 'Depoimentos',
   Faq: 'Perguntas frequentes',
   Gallery: 'Galeria de fotos',
+  InstagramStrip: 'Instagram',
   CallToAction: 'Chamada para ação',
   Contact: 'Contato e endereço',
   LinkList: 'Lista de links',
@@ -172,6 +188,22 @@ export const renderConfig: Config<Components> = {
     Privacy: {
       label: SECTION_LABELS.Privacy,
       render: ({ puck, ...props }) => <Privacy {...props} metadata={meta(puck)} />,
+    },
+    Products: {
+      label: SECTION_LABELS.Products,
+      render: ({ puck, ...props }) => <Products {...props} metadata={meta(puck)} />,
+    },
+    PriceList: {
+      label: SECTION_LABELS.PriceList,
+      render: ({ puck, ...props }) => <PriceList {...props} metadata={meta(puck)} />,
+    },
+    Announcement: {
+      label: SECTION_LABELS.Announcement,
+      render: ({ puck, ...props }) => <Announcement {...props} metadata={meta(puck)} />,
+    },
+    InstagramStrip: {
+      label: SECTION_LABELS.InstagramStrip,
+      render: ({ puck, ...props }) => <InstagramStrip {...props} metadata={meta(puck)} />,
     },
     ColumnText: {
       label: PIECE_LABELS.ColumnText,

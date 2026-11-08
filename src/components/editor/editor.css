@@ -377,6 +377,18 @@ textarea.ed-input {
   white-space: nowrap;
 }
 
+/* Legenda de cada foto (Galeria): embaixo do nome, na largura toda. */
+.ed-photo-list__name:has(.ed-photo-list__caption) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ed-photo-list__caption {
+  width: 100%;
+  min-height: 36px;
+}
+
 .ed-link-field {
   display: grid;
   gap: 6px;

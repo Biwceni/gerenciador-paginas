@@ -40,6 +40,8 @@ export type SiteInfo = {
   privacyHref?: string | null
   /** Animação do site: vale nas seções em "Igual ao site" (`lib/motion.ts`). Sem ela, a padrão. */
   motion?: Motion
+  /** Instagram das Configurações, como o cliente digitou (seção Instagram). */
+  instagram?: string | null
 }
 
 type References = {

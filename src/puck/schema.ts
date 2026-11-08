@@ -111,24 +111,36 @@ export const FEATURE_ICONS = [
   'tool',
   'bag',
   'home',
+  // Confeitaria e serviços (redesign v3, entrega 4): só valores a mais, a versão continua a 2.
+  'cake',
+  'cupcake',
+  'paw',
+  'scissors',
+  'gift',
+  'truck',
 ] as const
 
+/** Marcador dos Destaques. `photo` (entrega 4): uma foto pequena e redonda no lugar do ícone. */
+export const FEATURE_MARKERS = ['none', 'icon', 'number', 'photo'] as const
+
 /**
- * Destaques. `marker` e `icon` são opções novas com valor padrão (sem marcador, ícone "certo"):
- * páginas salvas antes delas continuam válidas e iguais, sem mudar a versão do conteúdo.
+ * Destaques. `marker`, `icon` e `photo` são opções novas com valor padrão (sem marcador, ícone
+ * "certo", sem foto): páginas salvas antes delas continuam válidas e iguais, sem mudar a versão do
+ * conteúdo.
  */
 export const featuresPropsSchema = z.object({
   id: componentId,
   menuLabel,
   title,
-  // `number`: passo a passo (lista numerada). `icon`: cada item com um ícone.
-  marker: z.enum(['none', 'icon', 'number']).default('none'),
+  // `number`: passo a passo (lista numerada). `icon`: cada item com um ícone. `photo`: foto redonda.
+  marker: z.enum(FEATURE_MARKERS).default('none'),
   items: z
     .array(
       z.object({
         title: z.string().max(80),
         text: z.string().max(300),
         icon: z.enum(FEATURE_ICONS).default('check'),
+        photo: photoRefSchema.default(null),
       }),
     )
     .min(1)
@@ -168,13 +180,126 @@ export const faqPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Faq),
 })
 
+/** Arrumação da galeria: grade de quadrados (a de antes) ou mosaico em colunas (entrega 4). */
+export const GALLERY_LAYOUTS = ['grid', 'masonry'] as const
+
+/**
+ * Galeria. A legenda de cada foto, o "Mostrar legendas" e a arrumação são novos (entrega 4), com
+ * padrão: sem legenda, legendas escondidas e grade. Páginas antigas continuam iguais.
+ */
 export const galleryPropsSchema = z.object({
   id: componentId,
   menuLabel,
   title,
-  images: z.array(z.object({ mediaId: id })).max(24),
+  images: z
+    .array(
+      z.object({
+        mediaId: id,
+        // Vazia: vale a descrição da foto.
+        caption: z.string().max(120).default(''),
+      }),
+    )
+    .max(24),
+  layout: z.enum(GALLERY_LAYOUTS).default('grid'),
+  showCaptions: z.boolean().default(false),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Gallery),
+})
+
+// Seções novas da entrega 4 (redesign v3): só tipos a mais, com padrão em tudo o que é opção. As
+// outras seções não mudam, então a versão continua a 2.
+
+/** Arrumação da Vitrine de produtos: 3 por linha, 2 grandes ou lista com foto. */
+export const PRODUCT_LAYOUTS = ['three', 'two', 'list'] as const
+
+export const productsPropsSchema = z.object({
+  id: componentId,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  layout: z.enum(PRODUCT_LAYOUTS).default('three'),
+  items: z
+    .array(
+      z.object({
+        // Obrigatória para ir ao ar: produto sem foto não aparece no site (o Publicar avisa).
+        image: photoRefSchema.default(null),
+        name: z.string().max(80),
+        text: z.string().max(200).default(''),
+        // Texto livre: "R$ 45", "a partir de R$ 120", "sob consulta". Vazio: sem preço.
+        price: z.string().max(40).default(''),
+        // "Pedir pelo WhatsApp" monta a mensagem com o nome do produto; ou um link qualquer.
+        button: buttonSchema.nullable().default({ label: '', link: null }),
+      }),
+    )
+    .min(1)
+    .max(12),
+  style: sectionStyle.default('light'),
+  anim: anim(SECTION_ANIMS.Products),
+})
+
+/** Cardápio: uma ou duas colunas de grupos; entre o nome e o preço, pontilhado ou linha. */
+export const PRICE_COLUMNS = ['two', 'one'] as const
+export const PRICE_LEADERS = ['dots', 'line'] as const
+
+export const priceListPropsSchema = z.object({
+  id: componentId,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  columns: z.enum(PRICE_COLUMNS).default('two'),
+  leader: z.enum(PRICE_LEADERS).default('dots'),
+  groups: z
+    .array(
+      z.object({
+        name: z.string().max(60),
+        // Opcional: a foto fica ao lado do grupo.
+        image: photoRefSchema.default(null),
+        items: z
+          .array(
+            z.object({
+              name: z.string().max(80),
+              description: z.string().max(160).default(''),
+              price: z.string().max(40).default(''),
+            }),
+          )
+          .min(1)
+          .max(30),
+      }),
+    )
+    .min(1)
+    .max(8),
+  style: sectionStyle.default('light'),
+  anim: anim(SECTION_ANIMS.PriceList),
+})
+
+/**
+ * Faixa de aviso: frases curtas que correm na faixa, ou paradas. Não tem "Animação" (o movimento é
+ * o dela) nem "Nome no menu" (é uma faixa fina, não um lugar da página).
+ */
+export const ANNOUNCEMENT_MODES = ['move', 'static'] as const
+
+export const announcementPropsSchema = z.object({
+  id: componentId,
+  items: z
+    .array(z.object({ text: z.string().max(80) }))
+    .min(1)
+    .max(5),
+  mode: z.enum(ANNOUNCEMENT_MODES).default('move'),
+  // Na cor principal por padrão.
+  style: sectionStyle.default('brand'),
+})
+
+/** Instagram: fotos escolhidas da biblioteca (não atualizam sozinhas) e o @ das Configurações. */
+export const INSTAGRAM_MIN_PHOTOS = 4
+export const INSTAGRAM_MAX_PHOTOS = 8
+
+export const instagramStripPropsSchema = z.object({
+  id: componentId,
+  menuLabel,
+  title,
+  images: z.array(z.object({ mediaId: id })).max(INSTAGRAM_MAX_PHOTOS),
+  style: sectionStyle.default('light'),
+  anim: anim(SECTION_ANIMS.InstagramStrip),
 })
 
 export const callToActionPropsSchema = z.object({
@@ -320,6 +445,11 @@ const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Form'), props: formPropsSchema }),
   // Seção nova (v2): idem.
   z.object({ type: z.literal('Privacy'), props: privacyPropsSchema }),
+  // Seções novas (redesign v3, entrega 4): idem.
+  z.object({ type: z.literal('Products'), props: productsPropsSchema }),
+  z.object({ type: z.literal('PriceList'), props: priceListPropsSchema }),
+  z.object({ type: z.literal('Announcement'), props: announcementPropsSchema }),
+  z.object({ type: z.literal('InstagramStrip'), props: instagramStripPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -349,6 +479,13 @@ export type FeatureIconName = (typeof FEATURE_ICONS)[number]
 export type TestimonialsProps = z.infer<typeof testimonialsPropsSchema>
 export type FaqProps = z.infer<typeof faqPropsSchema>
 export type GalleryProps = z.infer<typeof galleryPropsSchema>
+export type GalleryImage = GalleryProps['images'][number]
+export type FeatureMarker = (typeof FEATURE_MARKERS)[number]
+export type ProductsProps = z.infer<typeof productsPropsSchema>
+export type ProductItem = ProductsProps['items'][number]
+export type PriceListProps = z.infer<typeof priceListPropsSchema>
+export type AnnouncementProps = z.infer<typeof announcementPropsSchema>
+export type InstagramStripProps = z.infer<typeof instagramStripPropsSchema>
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>
 export type PrivacyProps = z.infer<typeof privacyPropsSchema>

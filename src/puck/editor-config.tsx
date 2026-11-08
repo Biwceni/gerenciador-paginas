@@ -12,9 +12,11 @@ import {
   PhotoField,
   PhotoListField,
   StackedChoiceField,
+  ThumbChoiceField,
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
+import { ChoiceThumb, type ChoiceThumbName } from '@/components/editor/ChoiceThumbs'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
 import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
@@ -22,7 +24,14 @@ import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
-import { type ButtonValue, FEATURE_ICONS, type LinkRef, type PhotoRef } from './schema'
+import {
+  type ButtonValue,
+  FEATURE_ICONS,
+  type FeatureMarker,
+  INSTAGRAM_MAX_PHOTOS,
+  type LinkRef,
+  type PhotoRef,
+} from './schema'
 
 // Configuração do editor: a mesma de desenhar (`renderConfig`), mais os campos que o leigo mexe e
 // o conteúdo inicial de cada seção (ficha das seções). Textos se editam na própria página
@@ -84,7 +93,32 @@ const button: Field = {
   objectFields: { label: text('Texto do botão (vazio: sem botão)'), link },
 }
 
-type FeatureMarker = 'none' | 'icon' | 'number'
+/**
+ * Escolha por miniatura (um desenho de cada opção), para as variações visuais das seções: a pessoa
+ * vê a arrumação antes de escolher, em vez de ler o nome numa lista.
+ */
+const thumbChoice = <V extends string>(
+  label: string,
+  options: { value: V; label: string; hint?: string; thumb: ChoiceThumbName }[],
+): CustomField<V> => ({
+  type: 'custom',
+  label,
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <ThumbChoiceField
+        label={label}
+        name={name}
+        onChange={(next) => onChange(next as V)}
+        options={options.map((option) => ({
+          ...option,
+          thumb: <ChoiceThumb name={option.thumb} />,
+        }))}
+        readOnly={readOnly}
+        value={value ?? options[0].value}
+      />
+    </FieldLabel>
+  ),
+})
 
 const featureMarker: CustomField<FeatureMarker> = {
   type: 'custom',
@@ -98,6 +132,7 @@ const featureMarker: CustomField<FeatureMarker> = {
           { value: 'none', label: 'Nenhum', hint: 'Só o título e o texto' },
           { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada destaque' },
           { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3' },
+          { value: 'photo', label: 'Foto', hint: 'Uma foto pequena e redonda em cada destaque' },
         ]}
         readOnly={readOnly}
         value={value ?? 'none'}
@@ -121,6 +156,7 @@ const featureItems: Field = {
       label: 'Ícone (com o marcador "Ícone")',
       options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
     },
+    photo: photo('Foto (com o marcador "Foto")'),
     // Só botões: não guarda nada no item.
     move: {
       type: 'custom',
@@ -136,8 +172,41 @@ const featureItems: Field = {
     title: 'Novo destaque',
     text: 'Explique em uma ou duas frases.',
     icon: 'check',
+    photo: null,
   },
   getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
+}
+
+// Produtos da Vitrine. Como nos Destaques, os botões Subir e Descer ficam em cada item.
+const productItems: Field = {
+  type: 'array',
+  label: 'Produtos',
+  min: 1,
+  max: 12,
+  arrayFields: {
+    image: photo('Foto (obrigatória para aparecer no site)', SECTION_MIN_WIDTH),
+    name: text('Nome'),
+    text: textarea('Frase curta'),
+    price: text('Preço (opcional)'),
+    button,
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves label="name" name={name} noun="Produto" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: {
+    image: null,
+    name: 'Nome do produto',
+    text: 'Uma frase sobre ele.',
+    price: '',
+    button: { label: 'Pedir pelo WhatsApp', link: { kind: 'whatsapp' } },
+  },
+  getItemSummary: (item: { name?: string }) => item.name || 'Produto',
 }
 
 /** Animação da seção (redesign v3, entrega 2): no fim das opções, escolhida por miniatura. */
@@ -272,6 +341,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         title: `${name} destaque`,
         text: 'Explique em uma ou duas frases.',
         icon: 'check' as const,
+        photo: null,
       })),
       style: 'light',
     },
@@ -361,10 +431,37 @@ const sections: { [K in keyof Components]: Section<K> } = {
         label: 'Fotos da galeria',
         render: (props) => (
           <FieldLabel el="div" label={props.field.label ?? ''}>
-            <PhotoListField {...props} minWidth={SECTION_MIN_WIDTH} />
+            <PhotoListField {...props} captions minWidth={SECTION_MIN_WIDTH} />
           </FieldLabel>
         ),
       },
+      layout: thumbChoice('Arrumação', [
+        {
+          value: 'grid',
+          label: 'Grade',
+          hint: 'Quadrados do mesmo tamanho',
+          thumb: 'gallery-grid',
+        },
+        {
+          value: 'masonry',
+          label: 'Mosaico',
+          hint: 'Cada foto no formato dela; a ordem vai de cima para baixo, coluna por coluna',
+          thumb: 'gallery-masonry',
+        },
+      ]),
+      showCaptions: {
+        type: 'radio',
+        label: 'Legendas embaixo das fotos',
+        options: [
+          { label: 'Esconder', value: false },
+          { label: 'Mostrar', value: true },
+        ],
+      },
+      ...({
+        captionsHint: notice(
+          'Sem legenda escrita, vale a descrição da foto. Na tela cheia, a legenda aparece sempre.',
+        ),
+      } as object),
       style: sectionStyle,
       menuLabel,
       anim: animField('Gallery'),
@@ -373,6 +470,193 @@ const sections: { [K in keyof Components]: Section<K> } = {
       anim: 'site',
       menuLabel: '',
       title: 'Nosso dia a dia',
+      images: [],
+      layout: 'grid',
+      showCaptions: false,
+      style: 'light',
+    },
+  },
+  Products: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      layout: thumbChoice('Arrumação', [
+        { value: 'three', label: '3 por linha', thumb: 'products-three' },
+        { value: 'two', label: '2 grandes', thumb: 'products-two' },
+        { value: 'list', label: 'Lista com foto', thumb: 'products-list' },
+      ]),
+      items: productItems,
+      ...({
+        productsHint: notice(
+          'O preço é texto livre: “R$ 45”, “a partir de R$ 120” ou “sob consulta”. O botão “Pedir pelo WhatsApp” já abre a conversa com o nome do produto. Produto sem foto não aparece no site.',
+        ),
+      } as object),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Products'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Nossos produtos',
+      text: '',
+      layout: 'three',
+      items: [1, 2, 3].map(() => ({
+        image: null,
+        name: 'Nome do produto',
+        text: 'Uma frase sobre ele.',
+        // Vazio: um "R$ 0,00" esquecido mostraria o produto de graça no site.
+        price: '',
+        button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
+      })),
+      style: 'light',
+    },
+    resolveData: ({ props }) => ({
+      // Botão vazio vira objeto, para o campo de texto do botão aparecer (o formato aceita `null`).
+      props: {
+        ...props,
+        items: props.items.map((item) =>
+          item.button ? item : { ...item, button: { label: '', link: null } },
+        ),
+      },
+    }),
+  },
+  PriceList: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      columns: thumbChoice('Colunas', [
+        { value: 'two', label: 'Duas colunas', thumb: 'prices-two' },
+        { value: 'one', label: 'Uma coluna', thumb: 'prices-one' },
+      ]),
+      leader: thumbChoice('Entre o nome e o preço', [
+        { value: 'dots', label: 'Pontilhado', thumb: 'leader-dots' },
+        { value: 'line', label: 'Linha', thumb: 'leader-line' },
+      ]),
+      groups: {
+        type: 'array',
+        label: 'Grupos',
+        min: 1,
+        max: 8,
+        arrayFields: {
+          name: text('Nome do grupo'),
+          image: photo('Foto ao lado do grupo (opcional)'),
+          items: {
+            type: 'array',
+            label: 'Itens',
+            min: 1,
+            max: 30,
+            arrayFields: {
+              name: text('Nome'),
+              description: text('Descrição curta (opcional)'),
+              price: text('Preço'),
+            },
+            defaultItemProps: { name: 'Novo item', description: '', price: 'R$ 0,00' },
+            getItemSummary: (item) => item.name || 'Item',
+          },
+        },
+        defaultItemProps: {
+          name: 'Novo grupo',
+          image: null,
+          items: [{ name: 'Novo item', description: '', price: 'R$ 0,00' }],
+        },
+        getItemSummary: (item) => item.name || 'Grupo',
+      },
+      ...({
+        pricesHint: notice(
+          'Escreva o preço como quiser: “R$ 12”, “R$ 45 o kg” ou “sob consulta”. Os números ficam alinhados.',
+        ),
+      } as object),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('PriceList'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Preços',
+      text: '',
+      columns: 'two',
+      leader: 'dots',
+      groups: [
+        {
+          name: 'Nome do grupo',
+          image: null,
+          items: [
+            { name: 'Nome do item', description: 'Descrição curta', price: 'R$ 0,00' },
+            { name: 'Nome do item', description: '', price: 'R$ 0,00' },
+          ],
+        },
+      ],
+      style: 'light',
+    },
+  },
+  Announcement: {
+    fields: {
+      items: {
+        type: 'array',
+        label: 'Frases',
+        min: 1,
+        max: 5,
+        arrayFields: { text: text('Frase curta') },
+        defaultItemProps: { text: 'Escreva o aviso aqui' },
+        getItemSummary: (item) => item.text || 'Frase',
+      },
+      mode: thumbChoice('Movimento', [
+        {
+          value: 'move',
+          label: 'Correndo',
+          hint: 'As frases passam pela faixa',
+          thumb: 'announce-move',
+        },
+        { value: 'static', label: 'Parada', hint: 'As frases no centro', thumb: 'announce-static' },
+      ]),
+      ...({
+        announceHint: notice(
+          'Use para promoção, temporada ou horário especial. Na prévia a faixa fica parada; no site ela corre e para quando a pessoa passa o mouse ou aperta o botão de parar. Quem pediu ao celular para reduzir movimentos vê a faixa parada.',
+        ),
+      } as object),
+      style: {
+        type: 'radio',
+        label: 'Fundo',
+        options: [
+          { label: 'Cor do site', value: 'brand' },
+          { label: 'Suave', value: 'soft' },
+          { label: 'Claro', value: 'light' },
+        ],
+      },
+    },
+    defaultProps: {
+      items: [{ text: 'Escreva o aviso aqui' }, { text: 'Promoção, horário ou temporada' }],
+      mode: 'move',
+      style: 'brand',
+    },
+  },
+  InstagramStrip: {
+    fields: {
+      title: text('Título'),
+      images: {
+        type: 'custom',
+        label: 'Fotos (de 4 a 8)',
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <PhotoListField {...props} max={INSTAGRAM_MAX_PHOTOS} />
+          </FieldLabel>
+        ),
+      },
+      ...({
+        instagramHint: notice(
+          'As fotos não atualizam sozinhas: escolha aqui as que quer mostrar e troque quando quiser. O @ e o botão “Seguir no Instagram” vêm das Configurações do site.',
+        ),
+      } as object),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('InstagramStrip'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'No Instagram',
       images: [],
       style: 'light',
     },

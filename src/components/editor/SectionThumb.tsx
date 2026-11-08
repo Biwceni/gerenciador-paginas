@@ -138,6 +138,56 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       <Bar h={3} r={1.5} w={44} x={8} y={30} />
     </>
   ),
+  // Faixa fina na cor do site, com as frases e a estrelinha entre elas.
+  Announcement: (
+    <>
+      <Bar f={ACCENT} h={12} r={2} w={56} x={2} y={14} />
+      <Bar f={ON_ACCENT} h={3} r={1.5} w={16} x={6} y={18.5} />
+      <Bar f={ON_ACCENT} h={3} r={1.5} w={16} x={28} y={18.5} />
+      <Bar f={ON_ACCENT} h={3} r={1.5} w={10} x={48} y={18.5} />
+    </>
+  ),
+  // Três fotos em pé, com nome e preço embaixo.
+  Products: (
+    <>
+      {[4, 23, 42].map((x) => (
+        <React.Fragment key={x}>
+          <Bar f={ACCENT} h={18} o={0.45} r={2} w={14} x={x} y={4} />
+          <Bar h={2.5} r={1.25} w={12} x={x} y={25} />
+          <Bar f={ACCENT} h={2.5} r={1.25} w={7} x={x} y={30} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
+  // Nome, pontilhado e preço, em linhas.
+  PriceList: (
+    <>
+      <Bar f={ACCENT} h={4} w={20} x={6} y={5} />
+      {[14, 22, 30].map((y) => (
+        <React.Fragment key={y}>
+          <Bar h={3} r={1.5} w={16} x={6} y={y} />
+          <path
+            d={`M24 ${y + 2}H44`}
+            fill="none"
+            strokeDasharray="1 2"
+            strokeLinecap="round"
+            style={{ stroke: LINE }}
+          />
+          <Bar f={ACCENT} h={3} r={1.5} w={8} x={46} y={y} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
+  // Fotos quadradas em fila e o botão de seguir.
+  InstagramStrip: (
+    <>
+      <Bar f={ACCENT} h={3} r={1.5} w={18} x={4} y={7} />
+      <Bar f={ACCENT} h={6} r={3} w={16} x={40} y={5} />
+      {[4, 17, 30, 43].map((x, i) => (
+        <Bar f={ACCENT} h={12} key={x} o={0.35 + (i % 2) * 0.25} r={2} w={12} x={x} y={18} />
+      ))}
+    </>
+  ),
   ColumnText: (
     <>
       <Bar f={ACCENT} h={5} w={30} x={8} y={9} />
@@ -165,6 +215,10 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   Video: 'Um vídeo do YouTube na página',
   Form: 'Um dos seus formulários, para o visitante preencher',
   Privacy: 'Como você cuida dos dados, com o contato das Configurações',
+  Announcement: 'Frase curta: promoção, temporada, horário',
+  Products: 'Foto, nome, preço e botão de pedir',
+  PriceList: 'Itens e valores, sem precisar de foto',
+  InstagramStrip: 'Fotos escolhidas e botão de seguir',
   ColumnText: 'Título e parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',
   ColumnButton: 'Um botão, dentro de uma coluna',

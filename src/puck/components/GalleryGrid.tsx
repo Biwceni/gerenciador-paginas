@@ -6,8 +6,15 @@ import { flushSync } from 'react-dom'
 import { Photo } from '@/components/site/Photo'
 import type { Media } from '@/payload-types'
 
+import { galleryColumns } from '../layout'
+
 type Props = {
-  photos: Media[]
+  /** Cada foto e a legenda dela (a escrita na galeria ou, sem ela, a descrição da foto). */
+  items: { photo: Media; caption: string }[]
+  /** Grade de quadrados ou mosaico em colunas (fotos na proporção delas). */
+  layout?: 'grid' | 'masonry'
+  /** Legenda embaixo de cada foto. Na tela cheia, a legenda aparece sempre. */
+  showCaptions?: boolean
   /** No site, cada foto abre em tela cheia; no editor, não (o clique escolhe a seção). */
   viewer: boolean
 }
@@ -28,7 +35,13 @@ function withTransition(change: () => void) {
  * descrição, o contador ("3 de 12"), setas e teclado (← →, Esc). O foco fica preso na janela e volta
  * para a foto clicada ao fechar. A foto grande só é baixada quando a janela abre.
  */
-export function GalleryGrid({ photos, viewer }: Props) {
+export function GalleryGrid({
+  items: entries,
+  layout = 'grid',
+  showCaptions = false,
+  viewer,
+}: Props) {
+  const photos = entries.map((entry) => entry.photo)
   const dialog = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLButtonElement | null>(null)
   const [current, setCurrent] = useState<number | null>(null)
@@ -61,28 +74,59 @@ export function GalleryGrid({ photos, viewer }: Props) {
     }
   }
 
-  const items = photos.map((photo, index) => (
+  const masonry = layout === 'masonry'
+  // Grade: quadrados que preenchem a moldura. Mosaico: a foto na proporção dela.
+  const picture = (photo: Media) => (
+    <Photo
+      className="anim-part"
+      fill={!masonry}
+      media={photo}
+      sizes="(max-width: 720px) 50vw, 380px"
+    />
+  )
+
+  const items = entries.map(({ photo, caption }, index) => (
     <li className="anim-part" key={`${photo.id}-${index}`} style={order(index)}>
-      {viewer ? (
-        <button
-          aria-label={`Ver foto ${index + 1} de ${total} em tela cheia${photo.alt ? `: ${photo.alt}` : ''}`}
-          className="gallery__open"
-          onClick={(event) => open(index, event.currentTarget)}
-          type="button"
-        >
-          <Photo className="anim-part" fill media={photo} sizes="(max-width: 720px) 50vw, 340px" />
-        </button>
-      ) : (
-        <Photo className="anim-part" fill media={photo} sizes="(max-width: 720px) 50vw, 340px" />
-      )}
+      <figure className="gallery__item">
+        <div className="gallery__frame">
+          {viewer ? (
+            <button
+              aria-label={`Ver foto ${index + 1} de ${total} em tela cheia${caption ? `: ${caption}` : ''}`}
+              className="gallery__open"
+              onClick={(event) => open(index, event.currentTarget)}
+              type="button"
+            >
+              {picture(photo)}
+            </button>
+          ) : (
+            picture(photo)
+          )}
+        </div>
+        {showCaptions && caption && <figcaption className="gallery__caption">{caption}</figcaption>}
+      </figure>
     </li>
   ))
 
   const photo = current === null ? null : photos[current]
+  const caption = current === null ? '' : entries[current].caption
+  // Grade: colunas pela quantidade, sem foto sozinha na última linha (a sobra fica no centro).
+  const columns = masonry ? Math.min(Math.max(total, 1), 3) : galleryColumns(total)
+  const classes = [
+    'gallery',
+    `gallery--${layout}`,
+    total % 2 && !masonry && 'gallery--odd',
+    showCaptions && 'gallery--captions',
+  ]
 
   return (
     <>
-      <ul className={`gallery${total % 2 ? ' gallery--odd' : ''}`}>{items}</ul>
+      <ul
+        className={classes.filter(Boolean).join(' ')}
+        data-count={total}
+        style={{ '--cols': columns } as React.CSSProperties}
+      >
+        {items}
+      </ul>
       {viewer && (
         <dialog
           aria-label="Fotos da galeria"
@@ -127,9 +171,9 @@ export function GalleryGrid({ photos, viewer }: Props) {
                 <div className="lightbox__photo">
                   <Photo fill media={photo} sizes="100vw" />
                 </div>
-                {(photo.alt || total > 1) && (
+                {(caption || total > 1) && (
                   <figcaption className="lightbox__caption">
-                    {photo.alt && <span>{photo.alt}</span>}
+                    {caption && <span>{caption}</span>}
                     <span aria-live="polite" className="lightbox__count">
                       {(current ?? 0) + 1} de {total}
                     </span>
