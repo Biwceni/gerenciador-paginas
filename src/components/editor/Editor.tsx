@@ -17,6 +17,7 @@ import {
 import { toast } from '@payloadcms/ui'
 import Link from 'next/link'
 import React, {
+  type CSSProperties,
   createContext,
   useCallback,
   useContext,
@@ -27,10 +28,13 @@ import React, {
 } from 'react'
 import type { z } from 'zod'
 
+import { saveSitePersonality } from '@/components/panel/api'
 import { PanelIcon } from '@/components/panel/PanelIcon'
+import { PERSONALITY_TOKENS } from '@/components/site/theme'
 import type { FormDefinition } from '@/lib/forms'
 import { findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
+import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
 import { COLUMN_PIECES } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
@@ -42,10 +46,12 @@ import { publishPage, RequestError, saveDraft } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
+import { createDraftSaver } from './draftSaver'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
+import { PersonalitySwitch } from './PersonalitySwitch'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
@@ -146,6 +152,9 @@ type Chrome = {
   openMore: (history: { canUndo: boolean; canRedo: boolean }) => void
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
   connect: (getPuck: GetPuck) => void
+  /** Personalidade do site (rascunho das configurações), trocável daqui. */
+  personality: Personality
+  changePersonality: (value: Personality) => void
 }
 
 const ChromeContext = createContext<Chrome | null>(null)
@@ -179,6 +188,11 @@ function EditorHeader() {
           {chrome.status}
         </span>
       </div>
+      <PersonalitySwitch
+        className="ed-hide-sm"
+        onChange={chrome.changePersonality}
+        value={chrome.personality}
+      />
       <div className="ed-top__actions">
         <button
           aria-label="Desfazer"
@@ -293,6 +307,9 @@ export function Editor(props: EditorProps) {
   const [forms, setForms] = useState(props.forms)
   const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
   const [data, setData] = useState<PuckPageData>(initialData)
+  const [personality, setPersonality] = useState<Personality>(() =>
+    safePersonality(props.theme['--personality']),
+  )
 
   const latest = useRef<PuckPageData>(initialData)
   const lastSaved = useRef(JSON.stringify(initialData))
@@ -521,6 +538,36 @@ export function Editor(props: EditorProps) {
               live ? '' : ' · rascunho, ainda não está no ar'
             }`
 
+  // Troca a personalidade na prévia na hora; guarda no rascunho das configurações um pouco depois
+  // da última troca, um pedido por vez (as setas do teclado trocam a cada toque). Só o último pedido
+  // avisa; se ele falhar, a tela volta para a última personalidade que chegou a ser guardada.
+  const personalitySaver = useMemo(
+    () =>
+      createDraftSaver<Personality>({
+        initial: safePersonality(props.theme['--personality']),
+        save: (value) => saveSitePersonality(apiRoute, value),
+        onSaved: (value) =>
+          toast.success(
+            `Personalidade ${PERSONALITY_LABELS[value].name} guardada. O site muda quando você publicar em Sua marca.`,
+          ),
+        onFailed: (lastSaved) => {
+          setPersonality(lastSaved)
+          toast.error('Não deu para trocar a personalidade. Confira a internet e tente de novo.')
+        },
+      }),
+    // Uma fila só durante o editor aberto: o tema inicial vem do servidor uma vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apiRoute],
+  )
+  useEffect(() => () => personalitySaver.dispose(), [personalitySaver])
+  const changePersonality = useCallback(
+    (next: Personality) => {
+      setPersonality(next)
+      personalitySaver.change(next)
+    },
+    [personalitySaver],
+  )
+
   const chrome: Chrome = {
     title: settings.title,
     status,
@@ -553,8 +600,13 @@ export function Editor(props: EditorProps) {
       setUndoState(history)
       setDialog('more')
     },
-    leave: flush,
+    // Ao sair, guarda também a personalidade que ainda esperava a pausa.
+    leave: async () => {
+      await Promise.all([flush(), personalitySaver.flush()])
+    },
     connect,
+    personality,
+    changePersonality,
   }
 
   // O que as seções precisam para desenhar na prévia. Todas as páginas contam (até rascunhos):
@@ -612,9 +664,28 @@ export function Editor(props: EditorProps) {
     [props.chrome, settings.campaign],
   )
 
+  // Tema da prévia com a personalidade escolhida aqui (as medidas dela e o `data-personality`).
+  const theme = useMemo<Record<string, string>>(
+    () => ({ ...props.theme, '--personality': personality, ...PERSONALITY_TOKENS[personality] }),
+    [props.theme, personality],
+  )
   const frameStyle = useMemo(
-    () => ({ theme: props.theme, fontFaces: props.fontFaces }),
-    [props.theme, props.fontFaces],
+    () => ({ theme, fontFaces: props.fontFaces }),
+    [theme, props.fontFaces],
+  )
+  // Cores do site para as miniaturas da lista de seções e das escolhas (`--ed-site-*`).
+  const siteColors = useMemo(
+    () =>
+      ({
+        '--ed-site-primary': theme['--color-primary'],
+        '--ed-site-on-primary': theme['--color-on-primary'],
+        '--ed-site-bg': theme['--color-background'],
+        '--ed-site-surface': theme['--color-surface'],
+        '--ed-site-text': theme['--color-text'],
+        '--ed-site-deep': theme['--color-deep'],
+        '--ed-site-on-deep': theme['--color-on-deep'],
+      }) as CSSProperties,
+    [theme],
   )
 
   return (
@@ -622,7 +693,7 @@ export function Editor(props: EditorProps) {
       <FrameStyleProvider value={frameStyle}>
         <SitePreviewProvider value={preview}>
           <ChromeContext.Provider value={chrome}>
-            <div className="ed-root">
+            <div className="ed-root" style={siteColors}>
               <Puck<typeof editorConfig>
                 config={editorConfig}
                 data={initialData}
@@ -712,6 +783,7 @@ export function Editor(props: EditorProps) {
                   <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
                     <PanelIcon name="sliders" size={16} /> Página e Google
                   </button>
+                  <PersonalitySwitch onChange={changePersonality} value={personality} />
                   {live && (
                     <a className="ed-btn" href={path} rel="noopener" target="_blank">
                       <PanelIcon name="eye" size={16} /> Ver no site

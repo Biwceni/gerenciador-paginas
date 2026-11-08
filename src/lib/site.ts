@@ -30,3 +30,17 @@ export function initials(name: string): string {
       .join('') || name.slice(0, 2)
   ).toUpperCase()
 }
+
+/**
+ * Favicon do painel (/admin): a marca do produto, em anil, como SVG dentro do próprio endereço
+ * (nenhum arquivo a mais para servir). No navegador em modo escuro, o anil claro do tema escuro.
+ */
+const PRODUCT_FAVICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34">' +
+  '<style>.a{fill:#2f43c9}.i{stroke:#fff}@media (prefers-color-scheme:dark){.a{fill:#8e9cff}.i{stroke:#0d1030}}</style>' +
+  '<rect class="a" x="3" y="7" width="20" height="24" rx="4" opacity=".35"/>' +
+  '<rect class="a" x="9" y="3" width="22" height="26" rx="4"/>' +
+  '<path class="i" d="M14 12h12M14 17h12M14 22h7" fill="none" stroke-width="2.2" stroke-linecap="round"/>' +
+  '</svg>'
+
+export const PRODUCT_FAVICON = `data:image/svg+xml,${encodeURIComponent(PRODUCT_FAVICON_SVG)}`

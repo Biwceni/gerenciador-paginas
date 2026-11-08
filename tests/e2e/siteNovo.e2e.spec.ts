@@ -116,7 +116,7 @@ test.describe.serial('site novo', () => {
 
     await expect(page.getByText('Seu site ainda não está no ar.')).toBeVisible()
     await expect(page.getByText('Seu site está montado, em rascunho.')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Para terminar seu site' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Para o site ficar pronto' })).toBeVisible()
     // A Página de links não usa foto: esse passo já nasce feito.
     await expect(page.getByText('1 de 5 feitos')).toBeVisible()
 

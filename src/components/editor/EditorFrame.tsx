@@ -73,18 +73,36 @@ function siteRules(rules: CSSRule[]): string[] {
   })
 }
 
-/** Moldura e barra da seção escolhida no verde do painel, como fora da prévia. */
-const PUCK_COLORS = `:root {
-  --puck-color-azure-03: #0f6b55;
-  --puck-color-azure-04: #0f6b55;
-  --puck-color-azure-05: #0f6b55;
-  --puck-color-azure-06: #0f6b55;
-  --puck-color-azure-08: #a9d2c5;
-  --puck-color-azure-09: #cde5dd;
-  --puck-color-azure-10: #e3f2ec;
-  --puck-color-interactive: #0f6b55;
-  --puck-color-focus-ring: #0f6b55;
+/**
+ * Moldura e barra da seção escolhida no anil do produto (entrega 5), como fora da prévia: contorno
+ * de 2 px na seção escolhida e o mesmo contorno a 50% ao passar o mouse, sem pintar a seção.
+ */
+/**
+ * Halo claro de 1 px por dentro do contorno da seção (escolhida ou com o mouse em cima): sobre um
+ * banner com foto ou uma seção escura, o anil sozinho fica abaixo de 3:1. O contorno do Puck tem
+ * 2 px por dentro da borda, então a sombra de 3 px deixa à mostra só 1 px, logo depois dele.
+ */
+export const SELECTION_HALO = `[class*='DraggableComponent--isSelected'] > [class*='DraggableComponent-overlayWrapper'] > [class*='DraggableComponent-overlay_'],
+[class*='DraggableComponent--hover'] > [class*='DraggableComponent-overlayWrapper'] > [class*='DraggableComponent-overlay_'] {
+  box-shadow: inset 0 0 0 3px rgb(255 255 255 / 85%);
 }`
+
+export const PUCK_COLORS = `:root {
+  --puck-color-azure-03: #2f43c9;
+  --puck-color-azure-04: #2f43c9;
+  --puck-color-azure-05: #2f43c9;
+  --puck-color-azure-06: #2f43c9;
+  --puck-color-azure-08: #2f43c9;
+  --puck-color-azure-09: #c9cff6;
+  --puck-color-azure-10: #e5e8fb;
+  --puck-color-interactive: #2f43c9;
+  --puck-color-focus-ring: #2f43c9;
+  --puck-slot-component-border-width: 2px;
+  --puck-slot-component-color-overlay: transparent;
+  --puck-slot-component-color-overlay-border: rgb(47 67 201 / 50%);
+  --puck-slot-component-color-border-selected: #2f43c9;
+}
+${SELECTION_HALO}`
 
 /**
  * Dentro do iframe da prévia. O Puck não copia os estilos do painel (`syncHostStyles: false`), que

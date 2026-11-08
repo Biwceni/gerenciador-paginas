@@ -17,7 +17,7 @@ import {
 } from '@/lib/motion'
 
 import { useEditor } from './context'
-import { ThumbChoiceField } from './fields'
+import { VisualChoiceField } from './VisualChoiceField'
 import { previewDocument } from './insert'
 
 const usePuck = createUsePuck()
@@ -26,11 +26,11 @@ const usePuck = createUsePuck()
 const PLAY_MS = 3000
 
 /**
- * Miniatura de cada animação, nas cores do painel: um desenho simples do que se mexe (como no
- * protótipo v3). `currentColor` é o texto; `--ed-accent`, a cor de destaque.
+ * Miniatura de cada animação, nas cores do site: um desenho simples do que se mexe (como no
+ * protótipo v3). `currentColor` é o texto do site; `--ed-site-primary`, a cor principal.
  */
 function AnimThumb({ value }: { value: SectionAnim }) {
-  const accent = 'var(--ed-accent)'
+  const accent = 'var(--ed-site-primary, var(--ed-accent))'
   const arrow = (d: string) => (
     <path
       d={d}
@@ -217,7 +217,7 @@ export function AnimField({
 
   return (
     <div className="ed-anim">
-      <ThumbChoiceField
+      <VisualChoiceField
         label="Animação"
         name={name}
         onChange={(next) => onChange(next as SectionAnim)}

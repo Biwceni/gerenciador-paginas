@@ -9,7 +9,7 @@ import { insertIndex } from '@/puck/insertPosition'
 
 import { useAddSection } from './insert'
 import { usePuck } from './puck'
-import { SECTION_DESCRIPTIONS, SectionThumb } from './SectionThumb'
+import { NEW_SECTIONS, SECTION_DESCRIPTIONS, SectionThumb } from './SectionThumb'
 
 const PIECES: readonly string[] = COLUMN_PIECES
 const LABELS: Record<string, string> = { ...SECTION_LABELS, ...PIECE_LABELS }
@@ -49,7 +49,7 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
       <ClosePanel />
       <div>
         <h3>Adicionar seção</h3>
-        <p className="ed-hint">{hint}</p>
+        <p className="ed-hint">{hint} As miniaturas já usam as cores do seu site.</p>
       </div>
       {children}
     </div>
@@ -97,9 +97,14 @@ export function EditorDrawerItem({ name }: { name: string; children?: React.Reac
       }}
     >
       <SectionThumb type={name as keyof Components} />
-      <span>
-        <b>{LABELS[name] ?? name}</b>
-        <span>{SECTION_DESCRIPTIONS[name as keyof Components]}</span>
+      <span className="ed-palitem__text">
+        {/* O selo fica ao lado do nome e desce para a linha de baixo se faltar espaço: o nome
+            nunca é cortado. */}
+        <span className="ed-palitem__name">
+          <b>{LABELS[name] ?? name}</b>
+          {NEW_SECTIONS.has(name as keyof Components) && <span className="ed-new">novo</span>}
+        </span>
+        <span className="ed-palitem__desc">{SECTION_DESCRIPTIONS[name as keyof Components]}</span>
       </span>
     </div>
   )

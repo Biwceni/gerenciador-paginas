@@ -12,7 +12,7 @@ export const resetPasswordEmailHTML = (args?: { token?: string }) => {
     <p>Olá!</p>
     <p>Recebemos um pedido para criar uma nova senha no painel do seu site.</p>
     <p>
-      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #0f6b55; color: #ffffff; text-decoration: none; border-radius: 6px;">
+      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #2f43c9; color: #ffffff; text-decoration: none; border-radius: 6px;">
         Criar nova senha
       </a>
     </p>

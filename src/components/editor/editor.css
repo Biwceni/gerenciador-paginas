@@ -1,21 +1,34 @@
 /*
- * Interface do editor visual (barra de cima, opções, janelas). Usa as cores do painel do Payload,
- * então acompanha o tema claro ou escuro dele. O visual do site, na prévia, vem de outro arquivo.
+ * Interface do editor visual (barra de cima, opções, janelas), em porcelana e anil (redesign v3,
+ * entrega 5). Acompanha o tema claro ou escuro do painel. O visual do site, na prévia, vem de
+ * outro arquivo.
  */
 
 .ed-root,
 .ed-overlay {
   /*
-   * Cores do tema do painel (claro ou escuro, como a pessoa escolheu em Minha conta). O Payload
-   * troca os `--theme-*` e o panel.scss troca os `--gp-*` junto com o `data-theme`.
+   * Cores do tema do painel (claro ou escuro, como a pessoa escolheu em Minha conta): o panel.scss
+   * troca os `--gp-*` junto com o `data-theme`.
    */
-  --ed-bg: var(--theme-elevation-0);
-  --ed-text: var(--theme-text);
-  --ed-muted: var(--theme-elevation-600);
-  --ed-line: var(--theme-elevation-150);
+  --ed-bg: var(--gp-surface);
+  --ed-text: var(--gp-ink);
+  --ed-muted: var(--gp-muted);
+  --ed-line: var(--gp-line);
   --ed-line-strong: var(--gp-line-strong);
-  --ed-soft: var(--theme-elevation-50);
-  /* Verde do painel. */
+  --ed-soft: var(--gp-surface-2);
+  /*
+   * Cores do site do cliente, para as miniaturas (lista de seções e escolhas visuais). O Editor.tsx
+   * põe as do rascunho das configurações no `style` do `.ed-root`; estas são só a reserva.
+   */
+  --ed-site-primary: var(--gp-accent);
+  --ed-site-on-primary: var(--gp-accent-ink);
+  --ed-site-bg: #ffffff;
+  --ed-site-surface: #f2f2ee;
+  --ed-site-text: #18191d;
+  --ed-site-deep: #1f2440;
+  --ed-site-on-deep: #ffffff;
+  --ed-site-line: color-mix(in srgb, var(--ed-site-text) 22%, var(--ed-site-bg));
+  /* Anil do produto. */
   --ed-accent: var(--gp-accent);
   --ed-accent-soft: var(--gp-accent-soft);
   --ed-on-accent: var(--gp-accent-ink);
@@ -53,7 +66,14 @@
   --puck-font-size-xxxxl: 56px;
   --puck-pluginbar-font-size: var(--gp-fs-rail);
   --puck-drawer-category-font-size: var(--gp-fs-small);
-  /* Cores do Puck (barra de ícones, listas, escolhas) no verde do painel. */
+  /* Fundo da área da prévia: a superfície 2 do painel, com a página por cima (sombra abaixo). */
+  --puck-canvas-color-bg: var(--ed-soft);
+  /* Seção escolhida: contorno anil de 2 px; ao passar o mouse, o mesmo contorno a 50%. */
+  --puck-slot-component-border-width: 2px;
+  --puck-slot-component-color-overlay: transparent;
+  --puck-slot-component-color-overlay-border: color-mix(in srgb, var(--ed-accent) 50%, transparent);
+  --puck-slot-component-color-border-selected: var(--ed-accent);
+  /* Cores do Puck (barra de ícones, listas, escolhas) no anil do painel. */
   --puck-color-interactive: var(--ed-accent);
   --puck-color-interactive-hover: var(--ed-accent);
   --puck-color-interactive-active: var(--ed-accent);
@@ -97,6 +117,7 @@
 
 .ed-top__title b {
   overflow: hidden;
+  font-family: var(--gp-font-display, inherit);
   font-size: var(--gp-fs-card);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -114,7 +135,39 @@
 }
 
 .ed-top__status--ok {
-  color: var(--ed-accent);
+  color: var(--gp-ok);
+}
+
+/* Personalidade do site, no topo (atalho para Sua marca). */
+.ed-personality {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+  color: var(--ed-muted);
+  white-space: nowrap;
+}
+
+.ed-personality .ed-input {
+  width: auto;
+  min-width: 128px;
+  min-height: 38px;
+  color: var(--ed-text);
+  font-weight: 600;
+}
+
+/* No menu ⋯ do celular, rótulo em cima e a lista na largura toda. */
+.ed-more .ed-personality {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  color: var(--ed-text);
+}
+
+.ed-more .ed-personality .ed-input {
+  width: 100%;
+  min-height: 44px;
 }
 
 .ed-top__status--warn {
@@ -229,7 +282,7 @@
 .ed-icon-btn:focus-visible,
 .ed-input:focus-visible,
 .ed-media-item:focus-visible {
-  outline: 3px solid var(--ed-accent);
+  outline: 2px solid var(--ed-accent);
   outline-offset: 2px;
 }
 
@@ -674,31 +727,60 @@ textarea.ed-input {
 
 .ed-palitem:hover {
   border-color: var(--ed-accent);
-  background: var(--ed-accent-soft);
 }
 
 .ed-palitem:focus-visible {
-  outline: 3px solid var(--ed-accent);
+  outline: 2px solid var(--ed-accent);
   outline-offset: 2px;
 }
 
+/* Miniatura da seção nas cores do site: o fundo é o fundo do site, com um fio para não sumir. */
 .ed-palitem__thumb {
   flex: none;
+  width: 76px;
+  height: auto;
+  aspect-ratio: 3 / 2;
   border-radius: 6px;
-  background: var(--ed-soft);
+  background: var(--ed-site-bg);
+  box-shadow: inset 0 0 0 1px var(--ed-line);
 }
 
-.ed-palitem b {
-  display: block;
+.ed-palitem__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Nome e selo "novo" lado a lado; sem espaço, o selo desce e o nome fica inteiro. */
+.ed-palitem__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+}
+
+.ed-palitem__name b {
   font-size: var(--gp-fs-help);
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
-.ed-palitem span span {
-  display: block;
+.ed-palitem__desc {
   color: var(--ed-muted);
   font-size: var(--gp-fs-small);
   line-height: 1.3;
+}
+
+.ed-new {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ed-accent-soft);
+  color: var(--ed-accent);
+  font-size: var(--gp-fs-small);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .ed-order {
@@ -800,6 +882,20 @@ textarea.ed-input {
   padding-top: 56px !important;
 }
 
+/* A página da prévia como uma folha sobre a mesa: sem o fio do Puck, com sombra suave abaixo. */
+.ed-root [class*='PuckCanvas-root'] {
+  outline: 0;
+  box-shadow:
+    0 1px 2px rgb(24 25 29 / 8%),
+    0 20px 50px -24px rgb(24 25 29 / 35%);
+}
+
+[data-theme='dark'] .ed-root [class*='PuckCanvas-root'] {
+  box-shadow:
+    0 0 0 1px var(--ed-line),
+    0 24px 60px -24px rgb(0 0 0 / 70%);
+}
+
 .ed-canvasbar {
   position: absolute;
   top: 0;
@@ -856,8 +952,8 @@ textarea.ed-input {
 }
 
 .ed-rail-btn:focus-visible {
-  outline: 3px solid var(--ed-accent);
-  outline-offset: -3px;
+  outline: 2px solid var(--ed-accent);
+  outline-offset: -2px;
 }
 
 /* Celular: a prévia usa a tela inteira e a barra de ícones fica embaixo. */
@@ -991,48 +1087,18 @@ textarea.ed-input {
   display: none;
 }
 
-/* Escolha em cartões empilhados (Marcador dos Destaques), como o Tema em Minha conta. */
-.ed-choices {
-  display: grid;
-  gap: 8px;
-}
-
-.ed-choice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--ed-line-strong);
-  border-radius: 10px;
-  background: var(--ed-bg);
-  cursor: pointer;
-}
-
-.ed-choice input {
-  margin-top: 3px;
-  accent-color: var(--ed-accent);
-}
-
-.ed-choice b {
-  display: block;
-  font-size: var(--gp-fs-help);
-}
-
-.ed-choice:has(input:checked) {
-  border-color: var(--ed-accent);
-  box-shadow: inset 0 0 0 1px var(--ed-accent);
-}
-
-.ed-choice:has(input:focus-visible) {
-  outline: 2px solid var(--ed-accent);
-  outline-offset: 2px;
-}
-
-/* Escolha por miniatura (ThumbChoiceField): Animação da seção. */
+/*
+ * Escolha visual (VisualChoiceField): fundo, lado da foto, arrumação, marcador, Animação e as
+ * variações das seções. Duas colunas, ou três quando as opções são curtas (Fundo).
+ */
 .ed-thumbs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.ed-thumbs--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .ed-thumb {
@@ -1066,12 +1132,15 @@ textarea.ed-input {
   cursor: pointer;
 }
 
+/* O desenho nas cores do site: fundo do site, texto do site e a cor principal. */
 .ed-thumb__svg {
   display: block;
   width: 100%;
   height: auto;
   border-radius: 6px;
-  background: var(--ed-soft);
+  background: var(--ed-site-bg);
+  color: var(--ed-site-text);
+  box-shadow: inset 0 0 0 1px var(--ed-line);
 }
 
 .ed-thumb__text {
@@ -1085,13 +1154,14 @@ textarea.ed-input {
   font-weight: 600;
 }
 
-.ed-thumb:has(input:checked) {
+.ed-thumb:hover {
   border-color: var(--ed-accent);
-  box-shadow: inset 0 0 0 1px var(--ed-accent);
 }
 
-.ed-thumb:has(input:checked) .ed-thumb__svg {
-  background: var(--ed-accent-soft);
+/* A escolhida: contorno anil e um anel anil suave em volta, como no protótipo. */
+.ed-thumb:has(input:checked) {
+  border-color: var(--ed-accent);
+  box-shadow: 0 0 0 3px var(--ed-accent-soft);
 }
 
 .ed-thumb:has(input:focus-visible) {
@@ -1117,4 +1187,12 @@ textarea.ed-input {
 .ed-anim__button {
   justify-self: start;
   min-height: 44px;
+}
+
+/* Títulos do editor na letra de títulos do painel (Familjen Grotesk). */
+.ed-panel h3,
+.ed-dialog__head h2,
+.ed-summary b {
+  font-family: var(--gp-font-display, inherit);
+  letter-spacing: -0.01em;
 }

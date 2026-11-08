@@ -26,7 +26,7 @@ export const inviteEmailHTML = ({
     <p>${escapeHTML(invitedBy)} convidou você para cuidar do site <b>${escapeHTML(siteName)}</b>.</p>
     <p>Para entrar, crie a sua senha:</p>
     <p>
-      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #0f6b55; color: #ffffff; text-decoration: none; border-radius: 6px;">
+      <a href="${url}" style="display: inline-block; padding: 12px 20px; background: #2f43c9; color: #ffffff; text-decoration: none; border-radius: 6px;">
         Criar minha senha
       </a>
     </p>

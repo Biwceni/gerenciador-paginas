@@ -2,10 +2,12 @@ import React from 'react'
 
 import type { Components } from '@/puck/config'
 
-// Cores do painel (claro ou escuro). Pelo `style`, que aceita variáveis do CSS.
-const ACCENT = 'var(--gp-accent)'
-const LINE = 'var(--gp-line)'
-const ON_ACCENT = 'var(--gp-accent-ink)'
+// Cores do site do cliente (redesign v3, entrega 5): o editor publica as do rascunho das
+// configurações como `--ed-site-*` (Editor.tsx). Fora do editor (Nova página), as do painel.
+// Pelo `style`, que aceita variáveis do CSS.
+const ACCENT = 'var(--ed-site-primary, var(--gp-accent))'
+const LINE = 'var(--ed-site-line, var(--gp-line))'
+const ON_ACCENT = 'var(--ed-site-on-primary, var(--gp-accent-ink))'
 
 type BarProps = { x: number; y: number; w: number; h: number; r?: number; f?: string; o?: number }
 
@@ -120,9 +122,9 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
   ),
   Video: (
     <>
-      <Bar f="#3b2d24" h={30} r={4} w={48} x={6} y={5} />
-      <Bar f="#e02424" h={10} r={3} w={14} x={23} y={14} />
-      <path d="M28 16.5v5l4-2.5z" fill="#fff" />
+      <Bar f="var(--ed-site-deep, #3b2d24)" h={30} r={4} w={48} x={6} y={5} />
+      <circle cx={30} cy={20} r={7} style={{ fill: ACCENT }} />
+      <path d="M28 17v6l5-3z" style={{ fill: ON_ACCENT }} />
     </>
   ),
   Form: (
@@ -198,6 +200,17 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
   ColumnImage: <Bar f={ACCENT} h={30} o={0.45} r={3} w={40} x={10} y={5} />,
   ColumnButton: <Bar f={ACCENT} h={12} r={6} w={32} x={14} y={14} />,
 }
+
+/**
+ * Seções que acabaram de chegar (redesign v3, entrega 4): ganham o selo "novo" na lista. Tirar daqui
+ * quando deixarem de ser novidade.
+ */
+export const NEW_SECTIONS: ReadonlySet<keyof Components> = new Set([
+  'Announcement',
+  'Products',
+  'PriceList',
+  'InstagramStrip',
+])
 
 /** Uma frase curta do que cada seção é. */
 export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {

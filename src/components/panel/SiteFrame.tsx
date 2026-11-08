@@ -22,6 +22,11 @@ type Props = {
    * Se não couber, a prévia inteira é diminuída (o computador vira uma miniatura).
    */
   width: number
+  /**
+   * Altura máxima da janela simulada, em pixels do site: mostra só o começo da página, como a
+   * primeira tela do navegador (e as fotos mais abaixo nem chegam a baixar).
+   */
+  maxHeight?: number
   children: React.ReactNode
 }
 
@@ -30,7 +35,15 @@ type Props = {
  * prévia do editor). No iframe, a largura dele vale como a da janela, e celular e computador ficam
  * certos. Os links não funcionam aqui: é só para ver.
  */
-export function SiteFrame({ title, theme, fontFaces, stylesheets, width, children }: Props) {
+export function SiteFrame({
+  title,
+  theme,
+  fontFaces,
+  stylesheets,
+  width,
+  maxHeight,
+  children,
+}: Props) {
   const box = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLIFrameElement>(null)
   const [body, setBody] = useState<HTMLElement | null>(null)
@@ -87,13 +100,14 @@ export function SiteFrame({ title, theme, fontFaces, stylesheets, width, childre
   }, [])
 
   const scale = Math.min(1, available / width)
+  const shown = maxHeight ? Math.min(height, maxHeight) : height
 
   return (
     <div className="gp-siteframe" ref={box}>
-      <div style={{ width: width * scale, height: height * scale, overflow: 'hidden' }}>
+      <div style={{ width: width * scale, height: shown * scale, overflow: 'hidden' }}>
         <iframe
           ref={ref}
-          style={{ width, height, transform: `scale(${scale})`, transformOrigin: '0 0' }}
+          style={{ width, height: shown, transform: `scale(${scale})`, transformOrigin: '0 0' }}
           tabIndex={-1}
           title={title}
         />

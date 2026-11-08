@@ -19,50 +19,108 @@ $desktop: 1024px;
   --gp-top: 32px;
 }
 
+// Identidade do produto (redesign v3, entrega 5): cromo calmo em porcelana e anil, para a marca do
+// cliente ser a única coisa colorida forte na tela. Todos os pares de texto (tinta, apagado, anil,
+// ok, aviso e erro sobre fundo, superfícies e anil suave) passam de 4,5:1, nos dois temas.
 html[data-theme='light'],
 html:not([data-theme]) {
-  --gp-bg: #f2f4f0;
+  --gp-bg: #f4f4f1;
   --gp-surface: #ffffff;
-  --gp-surface-2: #e9ece6;
-  --gp-ink: #1b2420;
-  --gp-muted: #5a6660;
-  --gp-line: #d6dbd3;
-  // Contorno de campos e botões: 3:1 com os fundos do painel.
-  --gp-line-strong: #7a847e;
-  --gp-accent: #0f6b55;
+  --gp-surface-2: #ecece7;
+  --gp-ink: #18191d;
+  --gp-muted: #5b5d66;
+  --gp-line: #dcdcd5;
+  // Contorno de campos e botões: 3:1 com o fundo e a superfície.
+  --gp-line-strong: #8a8b92;
+  --gp-accent: #2f43c9;
   --gp-accent-ink: #ffffff;
-  --gp-accent-soft: #dbeee6;
+  --gp-accent-soft: #e5e8fb;
   --gp-warn: #94570a;
   --gp-warn-soft: #fbecd2;
   --gp-ok: #1d7440;
   --gp-ok-soft: #dcf1e2;
   --gp-danger: #b23a2b;
   --gp-danger-soft: #f8e0dc;
+  --gp-shadow: rgb(24 25 29 / 8%);
+  --gp-scrim: rgb(12 13 18 / 55%);
+  color-scheme: light;
 }
 
 html[data-theme='dark'] {
-  --gp-bg: #121715;
-  --gp-surface: #1a211e;
-  --gp-surface-2: #232b27;
-  --gp-ink: #e6ece8;
-  --gp-muted: #9ba7a0;
-  --gp-line: #323c37;
-  --gp-line-strong: #707a74;
-  --gp-accent: #4fbf98;
-  --gp-accent-ink: #0a1a13;
-  --gp-accent-soft: #1c3a2f;
+  --gp-bg: #111216;
+  --gp-surface: #191a20;
+  --gp-surface-2: #22242b;
+  --gp-ink: #ecedf1;
+  --gp-muted: #a2a4ae;
+  --gp-line: #2c2e36;
+  --gp-line-strong: #6f717b;
+  --gp-accent: #8e9cff;
+  --gp-accent-ink: #0d1030;
+  --gp-accent-soft: #232a55;
   --gp-warn: #e6aa50;
   --gp-warn-soft: #3a2d16;
   --gp-ok: #62c784;
   --gp-ok-soft: #1a3423;
   --gp-danger: #f08273;
   --gp-danger-soft: #3e201c;
+  --gp-shadow: rgb(0 0 0 / 35%);
+  --gp-scrim: rgb(0 0 0 / 60%);
+  color-scheme: dark;
 }
 
-// Fundo e texto do painel inteiro, também nas telas padrão.
+// Telas padrão do Payload que ainda aparecem (Avançado, listas, conta): só os tokens, sem
+// redesenho. O Payload monta fundos, linhas e campos com a escala `--theme-elevation-*`; trocar
+// os pontos dela que viram fundo e linha deixa essas telas em porcelana e anil.
 html[data-theme] {
   --theme-bg: var(--gp-bg);
   --theme-text: var(--gp-ink);
+  --theme-input-bg: var(--gp-surface);
+  --theme-elevation-0: var(--gp-surface);
+  --theme-elevation-50: var(--gp-surface-2);
+  --theme-elevation-100: var(--gp-surface-2);
+  --theme-elevation-150: var(--gp-line);
+}
+
+// ---------- superfícies do navegador ----------
+
+html[data-theme] {
+  // Cursor de digitação e texto selecionado no anil do produto.
+  caret-color: var(--gp-accent);
+  accent-color: var(--gp-accent);
+
+  ::selection {
+    background: var(--gp-accent);
+    color: var(--gp-accent-ink);
+  }
+
+  // Foco igual em todo o painel, também nas telas padrão: anel anil de 2 px, 2 px afastado.
+  :focus-visible {
+    outline: 2px solid var(--gp-accent);
+    outline-offset: 2px;
+  }
+}
+
+// Barras de rolagem finas nas listas e nos painéis que rolam por dentro.
+.gp-nav,
+.gp-rows,
+.gp-media__grid,
+.gp-inbox,
+.gp-dialog__body,
+.ed-root [class*='SidebarSection-content'],
+.ed-root [class*='PuckLayout-leftSideBar'],
+.ed-root [class*='PuckLayout-rightSideBar'],
+.ed-dialog__body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gp-line-strong) transparent;
+}
+
+// Datas, contagens e números lado a lado não dançam de largura.
+.gp-count,
+.gp-row__sub,
+.gp-card__head .gp-small,
+.gp-readings__ratio,
+time {
+  font-variant-numeric: tabular-nums;
 }
 
 .gp-ic {
@@ -124,14 +182,69 @@ html[data-theme] {
   }
 }
 
+// Chip do site no pé do menu: logo (ou as iniciais do nome), nome e endereço.
+.gp-sitechip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--gp-surface-2);
+  font-size: var(--gp-fs-small);
+
+  &__logo {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    overflow: hidden;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--gp-accent-soft);
+    color: var(--gp-accent);
+    font-weight: 700;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__text {
+    display: grid;
+    min-width: 0;
+    line-height: 1.3;
+
+    b,
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b {
+      color: var(--gp-ink);
+      font-size: var(--gp-fs-help);
+    }
+
+    span {
+      color: var(--gp-muted);
+    }
+  }
+}
+
 // Pessoa que entrou, no pé do menu: iniciais no lugar da foto, nome e papel.
 .gp-who {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 12px 0;
+  padding: 6px 10px 0;
   margin-top: 4px;
-  border-top: 1px solid var(--gp-line);
+  border-top: 0;
   font-size: var(--gp-fs-small);
   color: var(--gp-muted);
   width: 100%;
@@ -233,21 +346,25 @@ html[data-theme] {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 44px;
   padding: 10px 12px;
   border-radius: 10px;
-  color: var(--gp-ink);
+  color: var(--gp-muted);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
   font-size: var(--gp-fs-text);
   cursor: pointer;
 
   &:hover {
     background: var(--gp-surface-2);
+    color: var(--gp-ink);
   }
 
+  // Tela aberta: anil suave com o texto e o ícone em anil.
   &[aria-current='page'] {
     background: var(--gp-accent-soft);
     color: var(--gp-accent);
+    font-weight: 600;
   }
 
   // Mesmo contorno dos botões, ao chegar pela tecla Tab (também na gaveta do celular).
@@ -374,16 +491,88 @@ html[data-theme] {
   }
 }
 
-.gp-statusbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  justify-content: space-between;
-  background: var(--gp-surface);
-  border: 1px solid var(--gp-line);
-  border-radius: 16px;
-  padding: 16px 20px;
+// Início do painel (entrega 5): o cartão "Seu site" grande e, ao lado, o que falta para ficar
+// pronto. Abaixo de 1100 px, um embaixo do outro.
+.gp-home {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 1099px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.gp-sitecard {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+
+  // A miniatura: a primeira tela do site no ar, diminuída. Nada dentro recebe clique nem foco.
+  &__mini {
+    position: relative;
+    overflow: hidden;
+    background: var(--gp-surface-2);
+    pointer-events: none;
+    user-select: none;
+    // Mesma proporção da janela simulada (LiveSite: 1280 × 760), enquanto o iframe não mede.
+    aspect-ratio: 1280 / 760;
+    max-height: 340px;
+
+    .gp-siteframe {
+      border: 0;
+      border-radius: 0;
+    }
+
+    iframe {
+      display: block;
+      border: 0;
+    }
+
+    &--soon {
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 8px;
+      color: var(--gp-muted);
+      font-weight: 600;
+    }
+  }
+
+  &__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--gp-line);
+  }
+
+  &__meta {
+    color: var(--gp-muted);
+    font-size: var(--gp-fs-help);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  // A bolinha fica na primeira linha do texto, também quando ele quebra (celular).
+  .gp-live {
+    flex: 1 1 260px;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .gp-live__dot {
+    margin-top: 0.45em;
+  }
 }
 
 .gp-live {
@@ -395,17 +584,30 @@ html[data-theme] {
   flex-wrap: wrap;
 
   &__dot {
+    flex: none;
     width: 10px;
     height: 10px;
     border-radius: 50%;
     background: var(--gp-ok);
     box-shadow: 0 0 0 4px var(--gp-ok-soft);
   }
+
+  // Selo "No ar", em verde: o único sinal de estado do cartão.
+  &__label {
+    margin-right: 8px;
+    color: var(--gp-ok);
+  }
+
+  &--draft .gp-live__dot {
+    background: var(--gp-warn);
+    box-shadow: 0 0 0 4px var(--gp-warn-soft);
+  }
 }
 
+// Atalhos, menores que os cartões de cima.
 .gp-quick {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
 
   // No celular, os atalhos em grade 2×2.
@@ -420,11 +622,11 @@ html[data-theme] {
 
   a {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     align-content: start;
     border: 1px solid var(--gp-line);
     border-radius: 14px;
-    padding: 16px;
+    padding: 14px;
     background: var(--gp-surface);
     color: var(--gp-ink);
     text-decoration: none;
@@ -435,12 +637,12 @@ html[data-theme] {
   }
 
   b {
-    font-size: var(--gp-fs-text);
+    font-size: var(--gp-fs-help);
   }
 
   &__icon {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     border-radius: 10px;
     background: var(--gp-accent-soft);
     color: var(--gp-accent);
@@ -1097,7 +1299,7 @@ html[data-theme] {
   display: grid;
   gap: 20px;
   min-width: 0;
-  box-shadow: 0 6px 24px rgb(20 30 25 / 8%);
+  box-shadow: 0 6px 24px var(--gp-shadow);
 }
 
 .gp-eyebrow {
@@ -1294,7 +1496,7 @@ html[data-theme] {
   padding: 32px;
   display: grid;
   gap: 18px;
-  box-shadow: 0 6px 24px rgb(20 30 25 / 8%);
+  box-shadow: 0 6px 24px var(--gp-shadow);
 
   .gp-brandmark {
     padding: 0;
@@ -2282,7 +2484,7 @@ textarea.gp-input {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgb(10 15 12 / 45%);
+  background: var(--gp-scrim);
   display: grid;
   place-items: center;
   padding: 16px;
@@ -2299,7 +2501,7 @@ textarea.gp-input {
   padding: 22px;
   display: grid;
   gap: 16px;
-  box-shadow: 0 6px 24px rgb(20 30 25 / 20%);
+  box-shadow: 0 6px 24px var(--gp-shadow);
   font-size: var(--gp-fs-text);
   outline: none;
 
@@ -2404,12 +2606,6 @@ textarea.gp-input {
   .gp-nav * {
     transition: none !important;
   }
-}
-
-// Painel: site ainda fora do ar e cartão "Para terminar seu site" (v2, entrega 2a).
-.gp-statusbar--draft .gp-live__dot {
-  background: var(--gp-warn);
-  box-shadow: 0 0 0 4px var(--gp-warn-soft);
 }
 
 .gp-progress {

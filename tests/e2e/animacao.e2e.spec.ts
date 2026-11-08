@@ -161,7 +161,9 @@ test.describe.serial('animação do site e das seções', () => {
     previous = {
       ...(site.name ? { name: site.name } : {}),
       motion: site.motion ?? 'suave',
-      contact: site.contact ?? {},
+      // Sem o `whatsapp` explícito, um banco que nunca gravou as configurações ficaria com o número
+      // de teste (o `{}` não apaga nada) e os testes seguintes veriam o botão do WhatsApp.
+      contact: { ...site.contact, whatsapp: site.contact?.whatsapp ?? null },
     }
     await payload.updateGlobal({
       slug: 'site',
