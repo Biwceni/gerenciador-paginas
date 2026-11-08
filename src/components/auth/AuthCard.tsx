@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { Icon } from '@/components/admin/Icon'
+import { PanelIcon } from '@/components/panel/PanelIcon'
 import { LOCK_MINUTES, MAX_LOGIN_ATTEMPTS } from '@/lib/auth'
 import { PRODUCT_NAME } from '@/lib/site'
 
@@ -45,14 +46,35 @@ export function AuthLink({ children, href }: { children: React.ReactNode; href: 
   )
 }
 
-/** Aviso embaixo de um campo, no estilo do aviso de senha errada. */
-export function FieldProblem({ id, text }: { id: string; text?: string | null }) {
+/**
+ * Caixa de erro das telas de entrar e senha: ícone de alerta e o texto, sobre o fundo de erro.
+ * O aviso comum (`.gp-warnbox`, bege) fica para avisos de verdade.
+ */
+export function AuthError({
+  field,
+  id,
+  text,
+}: {
+  field?: boolean
+  id?: string
+  text?: string | null
+}) {
   if (!text) return null
   return (
-    <p className="gp-warnbox gp-warnbox--field" id={id} role="alert">
-      {text}
+    <p
+      className={`gp-warnbox gp-warnbox--danger${field ? ' gp-warnbox--field' : ''}`}
+      id={id}
+      role="alert"
+    >
+      <PanelIcon name="alert" size={16} />
+      <span>{text}</span>
     </p>
   )
+}
+
+/** Problema embaixo de um campo, na mesma caixa de erro da senha errada. */
+export function FieldProblem({ id, text }: { id: string; text?: string | null }) {
+  return <AuthError field id={id} text={text} />
 }
 
 /** Conta bloqueada depois de tentativas com a senha errada. */

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 
 import { WhyDisabled } from '@/components/panel/WhyDisabled'
 
-import { AuthCard, ExpiredCard } from './AuthCard'
+import { AuthCard, AuthError, ExpiredCard } from './AuthCard'
 import { authRequest } from './authApi'
 import { PasswordFields, passwordMissing, passwordReady } from './PasswordFields'
 
@@ -65,11 +65,7 @@ export function NewPasswordForm(props: Props) {
       title={invite ? 'Crie sua senha' : 'Crie uma senha nova'}
     >
       <form className="gp-authform" onSubmit={submit}>
-        {error && (
-          <p className="gp-warnbox" role="alert">
-            {error}
-          </p>
-        )}
+        <AuthError text={error} />
         <PasswordFields
           confirm={confirm}
           password={password}

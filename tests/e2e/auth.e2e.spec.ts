@@ -38,6 +38,74 @@ test.describe('Entrar e senha', () => {
     await expect(page.locator('.gp-warnbox')).toHaveText(WRONG_LOGIN_MESSAGE)
   })
 
+  // Ajustes da avaliação do Impeccable (08/11/2026).
+  test('no celular, os campos têm letra de 16 px (o iPhone não amplia a tela)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${BASE}/admin/login`)
+    for (const id of ['#lg-email', '#lg-pass']) {
+      const size = await page
+        .locator(id)
+        .evaluate((element) => parseFloat(getComputedStyle(element).fontSize))
+      expect(size).toBeGreaterThanOrEqual(16)
+    }
+  })
+
+  test('o olho mostra e esconde a senha', async ({ page }) => {
+    await page.goto(`${BASE}/admin/login`)
+    const password = page.locator('#lg-pass')
+    const toggle = page.locator('.gp-pwinput__toggle')
+    await password.fill('qualquer-coisa-1')
+    await expect(password).toHaveAttribute('type', 'password')
+    await expect(toggle).toHaveAttribute('aria-label', 'Mostrar senha')
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+    await toggle.click()
+    await expect(password).toHaveAttribute('type', 'text')
+    await expect(toggle).toHaveAttribute('aria-label', 'Esconder senha')
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(password).toHaveAttribute('autocomplete', 'current-password')
+
+    await toggle.click()
+    await expect(password).toHaveAttribute('type', 'password')
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  test('depois da senha errada, a senha some e o cursor vai para ela', async ({ page }) => {
+    await page.goto(`${BASE}/admin/login`)
+    await page.fill('#lg-email', testUser.email)
+    await page.fill('#lg-pass', 'senha-errada-1')
+    // Mostrando a senha: ao entrar, ela volta a ficar escondida.
+    await page.click('.gp-pwinput__toggle')
+    await page.click('button[type="submit"]')
+    await expect(page.locator('.gp-warnbox--danger[role="alert"]')).toHaveText(WRONG_LOGIN_MESSAGE)
+    await expect(page.locator('#lg-email')).toHaveValue(testUser.email)
+    await expect(page.locator('#lg-pass')).toHaveValue('')
+    await expect(page.locator('#lg-pass')).toHaveAttribute('type', 'password')
+    await expect(page.locator('#lg-pass')).toBeFocused()
+  })
+
+  test('enviar vazio mostra os dois problemas na caixa de erro', async ({ page }) => {
+    await page.goto(`${BASE}/admin/login`)
+    await page.click('button[type="submit"]')
+    await expect(page.locator('#lg-email-problem')).toHaveClass(/gp-warnbox--danger/)
+    await expect(page.locator('#lg-pass-problem')).toHaveClass(/gp-warnbox--danger/)
+    await expect(page.locator('#lg-email')).toHaveAttribute('aria-invalid', 'true')
+    await expect(page.locator('#lg-pass')).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  test('"Esqueci minha senha" tem 44 px de altura para o dedo', async ({ page }) => {
+    await page.goto(`${BASE}/admin/login`)
+    const box = await page.getByRole('link', { name: 'Esqueci minha senha' }).boundingBox()
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+  })
+
+  test('o painel diz que a página está em pt-BR', async ({ page }) => {
+    await page.goto(`${BASE}/admin/login`)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
+  })
+
   test('esqueci a senha não diz se o e-mail existe', async ({ page }) => {
     await page.goto(`${BASE}/admin/forgot`)
     await page.fill('#fg-email', 'ninguem@exemplo.com.br')

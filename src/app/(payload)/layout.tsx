@@ -23,7 +23,13 @@ const serverFunction: ServerFunctionClient = async function (args) {
 }
 
 const Layout = ({ children }: Args) => (
-  <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
+  <RootLayout
+    config={config}
+    // O Payload põe `lang="pt"` (o idioma do painel); o site público já usa `pt-BR`.
+    htmlProps={{ lang: 'pt-BR' }}
+    importMap={importMap}
+    serverFunction={serverFunction}
+  >
     {children}
   </RootLayout>
 )

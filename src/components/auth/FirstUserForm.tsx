@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 
 import { WhyDisabled } from '@/components/panel/WhyDisabled'
 
-import { AuthCard } from './AuthCard'
+import { AuthCard, AuthError } from './AuthCard'
 import { authRequest } from './authApi'
 import { PasswordFields, passwordMissing, passwordReady } from './PasswordFields'
 
@@ -44,11 +44,7 @@ export function FirstUserForm({ adminRoute, apiRoute }: { adminRoute: string; ap
       title="Crie sua conta"
     >
       <form className="gp-authform" onSubmit={submit}>
-        {error && (
-          <p className="gp-warnbox" role="alert">
-            {error}
-          </p>
-        )}
+        <AuthError text={error} />
         <div className="gp-field">
           <label htmlFor="fu-name">Seu nome</label>
           <input
