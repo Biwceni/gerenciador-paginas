@@ -89,14 +89,17 @@ describe('Destaques: marcador', () => {
       .flatMap((seed) => seed.pages ?? [])
       .flatMap((page) =>
         (parsePageContent(page.content).data?.data.content ?? []).flatMap((item) =>
-          item.type === 'Features' ? [{ slug: page.slug, marker: item.props.marker }] : [],
+          item.type === 'Features'
+            ? [{ slug: page.slug, title: item.props.title, marker: item.props.marker }]
+            : [],
         ),
       )
     expect(markers.length).toBeGreaterThan(5)
     expect(markers.filter(({ marker }) => marker === 'none')).toEqual([])
     const steps = markers.filter(({ marker }) => marker === 'number')
     expect(steps.length).toBeGreaterThan(0)
-    expect(steps.every(({ slug }) => slug === 'como-trabalhamos')).toBe(true)
+    // Números só no passo a passo ("Como funciona") e na programação do evento.
+    expect(steps.every(({ title }) => ['Como funciona', 'Programação'].includes(title))).toBe(true)
   })
 })
 

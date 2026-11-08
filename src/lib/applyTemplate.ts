@@ -8,7 +8,13 @@ import { templateBlockType } from './forms'
 import { PRIVACY_TEMPLATE_KEY } from './privacy'
 import { relationID } from './relations'
 import { slugify, uniqueSlug } from './slug'
-import { isTemplatePhotoURL, remapTemplateContent, type TemplateIds } from './templates'
+import {
+  fillExamples,
+  isTemplatePhotoURL,
+  remapTemplateContent,
+  type TemplateIds,
+  templatePersonality,
+} from './templates'
 
 // Aplicar um modelo (fase 4): copia as fotos para a biblioteca, cria os formulários e as páginas e,
 // no modelo de site, troca as configurações, o menu e o rodapé. Chamado pelos endpoints em
@@ -190,7 +196,8 @@ function headerLink(link: TemplateLink | null | undefined, pageIds: number[]) {
   return { kind: 'whatsapp' as const }
 }
 
-export type SiteAnswers = { name: string; tagline: string; whatsapp: string }
+/** O que a pessoa respondeu no Começar. A cidade só entra nos textos de exemplo. */
+export type SiteAnswers = { name: string; tagline: string; whatsapp: string; city?: string }
 
 /**
  * Endereço que uma página arquivada passa a ter quando uma página nova do modelo precisa do dela:
@@ -214,18 +221,23 @@ function archivedPageData(page: Page, slug: string) {
 }
 
 /**
- * Configurações do site depois de aplicar um modelo. Do modelo vêm só as cores e as letras: a
+ * Configurações do site depois de aplicar um modelo. Do modelo vêm só as cores, as letras e a
+ * personalidade sugerida (pelo identificador do modelo, quando ele tem uma): a
  * frase, o endereço e o horário de exemplo nunca viram dado real (em branco, ficam em branco, e o
  * painel lembra a pessoa de preencher). O resto vem do que está no ar, e o WhatsApp respondido
  * troca o de hoje. Vão todos os campos: o Payload completa o que faltar com o último rascunho, e
  * uma mudança não publicada das Configurações iria para o ar junto.
  */
 export function templateSiteData(
-  site: Pick<Site, 'logo' | 'social' | 'seoDescription' | 'shareImage' | 'contact'>,
-  sample: Template['site'],
+  site: Pick<
+    Site,
+    'logo' | 'social' | 'seoDescription' | 'shareImage' | 'contact' | 'personality' | 'motion'
+  >,
+  template: Pick<Template, 'key' | 'site'>,
   answers: SiteAnswers,
   homepage: number,
 ) {
+  const sample = template.site
   return {
     logo: relationID(site.logo),
     // A página de privacidade de antes vai para "Arquivadas" com as outras, e a nova se cria depois.
@@ -238,6 +250,8 @@ export function templateSiteData(
     homepage,
     colors: sample?.colors,
     fonts: sample?.fonts,
+    personality: templatePersonality(template.key) ?? site.personality,
+    motion: site.motion,
     contact: {
       ...site.contact,
       whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
@@ -316,8 +330,9 @@ export async function applySiteTemplate(
       )
     }
     const ids: TemplateIds = { pages: created.map((page) => page.id), photos, forms }
+    const examples = { name: answers.name, city: answers.city ?? '' }
     for (const [index, page] of (template.pages ?? []).entries()) {
-      const data = remapTemplateContent(templateContent(page), ids)
+      const data = fillExamples(remapTemplateContent(templateContent(page), ids), examples)
       if (index === 0) {
         const linkPage = data.content[0]?.type === 'LinkList'
         personalizeOpening(data, {
@@ -341,7 +356,7 @@ export async function applySiteTemplate(
     const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access })
     await req.payload.updateGlobal({
       slug: 'site',
-      data: templateSiteData(site, template.site, answers, ids.pages[0]),
+      data: templateSiteData(site, template, answers, ids.pages[0]),
       ...access,
     })
 
@@ -364,7 +379,7 @@ export async function applySiteTemplate(
     await req.payload.updateGlobal({
       slug: 'footer',
       data: {
-        text: footer?.text ?? null,
+        text: footer?.text ? fillExamples(footer.text, examples) : null,
         showMenu: footer?.showMenu !== false,
         showContact: footer?.showContact !== false,
         showSocial: footer?.showSocial !== false,
@@ -450,7 +465,7 @@ async function setPrivacyPage(req: PayloadRequest, pageId: number) {
 
 /**
  * Página nova (rascunho) a partir de um modelo de página. O título da abertura vira o nome da
- * página; botões que levariam a outra página do modelo levam ao WhatsApp.
+ * página, e o nome do site entra nos textos de exemplo; botões que levariam a outra página do modelo levam ao WhatsApp.
  */
 export async function applyPageTemplate(
   req: PayloadRequest,
@@ -464,7 +479,18 @@ export async function applyPageTemplate(
   const shouldCommit = await initTransaction(req)
   try {
     const forms = await createTemplateForms(req, template)
-    const data = remapTemplateContent(templateContent(source), { pages: [], photos, forms })
+    // `{nome}` dos textos de exemplo vira o nome do site (a cidade só é perguntada no Começar).
+    const site = await req.payload.findGlobal({
+      slug: 'site',
+      depth: 0,
+      draft: false,
+      overrideAccess: false,
+      req,
+    })
+    const data = fillExamples(
+      remapTemplateContent(templateContent(source), { pages: [], photos, forms }),
+      { name: site.name ?? '', city: '' },
+    )
     personalizeOpening(data, { title: page.title })
     const doc = await req.payload.create({
       collection: 'pages',

@@ -109,8 +109,10 @@ test.describe.serial('site novo', () => {
 
     await page.getByRole('radio', { name: /Página de links/ }).click()
     await page.getByRole('button', { name: 'Continuar' }).click()
-    await page.getByRole('button', { name: 'Continuar' }).click()
+    // O básico vem antes do modelo (entrega 6): a prévia já mostra o nome e a cidade.
     await page.fill('#ob-name', SITE_NAME)
+    await page.fill('#ob-city', 'Lavras')
+    await page.getByRole('button', { name: 'Continuar' }).click()
     await page.getByRole('button', { name: 'Criar meu site' }).click()
     await page.waitForURL(/pronto=1/)
 

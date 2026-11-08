@@ -14,14 +14,19 @@ import { type Components, SECTION_LABELS } from '@/puck/config'
 import { blankContent, copyPage, createPage, createPageFromTemplate } from './api'
 import { PanelIcon } from './PanelIcon'
 
+/** Uma seção na miniatura do modelo. `band`: banner baixo, desenhado como uma faixa fina. */
+export type MiniSection = { type: string; band?: boolean }
+
 type Props = {
   adminRoute: string
   apiRoute: string
+  /** Cores do site nas variáveis `--ed-site-*`: as miniaturas dos modelos ficam nelas. */
+  colors?: React.CSSProperties
   domain: string
   /** Identificador do modelo que já vem escolhido (`?modelo=`), como o "Criar agora" dos formulários. */
   initialModel: string | null
   /** Modelos de página (coleção Modelos, fase 4). */
-  models: { id: number; key: string; title: string; text: string; sections: string[] }[]
+  models: { id: number; key: string; title: string; text: string; sections: MiniSection[] }[]
   pages: { id: number; title: string; slug: string }[]
 }
 
@@ -41,10 +46,11 @@ const STARTS: { key: 'blank' | 'copy'; title: string; text: string }[] = [
 const isSection = (type: string): type is keyof Components => type in SECTION_LABELS
 
 /**
- * Miniatura do cartão: as seções que o modelo cria, empilhadas como numa folha, com os mesmos
- * desenhos da lista "Adicionar seção". Em branco: um título e o "+"; cópia: o ícone de copiar.
+ * Miniatura do cartão: as seções que o modelo cria, empilhadas como numa folha nas cores do site,
+ * com os mesmos desenhos da lista "Adicionar seção" (a vitrine com 3 fotos, o cardápio com linhas e
+ * preços). O banner baixo é uma faixa fina. Em branco: um título e o "+"; cópia: o ícone de copiar.
  */
-function StartMini({ start, sections }: { start: Start; sections?: string[] }) {
+function StartMini({ start, sections }: { start: Start; sections?: MiniSection[] }) {
   if (start === 'copy') {
     return (
       <span aria-hidden="true" className="gp-mini gp-mini--icon">
@@ -66,10 +72,14 @@ function StartMini({ start, sections }: { start: Start; sections?: string[] }) {
   }
   return (
     <span aria-hidden="true" className="gp-mini">
-      <span className="gp-mini__sheet">
-        {(sections ?? []).filter(isSection).map((type, index) => (
-          <SectionThumb className="gp-mini__section" key={index} type={type} />
-        ))}
+      <span className="gp-mini__sheet gp-mini__sheet--site">
+        {(sections ?? []).map(({ type, band }, index) =>
+          band ? (
+            <i className="gp-mini__band" key={index} />
+          ) : isSection(type) ? (
+            <SectionThumb className="gp-mini__section" key={index} type={type} />
+          ) : null,
+        )}
       </span>
     </span>
   )
@@ -79,7 +89,15 @@ function StartMini({ start, sections }: { start: Start; sections?: string[] }) {
 type Start = number | 'blank' | 'copy'
 
 /** Nome da página, jeito de começar e "Criar e começar a editar". Segue o `vNewPage`. */
-export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models, pages }: Props) {
+export function NewPageForm({
+  adminRoute,
+  apiRoute,
+  colors,
+  domain,
+  initialModel,
+  models,
+  pages,
+}: Props) {
   const router = useRouter()
   const privacyModel = models.find((model) => model.key === PRIVACY_TEMPLATE_KEY)
   const asked = models.find((model) => model.key === initialModel)
@@ -130,13 +148,13 @@ export function NewPageForm({ adminRoute, apiRoute, domain, initialModel, models
           </Link>
           <h1>Nova página</h1>
           <p>
-            Escolha um modelo. A estrutura vem pronta, com textos de exemplo (Lorem Ipsum) para você
-            trocar pelos seus.
+            Escolha um modelo. A estrutura vem pronta, com textos de exemplo do seu ramo para você
+            trocar pelos seus. As fotos ficam para você escolher.
           </p>
         </div>
       </header>
 
-      <div className="gp-starts" role="radiogroup" aria-label="Como começar">
+      <div aria-label="Como começar" className="gp-starts" role="radiogroup" style={colors}>
         {[
           ...models.map((model) => ({ ...model, key: model.id as Start })),
           ...STARTS.filter((item) => item.key === 'blank' || pages.length > 0),

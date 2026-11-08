@@ -25,7 +25,11 @@ export function Photo({ media, sizes, priority, className, fill, alt: ownAlt }: 
   // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado) ou guardada no
   // próprio servidor (sem o Storage configurado, só no computador e nos testes): vai direto, sem o
   // otimizador de imagens do site, que só aceita o nosso Storage.
-  const unoptimized = isTemplatePhotoURL(media.url) || media.url.includes('/api/media/file/')
+  // A ilustração das prévias dos modelos (`lib/illustration.ts`) é um desenho `data:`, também direto.
+  const unoptimized =
+    isTemplatePhotoURL(media.url) ||
+    media.url.includes('/api/media/file/') ||
+    media.url.startsWith('data:')
   const objectPosition =
     media.focalX != null && media.focalY != null ? `${media.focalX}% ${media.focalY}%` : undefined
 

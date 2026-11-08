@@ -3,14 +3,15 @@ import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
 import { NOT_ARCHIVED, panelHref, PANEL_PATHS } from '@/lib/panel'
+import { cityFromAddress, templateBusiness } from '@/lib/templates'
 import { parsePageContent } from '@/puck/schema'
 
 import { PanelTemplate, requireUser } from './PanelTemplate'
 import { StartWizard, type StartTemplate } from './StartWizard'
 
 /**
- * Início guiado (`/admin/comecar`, fase 4): tipo de site, ramo (no site da empresa), modelo com
- * prévia e o básico (nome, frase e WhatsApp). Segue o `vOnboarding` do protótipo, em tela cheia.
+ * Início guiado (`/admin/comecar`, fase 4): tipo de site, ramo (no site da empresa), o básico
+ * (nome, cidade, frase e WhatsApp) e o modelo com prévia. Segue o `vOnboarding` do protótipo, em tela cheia.
  * Abre sozinho quando o site não tem nenhuma página; com páginas, o administrador chega pelas
  * Configurações ("Começar de novo com um modelo"), e o nome, a frase e o WhatsApp já vêm
  * preenchidos com o que está lá.
@@ -62,10 +63,11 @@ export async function StartView(props: AdminViewServerProps) {
     return [
       {
         id: doc.id,
+        key: doc.key,
         name: doc.name,
         description: doc.description ?? null,
         siteType: doc.siteType,
-        segment: doc.segment ?? null,
+        business: templateBusiness(doc),
         photos: doc.photos,
         forms: doc.forms,
         site: doc.site,
@@ -88,6 +90,7 @@ export async function StartView(props: AdminViewServerProps) {
               name: site.name ?? '',
               tagline: site.tagline ?? '',
               whatsapp: site.contact?.whatsapp ?? '',
+              city: cityFromAddress(site.contact?.address),
             }
           : null
       }

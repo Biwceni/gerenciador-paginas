@@ -8,6 +8,8 @@ import React, { useMemo } from 'react'
 import { SiteFooterView, SiteHeaderView } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import type { FormDefinition } from '@/lib/forms'
+import { fillPhotoSlots, ILLUSTRATION_SIZE, illustrationURL } from '@/lib/illustration'
+import { fillExamples, templatePersonality } from '@/lib/templates'
 import type { Media, Template } from '@/payload-types'
 import { sectionAnchors } from '@/puck/anchors'
 import { renderConfig } from '@/puck/config'
@@ -22,6 +24,8 @@ export type TemplatePreviewData = Pick<
   'photos' | 'forms' | 'site' | 'header' | 'footer'
 > & {
   id: number
+  /** O identificador: leva a personalidade sugerida (`templatePersonality`). */
+  key?: string
   name: string
   description: string | null
   home: { title: string; campaign: boolean; data: PuckPageData }
@@ -31,36 +35,48 @@ export type TemplatePreviewData = Pick<
 const googleFontCSS = (name: string) =>
   `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g, '+')}&display=swap`
 
-/** Foto do banco de fotos em tamanho de prévia (o modelo guarda a de 1600 px). */
-const smaller = (url: string) => url.replace(/([?&])w=\d+/, '$1w=900')
-
 /**
- * Página inicial de um modelo como vai ficar no site, com as fotos vindas direto do banco de fotos
- * (ainda não estão na biblioteca). Os links têm destinos de mentira, mas válidos (o site esconde
- * link com endereço inseguro, como "#"); a prévia não deixa clicar em nada. Só para ver.
+ * Página inicial de um modelo como vai ficar no site, com o nome e a cidade nos textos de exemplo,
+ * a personalidade sugerida e uma ilustração nas cores do site no lugar de cada foto (os modelos não
+ * trazem foto: o lugar fica para as fotos da pessoa). Os links têm destinos de mentira, mas válidos
+ * (o site esconde link com endereço inseguro, como "#"); a prévia não deixa clicar em nada. Só para
+ * ver.
  */
 export function TemplatePreview({
   template,
   name,
+  city,
   width = 1100,
 }: {
   template: TemplatePreviewData
   /** Nome digitado no início guiado; sem ele, o nome de exemplo do modelo. */
   name?: string
+  /** Cidade digitada no início guiado; sem ela, "sua cidade". */
+  city?: string
   width?: number
 }) {
   const siteName = name?.trim() || template.site?.name || template.name
+  const colors = template.site?.colors
+
+  // Os textos com o nome e a cidade, e um número de foto em cada lugar de foto vazio.
+  const page = useMemo(() => {
+    const examples = { name: siteName, city: city ?? '' }
+    return {
+      ...fillPhotoSlots(fillExamples(template.home.data, examples)),
+      footer: template.footer?.text ? fillExamples(template.footer.text, examples) : null,
+      address: template.site?.address ? fillExamples(template.site.address, examples) : null,
+    }
+  }, [template, siteName, city])
 
   const metadata = useMemo<ContentMetadata>(() => {
     const photos = Object.fromEntries(
-      (template.photos ?? []).map((photo, index) => [
+      Array.from({ length: page.count }, (_, index) => [
         index + 1,
         {
           id: index + 1,
-          alt: photo.alt,
-          url: smaller(photo.url),
-          width: 1600,
-          height: 1067,
+          alt: '',
+          url: illustrationURL(colors, index),
+          ...ILLUSTRATION_SIZE,
         } as Media,
       ]),
     )
@@ -88,20 +104,21 @@ export function TemplatePreview({
       forms,
       pageHrefs: Object.fromEntries(template.pageTitles.map((_, index) => [index + 1, '/'])),
       pageAnchors: {},
-      anchors: sectionAnchors(template.home.data),
+      anchors: sectionAnchors(page.data),
       whatsappHref: 'https://wa.me/',
       site: {
         name: siteName,
         logo: null,
-        contact: { address: template.site?.address, hours: template.site?.hours },
+        contact: { address: page.address, hours: template.site?.hours },
       },
-      mainHeadingId: mainHeadingID(template.home.data),
+      mainHeadingId: mainHeadingID(page.data),
     }
-  }, [template, siteName])
+  }, [template, siteName, page, colors])
 
   const theme = themeStyle({
-    colors: template.site?.colors,
+    colors,
     fonts: template.site?.fonts,
+    personality: templatePersonality(template.key),
   }) as Record<string, string>
   const fonts = [template.site?.fonts?.headings, template.site?.fonts?.body].filter(
     (font): font is string => Boolean(font),
@@ -133,7 +150,7 @@ export function TemplatePreview({
         name={siteName}
       />
       <main>
-        <Render config={renderConfig} data={template.home.data} metadata={metadata} />
+        <Render config={renderConfig} data={page.data} metadata={metadata} />
       </main>
       <SiteFooterView
         campaign={campaign}
@@ -141,14 +158,14 @@ export function TemplatePreview({
           whatsapp: null,
           whatsappHref: null,
           email: null,
-          address: template.site?.address ?? null,
+          address: page.address,
           hours: template.site?.hours ?? null,
         }}
         menu={template.footer?.showMenu !== false ? items : []}
         name={siteName}
         showContact={template.footer?.showContact !== false}
         social={[]}
-        text={template.footer?.text ?? null}
+        text={page.footer}
       />
     </SiteFrame>
   )

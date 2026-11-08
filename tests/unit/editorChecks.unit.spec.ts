@@ -55,10 +55,16 @@ describe('título do Google', () => {
   })
 })
 
+/** Os modelos não trazem foto: o banner ganha uma aqui. */
+function withPhoto(section: PageComponent, mediaId: number): PageComponent {
+  if (section.type !== 'Hero') throw new Error('esperava um banner')
+  return { ...section, props: { ...section.props, image: { mediaId } } }
+}
+
 describe('fotos da página', () => {
   const data: PuckPageData = {
     root: { props: {} },
-    content: [pageBuilder().hero({ image: 3 })],
+    content: [withPhoto(pageBuilder().hero({ title: 'Café', text: '', style: 'side' }), 3)],
   }
 
   it('junta as das seções com a do Google, sem repetir', () => {
@@ -77,16 +83,26 @@ describe('botão de WhatsApp na página', () => {
   const page = (content: PageComponent[]): PuckPageData => ({ root: { props: {} }, content })
 
   it('acha o botão de uma seção', () => {
-    expect(usesWhatsApp(page([pageBuilder().cta({ button: 'Pedir', link: whatsapp })]))).toBe(true)
+    expect(
+      usesWhatsApp(
+        page([pageBuilder().cta({ title: 'Peça', text: '', button: 'Pedir', link: whatsapp })]),
+      ),
+    ).toBe(true)
   })
 
   it('botão para outra página não conta', () => {
     const link = { kind: 'page', pageId: 1 } as const
-    expect(usesWhatsApp(page([pageBuilder().cta({ button: 'Pedir', link })]))).toBe(false)
+    expect(
+      usesWhatsApp(page([pageBuilder().cta({ title: 'Peça', text: '', button: 'Pedir', link })])),
+    ).toBe(false)
   })
 
   it('botão sem texto não aparece no site e não conta', () => {
-    expect(usesWhatsApp(page([pageBuilder().cta({ button: ' ', link: whatsapp })]))).toBe(false)
+    expect(
+      usesWhatsApp(
+        page([pageBuilder().cta({ title: 'Peça', text: '', button: ' ', link: whatsapp })]),
+      ),
+    ).toBe(false)
   })
 
   it('acha o botão dentro das colunas', () => {

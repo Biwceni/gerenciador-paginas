@@ -223,26 +223,29 @@ describe('combinações prontas', () => {
 describe('pares de letras por ramo', () => {
   it('cada ramo tem 3 sugestões', () => {
     for (const pairs of Object.values(FONT_PAIRS)) expect(pairs).toHaveLength(3)
-    expect(FONT_PAIRS.cafe[0]).toMatchObject({ headings: 'Cormorant Garamond', body: 'Montserrat' })
+    expect(FONT_PAIRS.confeitaria[0]).toMatchObject({
+      headings: 'Cormorant Garamond',
+      body: 'Montserrat',
+    })
     expect(FONT_PAIRS.saude[0]).toMatchObject({ headings: 'Manrope', body: 'Manrope' })
   })
 
   const templates = [
     {
+      key: 'restaurante-vitrine',
       siteType: 'institucional' as const,
-      segment: 'cafe' as const,
       site: { fonts: { headings: 'Fraunces', body: 'Nunito' }, colors: { primary: '#6b3f24' } },
-      pages: [{ slug: 'inicio' }, { slug: 'nossos-cafes' }, { slug: 'contato' }],
+      pages: [{ slug: 'inicio' }, { slug: 'reservas' }, { slug: 'contato' }],
     },
     {
+      key: 'saude-classico',
       siteType: 'institucional' as const,
-      segment: 'saude' as const,
       site: { fonts: { headings: 'Lora', body: 'Figtree' }, colors: { primary: '#2f5d3a' } },
       pages: [{ slug: 'inicio' }, { slug: 'tratamentos' }, { slug: 'contato' }],
     },
     {
+      key: 'evento-vitrine',
       siteType: 'evento' as const,
-      segment: null,
       site: {
         fonts: { headings: 'Bebas Neue', body: 'Open Sans' },
         colors: { primary: '#111111' },

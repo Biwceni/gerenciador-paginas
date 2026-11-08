@@ -49,7 +49,7 @@ export async function BrandView(props: AdminViewServerProps) {
     payload.find({
       collection: 'templates',
       where: { kind: { equals: 'site' } },
-      select: { siteType: true, segment: true, site: true, pages: true },
+      select: { key: true, siteType: true, site: true, pages: true },
       depth: 0,
       pagination: false,
       ...access,

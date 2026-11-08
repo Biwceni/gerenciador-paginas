@@ -1,6 +1,7 @@
 import type { PanelIconName } from '../components/panel/PanelIcon'
 import { collectReferences } from '../puck/references'
 import type { PuckPageData } from '../puck/schema'
+import { type Personality, PERSONALITIES } from './theme'
 
 // Modelos de site e de página (fase 4). Ficam na coleção Modelos; aqui está o que o painel, a
 // coleção e a rotina que aplica um modelo dividem.
@@ -48,41 +49,165 @@ export const SITE_TYPES = [
 
 export type SiteType = (typeof SITE_TYPES)[number]['value']
 
-/** Ramos do "Site da empresa": escolhem as páginas, os textos e as fotos de exemplo. */
+/**
+ * Valores do campo "Ramo" da coleção Modelos, como estão no banco (fase 4). Os ramos de hoje são
+ * mais (`BUSINESSES`); para não precisar de migração, cada um guarda aqui o grupo mais próximo, e o
+ * ramo de verdade vai no identificador do modelo (`templateBusiness`).
+ */
 export const SEGMENTS = [
+  { value: 'cafe', label: 'Comida (confeitaria, restaurante)' },
+  { value: 'saude', label: 'Cuidados (saúde, salão e estética)' },
+  { value: 'servicos', label: 'Serviços (escritório, serviços em casa)' },
+  { value: 'loja', label: 'Loja' },
+  { value: 'outro', label: 'Outro' },
+] as const
+
+export type Segment = (typeof SEGMENTS)[number]['value']
+
+/**
+ * Ramos do "Site da empresa" (redesign v3, entrega 6): escolhem as páginas, a ordem das seções e os
+ * textos de exemplo, e sugerem a personalidade, as letras e as cores dos dois modelos de cada um.
+ */
+export const BUSINESSES = [
   {
-    value: 'cafe',
-    label: 'Restaurante ou café',
-    text: 'Cafeteria, padaria, restaurante, lanchonete',
+    value: 'confeitaria',
+    label: 'Confeitaria e doces',
+    text: 'Bolos, doces, salgados, encomendas',
+    icon: 'cake',
+    segment: 'cafe',
+  },
+  {
+    value: 'restaurante',
+    label: 'Restaurante e lanchonete',
+    text: 'Restaurante, lanchonete, café, marmitas',
     icon: 'cup',
+    segment: 'cafe',
+  },
+  {
+    value: 'beleza',
+    label: 'Salão e estética',
+    text: 'Cabelo, unhas, sobrancelha, estética',
+    icon: 'scissors',
+    segment: 'saude',
   },
   {
     value: 'saude',
-    label: 'Clínica ou consultório',
-    text: 'Dentista, psicólogo, fisioterapia, estética',
+    label: 'Saúde e clínica',
+    text: 'Dentista, psicólogo, fisioterapia, nutrição',
     icon: 'heart',
+    segment: 'saude',
   },
   {
-    value: 'servicos',
-    label: 'Prestador de serviços',
-    text: 'Reformas, contabilidade, advocacia, limpeza',
-    icon: 'tool',
+    value: 'escritorio',
+    label: 'Advocacia e contabilidade',
+    text: 'Escritório de advocacia, contabilidade, consultoria',
+    icon: 'briefcase',
+    segment: 'servicos',
   },
   {
     value: 'loja',
-    label: 'Loja e produtos',
-    text: 'Artesanato, roupas, presentes, feitos à mão',
+    label: 'Loja',
+    text: 'Roupas, presentes, artesanato, feitos à mão',
     icon: 'bag',
+    segment: 'loja',
+  },
+  {
+    value: 'casa',
+    label: 'Serviços em casa',
+    text: 'Reformas, eletricista, limpeza, jardinagem',
+    icon: 'tool',
+    segment: 'servicos',
   },
   {
     value: 'outro',
-    label: 'Outro tipo',
+    label: 'Outro',
     text: 'Um site simples de 3 páginas para adaptar',
     icon: 'file',
+    segment: 'outro',
   },
-] as const satisfies readonly { value: string; label: string; text: string; icon: PanelIconName }[]
+] as const satisfies readonly {
+  value: string
+  label: string
+  text: string
+  icon: PanelIconName
+  segment: Segment
+}[]
 
-export type Segment = (typeof SEGMENTS)[number]['value']
+export type BusinessType = (typeof BUSINESSES)[number]['value']
+
+/**
+ * O identificador de um modelo de site é `<ramo ou tipo>-<personalidade>` (ex.: `confeitaria-vitrine`,
+ * `evento-aconchego`). Assim o ramo e a personalidade sugerida ficam no modelo sem campo novo no
+ * banco.
+ */
+export function templateKey(prefix: string, personality: Personality): string {
+  return `${prefix}-${personality}`
+}
+
+/** O ramo de um modelo do "Site da empresa", pelo identificador; `null` nos outros. */
+export function templateBusiness(
+  template: { key?: string | null; siteType?: string | null } | null | undefined,
+): BusinessType | null {
+  if (template?.siteType !== 'institucional') return null
+  const prefix = template.key?.split('-')[0]
+  return BUSINESSES.find((item) => item.value === prefix)?.value ?? null
+}
+
+/** A personalidade que o modelo sugere, pelo identificador; `null` quando não tem. */
+export function templatePersonality(key: string | null | undefined): Personality | null {
+  const suffix = key?.split('-').at(-1)
+  return (PERSONALITIES as readonly string[]).includes(suffix ?? '')
+    ? (suffix as Personality)
+    : null
+}
+
+/**
+ * Marcadores dos textos de exemplo dos modelos: viram o nome do negócio e a cidade respondidos no
+ * Começar. Também marcam o texto como exemplo para a checagem "Ainda há texto de exemplo"
+ * (`lib/examples.ts`): o texto do modelo com qualquer nome e cidade no lugar continua sendo exemplo.
+ */
+export const EXAMPLE_PLACEHOLDERS = { name: '{nome}', city: '{cidade}' } as const
+
+export type ExampleAnswers = { name: string; city: string }
+
+/**
+ * A cidade do endereço das Configurações, para o "Começar de novo" não pedir de novo. Só quando dá
+ * para ter certeza: a parte do endereço junto do estado ("Uberlândia/MG", "Lavras - MG" ou
+ * "Lavras, MG"). Sem o estado, a última parte pode ser a rua ou o bairro: fica vazio.
+ */
+export function cityFromAddress(address: string | null | undefined): string {
+  const parts = (address ?? '')
+    .split(/[·,\n]| - /)
+    .map((part) => part.trim())
+    // O CEP não conta.
+    .filter((part) => part && !/^[\d\s.-]+$/.test(part))
+  const state = /^[A-Z]{2}$/
+  for (let index = parts.length - 1; index >= 0; index--) {
+    const part = parts[index]
+    const joined = part.match(/^(.+?)\s*[/-]\s*[A-Z]{2}$/)
+    const city = joined ? joined[1] : state.test(part) ? parts[index - 1] : null
+    if (city === null) continue
+    return city && /\p{L}/u.test(city) && !/\d/.test(city) && city.length <= 60 ? city : ''
+  }
+  return ''
+}
+
+/** Texto com os marcadores trocados. Sem cidade, vale "sua cidade". */
+export function fillExampleText(text: string, answers: ExampleAnswers): string {
+  return text
+    .replaceAll(EXAMPLE_PLACEHOLDERS.name, answers.name.trim() || 'Seu negócio')
+    .replaceAll(EXAMPLE_PLACEHOLDERS.city, answers.city.trim() || 'sua cidade')
+}
+
+/** Troca os marcadores em todos os textos de um valor (o conteúdo de uma página, por exemplo). */
+export function fillExamples<T>(value: T, answers: ExampleAnswers): T {
+  if (typeof value === 'string') return fillExampleText(value, answers) as T
+  if (Array.isArray(value)) return value.map((item) => fillExamples(item, answers)) as T
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, fillExamples(item, answers)]),
+  ) as T
+}
 
 /**
  * Bancos de fotos de onde vêm as fotos dos modelos. O modelo guarda só o endereço; ao aplicar, a

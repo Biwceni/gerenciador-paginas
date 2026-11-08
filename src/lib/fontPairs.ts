@@ -1,33 +1,55 @@
-import { SEGMENTS, type Segment, SITE_TYPES, type SiteType } from './templates'
+import {
+  BUSINESSES,
+  type BusinessType,
+  SITE_TYPES,
+  type SiteType,
+  templateBusiness,
+} from './templates'
 
-// Pares de letras sugeridos em "Sua marca" (redesign v3, entrega 3), conforme o ramo escolhido no
-// Começar. São só atalhos: qualquer fonte do Google Fonts continua valendo.
+// Pares de letras sugeridos em "Sua marca" (redesign v3, entrega 3) e nos modelos de cada ramo
+// (entrega 6), conforme o ramo escolhido no Começar. São só atalhos: qualquer fonte do Google Fonts
+// continua valendo.
 
 export type FontPair = { name: string; headings: string; body: string }
 
 /** Ramo do site: o ramo do "Site da empresa" ou o próprio tipo de site; `geral` quando não dá para saber. */
-export type Business = Segment | Exclude<SiteType, 'institucional'> | 'geral'
+export type Business = BusinessType | Exclude<SiteType, 'institucional'> | 'geral'
 
 export const FONT_PAIRS: Record<Business, FontPair[]> = {
-  cafe: [
+  confeitaria: [
     { name: 'Elegante', headings: 'Cormorant Garamond', body: 'Montserrat' },
     { name: 'Aconchegante', headings: 'Fraunces', body: 'Nunito' },
     { name: 'Clássica', headings: 'Playfair Display', body: 'Lato' },
+  ],
+  restaurante: [
+    { name: 'Clássica', headings: 'Playfair Display', body: 'Lato' },
+    { name: 'Forte', headings: 'Oswald', body: 'Work Sans' },
+    { name: 'Aconchegante', headings: 'Fraunces', body: 'Nunito' },
+  ],
+  beleza: [
+    { name: 'Elegante', headings: 'Cormorant Garamond', body: 'Montserrat' },
+    { name: 'Moderna', headings: 'Josefin Sans', body: 'Lato' },
+    { name: 'Suave', headings: 'Lora', body: 'Figtree' },
   ],
   saude: [
     { name: 'Limpa', headings: 'Manrope', body: 'Manrope' },
     { name: 'Acolhedora', headings: 'Lora', body: 'Figtree' },
     { name: 'Suave', headings: 'Nunito', body: 'Nunito' },
   ],
-  servicos: [
-    { name: 'Firme', headings: 'Archivo', body: 'Inter' },
+  escritorio: [
     { name: 'Tradicional', headings: 'Libre Baskerville', body: 'Source Sans 3' },
-    { name: 'Forte', headings: 'Oswald', body: 'Work Sans' },
+    { name: 'Firme', headings: 'Archivo', body: 'Inter' },
+    { name: 'Sóbria', headings: 'Merriweather', body: 'Lato' },
   ],
   loja: [
-    { name: 'Artesanal', headings: 'Fraunces', body: 'Nunito' },
     { name: 'Vitrine', headings: 'DM Serif Display', body: 'DM Sans' },
     { name: 'Moderna', headings: 'Space Grotesk', body: 'Karla' },
+    { name: 'Artesanal', headings: 'Fraunces', body: 'Nunito' },
+  ],
+  casa: [
+    { name: 'Firme', headings: 'Archivo', body: 'Inter' },
+    { name: 'Forte', headings: 'Oswald', body: 'Work Sans' },
+    { name: 'Tradicional', headings: 'Libre Baskerville', body: 'Source Sans 3' },
   ],
   outro: [
     { name: 'Clássica', headings: 'Lora', body: 'Figtree' },
@@ -75,7 +97,7 @@ export const FONT_PAIRS: Record<Business, FontPair[]> = {
 export function businessLabel(business: Business): string | null {
   if (business === 'geral') return null
   const label =
-    SEGMENTS.find((item) => item.value === business)?.label ??
+    BUSINESSES.find((item) => item.value === business)?.label ??
     SITE_TYPES.find((item) => item.value === business)?.label
   return label ? label.charAt(0).toLowerCase() + label.slice(1) : null
 }
@@ -86,8 +108,9 @@ type SiteLook = {
 }
 
 export type BusinessTemplate = {
+  /** O identificador do modelo, que leva o ramo (`templateBusiness`). */
+  key?: string | null
   siteType?: SiteType | null
-  segment?: Segment | null
   site?: SiteLook | null
   pages?: { slug?: string | null }[] | null
 }
@@ -113,7 +136,9 @@ export function guessBusiness(
   for (const template of templates) {
     if (!template.siteType) continue
     const business: Business =
-      template.siteType === 'institucional' ? (template.segment ?? 'outro') : template.siteType
+      template.siteType === 'institucional'
+        ? (templateBusiness(template) ?? 'outro')
+        : template.siteType
     let score = 0
     const fonts = template.site?.fonts
     if (fonts?.headings && same(fonts.headings, site.fonts?.headings)) score += 2
