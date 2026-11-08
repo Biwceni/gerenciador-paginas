@@ -972,13 +972,22 @@ time {
   padding: 8px 12px;
 }
 
-// Erro (senha errada, campo com problema): fundo vermelho claro com uma marca vermelha à
-// esquerda. O aviso comum, em bege, fica para avisos de verdade. Tinta sobre o fundo de erro
-// passa de 12:1 nos dois temas.
+// Erro (senha errada, campo com problema, falha ao enviar): fundo vermelho claro e o ícone de
+// alerta em vermelho, para o erro não depender só da cor (AuthError, em AuthCard.tsx). O aviso
+// comum, em bege, fica para avisos de verdade. Tinta sobre o fundo de erro passa de 12:1 nos dois
+// temas; o ícone, de 4,5:1.
 .gp-warnbox--danger {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
   background: var(--gp-danger-soft);
   color: var(--gp-ink);
-  box-shadow: inset 3px 0 0 var(--gp-danger);
+
+  .gp-ic {
+    // Centro do ícone na altura da primeira linha (14 px × 1,5 = 21 px).
+    margin-top: 2.5px;
+    color: var(--gp-danger);
+  }
 }
 
 .gp-error {
@@ -1529,6 +1538,8 @@ time {
 
   p {
     margin: 0;
+    // Sem palavra sozinha na última linha (frase de apoio, erros).
+    text-wrap: pretty;
   }
 }
 
@@ -1593,6 +1604,12 @@ time {
 
   .gp-input {
     padding-right: 48px;
+
+    // O Edge põe o próprio olho dentro de todo campo de senha: aqui ficariam dois.
+    &::-ms-reveal,
+    &::-ms-clear {
+      display: none;
+    }
   }
 
   &__toggle {

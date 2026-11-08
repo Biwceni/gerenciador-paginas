@@ -11,7 +11,7 @@ import {
   WRONG_LOGIN_MESSAGE,
 } from '@/lib/auth'
 
-import { AuthCard, AuthLink, FieldProblem, LockedCard } from './AuthCard'
+import { AuthCard, AuthError, AuthLink, FieldProblem, LockedCard } from './AuthCard'
 import { authRequest } from './authApi'
 import { PasswordInput } from './PasswordInput'
 
@@ -82,11 +82,7 @@ export function LoginForm({ apiRoute, forgotHref, loginHref, redirectTo }: Props
   return (
     <AuthCard lead="Use o e-mail que recebeu o convite." title="Entrar no seu site">
       <form className="gp-authform" noValidate onSubmit={submit}>
-        {error && (
-          <p className="gp-warnbox gp-warnbox--danger" role="alert">
-            {error}
-          </p>
-        )}
+        <AuthError text={error} />
         <div className="gp-field">
           <label htmlFor="lg-email">E-mail</label>
           <input

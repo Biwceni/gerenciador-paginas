@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 
 import { emailProblem } from '@/lib/auth'
 
-import { AuthCard, AuthLink, FieldProblem } from './AuthCard'
+import { AuthCard, AuthError, AuthLink, FieldProblem } from './AuthCard'
 import { authRequest } from './authApi'
 
 /**
@@ -57,11 +57,7 @@ export function ForgotForm({ apiRoute, loginHref }: { apiRoute: string; loginHre
       title="Criar uma senha nova"
     >
       <form className="gp-authform" noValidate onSubmit={submit}>
-        {error && (
-          <p className="gp-warnbox" role="alert">
-            {error}
-          </p>
-        )}
+        <AuthError text={error} />
         <div className="gp-field">
           <label htmlFor="fg-email">E-mail</label>
           <input

@@ -47,6 +47,13 @@ const PATHS = {
       <path d="M4 4l16 16" />
     </>
   ),
+  // Erro: círculo com exclamação, na caixa de erro das telas de entrar.
+  alert: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5.5M12 16.5v.01" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   out: (
     <>
