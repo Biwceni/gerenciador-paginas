@@ -1,5 +1,5 @@
 // Endereços que já são do sistema: uma página com eles ficaria escondida atrás do painel ou da API.
-export const RESERVED_SLUGS = ['admin', 'api', 'media', 'next'] as const
+export const RESERVED_SLUGS = ['admin', 'api', 'media', 'next', 'og'] as const
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 

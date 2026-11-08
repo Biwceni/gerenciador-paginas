@@ -15,6 +15,7 @@ import { editorPath } from '@/lib/editor'
 import { isExamplePhoto } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import { photoLabel } from '@/lib/photos'
+import { SMALL_PHOTO_TEXT } from '@/lib/photoSize'
 import type { Media } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'
@@ -26,6 +27,8 @@ type Props = {
   apiRoute: string
   photos: Media[]
   usage: Record<number, PhotoUse[]>
+  /** Fotos pequenas para onde estão: a largura que cada uma precisaria ter. */
+  small: Record<number, number>
 }
 
 type Filter = 'all' | 'noalt' | 'unused'
@@ -43,7 +46,7 @@ function usageLabel(uses: PhotoUse[] | undefined): string {
 // Até esta largura o detalhe da foto fica embaixo da grade. Igual ao `$media-stacked` do panel.scss.
 const STACKED = '(max-width: 1279px)'
 
-export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
+export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Props) {
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const detail = useRef<HTMLElement>(null)
@@ -180,6 +183,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
                   <span className="gp-media__name">{photoLabel(photo)}</span>
                   <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
                   {!hasAlt(photo) && <span className="gp-media__noalt">Sem descrição</span>}
+                  {small[photo.id] && <span className="gp-media__noalt">Foto pequena</span>}
                 </button>
               </li>
             ))}
@@ -205,6 +209,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage }: Props) {
                 router.refresh()
               }}
               photo={selected}
+              small={Boolean(small[selected.id])}
               uses={usage[selected.id] ?? []}
             />
           ) : (
@@ -226,6 +231,8 @@ type DetailProps = {
   onDeleted: () => void
   onReplaced: () => void
   photo: Media
+  /** Pequena para onde está: fica borrada no computador. */
+  small: boolean
   uses: PhotoUse[]
 }
 
@@ -239,6 +246,7 @@ function PhotoDetail({
   onDeleted,
   onReplaced,
   photo,
+  small,
   uses,
 }: DetailProps) {
   const [alt, setAlt] = useState(photo.alt ?? '')
@@ -286,6 +294,12 @@ function PhotoDetail({
       {isExamplePhoto(photo) && (
         <span className="gp-chip gp-chip--warn">Foto de exemplo do modelo</span>
       )}
+      {small && (
+        <p className="gp-warnbox" role="note">
+          {SMALL_PHOTO_TEXT}
+          {photo.width ? ` Esta tem ${photo.width.toLocaleString('pt-BR')} px de largura.` : ''}
+        </p>
+      )}
 
       <div className="gp-field">
         <label htmlFor="md-alt">O que aparece na foto?</label>
@@ -325,8 +339,9 @@ function PhotoDetail({
                 </li>
               ) : (
                 <li key="settings">
+                  <Link href={panelHref(adminRoute, 'brand')}>Sua marca (logo)</Link> ou{' '}
                   <Link href={panelHref(adminRoute, 'settings')}>
-                    Configurações (logo ou foto ao compartilhar)
+                    Configurações (foto ao compartilhar)
                   </Link>
                 </li>
               ),

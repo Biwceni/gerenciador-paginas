@@ -12,6 +12,7 @@ import { PanelIcon, type PanelIconName } from './PanelIcon'
 const MAIN: [PanelPath, PanelIconName, string][] = [
   ['dashboard', 'home', 'Painel'],
   ['pages', 'file', 'Páginas'],
+  ['brand', 'palette', 'Sua marca'],
   ['photos', 'image', 'Fotos'],
   ['menu', 'layout', 'Menu e rodapé'],
   ['messages', 'mail', 'Mensagens'],

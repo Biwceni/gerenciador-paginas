@@ -212,11 +212,12 @@ test.describe.serial('crítica de design', () => {
     await cleanupTestUser()
   })
 
-  test('Configurações: a cor fica guardada e só vai ao ar ao publicar', async () => {
+  test('Sua marca: a cor fica guardada e só vai ao ar ao publicar', async () => {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await open(page, '/admin/configuracoes')
+    await open(page, '/admin/sua-marca')
     await expect(page.getByText('Tudo no ar')).toBeVisible()
     await expect(page.getByText('Nada para publicar')).toBeVisible()
+    await page.getByRole('button', { name: 'Ajustar cores à mão' }).click()
     await page.getByLabel('Cor principal', { exact: true }).last().fill(TRIED)
     await expect(page.getByText('Guardado, falta publicar')).toBeVisible({ timeout: 20_000 })
 
@@ -226,10 +227,10 @@ test.describe.serial('crítica de design', () => {
     await open(page, '/admin')
     await expect(page.getByText('Configurações com mudanças fora do ar')).toBeVisible()
 
-    await open(page, '/admin/configuracoes')
+    await open(page, '/admin/sua-marca')
     await expect(page.getByText('Guardado, falta publicar')).toBeVisible()
-    await page.getByRole('button', { name: 'Publicar configurações' }).click()
-    await expect(page.getByText('Configurações publicadas em todo o site.')).toBeVisible({
+    await page.getByRole('button', { name: 'Publicar', exact: true }).click()
+    await expect(page.getByText('Sua marca foi publicada em todo o site.')).toBeVisible({
       timeout: 20_000,
     })
     await expect(page.getByText('Tudo no ar')).toBeVisible()
@@ -376,6 +377,7 @@ test.describe.serial('crítica de design', () => {
       '/admin/formularios',
       `/admin/formularios/${formId}`,
       '/admin/configuracoes',
+      '/admin/sua-marca',
       '/admin/mensagens',
       '/admin/avancado',
       '/admin/account',

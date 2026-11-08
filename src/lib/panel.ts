@@ -3,6 +3,7 @@ export const PANEL_PATHS = {
   dashboard: '',
   pages: '/paginas',
   newPage: '/paginas/nova',
+  brand: '/sua-marca',
   photos: '/fotos',
   menu: '/menu-e-rodape',
   footer: '/menu-e-rodape',
@@ -148,11 +149,13 @@ export type FinishInput = {
   examplePages: { id: number; title: string }[]
   /** Quantas páginas usam foto de exemplo. */
   examplePhotoPages: number
+  /** Páginas com foto pequena demais para onde está (borrada no computador). */
+  smallPhotoPages?: { id: number; title: string }[]
   home: { id: number; live: boolean } | null
 }
 
 export type FinishStep = {
-  key: 'tagline' | 'contact' | 'texts' | 'photos' | 'home'
+  key: 'tagline' | 'contact' | 'texts' | 'photos' | 'sharp' | 'home'
   done: boolean
   title: string
   detail?: string
@@ -163,9 +166,13 @@ export type FinishStep = {
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
-/** Os 5 passos do cartão "Para terminar seu site" (segue o `vDashboard` do protótipo). */
+/**
+ * Os passos do cartão "Para terminar seu site" (segue o `vDashboard` do protótipo): 5 sempre e, com
+ * fotos pequenas nas páginas, mais um para trocá-las (redesign v3, entrega 3).
+ */
 export function finishSteps(input: FinishInput): FinishStep[] {
   const { examplePages, examplePhotoPages, home } = input
+  const smallPages = input.smallPhotoPages ?? []
   const hasTagline = Boolean(input.tagline?.trim())
   const hasContact = Boolean(input.whatsapp?.trim() || input.email?.trim())
   return [
@@ -207,6 +214,18 @@ export function finishSteps(input: FinishInput): FinishStep[] {
       action: 'Enviar fotos',
       target: { screen: 'photos' },
     },
+    ...(smallPages.length
+      ? [
+          {
+            key: 'sharp',
+            done: false,
+            title: `Troque as fotos pequenas (${plural(smallPages.length, 'página', 'páginas')})`,
+            detail: `Ficam borradas no computador em: ${smallPages.map((page) => page.title).join(', ')}. Use uma foto do celular, não um print, com pelo menos 1.600 px.`,
+            action: 'Trocar',
+            target: { page: smallPages[0].id },
+          } satisfies FinishStep,
+        ]
+      : []),
     {
       key: 'home',
       done: Boolean(home?.live),

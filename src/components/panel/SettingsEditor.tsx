@@ -1,56 +1,27 @@
 'use client'
 
-import '@/app/(frontend)/styles.css'
-
 // Miniaturas prontas do Storage (400 px): o otimizador de imagens do Next não ajuda no painel.
 /* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
-import {
-  footerSocial,
-  siteBrand,
-  SiteFooterView,
-  SiteHeaderView,
-} from '@/components/site/SiteChrome'
-import { themeStyle } from '@/components/site/theme'
-import { HEX_COLOR_PATTERN } from '@/lib/colors'
-import { whatsAppURL } from '@/lib/links'
-import { MOTION_LABELS, MOTIONS } from '@/lib/motion'
 import { panelHref } from '@/lib/panel'
-import {
-  COLOR_FIELDS,
-  COLOR_PRESETS,
-  contrastWarnings,
-  FONT_PRESETS,
-  FONT_SUGGESTIONS,
-  formatRatio,
-  normalizeFontName,
-  type SiteColors,
-} from '@/lib/style-presets'
-import { FONT_NAME_PATTERN } from '@/lib/theme'
-import type { Media, Site } from '@/payload-types'
+import type { Media } from '@/payload-types'
 
-import { discardSettings, publishSettings, saveGlobalDraft } from './api'
-import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
-import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
-import { PersonalityPicker } from './PersonalityPicker'
 import { PhotoChooser } from './PhotoChooser'
 import { SaveStatus } from './SaveStatus'
-import { type SettingsState, toSiteData, validateSettings } from './settings'
-import { SiteFrame } from './SiteFrame'
+import type { SettingsState } from './settings'
 import { Tip } from './Tip'
+import { useSettingsDraft } from './useSettingsDraft'
 import { WhyDisabled } from './WhyDisabled'
 
 type Props = {
   adminRoute: string
   apiRoute: string
   domain: string
-  fontFaces: string | null
   initial: SettingsState
   livePages: { id: number; title: string }[]
   /** Página inicial escolhida que ainda não está no ar (o site novo nasce assim). */
@@ -74,7 +45,6 @@ const SECTIONS: [string, string][] = [
   ['st-identidade', 'Identidade'],
   ['st-inicial', 'Página inicial'],
   ['st-privacidade', 'Privacidade'],
-  ['st-cores', 'Cores e letras'],
   ['st-contato', 'Contato'],
   ['st-redes', 'Redes sociais'],
   ['st-google', 'Google'],
@@ -82,33 +52,14 @@ const SECTIONS: [string, string][] = [
   ['st-modelo', 'Começar de novo'],
 ]
 
-type SaveState = 'idle' | 'waiting' | 'saving' | 'invalid' | 'error'
-type FontRole = 'headings' | 'body'
-
-const PRESET_FONTS_URL = googleFontsURL(
-  FONT_PRESETS.flatMap((preset) => [preset.headings, preset.body]),
-  `Aa${FONT_PRESETS.map((preset) => preset.name).join('')}`,
-)
-
-/** Amostra embaixo do campo de fonte, assim que o Google acha a fonte digitada. */
-function FontSampleLine({ name, text }: { name: string; text: string }) {
-  const sample = useFontSample(name)
-  if (sample !== 'found') return null
-  return (
-    <span className="gp-fontsample" style={{ fontFamily: fontStack(normalizeFontName(name)) }}>
-      {text}
-    </span>
-  )
-}
-
-const googleFontCSS = (name: string) =>
-  `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g, '+')}&display=swap`
-
+/**
+ * Configurações: identidade, página inicial, contato, redes e Google. O logo, as cores, as letras,
+ * o jeito e a animação do site ficam em Sua marca (`BrandEditor`), no mesmo rascunho.
+ */
 export function SettingsEditor({
   adminRoute,
   apiRoute,
   domain,
-  fontFaces,
   initial,
   livePages,
   draftHome,
@@ -119,177 +70,15 @@ export function SettingsEditor({
   canStartOver,
   photos: initialPhotos,
 }: Props) {
-  const router = useRouter()
-  const [state, setState] = useState(initial)
-  // O que já está guardado: no rascunho ou, sem rascunho, no ar.
-  const [saved, setSaved] = useState(initial)
-  const [pending, setPending] = useState(initialPending)
-  const [touched, setTouched] = useState(false)
-  const [attempt, setAttempt] = useState(0)
-  const [save, setSave] = useState<SaveState>('idle')
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
-  const [fontError, setFontError] = useState<Partial<Record<FontRole, string>>>({})
-  const [fontText, setFontText] = useState(initial.fonts)
-  const [hexText, setHexText] = useState<SiteColors>(initial.colors)
+  const draft = useSettingsDraft({
+    apiRoute,
+    initial,
+    initialPending,
+    publishedText: 'Configurações publicadas em todo o site.',
+  })
+  const { state, update, errors, save, busy, pending, message } = draft
   const [photos, setPhotos] = useState(initialPhotos)
-  const [choosing, setChoosing] = useState<'logo' | 'shareImage' | null>(null)
-  const [fullPreview, setFullPreview] = useState(false)
-
-  const errors = validateSettings(state)
-  const photo = (id: number | null) => photos.find((item) => item.id === id) ?? null
-
-  const update = (next: Partial<SettingsState>) => {
-    setState((current) => ({ ...current, ...next }))
-    setTouched(true)
-    setSave('waiting')
-    setMessage(null)
-  }
-
-  /** Fonte que o Google não tem: volta para a de `from` e mostra o erro no campo. */
-  const rejectFont = (text: string, tried: SettingsState, from: SettingsState) => {
-    const role = (['headings', 'body'] as const).find((key) => tried.fonts[key] !== from.fonts[key])
-    if (!role || !text.includes('Google Fonts')) return false
-    setFontError({ [role]: text })
-    setFontText((current) => ({ ...current, [role]: from.fonts[role] }))
-    setState((current) => ({ ...current, fonts: { ...current.fonts, [role]: from.fonts[role] } }))
-    return true
-  }
-
-  // Cada mudança é guardada sozinha como rascunho, um pouco depois da última. O site só muda ao
-  // publicar.
-  useEffect(() => {
-    // Já guardado: depois de salvar, `saved` passa a ser este mesmo estado. Enquanto publica ou
-    // descarta, espera: um rascunho gravado no meio criaria de novo as mudanças fora do ar.
-    if (!touched || state === saved || busy) return
-    const timer = setTimeout(async () => {
-      if (Object.keys(validateSettings(state)).length) {
-        setSave('invalid')
-        return
-      }
-      setSave('saving')
-      try {
-        await saveGlobalDraft(apiRoute, 'site', toSiteData(state))
-        setSaved(state)
-        setPending(true)
-        setFontError({})
-        setSaveError(null)
-        setSave('idle')
-      } catch (error) {
-        const text = error instanceof Error ? error.message : 'Tente de novo.'
-        // A fonte volta para a anterior e o resto é guardado de novo.
-        if (rejectFont(text, state, saved)) {
-          setSave('waiting')
-          return
-        }
-        setSaveError(text)
-        setSave('error')
-      }
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [apiRoute, attempt, busy, saved, state, touched])
-
-  // Aviso ao fechar a aba só enquanto algo ainda não foi guardado (o rascunho guardado fica).
-  useEffect(() => {
-    if (save === 'idle') return
-    const onLeave = (event: BeforeUnloadEvent) => event.preventDefault()
-    window.addEventListener('beforeunload', onLeave)
-    return () => window.removeEventListener('beforeunload', onLeave)
-  }, [save])
-
-  /** Depois de publicar ou descartar: a tela fica igual ao que está no ar. */
-  const reset = (next: SettingsState) => {
-    setState(next)
-    setSaved(next)
-    setFontText(next.fonts)
-    setHexText(next.colors)
-    setFontError({})
-    setSaveError(null)
-    setPending(false)
-    setSave('idle')
-  }
-
-  const publish = async () => {
-    setBusy(true)
-    setMessage(null)
-    try {
-      await publishSettings(apiRoute, toSiteData(state))
-      reset(state)
-      setMessage({ tone: 'ok', text: 'Configurações publicadas em todo o site.' })
-      router.refresh()
-    } catch (error) {
-      const text = error instanceof Error ? error.message : 'tente de novo.'
-      if (rejectFont(text, state, saved)) setSave('waiting')
-      setMessage({ tone: 'error', text: `Não deu para publicar: ${text}` })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const discard = async () => {
-    setBusy(true)
-    setMessage(null)
-    try {
-      reset(await discardSettings(apiRoute))
-      setMessage({ tone: 'ok', text: 'Mudanças descartadas. Voltou a ser igual ao site no ar.' })
-      router.refresh()
-    } catch (error) {
-      setMessage({
-        tone: 'error',
-        text: `Não deu para descartar: ${error instanceof Error ? error.message : 'tente de novo.'}`,
-      })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const setColor = (key: keyof SiteColors, value: string) => {
-    setHexText((current) => ({ ...current, [key]: value }))
-    if (HEX_COLOR_PATTERN.test(value)) {
-      update({ colors: { ...state.colors, [key]: value.toLowerCase() } })
-    }
-  }
-  const applyColors = (colors: SiteColors) => {
-    setHexText(colors)
-    update({ colors })
-  }
-
-  const commitFont = (role: FontRole) => {
-    const name = fontText[role].trim() ? normalizeFontName(fontText[role]) : ''
-    if (name && !FONT_NAME_PATTERN.test(name)) {
-      setFontError({ [role]: 'Use só o nome da fonte, sem símbolos. Ex.: Playfair Display.' })
-      return
-    }
-    setFontError((current) => ({ ...current, [role]: undefined }))
-    setFontText((current) => ({ ...current, [role]: name }))
-    if (name !== state.fonts[role]) update({ fonts: { ...state.fonts, [role]: name } })
-  }
-  const applyFonts = (fonts: { headings: string; body: string }) => {
-    setFontError({})
-    setFontText(fonts)
-    update({ fonts })
-  }
-
-  const contrast = contrastWarnings(state.colors)
-  const previewSite = {
-    colors: state.colors,
-    fonts: state.fonts,
-    personality: state.personality,
-  } as Partial<Site>
-  const previewBrand = siteBrand({ personality: state.personality, tagline: state.tagline })
-  const previewFonts = [...new Set([state.fonts.headings, state.fonts.body].filter(Boolean))]
-  const changed = pending || save !== 'idle'
-  const hasErrors = Object.keys(errors).length > 0
-  const cantPublish = busy
-    ? null
-    : hasErrors
-      ? 'Corrija o campo marcado para publicar'
-      : save === 'saving'
-        ? 'Espere terminar de salvar'
-        : !changed
-          ? 'Nada para publicar'
-          : null
+  const [choosing, setChoosing] = useState(false)
 
   const text = (
     key: 'name' | 'tagline' | 'seoDescription',
@@ -349,78 +138,7 @@ export function SettingsEditor({
 
   const homeLive = livePages.some((page) => page.id === state.homepage)
   const homeInList = homeLive || draftHome?.id === state.homepage
-  const logo = photo(state.logo)
-  const shareImage = photo(state.shareImage)
-
-  // Site de mentira da prévia: na miniatura e, em tamanho real, na janela.
-  const preview = (
-    <>
-      <SiteHeaderView
-        brand={previewBrand}
-        button={{ label: 'Fale conosco', href: '/' }}
-        items={['Início', 'Sobre', 'Contato'].map((label) => ({
-          id: label,
-          label,
-          href: '/',
-          current: label === 'Início',
-        }))}
-        logo={logo}
-        name={state.name || 'Meu site'}
-      />
-      {/* Banner com "foto ao lado": a foto é um bloco na cor do site, para mostrar o formato. */}
-      <section className="section section--soft hero hero--side">
-        <div className="container hero__container">
-          <div className="hero__inner">
-            <h2 className="hero__title">
-              {state.tagline.split('.')[0] || 'Assim fica o seu site'}
-            </h2>
-            <p className="hero__text">
-              Assim ficam os textos do seu site, com as letras e as cores que você escolheu.
-            </p>
-            <span className="button">Conheça</span>
-          </div>
-          <div
-            aria-hidden="true"
-            className="hero__photo"
-            style={{
-              background: 'linear-gradient(160deg, var(--color-primary), var(--color-deep) 85%)',
-            }}
-          />
-        </div>
-      </section>
-      <section className="section section--light">
-        <div className="container">
-          <h2 className="section-title">Títulos das seções</h2>
-          <p>Cada seção do site segue este jeito: tamanhos, espaços e cantos.</p>
-        </div>
-      </section>
-      <section className="section section--soft" style={{ paddingBlock: 28 }}>
-        <div className="container">Faixa com o fundo suave</div>
-      </section>
-      <section className="section section--brand" style={{ paddingBlock: 28 }}>
-        <div className="container">
-          <b>Faixa com a cor principal</b>
-        </div>
-      </section>
-      <SiteFooterView
-        brand={previewBrand}
-        contact={{
-          whatsapp: state.contact.whatsapp || null,
-          whatsappHref: whatsAppURL(state.contact.whatsapp),
-          email: state.contact.email || null,
-          address: state.contact.address || null,
-          hours: state.contact.hours || null,
-        }}
-        logo={logo}
-        menu={[]}
-        name={state.name || 'Meu site'}
-        showContact
-        social={footerSocial({ social: state.social } as Partial<Site>)}
-        text={null}
-      />
-    </>
-  )
-  const sampleText = state.tagline.trim() || 'Venha conhecer o nosso trabalho'
+  const shareImage = photos.find((item) => item.id === state.shareImage) ?? null
 
   return (
     <div className="gp-page">
@@ -434,12 +152,9 @@ export function SettingsEditor({
         </div>
         <SaveStatus
           blocked={save === 'invalid' ? 'Corrija o campo marcado para salvar' : null}
-          error={saveError}
+          error={draft.saveError}
           mode="publish"
-          onRetry={() => {
-            setSave('waiting')
-            setAttempt((value) => value + 1)
-          }}
+          onRetry={draft.retry}
           pending={pending}
           state={
             save === 'error' ? 'error' : save === 'idle' || save === 'invalid' ? 'saved' : 'saving'
@@ -461,7 +176,7 @@ export function SettingsEditor({
             <button
               className="gp-btn"
               disabled={busy || save === 'saving'}
-              onClick={discard}
+              onClick={draft.discard}
               type="button"
             >
               Descartar mudanças
@@ -469,15 +184,15 @@ export function SettingsEditor({
           )}
           <div className="gp-btnwrap">
             <button
-              aria-describedby={cantPublish ? 'st-why' : undefined}
+              aria-describedby={draft.cantPublish ? 'st-why' : undefined}
               className="gp-btn gp-btn--primary"
-              disabled={busy || Boolean(cantPublish)}
-              onClick={publish}
+              disabled={busy || Boolean(draft.cantPublish)}
+              onClick={draft.publish}
               type="button"
             >
               {busy ? 'Aguarde…' : 'Publicar configurações'}
             </button>
-            <WhyDisabled id="st-why" reason={cantPublish} />
+            <WhyDisabled id="st-why" reason={draft.cantPublish} />
           </div>
         </div>
       </div>
@@ -499,41 +214,13 @@ export function SettingsEditor({
             hint: 'Uma frase curta sobre o negócio. Também vai no título da página inicial no Google.',
             placeholder: `Ex.: ${taglineHint}`,
           })}
-          <div className="gp-field">
-            <span className="gp-label">Logo</span>
-            <div className="gp-thumbrow">
-              {logo ? (
-                <img alt="Logo" className="gp-thumb gp-thumb--logo" src={thumbnailURL(logo)} />
-              ) : (
-                <span aria-hidden="true" className="gp-thumb gp-thumb--empty">
-                  <PanelIcon name="image" />
-                </span>
-              )}
-              <div className="gp-stack">
-                <button
-                  className="gp-btn gp-btn--sm"
-                  onClick={() => setChoosing('logo')}
-                  type="button"
-                >
-                  <PanelIcon name="upload" size={14} />
-                  {logo ? 'Trocar logo' : 'Escolher logo'}
-                </button>
-                {logo ? (
-                  <button
-                    className="gp-btn gp-btn--sm gp-btn--ghost"
-                    onClick={() => update({ logo: null })}
-                    type="button"
-                  >
-                    Tirar o logo
-                  </button>
-                ) : (
-                  <span className="gp-small gp-muted">
-                    Sem logo, o topo do site mostra só o nome.
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+          <p className="gp-small gp-muted">
+            O logo, as cores e as letras ficam em{' '}
+            <Link className="gp-link" href={panelHref(adminRoute, 'brand')}>
+              Sua marca
+            </Link>
+            .
+          </p>
         </section>
 
         <div className="gp-col">
@@ -599,226 +286,6 @@ export function SettingsEditor({
           </section>
         </div>
 
-        <section className="gp-card gp-grid2__full" id="st-cores">
-          <div>
-            <h2>Cores e letras</h2>
-            <p className="gp-small gp-muted">Valem para o site todo.</p>
-          </div>
-          <div className="gp-style">
-            <div className="gp-style__controls">
-              <PersonalityPicker
-                colors={state.colors}
-                onChange={(personality) => update({ personality })}
-                value={state.personality}
-              />
-
-              <fieldset className="gp-choices gp-field">
-                <legend className="gp-label">Animação do site</legend>
-                <span className="gp-hint">
-                  Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode
-                  ter a sua própria animação ou ficar sem. Quem pediu ao celular para reduzir
-                  movimentos vê só um esmaecer.
-                </span>
-                <div className="gp-choices__list">
-                  {MOTIONS.map((motion) => (
-                    <label className="gp-choice" key={motion}>
-                      <input
-                        checked={state.motion === motion}
-                        name="st-motion"
-                        onChange={() => update({ motion })}
-                        type="radio"
-                        value={motion}
-                      />
-                      <span>
-                        <b>{MOTION_LABELS[motion].name}</b>
-                        <span className="gp-hint">{MOTION_LABELS[motion].description}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <div className="gp-field">
-                <span className="gp-label">Combinações prontas</span>
-                <span className="gp-hint">
-                  Um ponto de partida. Depois ajuste cada cor como quiser.
-                </span>
-                <div className="gp-swatches">
-                  {COLOR_PRESETS.map((preset) => (
-                    <button
-                      className="gp-swatch"
-                      key={preset.name}
-                      onClick={() => applyColors(preset.colors)}
-                      type="button"
-                    >
-                      <i
-                        style={{
-                          background: `linear-gradient(135deg, ${preset.colors.primary} 0 50%, ${preset.colors.background} 50% 100%)`,
-                        }}
-                      />
-                      {preset.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="gp-field">
-                <span className="gp-label">Suas cores</span>
-                <span className="gp-hint">
-                  Clique no quadrado para escolher qualquer cor, ou digite o código (ex.: #6b3f24).
-                </span>
-                <div className="gp-colors">
-                  {COLOR_FIELDS.map(({ key, label, hint }) => (
-                    <div className="gp-colorrow" key={key}>
-                      <input
-                        aria-label={label}
-                        onChange={(event) => setColor(key, event.target.value)}
-                        type="color"
-                        value={state.colors[key]}
-                      />
-                      <div>
-                        <label htmlFor={`st-hex-${key}`}>
-                          <b>{label}</b>
-                        </label>
-                        <span className="gp-hint">{hint}</span>
-                      </div>
-                      <input
-                        aria-invalid={!HEX_COLOR_PATTERN.test(hexText[key])}
-                        className="gp-input gp-input--hex"
-                        id={`st-hex-${key}`}
-                        maxLength={7}
-                        onBlur={() =>
-                          setHexText((current) => ({ ...current, [key]: state.colors[key] }))
-                        }
-                        onChange={(event) => setColor(key, event.target.value.trim())}
-                        spellCheck={false}
-                        value={hexText[key]}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div aria-live="polite" className="gp-contrast">
-                  {contrast.length ? (
-                    contrast.map((warning) => (
-                      <p className="gp-contrast__line gp-contrast__line--warn" key={warning.label}>
-                        <b>{warning.label}: difícil de ler</b> (contraste{' '}
-                        {formatRatio(warning.ratio)}). {warning.hint} Você pode manter assim, é só
-                        um aviso.
-                      </p>
-                    ))
-                  ) : (
-                    <p className="gp-contrast__line gp-contrast__line--ok">
-                      Todas as combinações estão fáceis de ler.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="gp-field">
-                <span className="gp-label">Letras</span>
-                <span className="gp-hint">
-                  Use qualquer fonte do Google Fonts: escolha da lista ou digite o nome. As
-                  combinações abaixo são só atalhos.
-                </span>
-                {/* Só as fontes dos atalhos e só as letras que aparecem neles. */}
-                <link href={PRESET_FONTS_URL} precedence="default" rel="stylesheet" />
-                <div className="gp-fontpresets" role="group" aria-label="Combinações de letras">
-                  {FONT_PRESETS.map((preset) => (
-                    <button
-                      aria-pressed={
-                        state.fonts.headings === preset.headings && state.fonts.body === preset.body
-                      }
-                      className="gp-fontpreset"
-                      key={preset.name}
-                      onClick={() => applyFonts({ headings: preset.headings, body: preset.body })}
-                      title={`${preset.headings} e ${preset.body}`}
-                      type="button"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="gp-fontpreset__aa"
-                        style={{ fontFamily: fontStack(preset.headings) }}
-                      >
-                        Aa
-                      </span>
-                      <span style={{ fontFamily: fontStack(preset.body) }}>{preset.name}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="gp-grid2 gp-grid2--tight">
-                  {(
-                    [
-                      ['headings', 'Fonte dos títulos'],
-                      ['body', 'Fonte dos textos'],
-                    ] as const
-                  ).map(([role, label]) => (
-                    <div className="gp-field" key={role}>
-                      <label htmlFor={`st-font-${role}`}>{label}</label>
-                      <input
-                        aria-invalid={Boolean(fontError[role])}
-                        autoComplete="off"
-                        className="gp-input"
-                        id={`st-font-${role}`}
-                        list="gp-font-list"
-                        maxLength={60}
-                        onBlur={() => commitFont(role)}
-                        onChange={(event) =>
-                          setFontText((current) => ({ ...current, [role]: event.target.value }))
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') commitFont(role)
-                        }}
-                        placeholder="Fonte padrão"
-                        spellCheck={false}
-                        value={fontText[role]}
-                      />
-                      {fontError[role] ? (
-                        <span className="gp-hint gp-hint--error">{fontError[role]}</span>
-                      ) : (
-                        <FontSampleLine name={fontText[role]} text={sampleText} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <datalist id="gp-font-list">
-                  {FONT_SUGGESTIONS.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-                <span className="gp-hint">
-                  Ao publicar, a fonte é copiada do Google para o seu site: os visitantes não
-                  acessam o Google.
-                </span>
-              </div>
-            </div>
-
-            <div className="gp-style__preview">
-              <div className="gp-previewbox__cap">
-                <span className="gp-label">Prévia</span>
-                <button
-                  className="gp-btn gp-btn--sm"
-                  onClick={() => setFullPreview(true)}
-                  type="button"
-                >
-                  <PanelIcon name="eye" size={14} />
-                  Ver em tamanho real
-                </button>
-              </div>
-              <div className="gp-previewbox__frame">
-                <SiteFrame
-                  fontFaces={fontFaces}
-                  stylesheets={previewFonts.map(googleFontCSS)}
-                  theme={themeStyle(previewSite) as Record<string, string>}
-                  title="Prévia das cores e letras"
-                  width={1100}
-                >
-                  {preview}
-                </SiteFrame>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="gp-card" id="st-contato">
           <div>
             <h2>Contato</h2>
@@ -873,7 +340,7 @@ export function SettingsEditor({
                 <div className="gp-stack">
                   <button
                     className="gp-btn gp-btn--sm"
-                    onClick={() => setChoosing('shareImage')}
+                    onClick={() => setChoosing(true)}
                     type="button"
                   >
                     {shareImage ? 'Trocar foto' : 'Escolher foto'}
@@ -887,7 +354,10 @@ export function SettingsEditor({
                       Tirar a foto
                     </button>
                   ) : (
-                    <span className="gp-small gp-muted">Sem foto, usamos o logo.</span>
+                    <span className="gp-small gp-muted">
+                      Sem foto, cada página ganha uma imagem pronta: a foto do banner, o título e o
+                      logo, nas cores do site.
+                    </span>
                   )}
                 </div>
               </div>
@@ -900,6 +370,7 @@ export function SettingsEditor({
           <ul className="gp-checklist">
             <li>Mapa do site enviado ao Google, atualizado sozinho a cada publicação.</li>
             <li>Páginas em rascunho ficam escondidas: o Google só vê o que está no ar.</li>
+            <li>Ícone do site (a aba do navegador) feito a partir do logo.</li>
           </ul>
         </section>
 
@@ -932,36 +403,16 @@ export function SettingsEditor({
         .
       </Tip>
 
-      {fullPreview && (
-        <PanelDialog
-          onClose={() => setFullPreview(false)}
-          size="full"
-          title="Prévia em tamanho real"
-        >
-          <div className="gp-previewbox__frame">
-            <SiteFrame
-              fontFaces={fontFaces}
-              stylesheets={previewFonts.map(googleFontCSS)}
-              theme={themeStyle(previewSite) as Record<string, string>}
-              title="Prévia das cores e letras em tamanho real"
-              width={1100}
-            >
-              {preview}
-            </SiteFrame>
-          </div>
-        </PanelDialog>
-      )}
-
       {choosing && (
         <PhotoChooser
-          onClose={() => setChoosing(null)}
+          onClose={() => setChoosing(false)}
           onPick={(picked) => {
-            update({ [choosing]: picked.id })
-            setChoosing(null)
+            update({ shareImage: picked.id })
+            setChoosing(false)
           }}
           onUploaded={(uploaded) => setPhotos((current) => [uploaded, ...current])}
           photos={photos}
-          title={choosing === 'logo' ? 'Escolha o logo' : 'Escolha a foto ao compartilhar'}
+          title="Escolha a foto ao compartilhar"
         />
       )}
     </div>

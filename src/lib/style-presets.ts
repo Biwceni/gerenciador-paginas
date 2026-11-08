@@ -168,11 +168,11 @@ export function bannerTextRatio(primary: string): number {
 }
 
 /**
- * Combinações difíceis de ler (contraste abaixo de 4,5:1, o mínimo da WCAG para texto). Só avisam:
- * as cores são livres. A cor das letras de botões e rodapé já é a mais legível possível.
+ * Os pares de cor que o site usa, com o contraste de cada um. A cor das letras de botões e rodapé
+ * já é a mais legível possível.
  */
-export function contrastWarnings(colors: SiteColors): ContrastWarning[] {
-  const checks: ContrastWarning[] = [
+export function contrastChecks(colors: SiteColors): ContrastWarning[] {
+  return [
     {
       label: 'Texto sobre o fundo',
       ratio: contrastRatio(colors.text, colors.background),
@@ -204,7 +204,14 @@ export function contrastWarnings(colors: SiteColors): ContrastWarning[] {
       hint: 'Use um rodapé bem escuro ou bem claro.',
     },
   ]
-  return checks.filter((check) => check.ratio < 4.5)
+}
+
+/**
+ * Combinações difíceis de ler (contraste abaixo de 4,5:1, o mínimo da WCAG para texto). Só avisam:
+ * as cores são livres.
+ */
+export function contrastWarnings(colors: SiteColors): ContrastWarning[] {
+  return contrastChecks(colors).filter((check) => check.ratio < 4.5)
 }
 
 /** "3,2:1", arredondado para baixo (4,49 não vira 4,5). */

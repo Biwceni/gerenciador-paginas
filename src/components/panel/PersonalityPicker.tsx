@@ -69,7 +69,7 @@ export function PersonalityThumb({
   )
 }
 
-/** "Personalidade do site", em Configurações > Cores e letras: uma miniatura por opção. */
+/** "Personalidade do site", em Sua marca: uma miniatura por opção. */
 export function PersonalityPicker({
   value,
   colors,

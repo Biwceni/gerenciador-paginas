@@ -17,6 +17,7 @@ import {
 import { AnimField } from '@/components/editor/AnimField'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
 import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
+import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
@@ -52,12 +53,17 @@ const menuLabel: CustomField<string> = {
   ),
 }
 
-const photo = (label: string): CustomField<PhotoRef> => ({
+/**
+ * Uma foto da biblioteca. `minWidth`: a largura que ela precisa ter para não ficar borrada no
+ * computador; `banner`, a do banner, só quando o fundo escolhido mostra a foto. Sem ele, sem aviso
+ * de foto pequena, como nas fotinhas dos depoimentos.
+ */
+const photo = (label: string, minWidth?: number | 'banner'): CustomField<PhotoRef> => ({
   type: 'custom',
   label,
   render: (props) => (
     <FieldLabel el="div" label={props.field.label ?? ''}>
-      <PhotoField {...props} />
+      <PhotoField {...props} minWidth={minWidth} />
     </FieldLabel>
   ),
 })
@@ -189,7 +195,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Cor do site', value: 'brand' },
         ],
       },
-      image: photo('Foto (com "Foto" ou "Foto ao lado")'),
+      image: photo('Foto (com "Foto" ou "Foto ao lado")', 'banner'),
       align: {
         type: 'radio',
         label: 'Posição do texto',
@@ -225,7 +231,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
     fields: {
       title: text('Título'),
       text: textarea('Texto'),
-      image: photo('Foto'),
+      image: photo('Foto', SECTION_MIN_WIDTH),
       side: {
         type: 'radio',
         label: 'Lado da foto',
@@ -355,7 +361,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         label: 'Fotos da galeria',
         render: (props) => (
           <FieldLabel el="div" label={props.field.label ?? ''}>
-            <PhotoListField {...props} />
+            <PhotoListField {...props} minWidth={SECTION_MIN_WIDTH} />
           </FieldLabel>
         ),
       },
@@ -525,7 +531,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         ),
       },
       caption: text('Legenda'),
-      cover: photo('Foto de capa (opcional)'),
+      cover: photo('Foto de capa (opcional)', SECTION_MIN_WIDTH),
       style: sectionStyle,
       menuLabel,
       anim: animField('Video'),
@@ -590,7 +596,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
     defaultProps: { title: 'Título', text: 'Clique no texto para mudar.' },
   },
   ColumnImage: {
-    fields: { image: photo('Foto'), caption: text('Legenda (opcional)') },
+    fields: { image: photo('Foto', SECTION_MIN_WIDTH), caption: text('Legenda (opcional)') },
     defaultProps: { image: null, caption: '' },
   },
   ColumnButton: {

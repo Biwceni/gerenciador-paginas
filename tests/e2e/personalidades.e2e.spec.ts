@@ -264,14 +264,14 @@ test.describe.serial('personalidades do site', () => {
     await expect.poll(columns).toBe(1)
   })
 
-  test('Configurações: escolher a personalidade muda a prévia e só vai ao ar ao publicar', async () => {
+  test('Sua marca: escolher a personalidade muda a prévia e só vai ao ar ao publicar', async () => {
     await publishPersonality('classico')
     await page.setViewportSize({ width: 1440, height: 900 })
-    await open(page, '/admin/configuracoes')
+    await open(page, '/admin/sua-marca')
     const option = page.getByRole('button', { name: /^Aconchego/ })
     await option.click()
     await expect(option).toHaveAttribute('aria-pressed', 'true')
-    const preview = page.frameLocator('iframe[title="Prévia das cores e letras"]')
+    const preview = page.frameLocator('iframe[title="Prévia da sua marca"]')
     await expect(preview.locator('body')).toHaveAttribute('data-personality', 'aconchego')
 
     // Rascunho: o site continua Clássico até publicar.
@@ -279,9 +279,9 @@ test.describe.serial('personalidades do site', () => {
     await open(page, '/')
     await expect(page.locator('body')).toHaveAttribute('data-personality', 'classico')
 
-    await open(page, '/admin/configuracoes')
-    await page.getByRole('button', { name: 'Publicar configurações' }).click()
-    await expect(page.getByText('Configurações publicadas em todo o site.')).toBeVisible({
+    await open(page, '/admin/sua-marca')
+    await page.getByRole('button', { name: 'Publicar', exact: true }).click()
+    await expect(page.getByText('Sua marca foi publicada em todo o site.')).toBeVisible({
       timeout: 20_000,
     })
     await open(page, '/')

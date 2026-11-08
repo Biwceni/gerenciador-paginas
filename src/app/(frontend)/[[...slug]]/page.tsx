@@ -21,12 +21,14 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
+import { pageTitle } from '@/lib/pageTitle'
+import { SHARE_IMAGE_SIZE, shareImagePath } from '@/lib/shareImage'
 import { FALLBACK_SITE_NAME, getServerURL } from '@/lib/site'
 import { breadcrumbJsonLd, jsonLdText, localBusinessJsonLd } from '@/lib/structuredData'
-import type { Media, Page } from '@/payload-types'
+import type { Page } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import { resolveReferences } from '@/puck/references'
-import { extractDescription, firstPhotoId, googleTitle, homeGoogleTitle } from '@/puck/seo'
+import { extractDescription, googleTitle, homeGoogleTitle } from '@/puck/seo'
 
 // Páginas são estáticas e renovadas ao publicar (hooks em `src/hooks/revalidate.ts`).
 // Página publicada depois do build é gerada no primeiro acesso.
@@ -61,19 +63,6 @@ const findPage = cache(
   },
 )
 
-const getMediaByID = cache(async (id: number): Promise<Media | null> => {
-  const payload = await getPayloadClient()
-  const { docs } = await payload.find({
-    collection: 'media',
-    where: { id: { equals: id } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-    overrideAccess: false,
-  })
-  return docs[0] ?? null
-})
-
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug = [] } = await params
   const [{ page, isHome }, site] = await Promise.all([findPage(slug), getSite()])
@@ -94,12 +83,16 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     site.seoDescription ||
     site.tagline ||
     undefined
-  const photoId = firstPhotoId(data)
-  const image =
-    populatedMedia(page.seo?.image) ??
-    (photoId ? await getMediaByID(photoId) : null) ??
-    populatedMedia(site.shareImage) ??
-    populatedMedia(site.logo)
+  // A foto escolhida (da página ou do site) ou, sem nenhuma, a imagem feita na hora com a foto do
+  // banner, o título e o logo (`/og/<id>`).
+  const chosen = populatedMedia(page.seo?.image) ?? populatedMedia(site.shareImage)
+  const image = chosen?.url
+    ? { url: chosen.url, alt: chosen.alt ?? undefined }
+    : {
+        url: shareImagePath(page.id, page.updatedAt, site.updatedAt),
+        alt: pageTitle(page.title),
+        ...SHARE_IMAGE_SIZE,
+      }
   const path = isHome ? '/' : `/${page.slug}`
   const fullTitle = googleTitle({ title: page.title, seoTitle: page.seo?.title }, titleSite, isHome)
 
@@ -114,7 +107,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       siteName: name,
       locale: 'pt_BR',
       type: 'website',
-      images: image?.url ? [{ url: image.url, alt: image.alt ?? undefined }] : undefined,
+      images: [image],
     },
   }
 }
