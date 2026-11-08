@@ -15,6 +15,7 @@ import {
   UNREAD,
 } from '@/lib/messages'
 import { pageTitle } from '@/lib/pageTitle'
+import { FALLBACK_SITE_NAME } from '@/lib/site'
 import { type FinishInput, NOT_ARCHIVED, pageStatus, type PageStatus, timeAgo } from '@/lib/panel'
 import { relationID } from '@/lib/relations'
 import { smallPhotos } from '@/lib/photoSize'
@@ -99,7 +100,7 @@ export async function loadExampleTexts(payload: Payload, user: TypedUser): Promi
 }
 
 /**
- * O que o cartão "Para terminar seu site" precisa. Vale o que a pessoa está editando (o rascunho
+ * O que o cartão "Para o site ficar pronto" precisa. Vale o que a pessoa está editando (o rascunho
  * mais recente de cada página fora de "Arquivadas") e as configurações que estão no ar. `pageOrder`
  * é a ordem da tela Páginas: a primeira com texto de exemplo é a que o botão abre.
  */
@@ -406,3 +407,21 @@ export async function loadUnreadMessages(payload: Payload, user: TypedUser) {
   const forms = await loadFormDefinitions(payload, user)
   return { total: totalDocs, messages: await toInboxMessages(payload, user, docs, forms) }
 }
+
+export type SiteChip = { name: string; logo: string | null }
+
+/** Nome e logo publicados do site, para o chip no pé do menu lateral. */
+export const loadSiteChip = cache(async (payload: Payload, user: TypedUser): Promise<SiteChip> => {
+  const site = await payload.findGlobal({
+    slug: 'site',
+    select: { name: true, logo: true },
+    depth: 1,
+    overrideAccess: false,
+    user,
+  })
+  const logo = site.logo && typeof site.logo === 'object' ? (site.logo as Media) : null
+  return {
+    name: site.name || FALLBACK_SITE_NAME,
+    logo: logo?.sizes?.thumbnail?.url || logo?.url || null,
+  }
+})

@@ -18,7 +18,7 @@ import { Site } from './globals/Site'
 import { LOCKED_MESSAGE, NEW_PASSWORD_PATH, WRONG_LOGIN_MESSAGE } from './lib/auth'
 import { EDITOR_VIEW_PATH } from './lib/editor'
 import { PHOTO_MAX_BYTES } from './lib/photos'
-import { getServerURL, PRODUCT_NAME } from './lib/site'
+import { getServerURL, PRODUCT_FAVICON, PRODUCT_NAME } from './lib/site'
 import { formsPlugin } from './plugins/forms'
 
 const filename = fileURLToPath(import.meta.url)
@@ -71,6 +71,8 @@ export default buildConfig({
     meta: {
       titleSuffix: ` | ${PRODUCT_NAME}`,
       description: `Painel do ${PRODUCT_NAME}`,
+      // A marca do produto no lugar do favicon do Payload.
+      icons: [{ rel: 'icon', type: 'image/svg+xml', url: PRODUCT_FAVICON }],
     },
     components: {
       graphics: {

@@ -1,6 +1,6 @@
 @use 'panel';
 
-// Marca do produto no painel (provisória até existir identidade visual).
+// Marca do produto nas telas padrão do Payload que ainda sobram (Logo).
 .gp-logo {
   display: flex;
   align-items: center;
@@ -13,7 +13,9 @@
 }
 
 .gp-logo__name {
+  font-family: var(--gp-font-display);
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--theme-text);
 }

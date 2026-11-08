@@ -167,7 +167,7 @@ export type FinishStep = {
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
 /**
- * Os passos do cartão "Para terminar seu site" (segue o `vDashboard` do protótipo): 5 sempre e, com
+ * Os passos do cartão "Para o site ficar pronto" (segue o `vDashboard` do protótipo): 5 sempre e, com
  * fotos pequenas nas páginas, mais um para trocá-las (redesign v3, entrega 3).
  */
 export function finishSteps(input: FinishInput): FinishStep[] {

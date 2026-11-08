@@ -2,6 +2,7 @@
 
 import { request } from '@/components/editor/api'
 import { FORM_STARTERS } from '@/lib/forms'
+import type { Personality } from '@/lib/theme'
 import type { Footer, Form, Header, Page, Site } from '@/payload-types'
 import { emptyPageContent, type PageContent } from '@/puck/schema'
 
@@ -233,4 +234,14 @@ export async function discardSettings(apiRoute: string) {
   const published = toSettingsState(site)
   await publishSettings(apiRoute, toSiteData(published))
   return published
+}
+
+/**
+ * Troca só a personalidade do site, no rascunho das configurações (atalho do editor). Parte do
+ * rascunho mais recente, para não apagar o que mudou em Sua marca ou nas Configurações; o site só
+ * muda quando as configurações forem publicadas.
+ */
+export async function saveSitePersonality(apiRoute: string, personality: Personality) {
+  const site = await request<Site>(apiRoute, '/globals/site?depth=0&draft=true')
+  await saveGlobalDraft(apiRoute, 'site', toSiteData({ ...toSettingsState(site), personality }))
 }

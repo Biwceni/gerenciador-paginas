@@ -1,9 +1,14 @@
+import { Render } from '@puckeditor/core/rsc'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import type { AdminViewServerProps } from 'payload'
+import type { AdminViewServerProps, Payload } from 'payload'
 import React from 'react'
 
+import { SiteFooter } from '@/components/site/SiteFooter'
+import { SiteHeader } from '@/components/site/SiteHeader'
+import { themeStyle } from '@/components/site/theme'
 import { menuPageOrder } from '@/hooks/protectPage'
+import { getHomepage, getSite, readPageContent, siteInfo, siteLinks } from '@/lib/content'
 import { editorPath } from '@/lib/editor'
 import {
   type FinishStep,
@@ -15,6 +20,8 @@ import {
   sortPagesForList,
 } from '@/lib/panel'
 import { getServerURL } from '@/lib/site'
+import { renderConfig } from '@/puck/config'
+import { resolveReferences } from '@/puck/references'
 
 import {
   loadFinishInput,
@@ -23,8 +30,35 @@ import {
   loadUnreadMessages,
   type PendingGlobal,
 } from './data'
+import { LiveSite } from './LiveSite'
 import { PageRowItem } from './PageRowItem'
 import { PanelIcon, type PanelIconName } from './PanelIcon'
+
+/**
+ * Começo da página inicial publicada, como o visitante vê (lido como visitante, igual ao site):
+ * topo, seções e rodapé, para a miniatura ao vivo do cartão "Seu site".
+ */
+async function LiveHome({ payload }: { payload: Payload }) {
+  const [page, site] = await Promise.all([getHomepage(), getSite()])
+  if (!page) return null
+  const data = readPageContent(page)
+  const metadata = await resolveReferences(
+    payload,
+    data,
+    { ...siteLinks(site), info: siteInfo(site) },
+    page.id,
+  )
+  const campaign = Boolean(page.campaign)
+  return (
+    <LiveSite fontFaces={site.fontFaces ?? null} theme={themeStyle(site) as Record<string, string>}>
+      <SiteHeader campaign={campaign} currentPageId={page.id} />
+      <main>
+        <Render config={renderConfig} data={data} metadata={metadata} />
+      </main>
+      <SiteFooter campaign={campaign} />
+    </LiveSite>
+  )
+}
 
 const GLOBAL_SCREEN: Record<PendingGlobal['slug'], PanelPath> = {
   site: 'settings',
@@ -82,6 +116,8 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   const missingPhotos = searchParams?.pronto ? Math.max(0, Number(searchParams.fotos) || 0) : 0
   const pending = pages.filter((page) => page.status !== 'live')
   const recent = pages.slice(0, 4)
+  const livePages = pages.filter((page) => page.status !== 'draft').length
+  const editHomeLabel = home?.title === 'Início' ? 'Editar o Início' : 'Editar a página inicial'
 
   type Quick = [PanelPath, PanelIconName, string, string]
   // "Trocar fotos" sai enquanto o passo "Coloque suas fotos" está pendente: os dois levam a Fotos.
@@ -170,32 +206,105 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         </p>
       )}
 
-      {siteLive ? (
-        <div className="gp-statusbar">
-          <div className="gp-live">
-            <span aria-hidden="true" className="gp-live__dot" />
-            Seu site está no ar em <span className="gp-accent">{domain}</span>
+      <div className="gp-home">
+        {/* Cartão "Seu site": a miniatura ao vivo do que está no ar e o que dá para fazer com ele. */}
+        <section aria-labelledby="gp-site-title" className="gp-card gp-sitecard">
+          <h2 className="gp-sr" id="gp-site-title">
+            Seu site
+          </h2>
+          {siteLive ? (
+            <LiveHome payload={payload} />
+          ) : (
+            <div className="gp-sitecard__mini gp-sitecard__mini--soon">
+              <PanelIcon name="eye" size={22} />
+              <span>Em construção</span>
+            </div>
+          )}
+          <div className="gp-sitecard__bar">
+            {siteLive ? (
+              <div className="gp-live">
+                <span aria-hidden="true" className="gp-live__dot" />
+                <span>
+                  <b className="gp-live__label">No ar</b>
+                  <span className="gp-sr"> · </span>
+                  <span className="gp-sitecard__meta">
+                    Seu site está no ar em <span className="gp-accent">{domain}</span> · {livePages}{' '}
+                    {livePages === 1 ? 'página' : 'páginas'}
+                  </span>
+                </span>
+              </div>
+            ) : (
+              <div className="gp-live gp-live--draft">
+                <span aria-hidden="true" className="gp-live__dot" />
+                <span className="gp-sitecard__meta">
+                  Seu site ainda não está no ar. Quem abre{' '}
+                  <span className="gp-accent">{domain}</span> vê um aviso de &ldquo;em
+                  construção&rdquo;.
+                </span>
+              </div>
+            )}
+            <div className="gp-sitecard__actions">
+              {siteLive ? (
+                <a className="gp-btn" href="/" rel="noopener" target="_blank">
+                  <PanelIcon name="eye" size={16} />
+                  Ver site
+                </a>
+              ) : (
+                <Link className="gp-btn" href={previewHref}>
+                  <PanelIcon name="eye" size={16} />
+                  Ver como está ficando
+                </Link>
+              )}
+              {home && (
+                <Link
+                  className={`gp-btn${nextStep ? '' : ' gp-btn--primary'}`}
+                  href={editorPath(adminRoute, home.id)}
+                >
+                  <PanelIcon name="edit" size={16} />
+                  {editHomeLabel}
+                </Link>
+              )}
+            </div>
           </div>
-          <a className="gp-btn" href="/" rel="noopener" target="_blank">
-            <PanelIcon name="eye" size={16} />
-            Ver meu site
-          </a>
-        </div>
-      ) : (
-        <div className="gp-statusbar gp-statusbar--draft">
-          <div className="gp-live">
-            <span aria-hidden="true" className="gp-live__dot" />
-            <span>
-              Seu site ainda não está no ar. Quem abre <span className="gp-accent">{domain}</span>{' '}
-              vê um aviso de &ldquo;em construção&rdquo;.
+        </section>
+
+        {finishDone === finish.length ? (
+          <details className="gp-card gp-finished">
+            <summary>
+              <span aria-hidden="true" className="gp-todo__mark">
+                <PanelIcon name="check" size={14} />
+              </span>
+              Tudo pronto no seu site
+            </summary>
+            <FinishList finish={finish} />
+          </details>
+        ) : (
+          <section aria-labelledby="gp-finish-title" className="gp-card">
+            <div className="gp-card__head">
+              <h2 id="gp-finish-title">Para o site ficar pronto</h2>
+              <span className="gp-small gp-muted">
+                {finishDone} de {finish.length} feitos
+              </span>
+            </div>
+            <div aria-hidden="true" className="gp-progress">
+              <i style={{ width: `${Math.round((finishDone / finish.length) * 100)}%` }} />
+            </div>
+            <FinishList finish={finish} href={stepHref} next={nextStep} />
+          </section>
+        )}
+      </div>
+
+      <nav aria-label="Atalhos" className="gp-quick">
+        {quick.map(([path, icon, title, text]) => (
+          <Link href={panelHref(adminRoute, path)} key={path}>
+            <span className="gp-quick__icon">
+              <PanelIcon name={icon} />
             </span>
-          </div>
-          <Link className="gp-btn" href={previewHref}>
-            <PanelIcon name="eye" size={16} />
-            Ver como está ficando
+            <b>{title}</b>
+            <span className="gp-muted gp-small">{text}</span>
           </Link>
-        </div>
-      )}
+        ))}
+      </nav>
 
       {unread.total > 0 && (
         <section className="gp-card">
@@ -230,43 +339,6 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         </section>
       )}
 
-      {finishDone === finish.length ? (
-        <details className="gp-card gp-finished">
-          <summary>
-            <span aria-hidden="true" className="gp-todo__mark">
-              <PanelIcon name="check" size={14} />
-            </span>
-            Tudo pronto no seu site
-          </summary>
-          <FinishList finish={finish} />
-        </details>
-      ) : (
-        <section aria-labelledby="gp-finish-title" className="gp-card">
-          <div className="gp-card__head">
-            <h2 id="gp-finish-title">Para terminar seu site</h2>
-            <span className="gp-small gp-muted">
-              {finishDone} de {finish.length} feitos
-            </span>
-          </div>
-          <div aria-hidden="true" className="gp-progress">
-            <i style={{ width: `${Math.round((finishDone / finish.length) * 100)}%` }} />
-          </div>
-          <FinishList finish={finish} href={stepHref} next={nextStep} />
-        </section>
-      )}
-
-      <nav aria-label="Atalhos" className="gp-quick">
-        {quick.map(([path, icon, title, text]) => (
-          <Link href={panelHref(adminRoute, path)} key={path}>
-            <span className="gp-quick__icon">
-              <PanelIcon name={icon} />
-            </span>
-            <b>{title}</b>
-            <span className="gp-muted gp-small">{text}</span>
-          </Link>
-        ))}
-      </nav>
-
       <section className="gp-card">
         <div className="gp-card__head">
           <h2>Páginas recentes</h2>
@@ -288,7 +360,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   )
 }
 
-/** Passos de "Para terminar seu site". Feito: check verde e texto mais suave, sem botão. */
+/** Passos de "Para o site ficar pronto". Feito: check verde e texto mais suave, sem botão. */
 function FinishList({
   finish,
   href,

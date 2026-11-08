@@ -1,7 +1,8 @@
 import React from 'react'
 
-// Marca do produto (páginas empilhadas), na paleta verde do painel (#0f6b55). Aparece no menu
-// lateral, nas telas de entrar e no topo das telas padrão do Payload.
+// Marca do produto (redesign v3, entrega 5): duas folhas sobrepostas, a da frente com linhas de
+// texto, no anil do painel (claro ou escuro). Aparece no menu lateral, nas telas de entrar e no
+// topo das telas padrão do Payload. O favicon do /admin é o mesmo desenho (`productFavicon`).
 export function Icon() {
   return (
     <svg
@@ -9,18 +10,25 @@ export function Icon() {
       className="gp-icon"
       fill="none"
       height="32"
-      viewBox="0 0 32 32"
+      viewBox="0 0 34 34"
       width="32"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect fill="#0f6b55" height="32" rx="9" width="32" />
-      <rect fill="#9fd8c2" height="17" rx="2.5" width="13" x="12" y="6" />
-      <rect fill="#ffffff" height="17" rx="2.5" width="13" x="7" y="9" />
+      <rect
+        height="24"
+        opacity=".28"
+        rx="4"
+        style={{ fill: 'var(--gp-accent)' }}
+        width="20"
+        x="3"
+        y="7"
+      />
+      <rect height="26" rx="4" style={{ fill: 'var(--gp-accent)' }} width="22" x="9" y="3" />
       <path
-        d="M10 15h7M10 18.5h7M10 22h4"
-        stroke="#0f6b55"
+        d="M14 12h12M14 17h12M14 22h7"
         strokeLinecap="round"
-        strokeWidth="1.8"
+        strokeWidth="2.2"
+        style={{ stroke: 'var(--gp-accent-ink)' }}
       />
     </svg>
   )

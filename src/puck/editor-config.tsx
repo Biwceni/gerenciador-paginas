@@ -11,13 +11,12 @@ import {
   Notice,
   PhotoField,
   PhotoListField,
-  StackedChoiceField,
-  ThumbChoiceField,
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
 import { ChoiceThumb, type ChoiceThumbName } from '@/components/editor/ChoiceThumbs'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
+import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
 import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
@@ -41,16 +40,6 @@ import {
 
 const text = (label: string): Field => ({ type: 'text', label, contentEditable: true })
 const textarea = (label: string): Field => ({ type: 'textarea', label, contentEditable: true })
-
-const sectionStyle: Field = {
-  type: 'radio',
-  label: 'Fundo',
-  options: [
-    { label: 'Claro', value: 'light' },
-    { label: 'Suave', value: 'soft' },
-    { label: 'Cor do site', value: 'brand' },
-  ],
-}
 
 const menuLabel: CustomField<string> = {
   type: 'custom',
@@ -100,12 +89,14 @@ const button: Field = {
 const thumbChoice = <V extends string>(
   label: string,
   options: { value: V; label: string; hint?: string; thumb: ChoiceThumbName }[],
+  columns: 2 | 3 = 2,
 ): CustomField<V> => ({
   type: 'custom',
   label,
   render: ({ field, name, onChange, readOnly, value }) => (
     <FieldLabel el="div" label={field.label ?? ''}>
-      <ThumbChoiceField
+      <VisualChoiceField
+        columns={columns}
         label={label}
         name={name}
         onChange={(next) => onChange(next as V)}
@@ -120,26 +111,23 @@ const thumbChoice = <V extends string>(
   ),
 })
 
-const featureMarker: CustomField<FeatureMarker> = {
-  type: 'custom',
-  label: 'Marcador',
-  render: ({ field, name, onChange, readOnly, value }) => (
-    <FieldLabel el="div" label={field.label ?? ''}>
-      <StackedChoiceField
-        name={name}
-        onChange={(next) => onChange(next as FeatureMarker)}
-        options={[
-          { value: 'none', label: 'Nenhum', hint: 'Só o título e o texto' },
-          { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada destaque' },
-          { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3' },
-          { value: 'photo', label: 'Foto', hint: 'Uma foto pequena e redonda em cada destaque' },
-        ]}
-        readOnly={readOnly}
-        value={value ?? 'none'}
-      />
-    </FieldLabel>
-  ),
-}
+/** Fundo da seção: Claro, Suave ou Cor do site, cada um desenhado nas cores do site. */
+const sectionStyle = thumbChoice(
+  'Fundo',
+  [
+    { value: 'light', label: 'Claro', thumb: 'bg-light' },
+    { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
+    { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
+  ],
+  3,
+)
+
+const featureMarker = thumbChoice<FeatureMarker>('Marcador', [
+  { value: 'none', label: 'Nenhum', hint: 'Só o título e o texto', thumb: 'marker-none' },
+  { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada um', thumb: 'marker-icon' },
+  { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3', thumb: 'marker-number' },
+  { value: 'photo', label: 'Foto', hint: 'Uma foto pequena e redonda', thumb: 'marker-photo' },
+])
 
 // O campo Ícone fica sempre no item, como a foto do banner: um campo que aparece e some conforme o
 // marcador (resolveFields) redesenhava o painel a cada mudança e fazia cliques se perderem.
@@ -253,17 +241,17 @@ const sections: { [K in keyof Components]: Section<K> } = {
       } as object),
       text: textarea('Frase'),
       button,
-      style: {
-        type: 'radio',
-        label: 'Fundo',
-        options: [
-          { label: 'Foto', value: 'image' },
-          { label: 'Foto ao lado', value: 'side' },
-          { label: 'Claro', value: 'light' },
-          { label: 'Suave', value: 'soft' },
-          { label: 'Cor do site', value: 'brand' },
+      style: thumbChoice(
+        'Fundo',
+        [
+          { value: 'image', label: 'Foto', thumb: 'hero-image' },
+          { value: 'side', label: 'Foto ao lado', thumb: 'hero-side' },
+          { value: 'light', label: 'Claro', thumb: 'bg-light' },
+          { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
+          { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
         ],
-      },
+        3,
+      ),
       image: photo('Foto (com "Foto" ou "Foto ao lado")', 'banner'),
       align: {
         type: 'radio',
@@ -301,14 +289,10 @@ const sections: { [K in keyof Components]: Section<K> } = {
       title: text('Título'),
       text: textarea('Texto'),
       image: photo('Foto', SECTION_MIN_WIDTH),
-      side: {
-        type: 'radio',
-        label: 'Lado da foto',
-        options: [
-          { label: 'Esquerda', value: 'left' },
-          { label: 'Direita', value: 'right' },
-        ],
-      },
+      side: thumbChoice('Lado da foto', [
+        { value: 'left', label: 'Esquerda', thumb: 'side-left' },
+        { value: 'right', label: 'Direita', thumb: 'side-right' },
+      ]),
       style: sectionStyle,
       menuLabel,
       anim: animField('TextImage'),
@@ -616,15 +600,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
           'Use para promoção, temporada ou horário especial. Na prévia a faixa fica parada; no site ela corre e para quando a pessoa passa o mouse ou aperta o botão de parar. Quem pediu ao celular para reduzir movimentos vê a faixa parada.',
         ),
       } as object),
-      style: {
-        type: 'radio',
-        label: 'Fundo',
-        options: [
-          { label: 'Cor do site', value: 'brand' },
-          { label: 'Suave', value: 'soft' },
-          { label: 'Claro', value: 'light' },
+      style: thumbChoice(
+        'Fundo',
+        [
+          { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
+          { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
+          { value: 'light', label: 'Claro', thumb: 'bg-light' },
         ],
-      },
+        3,
+      ),
     },
     defaultProps: {
       items: [{ text: 'Escreva o aviso aqui' }, { text: 'Promoção, horário ou temporada' }],
@@ -731,16 +715,12 @@ const sections: { [K in keyof Components]: Section<K> } = {
   },
   Columns: {
     fields: {
-      layout: {
-        type: 'radio',
-        label: 'Modelo',
-        options: [
-          { label: 'Duas iguais', value: 'half' },
-          { label: 'Três iguais', value: 'thirds' },
-          { label: 'Larga e estreita', value: 'wide-left' },
-          { label: 'Estreita e larga', value: 'wide-right' },
-        ],
-      },
+      layout: thumbChoice('Modelo', [
+        { value: 'half', label: 'Duas iguais', thumb: 'cols-half' },
+        { value: 'thirds', label: 'Três iguais', thumb: 'cols-thirds' },
+        { value: 'wide-left', label: 'Larga e estreita', thumb: 'cols-wide-left' },
+        { value: 'wide-right', label: 'Estreita e larga', thumb: 'cols-wide-right' },
+      ]),
       style: sectionStyle,
       menuLabel,
       column1: { type: 'slot', allow: [...COLUMN_PIECES] },
