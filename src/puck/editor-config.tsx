@@ -445,7 +445,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         {
           value: 'masonry',
           label: 'Mosaico',
-          hint: 'Cada foto no formato dela',
+          hint: 'Cada foto no formato dela; a ordem vai de cima para baixo, coluna por coluna',
           thumb: 'gallery-masonry',
         },
       ]),
@@ -505,7 +505,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
         image: null,
         name: 'Nome do produto',
         text: 'Uma frase sobre ele.',
-        price: 'R$ 0,00',
+        // Vazio: um "R$ 0,00" esquecido mostraria o produto de graça no site.
+        price: '',
         button: { label: 'Pedir pelo WhatsApp', link: whatsapp },
       })),
       style: 'light',

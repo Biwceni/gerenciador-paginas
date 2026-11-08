@@ -319,7 +319,7 @@ describe('Faixa de aviso', () => {
     expect(html).toContain('announce announce--brand announce--move')
     expect(html).toContain('aria-label="Aviso: Encomendas de Natal abertas. Kits presente"')
     expect(html).toContain('role="note"')
-    expect(html).toContain('<div aria-hidden="true" class="announce__track">')
+    expect(html).toContain('<div aria-hidden="true" class="announce__track" style="--duration:')
     expect(html.match(/class="announce__half"/g)).toHaveLength(2)
     expect(html).toContain('type="checkbox"')
     expect(html).toContain('Parar a faixa de aviso')
@@ -340,7 +340,9 @@ describe('Faixa de aviso', () => {
 
   it('repete as frases até encher a tela, e nada quando estão vazias', () => {
     expect(announcementRun(['Oi'])).toHaveLength(10)
-    expect(announcementRun(['a'.repeat(130)])).toHaveLength(1)
+    // Um aviso de ~120 letras se repete: uma metade só dele não cobriria uma tela de 1440 px.
+    expect(announcementRun(['a'.repeat(116)]).length).toBeGreaterThanOrEqual(2)
+    expect(announcementRun(['a'.repeat(260)])).toHaveLength(1)
     expect(announcementRun(['  '])).toEqual([])
     expect(
       renderToStaticMarkup(
@@ -520,5 +522,36 @@ describe('resumo, fotos pequenas e checagens do Publicar', () => {
     const deleted = sectionChecks(content, { hasPhoto: (id) => id !== 1, instagram: '@kluana' })
     expect(deleted[0].title).toBe('2 produtos estão sem foto')
     expect(deleted).toHaveLength(2)
+  })
+
+  it('avisa produto sem nome, preço R$ 0,00 e nome de exemplo', () => {
+    const data = page([
+      {
+        type: 'Products',
+        props: {
+          id: 'p',
+          menuLabel: '',
+          title: '',
+          items: [
+            { name: ' ', image: { mediaId: 1 } },
+            { name: 'Nome do produto', image: { mediaId: 2 }, price: 'R$ 0,00' },
+          ],
+        },
+      },
+      {
+        type: 'PriceList',
+        props: {
+          id: 'c',
+          menuLabel: '',
+          title: '',
+          groups: [{ name: 'Natal', items: [{ name: 'Panetone', price: 'R$0,00' }] }],
+        },
+      },
+    ]).data!.data
+    expect(sectionChecks(data, { hasPhoto: () => true }).map((check) => check.title)).toEqual([
+      'Um produto está sem nome',
+      '2 preços ainda estão como R$ 0,00',
+      'Um item ainda tem nome de exemplo',
+    ])
   })
 })

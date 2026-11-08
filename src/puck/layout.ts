@@ -42,9 +42,11 @@ export function whatsAppMessageHref(href: string | null, product: string): strin
 
 /**
  * Frases da Faixa de aviso repetidas o bastante para encher uma tela larga: a faixa corre com duas
- * metades iguais (a segunda escondida do leitor de tela) e volta ao começo sem salto.
+ * metades iguais (a segunda escondida do leitor de tela) e volta ao começo sem salto. Para isso,
+ * cada metade precisa ser mais larga que a tela: 240 letras a 26 px dão cerca de 2.800 px, que
+ * cobrem até uma tela de 2.560 px.
  */
-export function announcementRun(items: string[], minLength = 120): string[] {
+export function announcementRun(items: string[], minLength = 240): string[] {
   const texts = items.map((text) => text.replace(/\s+/g, ' ').trim()).filter(Boolean)
   if (!texts.length) return []
   const length = texts.reduce((sum, text) => sum + text.length + 4, 0)

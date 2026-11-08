@@ -1135,6 +1135,11 @@ export function Announcement({
 
   const plain = texts.map((text) => String(text).replace(/\s+/g, ' ').trim())
   const run = announcementRun(plain)
+  // Mesma velocidade com textos curtos ou longos: ~0,2 s por letra de cada metade (~60 px/s).
+  const letters = run.reduce((sum, text) => sum + text.length + 4, 0)
+  const duration = {
+    '--duration': `${Math.max(20, Math.round(letters * 0.2))}s`,
+  } as React.CSSProperties
   const half = (copy: number) => (
     <span className="announce__half">
       {run.map((text, index) => (
@@ -1150,7 +1155,7 @@ export function Announcement({
     <div className={classes.join(' ')}>
       <div aria-label={`Aviso: ${plain.join('. ')}`} className="announce__note" role="note">
         {still}
-        <div aria-hidden="true" className="announce__track">
+        <div aria-hidden="true" className="announce__track" style={duration}>
           {half(1)}
           {half(2)}
         </div>
