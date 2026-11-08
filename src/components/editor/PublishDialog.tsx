@@ -9,6 +9,7 @@ import { isExamplePhoto } from '@/lib/examples'
 import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
+import { sectionChecks } from '@/puck/checks'
 import type { PuckPageData } from '@/puck/schema'
 
 import { updatePhotoAlt } from './api'
@@ -59,7 +60,7 @@ export function PublishDialog({
   onPublish,
   onPhotoChanged,
 }: Props) {
-  const { pageId, homepageId, pages, photoById, whatsappHref } = useEditor()
+  const { pageId, homepageId, pages, photoById, whatsappHref, site } = useEditor()
   const [alts, setAlts] = useState<Record<number, string>>({})
   const [addToMenu, setAddToMenu] = useState(true)
   // A página inicial não precisa estar no menu: o logo já leva até ela.
@@ -79,6 +80,11 @@ export function PublishDialog({
     isExamplePhoto(photoById[id]),
   )
   const whatsappWithoutNumber = !whatsappHref && usesWhatsApp(data)
+  // O que falta nas seções novas: foto dos produtos, fotos e @ do Instagram.
+  const missing = sectionChecks(data, {
+    hasPhoto: (id) => Boolean(photoById[id]),
+    instagram: site.instagram,
+  })
   // Aviso leve: não muda o botão para "Publicar mesmo assim".
   const homeHeroWithoutPhoto =
     pageId === homepageId && heroWithoutPhoto(data, (id) => Boolean(photoById[id]))
@@ -107,6 +113,7 @@ export function PublishDialog({
     weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
     draftLinks.length > 0 ||
     whatsappWithoutNumber ||
+    missing.length > 0 ||
     menu.kind === 'cannot-add' ||
     (menu.kind === 'can-add' && !addToMenu)
 
@@ -242,6 +249,11 @@ export function PublishDialog({
         {data.content.length === 0 && (
           <Check title="A página está vazia">Quem abrir vai ver só o topo e o rodapé.</Check>
         )}
+        {missing.map((check) => (
+          <Check key={check.title} title={check.title}>
+            {check.text}
+          </Check>
+        ))}
         {weakPhotos.length ? (
           <Check
             title={

@@ -24,6 +24,8 @@ function sectionText(item: PageComponent): string {
     case 'Contact':
     case 'LinkList':
     case 'Form':
+    case 'Products':
+    case 'PriceList':
       return item.props.text
     case 'Features':
       return item.props.items[0]?.text ?? ''
@@ -38,6 +40,8 @@ function sectionText(item: PageComponent): string {
     case 'Testimonials':
     case 'Gallery':
     case 'Privacy':
+    case 'Announcement':
+    case 'InstagramStrip':
       return ''
   }
 }
@@ -57,7 +61,10 @@ function sectionPhotoId(item: PageComponent): number | null {
     case 'TextImage':
       return item.props.image?.mediaId ?? null
     case 'Gallery':
+    case 'InstagramStrip':
       return item.props.images[0]?.mediaId ?? null
+    case 'Products':
+      return item.props.items.find((entry) => entry.image)?.image?.mediaId ?? null
     case 'Video':
       return item.props.cover?.mediaId ?? null
     case 'Columns':

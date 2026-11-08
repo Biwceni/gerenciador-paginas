@@ -84,6 +84,48 @@ const PATHS: Record<FeatureIconName, React.ReactNode> = {
       <path d="M5 10v10h14V10M10 20v-5h4v5" />
     </>
   ),
+  // Confeitaria e serviços (entrega 4).
+  cake: (
+    <>
+      <path d="M4 20h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z" />
+      <path d="M4 15c1.3 1 2.7 1 4 0s2.7-1 4 0 2.7 1 4 0 2.7-1 4 0M12 11V8M12 4.5c-.8 1-.8 2 0 2.5.8-.5.8-1.5 0-2.5z" />
+    </>
+  ),
+  cupcake: (
+    <>
+      <path d="M6 12l1.5 8h9L18 12" />
+      <path d="M5 12a3 3 0 0 1 1.5-5.6A5.5 5.5 0 0 1 17.5 6.4 3 3 0 0 1 19 12zM10 12l.5 8M14 12l-.5 8" />
+    </>
+  ),
+  paw: (
+    <>
+      <path d="M12 12c-3 0-5.5 3.2-5.5 5.3 0 1.6 1.3 2.7 2.8 2.7 1.1 0 1.7-.6 2.7-.6s1.6.6 2.7.6c1.5 0 2.8-1.1 2.8-2.7C17.5 15.2 15 12 12 12z" />
+      <circle cx="5.5" cy="10" r="1.8" />
+      <circle cx="9.5" cy="5.8" r="1.8" />
+      <circle cx="14.5" cy="5.8" r="1.8" />
+      <circle cx="18.5" cy="10" r="1.8" />
+    </>
+  ),
+  scissors: (
+    <>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M8.2 8.2L20 19M8.2 15.8L20 5" />
+    </>
+  ),
+  gift: (
+    <>
+      <rect height="5" rx="1" width="18" x="3" y="8" />
+      <path d="M5 13v7h14v-7M12 8v12M12 8c-1-3-4.5-4.5-5.5-2.5S9 8 12 8zM12 8c1-3 4.5-4.5 5.5-2.5S15 8 12 8z" />
+    </>
+  ),
+  truck: (
+    <>
+      <path d="M2 6h11v10H2zM13 9h4.5l3.5 3.5V16h-8z" />
+      <circle cx="6.5" cy="17.5" r="2" />
+      <circle cx="17" cy="17.5" r="2" />
+    </>
+  ),
 }
 
 /** Nomes que aparecem na escolha do ícone, no editor. */
@@ -104,6 +146,12 @@ export const FEATURE_ICON_LABELS: Record<FeatureIconName, string> = {
   tool: 'Ferramenta',
   bag: 'Sacola',
   home: 'Casa',
+  cake: 'Bolo',
+  cupcake: 'Cupcake',
+  paw: 'Pata',
+  scissors: 'Tesoura',
+  gift: 'Presente',
+  truck: 'Entrega',
 }
 
 export function FeatureIcon({ name }: { name: FeatureIconName }) {

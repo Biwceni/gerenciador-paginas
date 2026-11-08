@@ -210,8 +210,8 @@ describe('desenho com a animação', () => {
       <Features
         id="f"
         items={[
-          { title: 'Um', text: '', icon: 'check' },
-          { title: 'Dois', text: '', icon: 'check' },
+          { title: 'Um', text: '', icon: 'check', photo: null },
+          { title: 'Dois', text: '', icon: 'check', photo: null },
         ]}
         marker="none"
         menuLabel=""
@@ -243,7 +243,12 @@ describe('desenho com a animação', () => {
   it('galeria: no site cada foto abre em tela cheia; no editor, não', () => {
     const props = {
       id: 'g',
-      images: [{ mediaId: 1 }, { mediaId: 2 }],
+      images: [
+        { mediaId: 1, caption: '' },
+        { mediaId: 2, caption: '' },
+      ],
+      layout: 'grid' as const,
+      showCaptions: false,
       menuLabel: '',
       style: 'light' as const,
       title: 'Fotos',

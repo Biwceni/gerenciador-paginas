@@ -21,10 +21,21 @@ export function sectionSummary(item: PageComponent): string {
       return list(item.props.items.map((entry) => entry.question)) || item.props.title
     case 'LinkList':
       return list(item.props.items.map((entry) => entry.label)) || item.props.title
-    case 'Gallery': {
+    case 'Gallery':
+    case 'InstagramStrip': {
       const count = item.props.images.length
       return item.props.title || (count === 1 ? '1 foto' : `${count} fotos`)
     }
+    case 'Products':
+      return list(item.props.items.map((entry) => entry.name)) || item.props.title
+    case 'PriceList':
+      return (
+        list(item.props.groups.map((group) => group.name)) ||
+        list(item.props.groups.flatMap((group) => group.items.map((entry) => entry.name))) ||
+        item.props.title
+      )
+    case 'Announcement':
+      return list(item.props.items.map((entry) => entry.text))
     case 'Columns':
       return list(
         // Só as colunas que aparecem: o modelo de duas guarda a terceira sem mostrar.

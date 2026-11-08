@@ -11,14 +11,16 @@ type Props = {
   className?: string
   /** Preenche o espaço do elemento pai (que precisa de `position: relative`). */
   fill?: boolean
+  /** No lugar da descrição da foto: `""` quando o texto ao lado já diz o que ela mostra. */
+  alt?: string
 }
 
 /** Foto da biblioteca, com o texto alternativo dela e o ponto de foco escolhido no painel. */
-export function Photo({ media, sizes, priority, className, fill }: Props) {
+export function Photo({ media, sizes, priority, className, fill, alt: ownAlt }: Props) {
   if (!media.url) return null
 
   // Sem descrição: `alt=""`, e o leitor de tela pula a foto em vez de ler o nome do arquivo.
-  const alt = media.alt ?? ''
+  const alt = ownAlt ?? media.alt ?? ''
 
   // Foto de um modelo ainda no banco de fotos (só nas prévias do início guiado) ou guardada no
   // próprio servidor (sem o Storage configurado, só no computador e nos testes): vai direto, sem o

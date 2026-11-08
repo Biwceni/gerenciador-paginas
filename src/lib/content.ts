@@ -107,6 +107,7 @@ export function siteInfo(site: Partial<Site>): SiteInfo {
     contact: site.contact ?? {},
     privacyHref: privacyHref(site),
     motion: safeMotion(site.motion),
+    instagram: site.social?.instagram ?? null,
   }
 }
 

@@ -12,7 +12,16 @@ export function isExamplePhoto(photo: Pick<Media, 'sourceUrl'> | null | undefine
 
 // Só os campos de texto corrido: nomes de botão, de menu e de link ficam legíveis nos modelos e a
 // pessoa pode manter de propósito ("Fale com a gente" não é texto de exemplo).
-const TEXT_KEYS = new Set(['title', 'text', 'quote', 'name', 'question', 'answer', 'caption'])
+const TEXT_KEYS = new Set([
+  'title',
+  'text',
+  'quote',
+  'name',
+  'question',
+  'answer',
+  'caption',
+  'description',
+])
 
 // Títulos legíveis dos modelos, bons para manter: não contam como exemplo.
 const KEEPABLE_TEXTS = new Set(['perguntas frequentes', 'política de privacidade'])

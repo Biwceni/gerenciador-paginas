@@ -198,6 +198,7 @@ const pages: SeedPage[] = [
             title: 'Dolor sit amet',
             text: L_S,
             icon: 'check' as const,
+            photo: null,
           })),
           style: 'light',
           anim: 'site',
@@ -223,7 +224,11 @@ const pages: SeedPage[] = [
           id: 'galeria-sobre',
           menuLabel: '',
           title: 'Dolor Amet',
-          images: [photo(0), photo(1), photo(2)].filter((ref) => ref !== null),
+          images: [photo(0), photo(1), photo(2)]
+            .filter((ref) => ref !== null)
+            .map((ref) => ({ ...ref, caption: '' })),
+          layout: 'grid',
+          showCaptions: false,
           style: 'light',
           anim: 'site',
         },

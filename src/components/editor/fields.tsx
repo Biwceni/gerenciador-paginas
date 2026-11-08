@@ -110,14 +110,23 @@ export function PhotoField({
   )
 }
 
-/** Fotos da galeria, na ordem em que aparecem. */
-export function PhotoListField({
+type PhotoListItem = { mediaId: number; caption?: string }
+
+/**
+ * Fotos da galeria (ou do Instagram), na ordem em que aparecem. `captions`: uma legenda por foto,
+ * com a descrição da foto como sugestão (vazia, vale a descrição). `max`: quantas cabem.
+ */
+export function PhotoListField<T extends PhotoListItem>({
   value = [],
   onChange,
   readOnly,
   minWidth,
-}: FieldProps<{ mediaId: number }[]> & { minWidth?: number }) {
+  max = 24,
+  captions = false,
+}: FieldProps<T[]> & { minWidth?: number; max?: number; captions?: boolean }) {
   const { photoById, pickPhoto } = useEditor()
+  const setCaption = (index: number, caption: string) =>
+    onChange(value.map((item, i) => (i === index ? { ...item, caption } : item)))
   const move = (from: number, to: number) => {
     const next = [...value]
     const [item] = next.splice(from, 1)
@@ -141,6 +150,17 @@ export function PhotoListField({
               {minWidth && isSmallPhoto(photo, minWidth) && (
                 <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TITLE}</span>
               )}
+              {captions && (
+                <input
+                  aria-label={`Legenda da foto ${index + 1}`}
+                  className="ed-input ed-photo-list__caption"
+                  disabled={readOnly}
+                  maxLength={120}
+                  onChange={(event) => setCaption(index, event.target.value)}
+                  placeholder={photo?.alt?.trim() || 'Legenda (opcional)'}
+                  value={ref.caption ?? ''}
+                />
+              )}
             </span>
             <button
               aria-label="Subir foto"
@@ -163,11 +183,18 @@ export function PhotoListField({
           </div>
         )
       })}
-      {value.length < 24 && (
+      {value.length < max && (
         <button
           className="ed-btn ed-btn--sm"
           disabled={readOnly}
-          onClick={() => pickPhoto((picked) => onChange([...value, { mediaId: picked.id }]))}
+          onClick={() =>
+            pickPhoto((picked) =>
+              onChange([
+                ...value,
+                (captions ? { mediaId: picked.id, caption: '' } : { mediaId: picked.id }) as T,
+              ]),
+            )
+          }
           type="button"
         >
           + Adicionar foto
@@ -488,14 +515,24 @@ export function FormField({ value, onChange, readOnly, field }: FieldProps<FormR
  * do item: o nome dele diz a lista e a posição (`items[2].move`). A lista inteira volta para a
  * seção com o item no lugar novo, e o Desfazer pega a mudança.
  */
-export function ArrayItemMoves({ name, noun }: { name: string; noun: string }) {
+export function ArrayItemMoves({
+  name,
+  noun,
+  label = 'title',
+}: {
+  name: string
+  noun: string
+  /** Campo do item que dá nome a ele nos botões ("Subir Bolo de pote"). */
+  label?: string
+}) {
   const getPuck = useGetPuck()
   const match = /^([A-Za-z]+)\[(\d+)\]\.\w+$/.exec(name)
   const list = match?.[1] ?? ''
   const index = Number(match?.[2] ?? -1)
-  const items = usePuck((s) => s.selectedItem?.props[list]) as { title?: string }[] | undefined
+  const items = usePuck((s) => s.selectedItem?.props[list]) as Record<string, unknown>[] | undefined
   if (!match || !Array.isArray(items)) return null
-  const title = items[index]?.title?.trim() || `${noun} ${index + 1}`
+  const own = items[index]?.[label]
+  const title = (typeof own === 'string' && own.trim()) || `${noun} ${index + 1}`
 
   const move = (by: -1 | 1) => {
     const { appState, dispatch, selectedItem } = getPuck()

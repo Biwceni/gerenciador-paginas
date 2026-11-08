@@ -50,14 +50,16 @@ export type SectionAnim = 'site' | 'none' | Anim
 
 /**
  * As animações de cada seção, na ordem do editor. A primeira é a do "Marcante". A Faixa de aviso
- * (entrega 4) não entra: ela tem o próprio "Movimento". As seções novas da entrega 4 acrescentam a
- * linha delas aqui.
+ * não entra: ela tem o próprio "Movimento" (Correndo ou Parada).
  */
 export const SECTION_ANIMS = {
   Hero: ['linhas', 'zoom', 'esmaecer'],
+  Products: ['cascata', 'zoom', 'esmaecer'],
+  PriceList: ['linhas', 'esmaecer'],
   Features: ['cascata', 'esmaecer'],
   Testimonials: ['deslizar', 'cascata', 'esmaecer'],
   Gallery: ['sequencia', 'zoom', 'esmaecer'],
+  InstagramStrip: ['sequencia', 'esmaecer'],
   TextImage: ['deslizar', 'cortina', 'esmaecer'],
   CallToAction: ['subir', 'esmaecer'],
   Columns: ['cascata', 'esmaecer'],
@@ -90,6 +92,7 @@ const ANIM_LABELS: Record<Anim, string> = {
 
 const SECTION_ANIM_LABELS: Partial<Record<AnimatedSection, Partial<Record<Anim, string>>>> = {
   Hero: { zoom: 'Foto aproxima' },
+  PriceList: { linhas: 'Itens em sequência' },
   TextImage: { deslizar: 'Vêm dos lados', cortina: 'Foto em cortina' },
   Columns: { cascata: 'Uma depois da outra' },
   LinkList: { cascata: 'Botões em sequência' },
