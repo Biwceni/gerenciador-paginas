@@ -96,7 +96,8 @@ describe('Configurações em rascunho', () => {
 
   it('"Começar de novo com um modelo" não deixa rascunho velho', async () => {
     await saveDraft({ primary: TRIED })
-    const seed = templateSeeds.find((item) => item.key === 'outro-simples')!
+    const seed = templateSeeds.find((item) => item.key === 'outro-classico')!
+    expect(seed).toBeDefined()
     // Sem fotos, para não baixar nada no teste.
     const template = { ...seed, id: 1, photos: [] } as unknown as Template
 

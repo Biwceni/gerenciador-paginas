@@ -3,7 +3,7 @@ import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
 import { NOT_ARCHIVED, panelHref, PANEL_PATHS } from '@/lib/panel'
-import { templateBusiness } from '@/lib/templates'
+import { cityFromAddress, templateBusiness } from '@/lib/templates'
 import { parsePageContent } from '@/puck/schema'
 
 import { PanelTemplate, requireUser } from './PanelTemplate'
@@ -90,6 +90,7 @@ export async function StartView(props: AdminViewServerProps) {
               name: site.name ?? '',
               tagline: site.tagline ?? '',
               whatsapp: site.contact?.whatsapp ?? '',
+              city: cityFromAddress(site.contact?.address),
             }
           : null
       }

@@ -74,11 +74,18 @@ export function exampleTexts(templates: Pick<Template, 'pages'>[]): string[] {
   return [...found]
 }
 
+/**
+ * O que um marcador aceita: um nome ou uma cidade, de 1 a 6 palavras, sem pontuação. Assim a frase
+ * que a pessoa reescreveu em volta do marcador ("em uberlândia e região, com entrega grátis") deixa
+ * de contar como exemplo.
+ */
+const SLOT = String.raw`[^\s.,;:!?]+(?: [^\s.,;:!?]+){0,5}?`
+
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
  * Os textos dos modelos prontos para comparar. Texto com marcador vira um padrão em que o marcador
- * aceita qualquer nome ou cidade: "doces feitos à mão em {cidade}" reconhece "doces feitos à mão em
+ * aceita um nome ou uma cidade (`SLOT`): "doces feitos à mão em {cidade}" reconhece "doces feitos à mão em
  * uberlândia". Os outros são comparados por igual.
  */
 export function exampleMatcher(texts: readonly string[]): (text: string) => boolean {
@@ -94,7 +101,7 @@ export function exampleMatcher(texts: readonly string[]): (text: string) => bool
     const rest = markers.reduce((left, marker) => left.replaceAll(marker, ''), text)
     if (!/\p{L}/u.test(rest)) continue
     let source = escapeRegExp(text)
-    for (const marker of markers) source = source.replaceAll(escapeRegExp(marker), '.+?')
+    for (const marker of markers) source = source.replaceAll(escapeRegExp(marker), SLOT)
     patterns.push(new RegExp(`^${source}$`, 's'))
   }
   return (text) => exact.has(text) || patterns.some((pattern) => pattern.test(text))

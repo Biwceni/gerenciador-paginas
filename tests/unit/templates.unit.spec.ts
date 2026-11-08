@@ -10,6 +10,7 @@ import { contrastWarnings } from '@/lib/style-presets'
 import {
   BUSINESSES,
   checkTemplateReferences,
+  cityFromAddress,
   fillExamples,
   fillExampleText,
   isTemplatePhotoURL,
@@ -200,6 +201,23 @@ describe('nome e cidade nos textos de exemplo', () => {
     expect(fillExampleText('{nome} em {cidade}', { name: ' ', city: '' })).toBe(
       'Seu negócio em sua cidade',
     )
+  })
+})
+
+describe('cidade tirada do endereço (Começar de novo)', () => {
+  it('é a parte junto do estado, sem o CEP', () => {
+    expect(cityFromAddress('Rua das Flores, 120 · Centro · Uberlândia/MG')).toBe('Uberlândia')
+    expect(cityFromAddress('Av. Brasil, 500 - Centro, Belo Horizonte/MG')).toBe('Belo Horizonte')
+    expect(cityFromAddress('Rua A, 10, Lavras - MG')).toBe('Lavras')
+    expect(cityFromAddress('Rua B, 20\nJuiz de Fora, MG\n36000-000')).toBe('Juiz de Fora')
+  })
+
+  it('sem endereço, ou sem cara de cidade, fica vazio', () => {
+    expect(cityFromAddress(null)).toBe('')
+    expect(cityFromAddress('')).toBe('')
+    expect(cityFromAddress('Rua das Flores, 120')).toBe('')
+    // Sem o estado, a última parte pode ser o bairro.
+    expect(cityFromAddress('Rua das Flores, 120 · Centro')).toBe('')
   })
 })
 

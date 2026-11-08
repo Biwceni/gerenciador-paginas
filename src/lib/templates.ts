@@ -170,6 +170,28 @@ export const EXAMPLE_PLACEHOLDERS = { name: '{nome}', city: '{cidade}' } as cons
 
 export type ExampleAnswers = { name: string; city: string }
 
+/**
+ * A cidade do endereço das Configurações, para o "Começar de novo" não pedir de novo. Só quando dá
+ * para ter certeza: a parte do endereço junto do estado ("Uberlândia/MG", "Lavras - MG" ou
+ * "Lavras, MG"). Sem o estado, a última parte pode ser a rua ou o bairro: fica vazio.
+ */
+export function cityFromAddress(address: string | null | undefined): string {
+  const parts = (address ?? '')
+    .split(/[·,\n]| - /)
+    .map((part) => part.trim())
+    // O CEP não conta.
+    .filter((part) => part && !/^[\d\s.-]+$/.test(part))
+  const state = /^[A-Z]{2}$/
+  for (let index = parts.length - 1; index >= 0; index--) {
+    const part = parts[index]
+    const joined = part.match(/^(.+?)\s*[/-]\s*[A-Z]{2}$/)
+    const city = joined ? joined[1] : state.test(part) ? parts[index - 1] : null
+    if (city === null) continue
+    return city && /\p{L}/u.test(city) && !/\d/.test(city) && city.length <= 60 ? city : ''
+  }
+  return ''
+}
+
 /** Texto com os marcadores trocados. Sem cidade, vale "sua cidade". */
 export function fillExampleText(text: string, answers: ExampleAnswers): string {
   return text

@@ -34,8 +34,8 @@ type Props = {
   apiRoute: string
   /** Páginas que o site já tem (no ar ou em rascunho). */
   existingPages: number
-  /** Começar de novo: o nome, a frase e o WhatsApp que estão nas Configurações. */
-  initial: { name: string; tagline: string; whatsapp: string } | null
+  /** Começar de novo: o nome, a frase e o WhatsApp das Configurações, e a cidade tirada do endereço. */
+  initial: { name: string; tagline: string; whatsapp: string; city: string } | null
   /** Delas, as que estão no ar: saem do ar ao aplicar o modelo. */
   livePages: number
   /** As Configurações têm mudança fora do ar: trocar de modelo descarta. */
@@ -139,7 +139,7 @@ export function StartWizard({
   const [templateId, setTemplateId] = useState<number | null>(null)
   const [step, setStep] = useState(0)
   const [name, setName] = useState(initial?.name ?? '')
-  const [city, setCity] = useState('')
+  const [city, setCity] = useState(initial?.city ?? '')
   const [tagline, setTagline] = useState(initial?.tagline ?? '')
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '')
   const [bigPreview, setBigPreview] = useState<StartTemplate | null>(null)

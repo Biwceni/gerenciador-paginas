@@ -79,8 +79,21 @@ describe('textos de exemplo', () => {
 
   it('nome com caracteres especiais não quebra a comparação', () => {
     const isExample = exampleMatcher(['feito por {nome}.'])
-    expect(isExample('feito por doces (& cia.) [ana]*.')).toBe(true)
+    expect(isExample('feito por doces (& cia) [ana]*.')).toBe(true)
     expect(isExample('feito por.')).toBe(false)
+  })
+
+  it('o marcador aceita um nome ou uma cidade, não a frase que a pessoa reescreveu', () => {
+    const isExample = exampleMatcher([
+      'encomende aqui em {cidade}.',
+      'doces da {nome} feitos à mão',
+    ])
+    expect(isExample('encomende aqui em são josé do rio preto.')).toBe(true)
+    expect(isExample('doces da doces mineiros da lu feitos à mão')).toBe(true)
+    expect(
+      isExample('encomende aqui em uberlândia e região, com entrega grátis acima de r$ 100.'),
+    ).toBe(false)
+    expect(isExample('doces da lu e da mari, feitos à mão')).toBe(false)
   })
 
   it('um texto que é só o nome não faz de qualquer texto um exemplo', () => {
