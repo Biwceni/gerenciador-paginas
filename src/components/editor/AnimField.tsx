@@ -233,9 +233,9 @@ export function AnimField({
           Ver a animação
         </button>
         <span className="ed-hint">
-          A animação do site muda nas{' '}
-          <a href={`${panelHref(adminRoute, 'settings')}#st-cores`} rel="noopener" target="_blank">
-            Configurações
+          A animação do site muda em{' '}
+          <a href={`${panelHref(adminRoute, 'brand')}#mc-animacao`} rel="noopener" target="_blank">
+            Sua marca
           </a>
           .
         </span>
