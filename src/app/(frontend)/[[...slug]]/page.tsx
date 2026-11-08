@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const image = chosen?.url
     ? { url: chosen.url, alt: chosen.alt ?? undefined }
     : {
-        url: shareImagePath(page.id, page.updatedAt),
+        url: shareImagePath(page.id, page.updatedAt, site.updatedAt),
         alt: pageTitle(page.title),
         ...SHARE_IMAGE_SIZE,
       }

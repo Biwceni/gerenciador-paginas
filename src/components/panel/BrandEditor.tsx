@@ -6,7 +6,7 @@ import '@/app/(frontend)/styles.css'
 /* eslint-disable @next/next/no-img-element */
 
 import { Render } from '@puckeditor/core'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
 import {
@@ -173,6 +173,21 @@ export function BrandEditor({
   const logo = photos.find((item) => item.id === state.logo) ?? null
   const logoURL = logo ? thumbnailURL(logo) : undefined
 
+  // Cores de hoje, para a leitura (que termina depois) voltar a elas se o logo não der para ler.
+  const colorsNow = useRef(state.colors)
+  useEffect(() => {
+    colorsNow.current = state.colors
+  }, [state.colors])
+
+  /**
+   * Sem as cores de um logo (tirado, ou sem dar para ler): as combinações voltam a sair das cores de
+   * hoje, e nenhuma cor do logo antigo fica marcada como principal.
+   */
+  const forgetLogoColors = (colors: SiteColors) => {
+    setMain(null)
+    setPalette(paletteFromColors(colors))
+  }
+
   // As cores do logo são lidas aqui, no navegador, sempre que o logo muda.
   useEffect(() => {
     if (!logoURL) return
@@ -184,6 +199,9 @@ export function BrandEditor({
       if (colors && chosen) {
         setMain(chosen)
         setPalette(brandPalette(chosen, colors))
+      } else {
+        setMain(null)
+        setPalette(paletteFromColors(colorsNow.current))
       }
     })
     return () => {
@@ -191,6 +209,10 @@ export function BrandEditor({
     }
   }, [logoURL])
   const current = logoURL && read?.url === logoURL ? read : null
+  const removeLogo = () => {
+    update({ logo: null })
+    forgetLogoColors(state.colors)
+  }
   const logoColors = current?.colors ?? null
   const reading: Reading = !logoURL
     ? 'idle'
@@ -359,7 +381,7 @@ export function BrandEditor({
                 {logo && (
                   <button
                     className="gp-btn gp-btn--sm gp-btn--ghost"
-                    onClick={() => update({ logo: null })}
+                    onClick={removeLogo}
                     type="button"
                   >
                     Tirar o logo

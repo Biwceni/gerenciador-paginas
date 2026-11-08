@@ -18,7 +18,7 @@ import {
 import { contrastRatio, relativeLuminance } from '@/lib/colors'
 import { FONT_PAIRS, guessBusiness } from '@/lib/fontPairs'
 import { finishSteps } from '@/lib/panel'
-import { isSmallPhoto, photoNeeds, smallPhotos } from '@/lib/photoSize'
+import { heroShowsPhoto, isSmallPhoto, photoNeeds, smallPhotos } from '@/lib/photoSize'
 import { bannerPhotoId, fontFileURL, shareImagePath, shareTitleSize } from '@/lib/shareImage'
 import { RESERVED_SLUGS } from '@/lib/slug'
 import { contrastWarnings, formatRatio } from '@/lib/style-presets'
@@ -368,5 +368,29 @@ describe('imagem de compartilhar gerada', () => {
     expect(fontFileURL(css)).toBe('https://fonts.gstatic.com/l/font?kit=abc')
     expect(fontFileURL('nada')).toBeNull()
     expect(shareTitleSize('Café')).toBeGreaterThan(shareTitleSize('a'.repeat(80)))
+  })
+})
+
+describe('revisão da PR #17', () => {
+  it('a imagem gerada muda de endereço quando as configurações são publicadas depois da página', () => {
+    const page = '2026-11-01T10:00:00.000Z'
+    const site = '2026-11-08T10:00:00.000Z'
+    expect(shareImagePath(5, page, site)).toBe(shareImagePath(5, site))
+    expect(shareImagePath(5, page, site)).not.toBe(shareImagePath(5, page))
+    expect(shareImagePath(5, null, undefined)).toBe('/og/5')
+  })
+
+  it('banner sem foto à mostra não conta para a imagem de compartilhar', () => {
+    const data = {
+      root: { props: {} },
+      content: [
+        { type: 'Hero', props: { id: 'h', style: 'soft', image: { mediaId: 1 } } },
+        { type: 'TextImage', props: { id: 't', image: { mediaId: 2 } } },
+      ],
+    } as unknown as PuckPageData
+    expect(bannerPhotoId(data)).toBe(2)
+    expect(heroShowsPhoto('image')).toBe(true)
+    expect(heroShowsPhoto('side')).toBe(true)
+    expect(heroShowsPhoto('brand')).toBe(false)
   })
 })

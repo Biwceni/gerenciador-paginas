@@ -17,7 +17,7 @@ import {
 import { AnimField } from '@/components/editor/AnimField'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
 import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
-import { BANNER_MIN_WIDTH, SECTION_MIN_WIDTH } from '@/lib/photoSize'
+import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
@@ -55,9 +55,10 @@ const menuLabel: CustomField<string> = {
 
 /**
  * Uma foto da biblioteca. `minWidth`: a largura que ela precisa ter para não ficar borrada no
- * computador (sem ele, sem aviso de foto pequena, como nas fotinhas dos depoimentos).
+ * computador; `banner`, a do banner, só quando o fundo escolhido mostra a foto. Sem ele, sem aviso
+ * de foto pequena, como nas fotinhas dos depoimentos.
  */
-const photo = (label: string, minWidth?: number): CustomField<PhotoRef> => ({
+const photo = (label: string, minWidth?: number | 'banner'): CustomField<PhotoRef> => ({
   type: 'custom',
   label,
   render: (props) => (
@@ -194,7 +195,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Cor do site', value: 'brand' },
         ],
       },
-      image: photo('Foto (com "Foto" ou "Foto ao lado")', BANNER_MIN_WIDTH),
+      image: photo('Foto (com "Foto" ou "Foto ao lado")', 'banner'),
       align: {
         type: 'radio',
         label: 'Posição do texto',

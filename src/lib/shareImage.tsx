@@ -1,3 +1,6 @@
+// Dentro do `next/og` não existe o otimizador de imagens: o `<img>` com `data:` é o jeito certo.
+/* eslint-disable @next/next/no-img-element */
+
 import { ImageResponse } from 'next/og'
 import sharp, { type Sharp } from 'sharp'
 
@@ -8,6 +11,7 @@ import { firstPhotoId, firstSentence } from '../puck/seo'
 import { hexToRgb } from './brand'
 import { readableTextColor, safeColor } from './colors'
 import { pageTitle } from './pageTitle'
+import { heroShowsPhoto } from './photoSize'
 import { FALLBACK_SITE_NAME, getServerURL } from './site'
 import { DEFAULT_COLORS, FONT_NAME_PATTERN } from './theme'
 
@@ -19,18 +23,35 @@ export const SHARE_IMAGE_SIZE = { width: 1200, height: 630 } as const
 
 const rgba = (hex: string, alpha: number) => `rgba(${hexToRgb(hex).join(', ')}, ${alpha})`
 
-/** Endereço da imagem gerada. `v` muda a cada publicação, para o WhatsApp não guardar a antiga. */
-export function shareImagePath(pageId: number, version?: string | null): string {
-  const stamp = version ? new Date(version).getTime() : NaN
-  return Number.isFinite(stamp) ? `/og/${pageId}?v=${stamp.toString(36)}` : `/og/${pageId}`
+/**
+ * Endereço da imagem gerada. `v` é a publicação mais recente entre as datas dadas (a da página e a
+ * das configurações: logo, cores, nome e frase também mudam a imagem), para o WhatsApp não guardar a
+ * antiga.
+ */
+export function shareImagePath(pageId: number, ...versions: (string | null | undefined)[]): string {
+  const stamps = versions
+    .map((version) => (version ? new Date(version).getTime() : NaN))
+    .filter(Number.isFinite)
+  return stamps.length ? `/og/${pageId}?v=${Math.max(...stamps).toString(36)}` : `/og/${pageId}`
 }
 
-/** A foto do banner da página (o primeiro banner com foto) ou, sem banner, a primeira foto. */
+/**
+ * A foto do banner da página (o primeiro banner que mostra foto) ou, sem ele, a primeira foto que
+ * aparece. A foto guardada num banner de fundo "Claro", "Suave" ou "Cor do site" não aparece no site,
+ * então também não entra aqui.
+ */
 export function bannerPhotoId(data: PuckPageData): number | null {
   for (const item of data.content) {
-    if (item.type === 'Hero' && item.props.image?.mediaId) return item.props.image.mediaId
+    if (item.type === 'Hero' && heroShowsPhoto(item.props.style) && item.props.image?.mediaId) {
+      return item.props.image.mediaId
+    }
   }
-  return firstPhotoId(data)
+  const shown = data.content.map((item) =>
+    item.type === 'Hero' && !heroShowsPhoto(item.props.style)
+      ? { ...item, props: { ...item.props, image: null } }
+      : item,
+  )
+  return firstPhotoId({ ...data, content: shown })
 }
 
 /** Tamanho da letra do título: cabe em até três linhas na imagem. */

@@ -15,6 +15,14 @@ export const SMALL_PHOTO_TITLE = 'Foto pequena: fica borrada no computador.'
 export const SMALL_PHOTO_TEXT =
   'Foto pequena: fica borrada no computador. Use uma foto do celular, não um print, com pelo menos 1.600 px.'
 
+/**
+ * O banner mostra a foto? Só nos fundos "Foto" e "Foto ao lado"; em "Claro", "Suave" e "Cor do
+ * site", a foto escolhida fica guardada, mas não aparece.
+ */
+export function heroShowsPhoto(style: unknown): boolean {
+  return style === 'image' || style === 'side'
+}
+
 /** Largura mínima de uma foto em cada lugar: banner ou outra seção. */
 export function minPhotoWidth(inBanner: boolean): number {
   return inBanner ? BANNER_MIN_WIDTH : SECTION_MIN_WIDTH
@@ -49,8 +57,7 @@ export function photoNeeds(data: PuckPageData | null): Map<number, number> {
       const { image, ...rest } = record.props
       if (record.type === 'Testimonials') return
       if (record.type === 'Hero') {
-        const style = record.props.style
-        if (style === 'image' || style === 'side') walk(image, BANNER_MIN_WIDTH)
+        if (heroShowsPhoto(record.props.style)) walk(image, BANNER_MIN_WIDTH)
         walk(rest, SECTION_MIN_WIDTH)
         return
       }

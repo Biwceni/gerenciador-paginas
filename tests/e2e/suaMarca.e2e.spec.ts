@@ -169,9 +169,16 @@ test.describe.serial('Sua marca', () => {
     await expect(
       page.getByRole('button', { name: 'Usar #d62828 como cor principal' }),
     ).toHaveAttribute('aria-pressed', 'true')
-    // Nada saiu para fora ao ler o logo: só o nosso servidor e as fontes das amostras.
+    // Nada saiu para fora ao ler o logo: só o nosso servidor, o nosso Storage (fotos e fontes, quando
+    // configurado) e as fontes das amostras.
+    const ours = [BASE, process.env.S3_PUBLIC_URL, process.env.S3_FONTS_PUBLIC_URL]
+      .filter((url): url is string => Boolean(url))
+      .map((url) => new URL(url).origin)
     const outside = requests.filter(
-      (url) => !url.startsWith(BASE) && !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url),
+      (url) =>
+        /^https?:/.test(url) &&
+        !ours.includes(new URL(url).origin) &&
+        !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url),
     )
     expect(outside).toEqual([])
 
