@@ -39,6 +39,14 @@ const PATHS = {
       <circle cx="12" cy="12" r="3" />
     </>
   ),
+  // O mesmo olho, riscado: a senha está à mostra e o botão esconde.
+  'eye-off': (
+    <>
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M4 4l16 16" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   out: (
     <>

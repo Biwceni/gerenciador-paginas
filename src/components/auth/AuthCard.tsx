@@ -45,11 +45,11 @@ export function AuthLink({ children, href }: { children: React.ReactNode; href: 
   )
 }
 
-/** Aviso embaixo de um campo, no estilo do aviso de senha errada. */
+/** Problema embaixo de um campo, na mesma caixa de erro da senha errada. */
 export function FieldProblem({ id, text }: { id: string; text?: string | null }) {
   if (!text) return null
   return (
-    <p className="gp-warnbox gp-warnbox--field" id={id} role="alert">
+    <p className="gp-warnbox gp-warnbox--danger gp-warnbox--field" id={id} role="alert">
       {text}
     </p>
   )

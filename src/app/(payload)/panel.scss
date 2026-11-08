@@ -15,6 +15,9 @@ $desktop: 1024px;
   --gp-fs-help: 14px; // ajuda, endereços, botões
   --gp-fs-small: 13px; // selos e datas
   --gp-fs-rail: 12px; // trilho de ícones do editor
+  // Campos de digitação no celular: o Safari do iPhone amplia a tela sozinho quando a pessoa toca
+  // num campo com letra menor que 16 px.
+  --gp-fs-field-touch: 16px;
   // Espaço acima do título das telas e da marca do menu lateral (computador): os dois alinhados.
   --gp-top: 32px;
 }
@@ -969,6 +972,15 @@ time {
   padding: 8px 12px;
 }
 
+// Erro (senha errada, campo com problema): fundo vermelho claro com uma marca vermelha à
+// esquerda. O aviso comum, em bege, fica para avisos de verdade. Tinta sobre o fundo de erro
+// passa de 12:1 nos dois temas.
+.gp-warnbox--danger {
+  background: var(--gp-danger-soft);
+  color: var(--gp-ink);
+  box-shadow: inset 3px 0 0 var(--gp-danger);
+}
+
 .gp-error {
   color: var(--gp-danger);
   font-weight: 600;
@@ -1548,9 +1560,15 @@ time {
     }
   }
 
-  // Sublinhado, como no protótipo: tem cara de link.
+  // Sublinhado, como no protótipo: tem cara de link. Área de toque de 44 px de altura; a margem
+  // negativa devolve o espaço a mais, para o cartão não ficar mais espaçado.
   &__link {
     justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-block: -11px;
+    padding-inline: 8px;
     color: var(--gp-accent);
     font-weight: 600;
     font-size: var(--gp-fs-help);
@@ -1566,6 +1584,36 @@ time {
 .gp-authform {
   display: grid;
   gap: 16px;
+}
+
+// Campo de senha com o olho à direita (PasswordInput.tsx). O botão tem 44 px e cabe na altura do
+// campo; o texto ganha espaço à direita para não passar por baixo dele.
+.gp-pwinput {
+  position: relative;
+
+  .gp-input {
+    padding-right: 48px;
+  }
+
+  &__toggle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    translate: 0 -50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--gp-muted);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--gp-ink);
+    }
+  }
 }
 
 .gp-btn--block {
@@ -3540,5 +3588,16 @@ textarea.gp-input {
   .gp-logopick {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+// No celular, todos os campos de digitação do painel com pelo menos 16 px, para o iPhone não
+// ampliar a tela ao tocar neles. Fica no fim do arquivo para vencer os tamanhos menores acima
+// (`--hex`, `--sm`, perguntas do formulário). No computador, nada muda.
+@media (max-width: #{$desktop - 1px}) {
+  .gp-input,
+  .gp-question .gp-input,
+  .gp-searchbox input {
+    font-size: var(--gp-fs-field-touch);
   }
 }
