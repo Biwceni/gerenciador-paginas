@@ -722,7 +722,7 @@
     font-weight: var(--heading-weight, 700);
   }
 
-  /* Título com frase longa (mais de 30 letras): no máximo 76 px, para caber em 2 ou 3 linhas sem
+  /* Título com frase longa (mais de 20 letras): no máximo 76 px, para caber em 2 ou 3 linhas sem
      tomar a tela toda. Uma ou duas palavras continuam no tamanho grande da personalidade. */
   .hero--long .hero__title {
     font-size: min(var(--fs-h1), clamp(36px, 5.6cqi, 76px));
@@ -785,7 +785,7 @@
     text-wrap: pretty;
   }
 
-  /* Frase longa (mais de 30 letras) à esquerda: linhas parecidas, sem a última quase vazia. */
+  /* Frase longa (mais de 20 letras) à esquerda: linhas parecidas, sem a última quase vazia. */
   .hero--long.hero--plain:not(.hero--center) .hero__title {
     text-wrap: balance;
   }

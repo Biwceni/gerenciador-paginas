@@ -229,7 +229,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
     align === 'center' && 'hero--center',
     !photo && 'hero--plain',
     // Frase longa no título: tamanho menor que o de uma ou duas palavras, para não ocupar a tela.
-    filled(title) && title.trim().length > 30 && 'hero--long',
+    filled(title) && title.trim().length > 20 && 'hero--long',
     props.height === 'compact' && 'hero--compact',
     animClass(anim),
   ]

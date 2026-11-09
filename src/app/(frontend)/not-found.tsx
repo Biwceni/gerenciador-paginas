@@ -5,8 +5,8 @@ import React from 'react'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 
-// A aba diz o que aconteceu ("Página não encontrada | nome do site"), não só o nome do site.
-export const metadata: Metadata = { title: 'Página não encontrada', robots: { index: false } }
+// A aba diz o que aconteceu ("Página não encontrada | nome do site"). O noindex o Next já põe na 404.
+export const metadata: Metadata = { title: 'Página não encontrada' }
 
 export default function NotFound() {
   return (
