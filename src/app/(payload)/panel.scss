@@ -2063,6 +2063,15 @@ textarea.gp-input {
 
 // Barra de publicar (Configurações, Menu e rodapé): o aviso de salvo fica no título, aqui só os
 // botões, com o motivo embaixo do principal quando ele está desligado.
+// No celular e no tablet, a gaveta do menu abre por cima da tela, que fica espremida por trás: os
+// botões da barra de publicar vazavam para cima da gaveta (z-index 5 e largura que não encolhe).
+// Com a gaveta aberta, a barra some; ao fechar, volta.
+@media (max-width: #{$desktop - 1px}) {
+  .template-default--nav-open .gp-pubbar {
+    visibility: hidden;
+  }
+}
+
 .gp-pubbar {
   display: flex;
   flex-wrap: wrap;

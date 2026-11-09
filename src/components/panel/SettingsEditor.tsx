@@ -7,6 +7,7 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
+import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
 
@@ -23,7 +24,7 @@ type Props = {
   apiRoute: string
   domain: string
   initial: SettingsState
-  livePages: { id: number; title: string }[]
+  livePages: { id: number; title: string; slug?: string | null }[]
   /** Página inicial escolhida que ainda não está no ar (o site novo nasce assim). */
   draftHome: { id: number; title: string } | null
   /** Página de privacidade escolhida que ainda não está no ar. */
@@ -138,11 +139,13 @@ export function SettingsEditor({
   )
 
   const homeLive = livePages.some((page) => page.id === state.homepage)
+  // Duas páginas com o mesmo nome ("Início" e "Início") aparecem com o endereço junto.
+  const liveTitles = distinctPageTitles(livePages)
   const homeInList = homeLive || draftHome?.id === state.homepage
   const shareImage = photos.find((item) => item.id === state.shareImage) ?? null
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Configurações</h1>
@@ -240,7 +243,7 @@ export function SettingsEditor({
                 {draftHome && <option value={draftHome.id}>{draftHome.title} (rascunho)</option>}
                 {livePages.map((page) => (
                   <option key={page.id} value={page.id}>
-                    {page.title}
+                    {liveTitles.get(page.id)}
                   </option>
                 ))}
               </select>
@@ -267,7 +270,7 @@ export function SettingsEditor({
                 )}
                 {livePages.map((page) => (
                   <option key={page.id} value={page.id}>
-                    {page.title}
+                    {liveTitles.get(page.id)}
                   </option>
                 ))}
               </select>

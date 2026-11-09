@@ -267,7 +267,10 @@ export function notifyTarget(
 }
 
 const PHONE_CHARACTERS = /^[\d\s()+-]+$/
-const PHONE_MESSAGE = 'Digite só o número com DDD. Ex.: (35) 99999-1234.'
+// Sem um DDD de exemplo: o formulário vale para sites de qualquer cidade (o "(35)" de antes
+// aparecia num site de Santo André).
+const PHONE_MESSAGE =
+  'Digite só o número, com o DDD da sua cidade na frente. Ex.: (DDD) 99999-1234.'
 
 /** Campo "WhatsApp ou telefone": mensagem, ou `true` quando serve. Vale no navegador e no servidor. */
 export function validatePhone(value: string): string | true {

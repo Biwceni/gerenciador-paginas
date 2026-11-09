@@ -16,7 +16,7 @@ export const SMALL_PHOTO_TEXT =
   'Foto pequena: fica borrada no computador. Use uma foto do celular, não um print, com pelo menos 1.600 px.'
 
 /**
- * O banner mostra a foto? Só nos fundos "Foto" e "Foto ao lado"; em "Claro", "Suave" e "Cor do
+ * O banner mostra a foto? Só nos fundos "Foto" e "Foto ao lado"; em "Igual ao site", "Suave" e "Cor do
  * site", a foto escolhida fica guardada, mas não aparece.
  */
 export function heroShowsPhoto(style: unknown): boolean {

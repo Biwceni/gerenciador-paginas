@@ -256,7 +256,7 @@ export function FormEditor({
   const blocked = inUse || messages > 0
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <Link className="gp-btn gp-btn--sm gp-btn--ghost gp-back" href={formsHref}>

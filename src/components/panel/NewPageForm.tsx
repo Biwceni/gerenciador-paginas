@@ -136,7 +136,7 @@ export function NewPageForm({
   }
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <Link

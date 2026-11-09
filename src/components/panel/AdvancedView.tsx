@@ -17,7 +17,7 @@ export function AdvancedView(props: AdminViewServerProps) {
 
   return (
     <PanelTemplate {...props}>
-      <div className="gp-page">
+      <div className="gp-page" role="main">
         <header className="gp-pagehead">
           <div>
             <h1>Avançado</h1>

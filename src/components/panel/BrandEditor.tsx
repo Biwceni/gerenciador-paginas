@@ -291,7 +291,7 @@ export function BrandEditor({
   )
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Sua marca</h1>

@@ -40,6 +40,14 @@ export const KEEPABLE_TEXTS: readonly string[] = [
   'Cardápio',
   'Serviços e preços',
   'Programação',
+  // Títulos curtos de passo e de chamada: a pessoa costuma manter, e o aviso não sumia nunca (teste
+  // como usuário leigo, página Encomendas). O texto de cada passo continua contando como exemplo.
+  'Faça seu pedido',
+  'Faça sua encomenda',
+  'Conte o que você quer',
+  'Receba o orçamento',
+  'Receba o valor',
+  'Combine a entrega',
 ]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()

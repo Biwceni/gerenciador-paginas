@@ -108,7 +108,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
   )
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Fotos</h1>

@@ -728,6 +728,17 @@
     font-size: min(var(--fs-h1), clamp(36px, 5.6cqi, 76px));
   }
 
+  /* Foto ao lado: o título tem só metade da largura. Uma palavra comprida no tamanho grande da
+     personalidade ("Encomendas" a 124 px) passava da coluna e ficava escondida atrás da foto. Aqui
+     o teto é 84 px, e uma palavra que ainda assim não couber quebra em vez de sumir. */
+  .hero--side:not(.hero--long) .hero__title {
+    font-size: min(var(--fs-h1), clamp(36px, 6.4cqi, 84px));
+  }
+
+  .hero--side .hero__title {
+    overflow-wrap: break-word;
+  }
+
   /*
    * Palavras em destaque no título: itálico, na cor do site com contraste de leitura em cada fundo
    * (theme.ts). Na prévia do editor, só a cor (`::highlight`, EditorHighlight.tsx).

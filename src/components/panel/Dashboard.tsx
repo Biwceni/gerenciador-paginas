@@ -196,7 +196,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   ]
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>{greeting()}! Este é o seu site.</h1>

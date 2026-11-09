@@ -47,6 +47,13 @@ describe('textos de exemplo', () => {
     expect(texts).not.toContain('como funciona')
   })
 
+  it('títulos curtos de passo e de chamada não contam; o texto do passo continua contando', () => {
+    for (const title of ['faça seu pedido', 'conte o que você quer', 'receba o orçamento']) {
+      expect(texts).not.toContain(title)
+    }
+    expect(texts).toContain('quanto mais detalhes, mais certo o orçamento.')
+  })
+
   it('modelo num formato inválido fica de fora', () => {
     expect(exampleTexts([{ pages: [{ title: 'x', slug: 'x', content: { foo: 1 } }] }])).toEqual([])
   })
