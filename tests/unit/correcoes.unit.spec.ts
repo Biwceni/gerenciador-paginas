@@ -5,7 +5,7 @@ import { archivedSlug } from '@/lib/applyTemplate'
 import { blendColors, contrastRatio } from '@/lib/colors'
 import { fallbackFontFaces } from '@/lib/fontFallback'
 import { preloadFontFiles } from '@/lib/fontPreload'
-import { pageTitle, UNTITLED_PAGE } from '@/lib/pageTitle'
+import { distinctPageTitles, pageTitle, UNTITLED_PAGE } from '@/lib/pageTitle'
 import { sortPagesForList } from '@/lib/panel'
 import { siteInitials } from '@/lib/initials'
 import { breadcrumbJsonLd, jsonLdText, localBusinessJsonLd } from '@/lib/structuredData'
@@ -14,6 +14,19 @@ import type { Site } from '@/payload-types'
 import { templateSeeds } from '@/seed/templates/data'
 
 // Correções do redesign v3, entrega 0.
+
+describe('páginas com o mesmo nome nas listas de escolha', () => {
+  it('ganham o endereço junto; nome único fica como está', () => {
+    const titles = distinctPageTitles([
+      { id: 1, title: 'Início', slug: 'inicio' },
+      { id: 2, title: 'Início', slug: 'inicio-5' },
+      { id: 3, title: 'Cardápio', slug: 'cardapio' },
+    ])
+    expect(titles.get(1)).toBe('Início (/inicio)')
+    expect(titles.get(2)).toBe('Início (/inicio-5)')
+    expect(titles.get(3)).toBe('Cardápio')
+  })
+})
 
 describe('página sem nome', () => {
   it('aparece como "Página sem nome"', () => {

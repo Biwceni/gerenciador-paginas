@@ -25,7 +25,7 @@ export async function SettingsView(props: AdminViewServerProps) {
     payload.find({
       collection: 'pages',
       where: { _status: { equals: 'published' } },
-      select: { title: true },
+      select: { title: true, slug: true },
       depth: 0,
       draft: false,
       limit: 500,
@@ -94,7 +94,7 @@ export async function SettingsView(props: AdminViewServerProps) {
         draftPrivacy={
           draftPrivacy ? { id: draftPrivacy.id, title: pageTitle(draftPrivacy.title) } : null
         }
-        livePages={live.docs.map(({ id, title }) => ({ id, title: pageTitle(title) }))}
+        livePages={live.docs.map(({ id, title, slug }) => ({ id, title: pageTitle(title), slug }))}
         taglineHint={exampleTagline(site.colors, models.docs)}
         pending={site._status === 'draft'}
         people={

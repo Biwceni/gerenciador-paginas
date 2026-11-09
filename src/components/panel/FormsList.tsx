@@ -41,7 +41,7 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
   }
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Formulários</h1>

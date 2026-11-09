@@ -37,7 +37,7 @@ export function shareImagePath(pageId: number, ...versions: (string | null | und
 
 /**
  * A foto do banner da página (o primeiro banner que mostra foto) ou, sem ele, a primeira foto que
- * aparece. A foto guardada num banner de fundo "Claro", "Suave" ou "Cor do site" não aparece no site,
+ * aparece. A foto guardada num banner de fundo "Igual ao site", "Suave" ou "Cor do site" não aparece no site,
  * então também não entra aqui.
  */
 export function bannerPhotoId(data: PuckPageData): number | null {

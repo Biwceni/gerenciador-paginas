@@ -109,7 +109,7 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
   }
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Páginas</h1>

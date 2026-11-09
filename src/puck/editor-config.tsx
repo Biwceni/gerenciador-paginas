@@ -111,11 +111,14 @@ const thumbChoice = <V extends string>(
   ),
 })
 
-/** Fundo da seção: Claro, Suave ou Cor do site, cada um desenhado nas cores do site. */
+/**
+ * Fundo da seção: Igual ao site, Suave ou Cor do site, cada um desenhado nas cores do site. O
+ * primeiro se chamava "Claro" e confundia num site de fundo escuro.
+ */
 const sectionStyle = thumbChoice(
   'Fundo',
   [
-    { value: 'light', label: 'Claro', thumb: 'bg-light' },
+    { value: 'light', label: 'Igual ao site', thumb: 'bg-light' },
     { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
     { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
   ],
@@ -246,7 +249,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         [
           { value: 'image', label: 'Foto', thumb: 'hero-image' },
           { value: 'side', label: 'Foto ao lado', thumb: 'hero-side' },
-          { value: 'light', label: 'Claro', thumb: 'bg-light' },
+          { value: 'light', label: 'Igual ao site', thumb: 'bg-light' },
           { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
           { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
         ],
@@ -605,7 +608,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         [
           { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
           { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
-          { value: 'light', label: 'Claro', thumb: 'bg-light' },
+          { value: 'light', label: 'Igual ao site', thumb: 'bg-light' },
         ],
         3,
       ),

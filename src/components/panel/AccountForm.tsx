@@ -62,7 +62,7 @@ export function AccountForm({ apiRoute, user }: Props) {
   }, [apiRoute, error, name, router, saved, user.id])
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Minha conta</h1>

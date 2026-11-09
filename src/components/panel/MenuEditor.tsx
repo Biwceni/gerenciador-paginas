@@ -15,6 +15,7 @@ import {
   SiteHeaderView,
 } from '@/components/site/SiteChrome'
 import { isSafeURL, validateExternalURL } from '@/lib/links'
+import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Header, Media } from '@/payload-types'
 import type { PageSummary } from '@/puck/summary'
@@ -273,7 +274,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   )
 
   return (
-    <div className="gp-page">
+    <div className="gp-page" role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Menu e rodapé</h1>
@@ -674,6 +675,8 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
         ? `section:${pageID(value) ?? ''}:${value?.section ?? ''}`
         : current
   const urlCheck = current === 'url' && value?.url ? validateExternalURL(value.url) : true
+  // Duas páginas com o mesmo nome ("Início" e "Início") aparecem com o endereço junto.
+  const titles = distinctPageTitles(pages)
 
   const choose = (option: string) => {
     const [kind, page, section] = option.split(':')
@@ -695,7 +698,7 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
         <optgroup label="Páginas">
           {pages.map((page) => (
             <option key={page.id} value={`page:${page.id}`}>
-              {page.title}
+              {titles.get(page.id)}
               {page.published ? '' : ' (rascunho)'}
             </option>
           ))}
@@ -705,7 +708,7 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
             {pages.flatMap((page) =>
               page.sections.map((section) => (
                 <option key={`${page.id}:${section.id}`} value={`section:${page.id}:${section.id}`}>
-                  {page.title} › {section.label}
+                  {titles.get(page.id)} › {section.label}
                   {page.published ? '' : ' (rascunho)'}
                 </option>
               )),

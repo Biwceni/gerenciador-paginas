@@ -105,7 +105,7 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
   const download = `${apiRoute}/form-submissions/planilha${formId ? `?formulario=${formId}` : ''}`
 
   return (
-    <div className={`gp-page gp-inboxpage${open ? ' is-open' : ''}`}>
+    <div className={`gp-page gp-inboxpage${open ? ' is-open' : ''}`} role="main">
       <header className="gp-pagehead">
         <div>
           <h1>Mensagens</h1>

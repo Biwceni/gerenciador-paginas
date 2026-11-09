@@ -22,7 +22,7 @@ export async function StartView(props: AdminViewServerProps) {
   if (user.role !== 'admin') {
     return (
       <PanelTemplate {...props}>
-        <div className="gp-page">
+        <div className="gp-page" role="main">
           <header className="gp-pagehead">
             <div>
               <h1>Começar com um modelo</h1>
