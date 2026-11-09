@@ -76,9 +76,9 @@ export function PhotoField({
   return (
     <div className="ed-photo-field">
       {photo ? (
-        <img alt="" className="ed-thumb" src={thumbnailURL(photo)} />
+        <img alt="" className="ed-pic" src={thumbnailURL(photo)} />
       ) : (
-        <span className="ed-thumb ed-thumb--empty">{value ? 'Foto apagada' : 'Sem foto'}</span>
+        <span className="ed-pic ed-pic--empty">{value ? 'Foto apagada' : 'Sem foto'}</span>
       )}
       <div className="ed-photo-field__actions">
         <button
@@ -141,9 +141,9 @@ export function PhotoListField<T extends PhotoListItem>({
         return (
           <div className="ed-photo-list__item" key={`${ref.mediaId}-${index}`}>
             {photo ? (
-              <img alt="" className="ed-thumb ed-thumb--sm" src={thumbnailURL(photo)} />
+              <img alt="" className="ed-pic ed-pic--sm" src={thumbnailURL(photo)} />
             ) : (
-              <span className="ed-thumb ed-thumb--sm ed-thumb--empty">Apagada</span>
+              <span className="ed-pic ed-pic--sm ed-pic--empty">Apagada</span>
             )}
             <span className="ed-photo-list__name">
               {photo ? photoLabel(photo) : 'Foto apagada'}

@@ -270,7 +270,7 @@ export function PublishDialog({
             de tela.
             {weakPhotos.map((photo) => (
               <span className="ed-alt-row" key={photo.id}>
-                <img alt="" className="ed-thumb ed-thumb--sm" src={thumbnailURL(photo)} />
+                <img alt="" className="ed-pic ed-pic--sm" src={thumbnailURL(photo)} />
                 <input
                   aria-label={`Nova descrição para a foto "${photoLabel(photo)}"`}
                   className="ed-input"

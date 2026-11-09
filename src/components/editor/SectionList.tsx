@@ -40,16 +40,21 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
     const { content } = s.appState.data
     return content[insertIndex(content, itemSelector) - 1]?.type ?? null
   })
-  const hint = above
-    ? `Clique para colocar abaixo de “${LABELS[above] ?? above}”, ou arraste até o lugar.`
-    : 'Clique para colocar no fim da página, ou arraste até o lugar.'
+  const where = above ? `abaixo de “${LABELS[above] ?? above}”` : 'no fim da página'
 
   return (
     <div className="ed-panel">
       <ClosePanel />
       <div>
         <h3>Adicionar seção</h3>
-        <p className="ed-hint">{hint} As miniaturas já usam as cores do seu site.</p>
+        {/* No celular não dá para arrastar com conforto: a frase fala só em tocar. */}
+        <p className="ed-hint">
+          <span className="ed-hide-phone">
+            Clique para colocar {where}, ou arraste até o lugar.
+          </span>
+          <span className="ed-show-phone">Toque para colocar {where}.</span> As miniaturas já usam
+          as cores do seu site.
+        </p>
       </div>
       {children}
     </div>

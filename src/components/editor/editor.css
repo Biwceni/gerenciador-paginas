@@ -266,6 +266,10 @@
   }
 }
 
+.ed-show-phone {
+  display: none;
+}
+
 @media (max-width: 637px) {
   .ed-hide-phone {
     display: none;
@@ -327,6 +331,7 @@ textarea.ed-input {
   color: var(--ed-muted);
   font-size: var(--gp-fs-help);
   line-height: 1.4;
+  text-wrap: pretty;
 }
 
 .ed-hint--warn {
@@ -376,6 +381,17 @@ textarea.ed-input {
   white-space: nowrap;
 }
 
+.ed-serp + .ed-hint {
+  margin: 8px 0 14px;
+}
+
+.ed-switch input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ed-accent);
+}
+
 .ed-fieldset {
   margin: 18px 0 0;
   padding: 14px;
@@ -402,7 +418,7 @@ textarea.ed-input {
   min-width: 0;
 }
 
-.ed-thumb {
+.ed-pic {
   display: grid;
   place-items: center;
   flex: none;
@@ -416,12 +432,12 @@ textarea.ed-input {
   text-align: center;
 }
 
-.ed-thumb--sm {
+.ed-pic--sm {
   width: 48px;
   height: 36px;
 }
 
-.ed-thumb--empty {
+.ed-pic--empty {
   border: 1px dashed var(--ed-line);
 }
 
@@ -509,6 +525,11 @@ textarea.ed-input {
 .ed-dialog__head h2 {
   margin: 0 0 4px;
   font-size: var(--gp-fs-heading);
+}
+
+.ed-dialog__head p {
+  margin: 0;
+  text-wrap: pretty;
 }
 
 .ed-dialog__body {
@@ -992,14 +1013,33 @@ textarea.ed-input {
     padding: 8px 10px;
   }
 
-  /* Voltar, Publicar e o ⋯ com 44 px de toque. */
-  .ed-top .ed-icon-btn {
+  /* Toque de 44 px no celular: botões, setas da Ordem, X das janelas e campos. */
+  .ed-icon-btn,
+  .ed-icon-btn--sm,
+  .ed-photo-list__item .ed-icon-btn {
     width: 44px;
     height: 44px;
   }
 
-  .ed-top .ed-btn {
+  .ed-btn,
+  .ed-btn--sm,
+  .ed-input,
+  .ed-switch {
     min-height: 44px;
+  }
+
+  /* O endereço do site fica em cima e o campo usa a largura toda. */
+  .ed-prefix {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .ed-prefix .ed-input {
+    flex: 1 1 100%;
+  }
+
+  .ed-show-phone {
+    display: inline;
   }
 
   .ed-root [class*='PuckCanvas_'] {
