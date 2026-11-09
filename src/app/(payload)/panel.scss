@@ -1597,6 +1597,27 @@ time {
   gap: 16px;
 }
 
+// "Confira seu e-mail": dica, "Enviar de novo" e o aviso de reenvio.
+.gp-authsent {
+  display: grid;
+  gap: 10px;
+
+  .gp-hint {
+    margin: 0;
+  }
+
+  // Vazio, não ocupa espaço; continua na página para o leitor de tela anunciar o reenvio.
+  .gp-authsent__status:empty {
+    margin-top: -10px;
+  }
+}
+
+// O título do cartão recebe o foco quando o cartão troca de estado (leitor de tela). Não é um
+// controle, então fica sem o anel de foco.
+.gp-authcard__head h1[tabindex='-1']:focus {
+  outline: none;
+}
+
 // Campo de senha com o olho à direita (PasswordInput.tsx). O botão tem 44 px e cabe na altura do
 // campo; o texto ganha espaço à direita para não passar por baixo dele.
 .gp-pwinput {
@@ -3605,6 +3626,48 @@ textarea.gp-input {
   .gp-logopick {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+// ---------- página não encontrada dentro do painel (avaliação Impeccable, rodada 1) ----------
+// A tela é do Payload (`not-found`); os textos vêm das traduções do config. Aqui ela ganha o título,
+// o texto e o botão principal do painel, com área de toque de 44 px.
+
+.not-found {
+  h1 {
+    font-size: clamp(26px, 3.4vw, var(--gp-fs-title));
+    font-weight: 700;
+    color: var(--gp-ink);
+  }
+
+  p {
+    color: var(--gp-muted);
+    font-size: var(--gp-fs-text);
+    margin-top: 4px;
+    max-width: 52ch;
+  }
+
+  .not-found__button.btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: var(--gp-accent);
+    color: var(--gp-accent-ink);
+    font-size: var(--gp-fs-text);
+    font-weight: 600;
+    box-shadow: none;
+
+    &:hover {
+      background: var(--gp-accent);
+      filter: brightness(1.07);
+    }
+
+    .btn__label {
+      font: inherit;
+    }
   }
 }
 

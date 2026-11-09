@@ -91,13 +91,22 @@ export default buildConfig({
           Component: '/components/auth/AuthViews#LoginView',
           meta: { title: 'Entrar' },
         },
+        // O título da aba de Esqueci a senha, Primeira conta, Sem acesso e Fim da sessão não vem
+        // do `meta` destas telas: o Payload usa as traduções (`authentication.forgotPassword`,
+        // `authentication.createFirstUser` e `error.unauthorized`, mais abaixo).
         forgot: {
           Component: '/components/auth/AuthViews#ForgotView',
-          meta: { title: 'Criar uma senha nova' },
+        },
+        // Sem acesso e fim da sessão (avaliação Impeccable, rodada 1): no cartão das telas de
+        // entrar, no lugar das telas cruas do Payload.
+        unauthorized: {
+          Component: '/components/auth/AuthViews#UnauthorizedView',
+        },
+        inactivity: {
+          Component: '/components/auth/AuthViews#InactivityView',
         },
         createFirstUser: {
           Component: '/components/auth/AuthViews#FirstUserView',
-          meta: { title: 'Crie sua conta' },
         },
         // Link dos e-mails de convite e de senha: /admin/nova-senha/<token>. Sem `:token` no
         // endereço e sem `exact`: só assim o Payload abre a tela para quem ainda não entrou.
@@ -198,6 +207,8 @@ export default buildConfig({
           // As telas de entrar comparam com estas frases (`src/lib/auth.ts`).
           emailOrPasswordIncorrect: WRONG_LOGIN_MESSAGE,
           userLocked: LOCKED_MESSAGE,
+          // Título da aba de Sem acesso, Fim da sessão e Sair, e a mensagem do erro 401 da API.
+          unauthorized: 'Você não tem acesso a esta parte.',
         },
         general: {
           // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
@@ -206,6 +217,12 @@ export default buildConfig({
           emailAddress: 'Endereço de e-mail',
           restoring: 'Restaurando…',
           time: 'Hora',
+          // Página não encontrada dentro do painel (a tela é do Payload; só os textos são nossos).
+          notFound: 'Página não encontrada',
+          nothingFound: 'Esta página não existe',
+          sorryNotFound:
+            'O endereço pode ter mudado ou sido digitado errado. Use o menu ou volte para o início.',
+          backToDashboard: 'Voltar para o início',
         },
         authentication: {
           backToLogin: 'Voltar para a tela de entrar',
@@ -214,6 +231,15 @@ export default buildConfig({
           logBackIn: 'Entrar novamente',
           login: 'Entrar',
           loginUser: 'Entrar',
+          // Títulos das abas de Esqueci a senha e Primeira conta.
+          forgotPassword: 'Esqueci minha senha',
+          createFirstUser: 'Crie sua conta',
+          // Sair pelo menu e fim da sessão por tempo sem uso.
+          loggedOutSuccessfully: 'Você saiu do painel.',
+          loggedOutInactivity: 'Você saiu por segurança depois de um tempo sem uso.',
+          stayLoggedIn: 'Continuar no painel',
+          youAreInactive:
+            'Faz um tempo que você não mexe no painel. Por segurança, ele vai fechar em instantes. Quer continuar?',
         },
       },
     },

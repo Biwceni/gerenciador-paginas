@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { WhyDisabled } from '@/components/panel/WhyDisabled'
 
-import { AuthCard, AuthError, ExpiredCard } from './AuthCard'
+import { AuthCard, AuthError, ExpiredCard, focusAuthTitle } from './AuthCard'
 import { authRequest } from './authApi'
 import { PasswordFields, passwordMissing, passwordReady } from './PasswordFields'
 
@@ -47,7 +47,12 @@ export function NewPasswordForm(props: Props) {
     else setError(result.message || 'Não deu para salvar agora. Tente de novo em alguns minutos.')
   }
 
-  if (expired) return <ExpiredCard forgotHref={forgotHref} loginHref={loginHref} />
+  // O link venceu com a tela aberta: o cartão troca e o foco vai para o título novo.
+  useEffect(() => {
+    if (expired) focusAuthTitle()
+  }, [expired])
+
+  if (expired) return <ExpiredCard focusTitle forgotHref={forgotHref} loginHref={loginHref} />
 
   return (
     <AuthCard
@@ -58,7 +63,7 @@ export function NewPasswordForm(props: Props) {
           </>
         ) : (
           <>
-            Para a conta <b>{email}</b>.
+            Escolha uma senha nova para a conta <b>{email}</b>.
           </>
         )
       }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { nameProblem } from '@/components/auth/FirstUserForm'
+import { passwordMissing } from '@/components/auth/PasswordFields'
 import { Users } from '@/collections/Users'
 import { inviteEmailHTML } from '@/email/invite'
 import { resetPasswordEmailHTML } from '@/email/resetPassword'
@@ -69,5 +71,47 @@ describe('avisos dos campos de entrar', () => {
     expect(emailProblem(' fabio@exemplo.com.br ')).toBeNull()
     expect(passwordProblem('')).toBe('Digite a sua senha.')
     expect(passwordProblem('x')).toBeNull()
+  })
+})
+
+// Avaliação Impeccable, rodada 1 (telas A2 a A7).
+describe('telas de acesso (rodada 1 do Impeccable)', () => {
+  it('antes de digitar, o motivo do botão desligado é um convite, não um erro', () => {
+    expect(passwordMissing('', '')).toBe('Crie uma senha para continuar.')
+    expect(passwordMissing('abc', '')).toBe('Siga as regras da senha acima.')
+    expect(passwordMissing('senha1234', 'senha')).toBe('Repita a mesma senha no segundo campo.')
+    expect(passwordMissing('senha1234', 'senha1234')).toBeNull()
+  })
+
+  it('a primeira conta pede o nome', () => {
+    expect(nameProblem('')).toBe('Digite seu nome.')
+    expect(nameProblem('   ')).toBe('Digite seu nome.')
+    expect(nameProblem('Ana')).toBeNull()
+  })
+
+  it('sem acesso e fim da sessão usam as telas nossas', async () => {
+    const views = (await config).admin.components?.views as Record<string, { Component?: string }>
+    expect(views.unauthorized?.Component).toBe('/components/auth/AuthViews#UnauthorizedView')
+    expect(views.inactivity?.Component).toBe('/components/auth/AuthViews#InactivityView')
+  })
+
+  it('os textos do Payload nestas telas ficam simples', async () => {
+    const pt = (await config).i18n.translations as {
+      pt: { general: Record<string, string>; authentication: Record<string, string> }
+    }
+    const texts = [
+      pt.pt.general.notFound,
+      pt.pt.general.nothingFound,
+      pt.pt.general.sorryNotFound,
+      pt.pt.general.backToDashboard,
+      pt.pt.authentication.loggedOutSuccessfully,
+      pt.pt.authentication.loggedOutInactivity,
+      pt.pt.authentication.stayLoggedIn,
+      pt.pt.authentication.youAreInactive,
+    ]
+    for (const text of texts) {
+      expect(text).toBeTruthy()
+      expect(text).not.toMatch(/requisição|log out|recurso|painel de controle/i)
+    }
   })
 })
