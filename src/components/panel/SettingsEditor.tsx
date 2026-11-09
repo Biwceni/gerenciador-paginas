@@ -48,7 +48,8 @@ const SECTIONS: [string, string][] = [
   ['st-contato', 'Contato'],
   ['st-redes', 'Redes sociais'],
   ['st-google', 'Google'],
-  ['st-pessoas', 'Pessoas com acesso'],
+  // Nome curto no atalho: com o nome inteiro, os atalhos quebravam em 2 linhas perto de 1050 px.
+  ['st-pessoas', 'Pessoas'],
   ['st-modelo', 'Começar de novo'],
 ]
 

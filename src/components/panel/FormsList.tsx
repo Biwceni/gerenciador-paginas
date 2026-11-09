@@ -68,7 +68,10 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
                   </div>
                 </div>
                 <div className="gp-row__actions">
-                  {/* "Mudar perguntas" por último: fica sempre no mesmo lugar, com ou sem respostas. */}
+                  <Link className="gp-btn gp-btn--sm" href={`${formsHref}/${form.id}`}>
+                    <PanelIcon name="edit" size={14} />
+                    Mudar perguntas
+                  </Link>
                   {form.messages > 0 && (
                     <Link
                       className="gp-btn gp-btn--sm"
@@ -77,10 +80,6 @@ export function FormsList({ adminRoute, apiRoute, forms }: Props) {
                       Ver respostas
                     </Link>
                   )}
-                  <Link className="gp-btn gp-btn--sm" href={`${formsHref}/${form.id}`}>
-                    <PanelIcon name="edit" size={14} />
-                    Mudar perguntas
-                  </Link>
                 </div>
               </li>
             ))}
