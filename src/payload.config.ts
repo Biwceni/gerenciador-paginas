@@ -91,23 +91,22 @@ export default buildConfig({
           Component: '/components/auth/AuthViews#LoginView',
           meta: { title: 'Entrar' },
         },
+        // O título da aba de Esqueci a senha, Primeira conta, Sem acesso e Fim da sessão não vem
+        // do `meta` destas telas: o Payload usa as traduções (`authentication.forgotPassword`,
+        // `authentication.createFirstUser` e `error.unauthorized`, mais abaixo).
         forgot: {
           Component: '/components/auth/AuthViews#ForgotView',
-          meta: { title: 'Esqueci minha senha' },
         },
         // Sem acesso e fim da sessão (avaliação Impeccable, rodada 1): no cartão das telas de
         // entrar, no lugar das telas cruas do Payload.
         unauthorized: {
           Component: '/components/auth/AuthViews#UnauthorizedView',
-          meta: { title: 'Sem acesso' },
         },
         inactivity: {
           Component: '/components/auth/AuthViews#InactivityView',
-          meta: { title: 'Você saiu por segurança' },
         },
         createFirstUser: {
           Component: '/components/auth/AuthViews#FirstUserView',
-          meta: { title: 'Crie sua conta' },
         },
         // Link dos e-mails de convite e de senha: /admin/nova-senha/<token>. Sem `:token` no
         // endereço e sem `exact`: só assim o Payload abre a tela para quem ainda não entrou.
@@ -208,6 +207,8 @@ export default buildConfig({
           // As telas de entrar comparam com estas frases (`src/lib/auth.ts`).
           emailOrPasswordIncorrect: WRONG_LOGIN_MESSAGE,
           userLocked: LOCKED_MESSAGE,
+          // Título da aba de Sem acesso, Fim da sessão e Sair, e a mensagem do erro 401 da API.
+          unauthorized: 'Você não tem acesso a esta parte.',
         },
         general: {
           // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
@@ -230,6 +231,9 @@ export default buildConfig({
           logBackIn: 'Entrar novamente',
           login: 'Entrar',
           loginUser: 'Entrar',
+          // Títulos das abas de Esqueci a senha e Primeira conta.
+          forgotPassword: 'Esqueci minha senha',
+          createFirstUser: 'Crie sua conta',
           // Sair pelo menu e fim da sessão por tempo sem uso.
           loggedOutSuccessfully: 'Você saiu do painel.',
           loggedOutInactivity: 'Você saiu por segurança depois de um tempo sem uso.',

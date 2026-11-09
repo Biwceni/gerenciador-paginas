@@ -128,6 +128,7 @@ test.describe('Entrar e senha', () => {
   test('esqueci a senha: título, e-mail digitado, foco e reenvio', async ({ page }) => {
     await page.goto(`${BASE}/admin/forgot`)
     await expect(page.getByRole('heading', { name: 'Esqueci minha senha' })).toBeVisible()
+    await expect(page).toHaveTitle(/^Esqueci minha senha/)
     await expect(page.getByRole('link', { name: 'Voltar para entrar' })).toBeVisible()
     await page.fill('#fg-email', 'ninguem@exemplo.com.br')
     await page.click('button[type="submit"]')
@@ -173,6 +174,7 @@ test.describe('Entrar e senha', () => {
     const home = page.getByRole('link', { name: 'Ir para o início do painel' })
     expect((await home.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
     await expect(page.locator('body')).not.toContainText(/log out|requisição/i)
+    await expect(page).toHaveTitle(/^Você não tem acesso a esta parte/)
 
     await page.goto(`${BASE}/admin/rota-que-nao-existe`)
     await expect(page.getByRole('heading', { name: 'Esta página não existe' })).toBeVisible()
@@ -182,6 +184,7 @@ test.describe('Entrar e senha', () => {
     const loggedOut = page.waitForResponse((response) => response.url().includes('/users/logout'))
     await page.goto(`${BASE}/admin/logout-inactivity?redirect=%2Fadmin%2Fpaginas`)
     await expect(page.getByRole('heading', { name: 'Você saiu por segurança' })).toBeVisible()
+    await expect(page).toHaveTitle(/^Você saiu por segurança/)
     await expect(page.getByRole('link', { name: 'Entrar de novo' })).toHaveAttribute(
       'href',
       '/admin/login?redirect=%2Fadmin%2Fpaginas',
@@ -190,5 +193,58 @@ test.describe('Entrar e senha', () => {
     await loggedOut
     await page.goto(`${BASE}/admin`)
     await expect(page).toHaveURL(/\/admin\/login/)
+  })
+})
+
+// A Primeira conta só abre com o banco sem contas: as contas saem antes e voltam depois (a conta de
+// guarda e a de teste, pelo `seedTestUser`). O cadastro em si não é enviado.
+test.describe('Primeira conta', () => {
+  test.beforeAll(async () => {
+    const payload = await getPayload({ config })
+    // Direto no banco: o gancho `keepOneAdmin` recusa apagar o último administrador.
+    await payload.db.deleteMany({ collection: 'users', where: {} })
+  })
+
+  test.afterAll(async () => {
+    await seedTestUser()
+    await cleanupTestUser()
+  })
+
+  test('confere nome e e-mail na tela e tem o olho nos dois campos de senha', async ({ page }) => {
+    let sent = false
+    await page.route('**/api/users/first-register', async (route) => {
+      sent = true
+      await route.abort()
+    })
+    await page.goto(`${BASE}/admin/create-first-user`)
+    await expect(page.getByRole('heading', { name: 'Crie sua conta' })).toBeVisible()
+    await expect(page).toHaveTitle(/^Crie sua conta/)
+
+    // Antes de digitar, as regras ficam neutras e o motivo do botão é um convite.
+    await expect(page.locator('.gp-pwrules li svg path')).toHaveCount(0)
+    await expect(page.locator('#fu-why')).toHaveText('Crie uma senha para continuar.')
+
+    for (const id of ['#pw-new', '#pw-confirm']) {
+      await page.locator(`${id} + .gp-pwinput__toggle`).click()
+      await expect(page.locator(id)).toHaveAttribute('type', 'text')
+    }
+
+    await page.fill('#fu-email', 'fabio@')
+    await page.fill('#pw-new', 'senha12345')
+    await page.fill('#pw-confirm', 'senha12345')
+    await page.click('button[type="submit"]')
+
+    await expect(page.locator('#fu-name-problem')).toHaveText('Digite seu nome.')
+    await expect(page.locator('#fu-name')).toHaveAttribute('aria-invalid', 'true')
+    await expect(page.locator('#fu-name')).toBeFocused()
+    await expect(page.locator('#fu-email-problem')).toHaveClass(/gp-warnbox--danger/)
+    await expect(page.locator('#fu-email')).toHaveAttribute('aria-invalid', 'true')
+    // O navegador não conferiu nada sozinho (o form tem `noValidate`) e nada foi enviado.
+    expect(
+      await page
+        .locator('#fu-email')
+        .evaluate((input) => (input as HTMLInputElement).validationMessage),
+    ).not.toBe('')
+    expect(sent).toBe(false)
   })
 })

@@ -120,6 +120,20 @@ export function UnauthorizedView(props: AdminViewServerProps) {
       </AuthCard>
     )
   }
+  // Conta que não pode entrar no painel: o `/admin` mandaria de volta para cá, então a saída é
+  // trocar de conta.
+  if (!props.initPageResult.permissions?.canAccessAdmin) {
+    return (
+      <AuthCard
+        lead="Esta conta não pode abrir o painel. Se precisar, peça acesso a quem cuida do site."
+        title="Você não tem acesso a esta parte"
+      >
+        <a className="gp-btn gp-btn--primary gp-btn--lg gp-btn--block" href={routes.logout}>
+          Entrar com outra conta
+        </a>
+      </AuthCard>
+    )
+  }
   return (
     <AuthCard
       lead="Esta conta não pode abrir esta tela. Se precisar, peça acesso a quem cuida do site."
