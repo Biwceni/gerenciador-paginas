@@ -110,6 +110,19 @@ const GLOBAL_SCREEN: Record<PendingGlobal['slug'], PanelPath> = {
 }
 
 /**
+ * Linhas do cartão "Mudanças que ainda não estão no ar": o topo e o rodapé são publicados juntos,
+ * na mesma tela, então os dois viram uma linha só, "Menu e rodapé".
+ */
+function pendingGlobalLines(globals: PendingGlobal[]): PendingGlobal[] {
+  const header = globals.some((global) => global.slug === 'header')
+  const footer = globals.some((global) => global.slug === 'footer')
+  if (!header || !footer) return globals
+  return globals
+    .filter((global) => global.slug !== 'footer')
+    .map((global) => (global.slug === 'header' ? { ...global, label: 'Menu e rodapé' } : global))
+}
+
+/**
  * Tela "Meu site" (no lugar do painel inicial do Payload): o que falta publicar, atalhos para o
  * trabalho de todo dia e as páginas mexidas por último. Segue o `vDashboard` do protótipo.
  */
@@ -218,7 +231,7 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
                 </Link>
               </li>
             )}
-            {pendingGlobals.map((global) => (
+            {pendingGlobalLines(pendingGlobals).map((global) => (
               <li key={global.slug}>
                 <span>{global.label}</span>
                 <Link

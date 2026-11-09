@@ -2058,22 +2058,13 @@ textarea.gp-input {
   gap: 10px;
 }
 
-// Nomes das colunas dos links, só no computador. A última coluna tem a largura dos três botões.
-.gp-menuhead {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 116px;
-  gap: 8px;
-  margin-bottom: -6px;
-  color: var(--gp-muted);
-  font-size: var(--gp-fs-small);
-  font-weight: 600;
-}
-
+// Cada link: o texto na linha inteira (um <input> não quebra linha, então precisa de largura para
+// não cortar o texto); embaixo, a página e os botões de mover e tirar.
 .gp-menuitem {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 116px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: start;
+  align-items: end;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--gp-line);
 
@@ -2091,9 +2082,12 @@ textarea.gp-input {
     min-width: 0;
   }
 
-  // Rótulo de cada campo: só no celular, onde as colunas não têm nome em cima.
+  > .gp-menuitem__field:first-child {
+    grid-column: 1 / -1;
+  }
+
+  // Rótulo de cada campo, em cima dele.
   &__label {
-    display: none;
     font-size: var(--gp-fs-small);
     font-weight: 600;
     color: var(--gp-muted);
@@ -2249,28 +2243,6 @@ textarea.gp-input {
 
   .gp-previewbox {
     position: static;
-  }
-}
-
-// Até 1199px a coluna dos campos fica estreita: "Abre a página" desce para baixo do texto,
-// para o texto do link nunca ficar cortado.
-@media (max-width: 1199px) {
-  .gp-menuhead {
-    display: none;
-  }
-
-  .gp-menuitem {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-
-    &__label {
-      display: block;
-    }
-
-    > .gp-menuitem__field:nth-child(2) {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
   }
 }
 
@@ -3547,13 +3519,18 @@ textarea.gp-input {
   text-align: left;
   cursor: pointer;
   min-width: 0;
+  // A letra do nome acompanha a largura do cartão (container query).
+  container-type: inline-size;
 
-  // O nome do negócio em até 2 linhas, sem partir palavra no meio ("Confeitar / ia").
+  // O nome do negócio em até 2 linhas, sem partir palavra no meio ("Confeitar / ia"). No
+  // computador, os 3 cartões ficam lado a lado numa coluna estreita: a letra diminui com o cartão
+  // (cerca de 18 px em 100 px), para uma palavra como "Confeitaria" caber inteira. Só uma palavra
+  // mais longa que o cartão todo ainda é partida (break-word), em vez de ficar cortada.
   &__title {
-    font-size: 22px;
+    font-size: clamp(16px, 18cqi, 22px);
     font-weight: 600;
     line-height: 1.15;
-    overflow-wrap: normal;
+    overflow-wrap: break-word;
     word-break: normal;
     hyphens: none;
     display: -webkit-box;
@@ -3783,6 +3760,12 @@ textarea.gp-input {
   .gp-seg button,
   .gp-seg a {
     min-height: 44px;
+  }
+
+  // Botão só com ícone (o "Ver" de Páginas, que esconde o texto no celular): 44 px de largura.
+  .gp-btn--icon-sm {
+    min-width: 44px;
+    justify-content: center;
   }
 }
 

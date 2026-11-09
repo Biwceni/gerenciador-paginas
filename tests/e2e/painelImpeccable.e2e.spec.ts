@@ -171,12 +171,36 @@ test.describe.serial('painel: avaliação Impeccable', () => {
       .locator('.gp-logopick')
       .evaluate((el) => getComputedStyle(el).borderTopStyle)
     expect(logo).not.toBe('dashed')
+    // O nome do negócio nos cartões de Letras: nenhuma palavra cortada na lateral.
+    const cut = await page
+      .locator('.gp-pair__title')
+      .evaluateAll((titles) =>
+        titles.filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent),
+      )
+    expect(cut).toEqual([])
   })
 
   test('Fotos: filtro "Fotos pequenas"', async () => {
     test.skip(!photoId, 'A foto de teste não subiu (sem o Storage).')
     await open(page, '/admin/fotos')
     await expect(page.getByRole('button', { name: /Fotos pequenas/ })).toBeVisible()
+  })
+
+  test('Menu e rodapé: texto de 20 letras sem corte, no computador e no celular', async () => {
+    for (const width of [1280, 1440, 390]) {
+      await page.setViewportSize({ width, height: 900 })
+      await open(page, '/admin/menu-e-rodape')
+      // Só mede: põe o texto direto no campo, sem avisar o React (nada é salvo).
+      const fits = await page
+        .locator('.gp-menuitem input')
+        .first()
+        .evaluate((input: HTMLInputElement) => {
+          input.value = 'Encomendas especiais'
+          return input.scrollWidth <= input.clientWidth
+        })
+      expect(fits, `${width}px`).toBe(true)
+    }
+    await page.setViewportSize({ width: 1440, height: 900 })
   })
 
   test('Menu e rodapé: prévia em tamanho real', async () => {

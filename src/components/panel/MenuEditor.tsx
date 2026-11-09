@@ -328,13 +328,6 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                 A ordem aqui é a ordem no site. Até {MENU_LIMIT} links.
               </p>
             </div>
-            {/* Nomes das colunas no computador; no celular, cada campo mostra o seu. */}
-            {header.items.length > 0 && (
-              <div aria-hidden="true" className="gp-menuhead">
-                <span>Texto no menu</span>
-                <span>Abre a página</span>
-              </div>
-            )}
             <ol className="gp-menulist">
               {header.items.map((item, index) => (
                 <li className="gp-menuitem" key={item.id ?? index}>
