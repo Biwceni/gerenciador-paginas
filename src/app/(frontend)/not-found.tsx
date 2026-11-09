@@ -1,8 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
 
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
+
+// A aba diz o que aconteceu ("Página não encontrada | nome do site"). O noindex o Next já põe na 404.
+export const metadata: Metadata = { title: 'Página não encontrada' }
 
 export default function NotFound() {
   return (
@@ -11,7 +15,7 @@ export default function NotFound() {
       <main className="not-found" id="conteudo">
         <div className="container">
           <h1>Página não encontrada</h1>
-          <p>O endereço não existe mais.</p>
+          <p>Este endereço não existe ou mudou. Veja as páginas no menu ou volte para o início.</p>
           <Link className="button" href="/">
             Ir para o início
           </Link>
