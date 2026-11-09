@@ -31,7 +31,7 @@ type Props = {
   small: Record<number, number>
 }
 
-type Filter = 'all' | 'noalt' | 'unused'
+type Filter = 'all' | 'noalt' | 'unused' | 'small'
 
 const hasAlt = (photo: Media) => Boolean(photo.alt?.trim())
 const isUnused = (uses: PhotoUse[] | undefined) => !uses?.length
@@ -94,11 +94,14 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
     ['all', 'Todas', library.length],
     ['noalt', 'Sem descrição', library.filter((photo) => !hasAlt(photo)).length],
     ['unused', 'Não usadas', library.filter((photo) => isUnused(usage[photo.id])).length],
+    // Fotos pequenas para onde estão: em vez de uma etiqueta em cada cartão, um filtro.
+    ['small', 'Fotos pequenas', library.filter((photo) => Boolean(small[photo.id])).length],
   ]
   const shown = library.filter(
     (photo) =>
       (filter !== 'noalt' || !hasAlt(photo)) &&
       (filter !== 'unused' || isUnused(usage[photo.id])) &&
+      (filter !== 'small' || Boolean(small[photo.id])) &&
       (!search ||
         photoLabel(photo).toLowerCase().includes(search) ||
         (photo.alt ?? '').toLowerCase().includes(search)),
@@ -183,7 +186,16 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
                   <span className="gp-media__name">{photoLabel(photo)}</span>
                   <span className="gp-small gp-muted">{usageLabel(usage[photo.id])}</span>
                   {!hasAlt(photo) && <span className="gp-media__noalt">Sem descrição</span>}
-                  {small[photo.id] && <span className="gp-media__noalt">Foto pequena</span>}
+                  {small[photo.id] && (
+                    <span
+                      aria-label="Foto pequena: fica borrada em telas grandes"
+                      className="gp-media__small"
+                      role="img"
+                      title="Foto pequena: fica borrada em telas grandes"
+                    >
+                      <PanelIcon name="alert" size={14} />
+                    </span>
+                  )}
                 </button>
               </li>
             ))}

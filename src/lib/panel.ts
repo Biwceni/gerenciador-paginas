@@ -70,9 +70,9 @@ export function timeAgo(date: Date | string, now: number = Date.now()): string {
   return days === 1 ? 'há 1 dia' : `há ${days} dias`
 }
 
-/** Aviso do painel: "1 página com mudanças fora do ar", "3 páginas com mudanças fora do ar". */
+/** Linha do cartão "Mudanças que ainda não estão no ar" do Início: "1 página", "3 páginas". */
 export function pendingPagesText(count: number): string {
-  return `${count} ${count === 1 ? 'página' : 'páginas'} com mudanças fora do ar`
+  return `${count} ${count === 1 ? 'página' : 'páginas'}`
 }
 
 /** "Bom dia", "Boa tarde" ou "Boa noite", no horário de Brasília. */

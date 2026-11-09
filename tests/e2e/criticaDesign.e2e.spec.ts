@@ -225,7 +225,7 @@ test.describe.serial('crítica de design', () => {
     expect(await sitePrimary(page)).toBe(PUBLISHED)
 
     await open(page, '/admin')
-    await expect(page.getByText('Configurações com mudanças fora do ar')).toBeVisible()
+    await expect(page.locator('.gp-pending li', { hasText: 'Configurações' })).toBeVisible()
 
     await open(page, '/admin/sua-marca')
     await expect(page.getByText('Guardado, falta publicar')).toBeVisible()

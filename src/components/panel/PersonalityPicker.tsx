@@ -69,7 +69,7 @@ export function PersonalityThumb({
   )
 }
 
-/** "Personalidade do site", em Sua marca: uma miniatura por opção. */
+/** "Jeito do site" (a personalidade), em Sua marca: uma miniatura por opção. */
 export function PersonalityPicker({
   value,
   colors,
@@ -82,11 +82,11 @@ export function PersonalityPicker({
   return (
     <div className="gp-field">
       <span className="gp-label" id="st-personality">
-        Personalidade do site
+        Jeito do site
       </span>
       <span className="gp-hint">
-        Muda formas, tamanhos e a arrumação do banner e das seções em todas as páginas. O texto e as
-        fotos continuam os mesmos.
+        A personalidade do site: muda formas, tamanhos e a arrumação do banner e das seções em todas
+        as páginas. O texto e as fotos continuam os mesmos.
       </span>
       <div aria-labelledby="st-personality" className="gp-personality" role="group">
         {PERSONALITIES.map((personality) => (

@@ -194,33 +194,44 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
         </div>
       </header>
 
-      {/* O que está salvo e ainda não está no ar: uma linha. A lista fica em Páginas recentes. */}
-      {pending.length > 0 && (
-        <p className="gp-notice gp-notice--warn" role="status">
-          <span>{pendingPagesText(pending.length)}</span>
-          <Link
-            className="gp-btn gp-btn--sm gp-notice__action"
-            href={
-              pending.length === 1
-                ? editorPath(adminRoute, pending[0].id)
-                : panelHref(adminRoute, 'pages')
-            }
-          >
-            {pending.length === 1 ? 'Continuar' : 'Ver'}
-          </Link>
-        </p>
+      {/* O que está salvo e ainda não está no ar: um cartão só, uma linha por parte do site (antes
+          eram avisos empilhados, que no celular tomavam a primeira tela). As páginas ficam em
+          Páginas recentes. */}
+      {(pending.length > 0 || pendingGlobals.length > 0) && (
+        <section aria-labelledby="gp-pending-title" className="gp-pending" role="status">
+          <h2 className="gp-pending__title" id="gp-pending-title">
+            Mudanças que ainda não estão no ar
+          </h2>
+          <ul className="gp-pending__list">
+            {pending.length > 0 && (
+              <li>
+                <span>{pendingPagesText(pending.length)}</span>
+                <Link
+                  className="gp-btn gp-btn--sm"
+                  href={
+                    pending.length === 1
+                      ? editorPath(adminRoute, pending[0].id)
+                      : panelHref(adminRoute, 'pages')
+                  }
+                >
+                  Abrir
+                </Link>
+              </li>
+            )}
+            {pendingGlobals.map((global) => (
+              <li key={global.slug}>
+                <span>{global.label}</span>
+                <Link
+                  className="gp-btn gp-btn--sm"
+                  href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
+                >
+                  Abrir
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
-      {pendingGlobals.map((global) => (
-        <p className="gp-notice gp-notice--warn" key={global.slug} role="status">
-          <span>{global.label} com mudanças fora do ar</span>
-          <Link
-            className="gp-btn gp-btn--sm gp-notice__action"
-            href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
-          >
-            Continuar
-          </Link>
-        </p>
-      ))}
 
       {searchParams?.pronto && (
         <p className="gp-notice" role="status">
