@@ -175,6 +175,8 @@ const PATHS = {
     </>
   ),
   check: <path d="M5 12l5 5 9-10" />,
+  // Regra da senha ainda sem nada digitado: nem certo nem errado.
+  dot: <circle cx="12" cy="12" r="3" />,
   users: (
     <>
       <circle cx="9" cy="8" r="3.5" />

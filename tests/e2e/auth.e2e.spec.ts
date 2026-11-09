@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test'
 // O aviso é o `.gp-warnbox`: o anúncio de rota do Next também tem `role="alert"`.
 
 import { WRONG_LOGIN_MESSAGE } from '../../src/lib/auth'
+import { getPayload } from 'payload'
+
+import config from '../../src/payload.config.js'
+import { login } from '../helpers/login'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
 
 const BASE = 'http://localhost:3000'
@@ -118,5 +122,73 @@ test.describe('Entrar e senha', () => {
     await expect(page).toHaveURL(`${BASE}/admin/nova-senha/token-que-nao-existe`)
     await expect(page.getByRole('heading', { name: 'Este link venceu' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Pedir um link novo' })).toBeVisible()
+  })
+
+  // Avaliação Impeccable, rodada 1 (telas A2 a A7).
+  test('esqueci a senha: título, e-mail digitado, foco e reenvio', async ({ page }) => {
+    await page.goto(`${BASE}/admin/forgot`)
+    await expect(page.getByRole('heading', { name: 'Esqueci minha senha' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Voltar para entrar' })).toBeVisible()
+    await page.fill('#fg-email', 'ninguem@exemplo.com.br')
+    await page.click('button[type="submit"]')
+    const title = page.getByRole('heading', { name: 'Confira seu e-mail' })
+    await expect(title).toBeFocused()
+    await expect(page.locator('.gp-authcard__head')).toContainText('ninguem@exemplo.com.br')
+    const resend = page.getByRole('button', { name: 'Enviar de novo' })
+    await expect(resend).toBeDisabled()
+    await expect(page.locator('#fg-wait')).toContainText('Você pode enviar de novo em')
+  })
+
+  test('criar senha: olho nos dois campos e regras neutras antes de digitar', async ({ page }) => {
+    const payload = await getPayload({ config })
+    const token = await payload.forgotPassword({
+      collection: 'users',
+      data: { email: testUser.email },
+      disableEmail: true,
+    })
+    await page.goto(`${BASE}/admin/nova-senha/${token}`)
+    await expect(page.getByRole('heading', { name: 'Crie uma senha nova' })).toBeVisible()
+    await expect(page.locator('.gp-pwrules li svg path')).toHaveCount(0)
+    await expect(page.locator('#np-why')).toHaveText('Crie uma senha para continuar.')
+
+    for (const id of ['#pw-new', '#pw-confirm']) {
+      const field = page.locator(id)
+      await expect(field).toHaveAttribute('type', 'password')
+      await page.locator(`${id} + .gp-pwinput__toggle`).click()
+      await expect(field).toHaveAttribute('type', 'text')
+      await expect(field).toHaveAttribute('autocomplete', 'new-password')
+    }
+
+    await page.fill('#pw-new', 'abc')
+    await expect(page.locator('#np-why')).toHaveText('Siga as regras da senha acima.')
+  })
+
+  test('sem acesso, página não encontrada e fim da sessão', async ({ page }) => {
+    await login({ page, user: testUser })
+
+    await page.goto(`${BASE}/admin/unauthorized`)
+    await expect(
+      page.getByRole('heading', { name: 'Você não tem acesso a esta parte' }),
+    ).toBeVisible()
+    const home = page.getByRole('link', { name: 'Ir para o início do painel' })
+    expect((await home.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+    await expect(page.locator('body')).not.toContainText(/log out|requisição/i)
+
+    await page.goto(`${BASE}/admin/rota-que-nao-existe`)
+    await expect(page.getByRole('heading', { name: 'Esta página não existe' })).toBeVisible()
+    const back = page.getByRole('link', { name: 'Voltar para o início' })
+    expect((await back.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+
+    const loggedOut = page.waitForResponse((response) => response.url().includes('/users/logout'))
+    await page.goto(`${BASE}/admin/logout-inactivity?redirect=%2Fadmin%2Fpaginas`)
+    await expect(page.getByRole('heading', { name: 'Você saiu por segurança' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Entrar de novo' })).toHaveAttribute(
+      'href',
+      '/admin/login?redirect=%2Fadmin%2Fpaginas',
+    )
+    // A tela também faz a saída: depois dela, o painel volta a pedir o login.
+    await loggedOut
+    await page.goto(`${BASE}/admin`)
+    await expect(page).toHaveURL(/\/admin\/login/)
   })
 })

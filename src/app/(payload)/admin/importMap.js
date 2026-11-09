@@ -32,6 +32,8 @@ import { PanelFonts as PanelFonts_1518cc1b7035b81b07a381805e936d5e } from '../..
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { LoginView as LoginView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { ForgotView as ForgotView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
+import { UnauthorizedView as UnauthorizedView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
+import { InactivityView as InactivityView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { FirstUserView as FirstUserView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { NewPasswordView as NewPasswordView_9cfb307d8750231fb68dc126ba7ee437 } from '../../../components/auth/AuthViews'
 import { Dashboard as Dashboard_65e8b0fdc5f8da02b62d337686836a55 } from '../../../components/panel/Dashboard'
@@ -86,6 +88,8 @@ export const importMap = {
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "/components/auth/AuthViews#LoginView": LoginView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#ForgotView": ForgotView_9cfb307d8750231fb68dc126ba7ee437,
+  "/components/auth/AuthViews#UnauthorizedView": UnauthorizedView_9cfb307d8750231fb68dc126ba7ee437,
+  "/components/auth/AuthViews#InactivityView": InactivityView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#FirstUserView": FirstUserView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/auth/AuthViews#NewPasswordView": NewPasswordView_9cfb307d8750231fb68dc126ba7ee437,
   "/components/panel/Dashboard#Dashboard": Dashboard_65e8b0fdc5f8da02b62d337686836a55,

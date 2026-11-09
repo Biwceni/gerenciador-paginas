@@ -93,7 +93,17 @@ export default buildConfig({
         },
         forgot: {
           Component: '/components/auth/AuthViews#ForgotView',
-          meta: { title: 'Criar uma senha nova' },
+          meta: { title: 'Esqueci minha senha' },
+        },
+        // Sem acesso e fim da sessão (avaliação Impeccable, rodada 1): no cartão das telas de
+        // entrar, no lugar das telas cruas do Payload.
+        unauthorized: {
+          Component: '/components/auth/AuthViews#UnauthorizedView',
+          meta: { title: 'Sem acesso' },
+        },
+        inactivity: {
+          Component: '/components/auth/AuthViews#InactivityView',
+          meta: { title: 'Você saiu por segurança' },
         },
         createFirstUser: {
           Component: '/components/auth/AuthViews#FirstUserView',
@@ -206,6 +216,12 @@ export default buildConfig({
           emailAddress: 'Endereço de e-mail',
           restoring: 'Restaurando…',
           time: 'Hora',
+          // Página não encontrada dentro do painel (a tela é do Payload; só os textos são nossos).
+          notFound: 'Página não encontrada',
+          nothingFound: 'Esta página não existe',
+          sorryNotFound:
+            'O endereço pode ter mudado ou sido digitado errado. Use o menu ou volte para o início.',
+          backToDashboard: 'Voltar para o início',
         },
         authentication: {
           backToLogin: 'Voltar para a tela de entrar',
@@ -214,6 +230,12 @@ export default buildConfig({
           logBackIn: 'Entrar novamente',
           login: 'Entrar',
           loginUser: 'Entrar',
+          // Sair pelo menu e fim da sessão por tempo sem uso.
+          loggedOutSuccessfully: 'Você saiu do painel.',
+          loggedOutInactivity: 'Você saiu por segurança depois de um tempo sem uso.',
+          stayLoggedIn: 'Continuar no painel',
+          youAreInactive:
+            'Faz um tempo que você não mexe no painel. Por segurança, ele vai fechar em instantes. Quer continuar?',
         },
       },
     },

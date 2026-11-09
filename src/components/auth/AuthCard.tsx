@@ -11,10 +11,16 @@ import { PRODUCT_NAME } from '@/lib/site'
  */
 export function AuthCard({
   children,
+  focusTitle,
   lead,
   title,
 }: {
   children?: React.ReactNode
+  /**
+   * O cartão troca de estado na mesma tela ("Confira seu e-mail", link vencido): o título pode
+   * receber o foco, para quem usa leitor de tela ouvir a mudança (`focusAuthTitle`).
+   */
+  focusTitle?: boolean
   lead?: React.ReactNode
   title: string
 }) {
@@ -28,13 +34,18 @@ export function AuthCard({
           <span>{PRODUCT_NAME}</span>
         </div>
         <div className="gp-authcard__head">
-          <h1>{title}</h1>
+          <h1 tabIndex={focusTitle ? -1 : undefined}>{title}</h1>
           {lead && <p className="gp-muted">{lead}</p>}
         </div>
         {children}
       </div>
     </div>
   )
+}
+
+/** Põe o foco no título do cartão que acabou de trocar (precisa do `focusTitle`). */
+export function focusAuthTitle() {
+  document.querySelector<HTMLElement>('.gp-authcard__head h1[tabindex="-1"]')?.focus()
 }
 
 /** Link discreto no pé do cartão ("Esqueci minha senha", "Voltar para entrar"). */
@@ -93,9 +104,18 @@ export function LockedCard({ forgotHref, loginHref }: { forgotHref: string; logi
 }
 
 /** Link de senha vencido ou já usado. */
-export function ExpiredCard({ forgotHref, loginHref }: { forgotHref: string; loginHref: string }) {
+export function ExpiredCard({
+  focusTitle,
+  forgotHref,
+  loginHref,
+}: {
+  focusTitle?: boolean
+  forgotHref: string
+  loginHref: string
+}) {
   return (
     <AuthCard
+      focusTitle={focusTitle}
       lead="Por segurança, o link para criar a senha tem prazo e só funciona uma vez. Peça um novo, leva um minuto."
       title="Este link venceu"
     >
