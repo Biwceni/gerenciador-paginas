@@ -63,6 +63,12 @@ describe('textos de exemplo', () => {
     expect(findExampleSections(page([filled, other]), texts)).toEqual([filled, other])
   })
 
+  it('o "Lorem ipsum" de preenchimento também conta como exemplo', () => {
+    const filler = hero({ title: 'Lorem ipsum dolor sit amet, consectetur' })
+    const own = hero({})
+    expect(findExampleSections(page([own, filler]), texts)).toEqual([filler])
+  })
+
   it('o texto que a pessoa mudou, mesmo que um pouco, deixa de ser exemplo', () => {
     const changed = hero({ text: MARKED.replace('{cidade}', 'Uberlândia').replace('bolo', 'pão') })
     expect(findExampleSections(page([changed]), texts)).toEqual([])

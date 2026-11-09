@@ -109,7 +109,13 @@ export function exampleMatcher(texts: readonly string[]): (text: string) => bool
 
 const matchers = new WeakMap<readonly string[], (text: string) => boolean>()
 
-/** As seções da página que ainda têm algum texto igual a um texto dos modelos. */
+/** Texto de preenchimento ("Lorem ipsum…"): nunca é o texto final, venha de onde vier. */
+const FILLER = /\blorem ipsum\b/
+
+/**
+ * As seções da página que ainda têm algum texto igual a um texto dos modelos, ou o "Lorem ipsum" de
+ * preenchimento.
+ */
 export function findExampleSections(data: PuckPageData, texts: readonly string[]): PageComponent[] {
   // O editor confere a cada mudança, sempre com a mesma lista: os padrões são montados uma vez.
   let isExample = matchers.get(texts)
@@ -120,7 +126,7 @@ export function findExampleSections(data: PuckPageData, texts: readonly string[]
   return data.content.filter((section) => {
     const found = new Set<string>()
     collectTexts(section, found)
-    return [...found].some(isExample)
+    return [...found].some((text) => isExample(text) || FILLER.test(text))
   })
 }
 
