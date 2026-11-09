@@ -225,6 +225,17 @@ export default buildConfig({
           sorryNotFound:
             'O endereço pode ter mudado ou sido digitado errado. Use o menu ou volte para o início.',
           backToDashboard: 'Voltar para o início',
+          // Telas padrão do Avançado: sem maiúscula no meio ("Criar Novo", "Atualizado Em").
+          createNew: 'Criar novo',
+          createdAt: 'Criado em',
+          updatedAt: 'Atualizado em',
+          perPage: 'Itens por página: {{limit}}',
+        },
+        upload: {
+          bulkUpload: 'Enviar várias',
+          fileName: 'Nome do arquivo',
+          fileSize: 'Tamanho do arquivo',
+          previewSizes: 'Tamanhos da foto',
         },
         authentication: {
           backToLogin: 'Voltar para a tela de entrar',
@@ -236,6 +247,9 @@ export default buildConfig({
           // Títulos das abas de Esqueci a senha e Primeira conta.
           forgotPassword: 'Esqueci minha senha',
           createFirstUser: 'Crie sua conta',
+          // Título da aba de Minha conta (o Payload não usa o meta da tela) e o botão do Avançado.
+          account: 'Minha conta',
+          forceUnlock: 'Desbloquear conta',
           // Sair pelo menu e fim da sessão por tempo sem uso.
           loggedOutSuccessfully: 'Você saiu do painel.',
           loggedOutInactivity: 'Você saiu por segurança depois de um tempo sem uso.',

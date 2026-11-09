@@ -470,7 +470,8 @@ export function FormEditor({
               <span className="gp-hint gp-hint--error">Confira o e-mail.</span>
             ) : (
               <span className="gp-hint">
-                Vazio = o e-mail das Configurações. A mensagem também fica em Mensagens.
+                Se ficar vazio, avisamos no e-mail das Configurações. A mensagem também fica em
+                Mensagens.
               </span>
             )}
           </div>

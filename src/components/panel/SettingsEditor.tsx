@@ -48,7 +48,8 @@ const SECTIONS: [string, string][] = [
   ['st-contato', 'Contato'],
   ['st-redes', 'Redes sociais'],
   ['st-google', 'Google'],
-  ['st-pessoas', 'Pessoas com acesso'],
+  // Nome curto no atalho: com o nome inteiro, os atalhos quebravam em 2 linhas perto de 1050 px.
+  ['st-pessoas', 'Pessoas'],
   ['st-modelo', 'Começar de novo'],
 ]
 
@@ -163,9 +164,10 @@ export function SettingsEditor({
       </header>
 
       <div className="gp-pubbar">
-        {/* Atalhos para cada bloco: a tela é longa. */}
-        <nav aria-label="Blocos desta tela" className="gp-toc">
-          {SECTIONS.filter(([id]) => id !== 'st-modelo' || canStartOver).map(([id, label]) => (
+        {/* Atalhos para cada bloco: a tela é longa. "Começar de novo" fica de fora: é o último bloco,
+            de perigo, e sem ele os atalhos cabem numa linha no computador. */}
+        <nav aria-label="Blocos desta tela" className="gp-toc gp-toc--row">
+          {SECTIONS.filter(([id]) => id !== 'st-modelo').map(([id, label]) => (
             <a href={`#${id}`} key={id}>
               {label}
             </a>

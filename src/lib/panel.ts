@@ -31,12 +31,12 @@ export const ADVANCED_SCREENS = [
   {
     slug: 'users',
     title: 'Usuários',
-    text: 'Lista completa das contas, com a data do último acesso. Para convidar, use Configurações, em “Pessoas com acesso”.',
+    text: 'Lista completa das contas e o tipo de acesso de cada uma. Para convidar, use Configurações, em “Pessoas com acesso”.',
   },
   {
     slug: 'media',
     title: 'Fotos (coleção)',
-    text: 'Dados técnicos das fotos: tamanho, formato e endereço no Storage.',
+    text: 'Dados técnicos de cada foto: nome do arquivo, tamanho em pixels e peso.',
   },
 ] as const
 

@@ -218,7 +218,7 @@ function ThemeCard() {
 
   return (
     <section className="gp-card">
-      <fieldset className="gp-choices">
+      <fieldset className="gp-choices gp-choices--stack">
         <legend>
           <h2>Tema do painel</h2>
         </legend>

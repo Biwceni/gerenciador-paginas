@@ -66,6 +66,8 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['name', 'email', 'role'],
+    // Sem a aba "API" (o JSON cru da conta).
+    hideAPIURL: true,
   },
   auth: {
     cookies: {

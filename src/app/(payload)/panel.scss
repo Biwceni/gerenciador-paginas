@@ -82,6 +82,11 @@ html[data-theme] {
   --theme-elevation-50: var(--gp-surface-2);
   --theme-elevation-100: var(--gp-surface-2);
   --theme-elevation-150: var(--gp-line);
+  // Textos de apoio das telas padrão (ajuda dos campos, nomes das colunas, "Buscar por…",
+  // "Última modificação"): no tom apagado do painel, que passa de 4,5:1 nos dois temas.
+  --theme-elevation-400: var(--gp-muted);
+  --theme-elevation-450: var(--gp-muted);
+  --theme-elevation-500: var(--gp-muted);
 }
 
 // ---------- superfícies do navegador ----------
@@ -882,6 +887,11 @@ time {
   > .gp-btn {
     justify-content: flex-start;
   }
+}
+
+// Ao lado da miniatura, o botão na largura do texto (esticado, "Escolher foto" parecia um campo).
+.gp-thumbrow .gp-stack {
+  justify-items: start;
 }
 
 .gp-actions {
@@ -1993,6 +2003,12 @@ textarea.gp-input {
   }
 }
 
+.gp-toc--row {
+  // Os atalhos numa linha só, em cima; os botões de publicar na linha de baixo, à direita.
+  flex-basis: 100%;
+  gap: 2px 12px;
+}
+
 @media (max-width: 720px) {
   .gp-toc {
     flex-basis: 100%;
@@ -2015,6 +2031,11 @@ textarea.gp-input {
 // Área de perigo: "Começar de novo com um modelo" troca o site inteiro.
 .gp-card--danger {
   border-color: var(--gp-danger);
+
+  // Medida de leitura confortável no cartão largo (detector: linha de ~113 letras).
+  p {
+    max-width: 60ch;
+  }
 
   h2 {
     color: var(--gp-danger);
@@ -3235,7 +3256,17 @@ textarea.gp-input {
   &__required {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    min-height: 44px;
+
+    // A caixinha de 13 px do navegador é pequena para o dedo.
+    input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      accent-color: var(--gp-accent);
+    }
+
     margin-right: 4px;
     font-size: var(--gp-fs-small);
     white-space: nowrap;
