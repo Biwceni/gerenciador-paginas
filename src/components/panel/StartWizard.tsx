@@ -55,18 +55,25 @@ const STEP_NAMES: [Step, string][] = [
   ['model', 'Modelo'],
 ]
 
-function StepBar({ current }: { current: Step }) {
-  const position = STEP_NAMES.findIndex(([step]) => step === current)
-  const label = STEP_NAMES[position][1]
+/**
+ * Só os passos deste caminho: sem o Ramo quando o tipo não pede. Cada nome fica embaixo da sua barra.
+ */
+function StepBar({ current, steps }: { current: Step; steps: Step[] }) {
+  const names = STEP_NAMES.filter(([step]) => steps.includes(step))
+  const position = names.findIndex(([step]) => step === current)
+  const label = names[position][1]
   return (
-    <div className="gp-stepbar">
+    <div className="gp-stepbar" style={{ '--gp-steps': names.length } as React.CSSProperties}>
       <div aria-hidden="true" className="gp-steps">
-        {STEP_NAMES.map(([step], index) => (
+        {names.map(([step], index) => (
           <span className={index <= position ? 'is-on' : undefined} key={step} />
         ))}
       </div>
-      <ol aria-label={`Passos do início: agora, ${label}`} className="gp-stepnames">
-        {STEP_NAMES.map(([step, name], index) => (
+      <ol
+        aria-label={`Passos do início: agora, ${label} (${position + 1} de ${names.length})`}
+        className="gp-stepnames"
+      >
+        {names.map(([step, name], index) => (
           <li
             aria-current={index === position ? 'step' : undefined}
             className={index <= position ? 'is-on' : undefined}
@@ -143,6 +150,7 @@ export function StartWizard({
   const [tagline, setTagline] = useState(initial?.tagline ?? '')
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '')
   const [bigPreview, setBigPreview] = useState<StartTemplate | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -227,6 +235,8 @@ export function StartWizard({
   const next = () => {
     if (!canGo) return
     if (step < steps.length - 1) setStep(step + 1)
+    // Com páginas de hoje, um clique troca o site inteiro: antes, uma confirmação.
+    else if (existingPages > 0) setConfirming(true)
     else void create()
   }
 
@@ -251,18 +261,11 @@ export function StartWizard({
     )
   }
 
-  // O que o modelo sugere para o ramo: a personalidade e o par de letras (as cores aparecem na prévia).
+  // O que o modelo sugere para o ramo. Só a personalidade: o nome das letras ("Cormorant Garamond")
+  // não diz nada para quem não é do ramo; as letras aparecem na própria prévia.
   const lookNote = (template: StartTemplate) => {
     const personality = templatePersonality(template.key)
-    const fonts = template.site?.fonts
-    const parts = [
-      personality && `Personalidade ${PERSONALITY_LABELS[personality].name}`,
-      fonts?.headings &&
-        (fonts.body && fonts.body !== fonts.headings
-          ? `letras ${fonts.headings} e ${fonts.body}`
-          : `letras ${fonts.headings}`),
-    ].filter(Boolean)
-    return parts.join(' · ')
+    return personality ? `Personalidade ${PERSONALITY_LABELS[personality].name}` : ''
   }
 
   const pagesNote = (template: StartTemplate) =>
@@ -273,15 +276,15 @@ export function StartWizard({
   return (
     <div className="gp-onboard">
       <div className="gp-ob">
-        <StepBar current={current} />
+        <StepBar current={current} steps={steps} />
 
         <div className="gp-obcard">
           {current === 'type' && (
             <>
               <h1>O que você quer montar?</h1>
               <p className="gp-muted">
-                Escolha o formato. Depois você pode criar outras páginas, como landing pages de
-                campanha, dentro do mesmo site.
+                Escolha o formato. Depois você pode criar outras páginas dentro do mesmo site, como
+                uma página para uma promoção.
               </p>
               <Choices
                 label="Tipo de site"
@@ -414,7 +417,12 @@ export function StartWizard({
                     </div>
                     <div className="gp-tplsite__meta">
                       <div>
-                        <b>{option.name}</b>
+                        <b>
+                          {option.name}
+                          {option.id === templateId && (
+                            <span className="gp-chip gp-chip--ok">Escolhido</span>
+                          )}
+                        </b>
                         <span className="gp-small gp-muted">{option.description}</span>
                         <span className="gp-small gp-tplsite__look">{lookNote(option)}</span>
                       </div>
@@ -430,10 +438,6 @@ export function StartWizard({
                   </div>
                 ))}
               </div>
-              <Tip>
-                A personalidade, as cores e as letras do modelo são sugestões para o seu ramo. Em
-                Sua marca você escolhe quaisquer outras.
-              </Tip>
               {existingPages > 0 && (
                 <div className="gp-warnbox" role="note">
                   <b>
@@ -444,7 +448,8 @@ export function StartWizard({
                         : `Seu site tem ${livePages} páginas no ar hoje.`}
                   </b>
                   <span>
-                    {livePages > 0 && 'Elas saem do ar. '}
+                    {livePages === 1 && 'Ela sai do ar. '}
+                    {livePages > 1 && 'Elas saem do ar. '}
                     As páginas de hoje ficam guardadas em Páginas, no grupo Arquivadas. O menu, o
                     rodapé, as cores e as letras passam a ser os do modelo. O contato e o e-mail
                     continuam os mesmos.
@@ -457,6 +462,10 @@ export function StartWizard({
                   )}
                 </div>
               )}
+              <Tip>
+                A personalidade, as cores e as letras do modelo são sugestões para o seu ramo. Em
+                Sua marca você escolhe quaisquer outras.
+              </Tip>
               {error && (
                 <p className="gp-error" role="alert">
                   Não deu para criar o site: {error}
@@ -522,6 +531,35 @@ export function StartWizard({
           </Link>
         )}
       </div>
+
+      {confirming && chosen && (
+        <PanelDialog onClose={() => setConfirming(false)} title="Trocar o site agora?">
+          <p>
+            {livePages === 0
+              ? 'Nenhuma página está no ar hoje, mas as páginas de hoje vão para Arquivadas.'
+              : livePages === 1
+                ? 'A página que está no ar hoje sai do ar e vai para Arquivadas.'
+                : `As ${livePages} páginas que estão no ar hoje saem do ar e vão para Arquivadas.`}{' '}
+            O site passa a ser o modelo {chosen.name}, com o menu, o rodapé, as cores e as letras
+            dele.
+          </p>
+          <div className="gp-actions gp-actions--end">
+            <button className="gp-btn" onClick={() => setConfirming(false)} type="button">
+              Cancelar
+            </button>
+            <button
+              className="gp-btn gp-btn--solid-danger"
+              onClick={() => {
+                setConfirming(false)
+                void create()
+              }}
+              type="button"
+            >
+              Sim, trocar meu site
+            </button>
+          </div>
+        </PanelDialog>
+      )}
 
       {bigPreview && (
         <PanelDialog onClose={() => setBigPreview(null)} title={`Modelo ${bigPreview.name}`} wide>

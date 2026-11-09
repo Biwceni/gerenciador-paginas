@@ -1338,8 +1338,9 @@ time {
 }
 
 .gp-stepnames {
-  display: flex;
-  justify-content: space-between;
+  // Uma coluna por passo, igual às barras de cima: cada nome fica embaixo da sua barra.
+  display: grid;
+  grid-template-columns: repeat(var(--gp-steps, 4), minmax(0, 1fr));
   gap: 8px;
   list-style: none;
   margin: 0;
@@ -1349,16 +1350,7 @@ time {
   color: var(--gp-muted);
 
   li {
-    flex: 1;
-    text-align: center;
-
-    &:first-child {
-      text-align: left;
-    }
-
-    &:last-child {
-      text-align: right;
-    }
+    min-width: 0;
 
     &.is-on {
       color: var(--gp-accent);
@@ -1391,6 +1383,12 @@ time {
   gap: 20px;
   min-width: 0;
   box-shadow: 0 6px 24px var(--gp-shadow);
+
+  // Medida de leitura no cartão largo (detector: ~99 letras por linha) e sem palavra sozinha.
+  > p {
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
 }
 
 .gp-eyebrow {
@@ -1522,16 +1520,26 @@ time {
   &__meta {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    // Topo alinhado: os nomes dos dois modelos ficam na mesma altura, com textos de tamanhos
+    // diferentes.
+    align-items: flex-start;
     gap: 10px;
 
     div {
       display: grid;
       min-width: 0;
     }
+
+    // Nome e "Escolhido" lado a lado; quando não cabem, o selo desce sem recuo.
+    b {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px 8px;
+    }
   }
 
-  // A sugestão do ramo: personalidade e letras (entrega 6).
+  // A sugestão do ramo: a personalidade (entrega 6).
   &__look {
     margin-top: 2px;
     color: var(--gp-ink);
@@ -1547,6 +1555,14 @@ time {
 
 .gp-actions--end {
   justify-content: flex-end;
+}
+
+@media (max-width: #{$desktop - 1px}) {
+  // O X das janelas com área de toque de 44 px no celular.
+  .gp-dialog__head .gp-iconbtn {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 @media (max-width: 560px) {
