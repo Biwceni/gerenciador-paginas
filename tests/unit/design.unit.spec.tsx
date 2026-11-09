@@ -137,6 +137,21 @@ describe('Banner: Foto ao lado', () => {
     )
   })
 
+  it('título longo ganha a classe própria; no editor (título como elemento) não quebra', () => {
+    const long = 'Transformar arte em açúcar e açúcar em arte'
+    expect(renderToStaticMarkup(<Hero {...hero} title={long} metadata={metadata} />)).toContain(
+      'hero--long',
+    )
+    // O Puck troca o texto editável por um elemento: antes, `title.trim()` derrubava o editor.
+    const editable = (<span>{long}</span>) as unknown as string
+    const render = () =>
+      renderToStaticMarkup(
+        <Hero {...hero} title={editable} metadata={{ ...metadata, editing: true }} />,
+      )
+    expect(render).not.toThrow()
+    expect(render()).toContain(long)
+  })
+
   it('sem foto, vira o fundo suave', () => {
     const html = renderToStaticMarkup(<Hero {...hero} metadata={metadata} />)
     expect(html).toContain('section--soft')

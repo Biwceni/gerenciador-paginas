@@ -229,7 +229,9 @@ export function Hero(props: WithMetadata<HeroProps>) {
     align === 'center' && 'hero--center',
     !photo && 'hero--plain',
     // Frase longa no título: tamanho menor que o de uma ou duas palavras, para não ocupar a tela.
-    filled(title) && title.trim().length > 20 && 'hero--long',
+    // No editor, o título é o elemento da edição no lugar (não é texto): não dá para medir, e
+    // chamar `.trim()` nele derrubava o editor inteiro.
+    typeof title === 'string' && title.trim().length > 20 && 'hero--long',
     props.height === 'compact' && 'hero--compact',
     animClass(anim),
   ]
