@@ -286,9 +286,16 @@
   color: var(--ed-accent);
 }
 
-/* O endereço da página quebra antes da barra, nunca no meio do domínio. */
+/* O endereço da página quebra antes da barra: cada parte vai inteira para a linha dela e só quebra
+   por dentro quando sozinha não cabe no painel (endereço longo não passa da borda). */
+.ed-summary__address {
+  max-width: 100%;
+}
+
 .ed-summary__address span {
-  white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .ed-btn:focus-visible,
