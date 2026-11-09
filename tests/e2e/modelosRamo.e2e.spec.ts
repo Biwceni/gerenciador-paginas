@@ -165,9 +165,9 @@ test.describe.serial('modelos por ramo', () => {
     await page.fill('#ob-whatsapp', '(34) 99999-0000')
     await page.getByRole('button', { name: 'Continuar' }).click()
 
-    // Os dois modelos sugerem personalidade e letras do ramo; a prévia já tem o nome e a cidade.
+    // Os dois modelos sugerem a personalidade do ramo; a prévia já tem o nome e a cidade.
     await expect(page.getByRole('heading', { name: 'Escolha um modelo' })).toBeVisible()
-    await expect(page.getByText(/Personalidade Vitrine · letras Cormorant Garamond/)).toBeVisible()
+    await expect(page.getByText('Personalidade Vitrine', { exact: true })).toBeVisible()
     await expect(page.getByText(/Personalidade Aconchego/)).toBeVisible()
     const preview = page.frameLocator('.gp-tplsite__preview iframe').first()
     await expect(preview.getByText(`Entregamos em ${CITY}`).first()).toBeVisible()
