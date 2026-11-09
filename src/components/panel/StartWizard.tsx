@@ -45,8 +45,8 @@ type Props = {
 
 type Step = 'type' | 'segment' | 'basics' | 'model'
 
-// Os quatro passos aparecem na barra desde o começo. O ramo só é perguntado no site da empresa;
-// nos outros tipos, ele é pulado e aparece como feito. O básico vem antes do modelo (entrega 6):
+// Os passos do início. O ramo só é perguntado no site da empresa; nos outros tipos, ele sai da
+// barra (que fica com 3 passos). O básico vem antes do modelo (entrega 6):
 // as prévias dos modelos já mostram o nome do negócio e a cidade nos textos de exemplo.
 const STEP_NAMES: [Step, string][] = [
   ['type', 'Tipo de site'],
@@ -154,8 +154,12 @@ export function StartWizard({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Sem tipo escolhido, a barra mostra os 4 passos: o Ramo só sai quando o tipo não o usa, para a
+  // barra não mudar de tamanho no primeiro clique em "Site da empresa".
   const steps: Step[] =
-    type === 'institucional' ? ['type', 'segment', 'basics', 'model'] : ['type', 'basics', 'model']
+    type === null || type === 'institucional'
+      ? ['type', 'segment', 'basics', 'model']
+      : ['type', 'basics', 'model']
   const current = steps[step]
   const options = templates.filter(
     (item) => item.siteType === type && (type !== 'institucional' || item.business === business),
@@ -543,6 +547,9 @@ export function StartWizard({
             O site passa a ser o modelo {chosen.name}, com o menu, o rodapé, as cores e as letras
             dele.
           </p>
+          {settingsDraft && (
+            <p>As mudanças das Configurações que ainda não foram publicadas serão descartadas.</p>
+          )}
           <div className="gp-actions gp-actions--end">
             <button className="gp-btn" onClick={() => setConfirming(false)} type="button">
               Cancelar

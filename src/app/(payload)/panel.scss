@@ -1489,6 +1489,9 @@ time {
   border-radius: 16px;
   padding: 10px;
   display: grid;
+  // Linhas pelo topo: quando o cartão estica até a altura do vizinho (o selo "Escolhido" desce
+  // de linha), a sobra fica embaixo e os nomes dos modelos continuam na mesma altura.
+  align-content: start;
   gap: 10px;
   min-width: 0;
   background: var(--gp-surface);
