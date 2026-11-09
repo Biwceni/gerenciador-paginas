@@ -180,7 +180,7 @@ function EditorHeader() {
         }}
         title="Voltar para as páginas"
       >
-        ←
+        <PanelIcon name="back" />
       </Link>
       <div className="ed-top__title">
         <b>{chrome.title}</b>
@@ -202,7 +202,7 @@ function EditorHeader() {
           title="Desfazer"
           type="button"
         >
-          ↶
+          <PanelIcon name="undo" />
         </button>
         <button
           aria-label="Refazer"
@@ -212,7 +212,7 @@ function EditorHeader() {
           title="Refazer"
           type="button"
         >
-          ↷
+          <PanelIcon name="redo" />
         </button>
         <button className="ed-btn ed-hide-sm" onClick={() => chrome.open('versions')} type="button">
           Versões
@@ -225,13 +225,22 @@ function EditorHeader() {
             Ver no site
           </a>
         )}
+        {/* Sem nada para publicar, vira um aviso legível ("Publicada", com o visto), não um botão
+            apagado. */}
         <button
-          className="ed-btn ed-btn--primary"
+          className={`ed-btn ed-btn--primary${chrome.canPublish ? '' : ' ed-btn--done'}`}
           disabled={!chrome.canPublish}
           onClick={() => chrome.open('publish')}
           type="button"
         >
-          {chrome.canPublish ? 'Publicar' : 'Publicada'}
+          {chrome.canPublish ? (
+            'Publicar'
+          ) : (
+            <>
+              <PanelIcon name="check" size={16} />
+              Publicada
+            </>
+          )}
         </button>
         <button
           aria-label="Mais opções do editor"
@@ -271,8 +280,16 @@ function EditorFields({
     <>
       <div className="ed-summary">
         <b>Esta página</b>
-        <span className="ed-hint">
-          {sections === 1 ? '1 seção' : `${sections} seções`} · {address}
+        <span className="ed-hint">{sections === 1 ? '1 seção' : `${sections} seções`}</span>
+        {/* O endereço numa linha só dele, que quebra antes da barra (nunca no meio do domínio). */}
+        <span className="ed-hint ed-summary__address">
+          <span>{address.split('/')[0]}</span>
+          {address.includes('/') && (
+            <>
+              <wbr />
+              <span>/{address.split('/').slice(1).join('/')}</span>
+            </>
+          )}
         </span>
         {exampleSections > 0 && (
           <button className="ed-linkbtn ed-hint--warn" onClick={chrome.goToExample} type="button">

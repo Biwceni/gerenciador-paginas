@@ -96,13 +96,15 @@ export function EditorDrawerItem({ name }: { name: string; children?: React.Reac
         return () => item.removeEventListener('keydown', onKey, { capture: true })
       }}
     >
-      <SectionThumb type={name as keyof Components} />
+      {/* O selo "novo" fica sempre no mesmo canto da miniatura: os nomes ficam todos na mesma
+          posição, sem o selo ora ao lado, ora embaixo. */}
+      <span className="ed-palitem__media">
+        <SectionThumb type={name as keyof Components} />
+        {NEW_SECTIONS.has(name as keyof Components) && <span className="ed-new">novo</span>}
+      </span>
       <span className="ed-palitem__text">
-        {/* O selo fica ao lado do nome e desce para a linha de baixo se faltar espaço: o nome
-            nunca é cortado. */}
         <span className="ed-palitem__name">
           <b>{LABELS[name] ?? name}</b>
-          {NEW_SECTIONS.has(name as keyof Components) && <span className="ed-new">novo</span>}
         </span>
         <span className="ed-palitem__desc">{SECTION_DESCRIPTIONS[name as keyof Components]}</span>
       </span>

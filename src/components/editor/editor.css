@@ -278,6 +278,19 @@
   cursor: default;
 }
 
+/* "Publicada": nada para publicar. Fica como um aviso legível, não um botão apagado. */
+.ed-btn--primary.ed-btn--done:disabled {
+  opacity: 1;
+  border-color: transparent;
+  background: var(--ed-accent-soft);
+  color: var(--ed-accent);
+}
+
+/* O endereço da página quebra antes da barra, nunca no meio do domínio. */
+.ed-summary__address span {
+  white-space: nowrap;
+}
+
 .ed-btn:focus-visible,
 .ed-icon-btn:focus-visible,
 .ed-input:focus-visible,
@@ -751,12 +764,14 @@ textarea.ed-input {
   min-width: 0;
 }
 
-/* Nome e selo "novo" lado a lado; sem espaço, o selo desce e o nome fica inteiro. */
+.ed-palitem__media {
+  position: relative;
+  flex: none;
+  display: grid;
+}
+
 .ed-palitem__name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 6px;
+  display: block;
 }
 
 .ed-palitem__name b {
@@ -772,8 +787,11 @@ textarea.ed-input {
 }
 
 .ed-new {
-  flex: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
   padding: 1px 7px;
+  box-shadow: 0 0 0 2px var(--ed-bg);
   border-radius: 999px;
   background: var(--ed-accent-soft);
   color: var(--ed-accent);
@@ -936,8 +954,12 @@ textarea.ed-input {
   justify-items: center;
   gap: 4px;
   width: 100%;
+  margin-top: 6px;
   padding: 10px 2px;
+  /* "Opções" mostra ou esconde o painel da direita: um fio o separa das abas, para não parecer uma
+     segunda aba escolhida. */
   border: 0;
+  border-top: 1px solid var(--ed-line);
   background: transparent;
   color: var(--puck-color-text-secondary, var(--ed-muted));
   font: inherit;
@@ -961,6 +983,16 @@ textarea.ed-input {
   .ed-top {
     gap: 8px;
     padding: 8px 10px;
+  }
+
+  /* Voltar, Publicar e o ⋯ com 44 px de toque. */
+  .ed-top .ed-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ed-top .ed-btn {
+    min-height: 44px;
   }
 
   .ed-root [class*='PuckCanvas_'] {
