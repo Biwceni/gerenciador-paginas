@@ -958,6 +958,39 @@ time {
   margin-left: auto;
 }
 
+// Início: o que está salvo e ainda não está no ar, num cartão só (avaliação Impeccable, rodada 2).
+.gp-pending {
+  display: grid;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--gp-warn-soft);
+  color: var(--gp-ink);
+  font-size: var(--gp-fs-help);
+
+  &__title {
+    margin: 0;
+    font-size: var(--gp-fs-help);
+    font-weight: 700;
+  }
+
+  &__list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 600;
+    }
+  }
+}
+
 .gp-warnbox {
   display: grid;
   gap: 10px;
@@ -1726,6 +1759,7 @@ $media-stacked: 1279px;
   }
 
   &__item {
+    position: relative;
     width: 100%;
     border: 2px solid transparent;
     border-radius: 12px;
@@ -1798,6 +1832,19 @@ $media-stacked: 1279px;
     color: var(--gp-warn);
     font-size: var(--gp-fs-small);
     font-weight: 700;
+  }
+
+  // Foto pequena: só um sinal discreto no cartão; o filtro "Fotos pequenas" junta todas e o
+  // detalhe da foto explica.
+  &__small {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-flex;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--gp-warn-soft);
+    color: var(--gp-warn);
   }
 }
 
@@ -1933,7 +1980,7 @@ textarea.gp-input {
   a {
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
+    min-height: 40px;
     color: var(--gp-accent);
     font-size: var(--gp-fs-help);
     font-weight: 600;
@@ -2014,7 +2061,7 @@ textarea.gp-input {
 // Nomes das colunas dos links, só no computador. A última coluna tem a largura dos três botões.
 .gp-menuhead {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 116px;
   gap: 8px;
   margin-bottom: -6px;
   color: var(--gp-muted);
@@ -2024,7 +2071,7 @@ textarea.gp-input {
 
 .gp-menuitem {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 116px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 116px;
   gap: 8px;
   align-items: start;
   padding-bottom: 10px;
@@ -2160,6 +2207,10 @@ textarea.gp-input {
   gap: 10px;
   min-width: 0;
 
+  > .gp-btn {
+    justify-self: start;
+  }
+
   &__cap {
     display: flex;
     flex-wrap: wrap;
@@ -2201,7 +2252,9 @@ textarea.gp-input {
   }
 }
 
-@media (max-width: 760px) {
+// Até 1199px a coluna dos campos fica estreita: "Abre a página" desce para baixo do texto,
+// para o texto do link nunca ficar cortado.
+@media (max-width: 1199px) {
   .gp-menuhead {
     display: none;
   }
@@ -2561,6 +2614,12 @@ textarea.gp-input {
     @media (max-width: 560px) {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+
+  // Uma opção embaixo da outra, para colunas estreitas (Animação do site, em Sua marca): lado a
+  // lado, o texto quebrava quase palavra por palavra.
+  &--stack &__list {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3265,6 +3324,14 @@ textarea.gp-input {
 
 .gp-more {
   position: relative;
+  // Flex: o ⋯ estica até a altura dos outros botões da linha ("Editar", "Ver").
+  display: flex;
+
+  // O ⋯ com a largura mínima de toque; a altura é a dos outros botões da linha.
+  > .gp-btn {
+    min-width: 44px;
+    justify-content: center;
+  }
 }
 
 // Preso ao ⋯, abrindo para baixo. A largura e a posição na linha vêm do PagesList (sempre dentro
@@ -3366,13 +3433,12 @@ textarea.gp-input {
   }
 }
 
+// Logo e botões direto no cartão, sem uma caixa dentro dele (o detector acusava cartão dentro de
+// cartão).
 .gp-logopick {
   display: flex;
   gap: 14px;
   align-items: center;
-  border: 1.5px dashed var(--gp-line-strong);
-  border-radius: 12px;
-  padding: 14px;
 }
 
 // Cores lidas do logo: quadrados de 44 px (área de toque).
@@ -3482,11 +3548,18 @@ textarea.gp-input {
   cursor: pointer;
   min-width: 0;
 
+  // O nome do negócio em até 2 linhas, sem partir palavra no meio ("Confeitar / ia").
   &__title {
     font-size: 22px;
     font-weight: 600;
     line-height: 1.15;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   &__text {
@@ -3509,7 +3582,9 @@ textarea.gp-input {
   }
 }
 
-.gp-more {
+// Parte que abre e fecha (<details>), como "Escolher outras letras" em Sua marca. Antes usava a
+// classe `.gp-more`, a mesma do ⋯ de Páginas: a borda e o recuo vazavam para o ⋯.
+.gp-disclosure {
   border-top: 1px solid var(--gp-line);
   padding-top: 12px;
 
@@ -3519,6 +3594,24 @@ textarea.gp-input {
     min-height: 44px;
     display: flex;
     align-items: center;
+    gap: 8px;
+    color: var(--gp-accent);
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  // Seta para baixo fechado, para cima aberto.
+  &__icon {
+    display: inline-flex;
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+  }
+
+  &[open] &__icon {
+    transform: rotate(90deg);
   }
 
   &__body {
@@ -3680,4 +3773,20 @@ textarea.gp-input {
   .gp-searchbox input {
     font-size: var(--gp-fs-field-touch);
   }
+}
+
+// No celular e no tablet, todo botão do painel com pelo menos 44 px de altura para o dedo
+// (avaliação Impeccable, rodada 2). Os botões pequenos (`--sm`) e os filtros de Fotos também.
+// No computador, nada muda.
+@media (max-width: #{$desktop - 1px}) {
+  .gp-btn,
+  .gp-seg button,
+  .gp-seg a {
+    min-height: 44px;
+  }
+}
+
+// Detector do Impeccable (straggler): sem uma palavra sozinha na última linha dos textos do painel.
+.gp-page p {
+  text-wrap: pretty;
 }

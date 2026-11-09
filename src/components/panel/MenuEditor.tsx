@@ -20,6 +20,7 @@ import type { Header, Media } from '@/payload-types'
 import type { PageSummary } from '@/puck/summary'
 
 import { discardMenuAndFooter, type HeaderData, publishMenuAndFooter, saveGlobalDraft } from './api'
+import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { SaveStatus } from './SaveStatus'
 import { SiteFrame } from './SiteFrame'
@@ -77,6 +78,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   // Parte da prévia em destaque: segue o foco (topo nos links e no botão, rodapé no Rodapé).
   const [part, setPart] = useState<'all' | 'header' | 'footer'>('all')
+  const [fullPreview, setFullPreview] = useState(false)
   const dirty = useRef<{ header: boolean; footer: boolean }>({ header: false, footer: false })
   const [version, setVersion] = useState(0)
 
@@ -228,6 +230,47 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
       : { id: newRowID(), label: 'WhatsApp', link: { kind: 'whatsapp' } }
     changeHeader({ ...header, items: [...header.items, item] })
   }
+
+  // O que a prévia desenha; a mesma coisa na miniatura e na janela de tamanho real.
+  const previewContent = (
+    <>
+      {part !== 'footer' && (
+        <SiteHeaderView
+          brand={site.brand}
+          button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
+          items={previewItems}
+          logo={site.logo}
+          name={site.name}
+        />
+      )}
+      {part === 'all' && (
+        <div
+          style={{
+            padding: '56px 16px',
+            textAlign: 'center',
+            fontWeight: 600,
+            opacity: 0.6,
+            background: 'var(--color-surface)',
+          }}
+        >
+          Conteúdo da página
+        </div>
+      )}
+      {part !== 'header' && (
+        <SiteFooterView
+          brand={site.brand}
+          contact={site.contact}
+          logo={site.logo}
+          menu={footer.showMenu ? previewItems : []}
+          name={site.name}
+          privacyHref={site.privacyHref}
+          showContact={footer.showContact}
+          social={footer.showSocial ? site.social : []}
+          text={footer.text || null}
+        />
+      )}
+    </>
+  )
 
   return (
     <div className="gp-page">
@@ -523,45 +566,34 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               // Só uma parte: desenhada mais estreita, para as letras ficarem maiores.
               width={device === 'mobile' ? 390 : part === 'all' ? 1200 : 960}
             >
-              {part !== 'footer' && (
-                <SiteHeaderView
-                  brand={site.brand}
-                  button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
-                  items={previewItems}
-                  logo={site.logo}
-                  name={site.name}
-                />
-              )}
-              {part === 'all' && (
-                <div
-                  style={{
-                    padding: '56px 16px',
-                    textAlign: 'center',
-                    fontWeight: 600,
-                    opacity: 0.6,
-                    background: 'var(--color-surface)',
-                  }}
-                >
-                  Conteúdo da página
-                </div>
-              )}
-              {part !== 'header' && (
-                <SiteFooterView
-                  brand={site.brand}
-                  contact={site.contact}
-                  logo={site.logo}
-                  menu={footer.showMenu ? previewItems : []}
-                  name={site.name}
-                  privacyHref={site.privacyHref}
-                  showContact={footer.showContact}
-                  social={footer.showSocial ? site.social : []}
-                  text={footer.text || null}
-                />
-              )}
+              {previewContent}
             </SiteFrame>
           </div>
+          <button className="gp-btn gp-btn--sm" onClick={() => setFullPreview(true)} type="button">
+            <PanelIcon name="eye" size={14} />
+            Ver em tamanho real
+          </button>
         </section>
       </div>
+
+      {fullPreview && (
+        <PanelDialog
+          onClose={() => setFullPreview(false)}
+          size="full"
+          title="Prévia em tamanho real"
+        >
+          <div className="gp-previewbox__frame">
+            <SiteFrame
+              fontFaces={site.fontFaces}
+              theme={site.theme}
+              title="Prévia do topo e do rodapé em tamanho real"
+              width={device === 'mobile' ? 390 : 1280}
+            >
+              {previewContent}
+            </SiteFrame>
+          </div>
+        </PanelDialog>
+      )}
     </div>
   )
 }

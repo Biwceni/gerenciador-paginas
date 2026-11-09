@@ -219,7 +219,12 @@ test.describe.serial('Sua marca', () => {
 
   test('foto pequena no banner: aviso em Fotos e no Início', async () => {
     await open(page, '/admin/fotos')
-    await expect(page.getByText('Foto pequena').first()).toBeVisible()
+    // No cartão, um ícone discreto com o aviso para o leitor de tela; e um filtro que junta todas.
+    await expect(
+      page.getByRole('img', { name: 'Foto pequena: fica borrada em telas grandes' }).first(),
+    ).toBeVisible()
+    await page.getByRole('button', { name: /Fotos pequenas/ }).click()
+    await expect(page.locator('.gp-media__item').first()).toBeVisible()
     await open(page, '/admin')
     await expect(page.getByText(/Troque as fotos pequenas/)).toBeVisible()
   })

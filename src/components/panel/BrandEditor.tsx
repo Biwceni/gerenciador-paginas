@@ -577,9 +577,14 @@ export function BrandEditor({
               ))}
             </div>
 
-            <details className="gp-more">
-              <summary>Escolher outras letras</summary>
-              <div className="gp-more__body">
+            <details className="gp-disclosure">
+              <summary>
+                Escolher outras letras
+                <span aria-hidden="true" className="gp-disclosure__icon">
+                  <PanelIcon name="back" size={16} />
+                </span>
+              </summary>
+              <div className="gp-disclosure__body">
                 <span className="gp-hint">
                   Use qualquer fonte do Google Fonts: escolha um atalho ou digite o nome.
                 </span>
@@ -663,7 +668,7 @@ export function BrandEditor({
           </section>
 
           <section className="gp-card" id="mc-animacao">
-            <fieldset className="gp-choices gp-field">
+            <fieldset className="gp-choices gp-choices--stack gp-field">
               <legend className="gp-label">Animação do site</legend>
               <span className="gp-hint">
                 Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode

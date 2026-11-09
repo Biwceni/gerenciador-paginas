@@ -213,6 +213,8 @@ export default buildConfig({
         general: {
           // A tradução do Payload chama o menu de "Cardápio" ("Abrir Cardápio" no botão ☰).
           menu: 'menu',
+          // Título da aba do Início e começo do caminho nas telas padrão (o menu diz "Painel").
+          dashboard: 'Painel',
           email: 'E-mail',
           emailAddress: 'Endereço de e-mail',
           restoring: 'Restaurando…',
