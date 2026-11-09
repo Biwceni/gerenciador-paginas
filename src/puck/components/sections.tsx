@@ -228,6 +228,8 @@ export function Hero(props: WithMetadata<HeroProps>) {
     'hero',
     align === 'center' && 'hero--center',
     !photo && 'hero--plain',
+    // Frase longa no título: tamanho menor que o de uma ou duas palavras, para não ocupar a tela.
+    filled(title) && title.trim().length > 30 && 'hero--long',
     props.height === 'compact' && 'hero--compact',
     animClass(anim),
   ]
@@ -660,6 +662,8 @@ export function Contact({ id, title, text, style, anim, metadata }: WithMetadata
 /** Política de privacidade: o texto sai das configurações na hora de mostrar (`lib/privacy.ts`). */
 export function Privacy({ id, title, style, anim, metadata }: WithMetadata<PrivacyProps>) {
   const Heading = metadata.mainHeadingId === id ? 'h1' : 'h2'
+  // Os subtítulos ficam um nível abaixo do título: sem pular do h1 para o h3.
+  const Sub = Heading === 'h1' ? 'h2' : 'h3'
 
   return (
     <Section
@@ -673,7 +677,7 @@ export function Privacy({ id, title, style, anim, metadata }: WithMetadata<Priva
         <div>
           {privacyBlocks(metadata.site).map((block, index) => (
             <React.Fragment key={index}>
-              {block.heading && <h3>{block.heading}</h3>}
+              {block.heading && <Sub className="rich-text__sub">{block.heading}</Sub>}
               <p>{block.text}</p>
               {block.details && block.details.length > 0 && (
                 <ul>
