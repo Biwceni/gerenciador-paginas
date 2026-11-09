@@ -163,9 +163,10 @@ export function SettingsEditor({
       </header>
 
       <div className="gp-pubbar">
-        {/* Atalhos para cada bloco: a tela é longa. */}
-        <nav aria-label="Blocos desta tela" className="gp-toc">
-          {SECTIONS.filter(([id]) => id !== 'st-modelo' || canStartOver).map(([id, label]) => (
+        {/* Atalhos para cada bloco: a tela é longa. "Começar de novo" fica de fora: é o último bloco,
+            de perigo, e sem ele os atalhos cabem numa linha no computador. */}
+        <nav aria-label="Blocos desta tela" className="gp-toc gp-toc--row">
+          {SECTIONS.filter(([id]) => id !== 'st-modelo').map(([id, label]) => (
             <a href={`#${id}`} key={id}>
               {label}
             </a>

@@ -102,10 +102,7 @@ export function PeopleCard({ adminRoute, apiRoute, me, people: initialPeople }: 
             )}
             <div className="gp-row__actions">
               {person.id === me.id ? (
-                <Link
-                  className="gp-btn gp-btn--sm gp-btn--ghost"
-                  href={panelHref(adminRoute, 'account')}
-                >
+                <Link className="gp-btn gp-btn--sm" href={panelHref(adminRoute, 'account')}>
                   Minha conta
                 </Link>
               ) : (
