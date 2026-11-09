@@ -116,12 +116,13 @@ export function PageSettingsDialog({
       <label className="ed-switch">
         <input
           checked={campaign}
+          aria-describedby="ed-campaign-hint"
           onChange={(event) => setCampaign(event.target.checked)}
           type="checkbox"
         />
         Página de campanha
       </label>
-      <p className="ed-hint">
+      <p className="ed-hint" id="ed-campaign-hint">
         Esconde o menu e deixa o rodapé numa linha só. Bom para quem chega por um anúncio.
       </p>
 
@@ -163,9 +164,9 @@ export function PageSettingsDialog({
           <span>Foto ao compartilhar no WhatsApp e nas redes (opcional)</span>
           <div className="ed-photo-field">
             {image ? (
-              <img alt="" className="ed-thumb" src={thumbnailURL(image)} />
+              <img alt="" className="ed-pic" src={thumbnailURL(image)} />
             ) : (
-              <span className="ed-thumb ed-thumb--empty">Primeira foto da página</span>
+              <span className="ed-pic ed-pic--empty">Primeira foto da página</span>
             )}
             <div className="ed-photo-field__actions">
               <button
