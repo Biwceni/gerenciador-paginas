@@ -219,3 +219,28 @@ export function getHref(metadata: ContentMetadata, link: LinkRef): string | null
   const anchor = metadata.pageAnchors[link.pageId]?.[link.sectionId]
   return anchor ? `${href}#${anchor}` : href
 }
+
+/**
+ * Botões e links com nome e sem destino ("Novo link" recém-colocado, por exemplo). No site eles
+ * somem, sem a pessoa saber (achado 10.4). Devolve cada um com a seção onde está.
+ */
+export function buttonsWithoutLink(
+  data: PuckPageData,
+): { sectionId: string; sectionType: string; label: string }[] {
+  const found: { sectionId: string; sectionType: string; label: string }[] = []
+  for (const section of data.content) {
+    const walk = (value: unknown) => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (!value || typeof value !== 'object') return
+      const record = value as Record<string, unknown>
+      // Sem nome e sem destino é botão desligado (o Banner sem botão fica assim): não conta.
+      const label = typeof record.label === 'string' ? record.label.trim() : ''
+      if (label && 'link' in record && record.link === null) {
+        found.push({ sectionId: String(section.props.id), sectionType: section.type, label })
+      }
+      Object.values(record).forEach(walk)
+    }
+    walk(section.props)
+  }
+  return found
+}

@@ -650,6 +650,29 @@ textarea.ed-input {
   color: var(--ed-muted);
 }
 
+/* "Ir até" de cada seção no Publicar (achados 2.3 e 10.4). */
+.ed-goto-list {
+  display: grid;
+  gap: 6px;
+}
+
+.ed-goto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ed-text);
+}
+
+.ed-goto > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ed-goto .ed-btn {
+  flex: none;
+}
+
 .ed-alt-row {
   display: flex;
   align-items: center;

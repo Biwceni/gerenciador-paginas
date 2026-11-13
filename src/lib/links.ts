@@ -18,6 +18,33 @@ export function validateExternalURL(value: string | null | undefined): string | 
   return true
 }
 
+const EMAIL = /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/
+const PHONE = /^\+?[\d\s().-]+$/
+// Um domínio com ponto ("instagram.com/perfil", "www.loja.com.br"), sem espaço nem protocolo.
+const DOMAIN = /^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/?#]\S*)?$/i
+
+/**
+ * O que a pessoa escreveu em "Outro site, e-mail ou telefone", como link (achado 3.7): o endereço
+ * completo fica como está; e-mail vira `mailto:`, telefone vira `tel:` e "www.…" ou "loja.com.br"
+ * ganham o https://. Devolve `null` quando não dá para entender.
+ */
+export function externalLink(value: string | null | undefined): string | null {
+  const text = (value ?? '').trim()
+  if (!text) return null
+  if (isSafeURL(text)) return text
+  if (EMAIL.test(text)) return `mailto:${text}`
+  if (PHONE.test(text) && text.replace(/\D/g, '').length >= 8) return telHref(text)
+  if (DOMAIN.test(text)) return `https://${text}`
+  return null
+}
+
+/** Mensagem para o campo "Outro site, e-mail ou telefone", ou `true` quando serve. */
+export function validateLinkInput(value: string | null | undefined): string | true {
+  if (!(value ?? '').trim()) return 'Digite o endereço do link.'
+  if (externalLink(value)) return true
+  return 'Escreva um site (instagram.com/seunegocio), um e-mail (contato@loja.com.br) ou um telefone com DDD.'
+}
+
 /**
  * Número de WhatsApp só com dígitos e com o código do Brasil (55).
  * Aceita "(31) 99999-0000", "31999990000" ou "+55 31 99999-0000". Devolve `null` se não parecer um número.

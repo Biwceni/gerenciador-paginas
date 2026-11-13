@@ -238,6 +238,8 @@ describe('contagem de problemas do envio', () => {
     const { result } = renderHook(() => usePhotoUploads({ onFinished }))
 
     act(() => result.current.addFiles([file('a.jpg'), file('b.jpg')]))
+    // O envio começa depois de conferir que o arquivo abre como foto.
+    await waitFor(() => expect(xhr.sent('a.jpg')).toBe(true))
     // "a" falha enquanto "b" ainda está subindo, e a pessoa tenta de novo.
     await act(async () => xhr.answer('a.jpg', false))
     await waitFor(() =>
@@ -275,6 +277,7 @@ describe('contagem de problemas do envio', () => {
     const { result } = renderHook(() => usePhotoUploads({ onFinished }))
 
     act(() => result.current.addFiles([file('a.jpg'), file('b.jpg')]))
+    await waitFor(() => expect(xhr.sent('a.jpg')).toBe(true))
     await act(async () => xhr.answer('a.jpg', false))
     await waitFor(() =>
       expect(result.current.items.find((item) => item.file.name === 'a.jpg')?.state).toBe('failed'),
@@ -283,6 +286,26 @@ describe('contagem de problemas do envio', () => {
     await act(async () => xhr.answer('b.jpg', true))
     await waitFor(() => expect(onFinished).toHaveBeenCalledTimes(1))
     expect(onFinished.mock.calls[0][0].problems).toBe(0)
+  })
+})
+
+describe('arquivo que não serve (achados 9.3 e 9.5)', () => {
+  it('com cara de foto, mas que não abre: recusado sem culpar a internet', async () => {
+    const sent = fakeXHR()
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(new Error('não é imagem')))
+    const { result } = renderHook(() => usePhotoUploads())
+    act(() => result.current.addFiles([file('falsa.jpg')]))
+    await waitFor(() => expect(result.current.items[0]?.state).toBe('refused'))
+    expect(result.current.items[0].problem).toMatch(/não abriu como foto/)
+    expect(sent).toHaveLength(0)
+  })
+
+  it('a mesma foto que já está na biblioteca fica parada, com "Enviar mesmo assim"', () => {
+    const library = [{ filename: 'praia-1600.jpg', filesize: 4, alt: 'Praia' }]
+    const { result } = renderHook(() => usePhotoUploads({ library }))
+    act(() => result.current.addFiles([file('praia-1600.jpg')]))
+    expect(result.current.items[0]).toMatchObject({ state: 'refused', duplicate: true })
+    expect(result.current.items[0].problem).toBe('Esta foto já está na biblioteca (Praia).')
   })
 })
 

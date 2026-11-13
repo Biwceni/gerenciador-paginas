@@ -88,13 +88,13 @@ function UploadTile({ upload, uploads }: { upload: PhotoUpload; uploads: PhotoUp
               {problem ?? 'Não deu para enviar. Confira a internet e tente de novo.'}
             </span>
             <div className="gp-upload__actions">
-              {state === 'failed' && (
+              {(state === 'failed' || upload.duplicate) && (
                 <button
                   className="gp-btn gp-btn--sm"
                   onClick={() => uploads.retry(upload)}
                   type="button"
                 >
-                  Tentar de novo
+                  {upload.duplicate ? 'Enviar mesmo assim' : 'Tentar de novo'}
                 </button>
               )}
               <button

@@ -31,14 +31,25 @@ import { saveSitePersonality } from '@/components/panel/api'
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { PERSONALITY_TOKENS } from '@/components/site/theme'
 import type { FormDefinition } from '@/lib/forms'
-import { findExampleSections } from '@/lib/examples'
+import { exampleMatcher, findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
 import { editorConfig } from '@/puck/editor-config'
-import { type ContentMetadata, mainHeadingID, type SiteInfo } from '@/puck/references'
-import { CONTENT_VERSION, parsePageContent, type PuckPageData } from '@/puck/schema'
-import { extractDescription, googleTitle } from '@/puck/seo'
+import { CATALOG_TEXTS } from '@/puck/catalogTexts'
+import {
+  buttonsWithoutLink,
+  type ContentMetadata,
+  mainHeadingID,
+  type SiteInfo,
+} from '@/puck/references'
+import {
+  CONTENT_VERSION,
+  type PageComponent,
+  parsePageContent,
+  type PuckPageData,
+} from '@/puck/schema'
+import { extractDescription, googleTitle, isCatalogText } from '@/puck/seo'
 
 import {
   latestPageVersion,
@@ -50,6 +61,7 @@ import {
 } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
 import { CountedField } from './CountedField'
+import { ListLimit } from './ListLimit'
 import { dictionary } from './dictionary'
 import { AdjustedBar, ChoiceField } from './adjusted'
 import { ColumnPicker } from './ColumnPicker'
@@ -64,7 +76,7 @@ import { PersonalitySwitch } from './PersonalitySwitch'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
-import { type GetPuck, ROOT_ZONE, usePuck } from './puck'
+import { type GetPuck, MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErrors'
 import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
@@ -87,6 +99,8 @@ export type EditorProps = {
   domain: string
   /** Textos dos modelos: seção que ainda tem um deles aparece como texto de exemplo. */
   exampleTexts: string[]
+  /** Personalidade que está no ar (a do editor pode ser um rascunho de Sua marca). */
+  livePersonality: Personality
   whatsappHref: string | null
   theme: Record<string, string>
   fontFaces: string | null
@@ -143,6 +157,7 @@ const countedFields = {
   richtext: CountedField,
   radio: ChoiceField,
   select: ChoiceField,
+  array: ListLimit,
 } as unknown as NonNullable<Parameters<typeof Puck>[0]['overrides']>['fieldTypes']
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -718,12 +733,35 @@ export function Editor(props: EditorProps) {
     [apiRoute, pageId, send, stopIfConflict],
   )
 
+  /** Escolhe uma seção da página e mostra ela na prévia (o "Ir até" do Publicar). */
+  const goToSection = useCallback((id: string) => {
+    const puck = getPuck.current?.()
+    if (!puck) return
+    const index = puck.appState.data.content.findIndex((item) => item.props.id === id)
+    if (index < 0) return
+    const phone = window.innerWidth < MOBILE_WIDTH
+    puck.dispatch({
+      type: 'setUi',
+      ui: {
+        itemSelector: { index, zone: ROOT_ZONE },
+        ...(phone ? { leftSideBarVisible: false } : { rightSideBarVisible: true }),
+      },
+      recordHistory: false,
+    })
+    scrollToSection(id)
+  }, [])
+
   const isHome = pageId === homepageId
   const path = isHome ? '/' : `/${settings.slug}`
   const unsaved = save.state !== 'saved'
   const savedAt = save.state === 'saved' ? save.at : undefined
 
-  const knownTexts = props.exampleTexts
+  // Textos dos modelos e o que cada seção traz ao entrar pelo catálogo (achado 2.3).
+  const knownTexts = useMemo(() => [...props.exampleTexts, ...CATALOG_TEXTS], [props.exampleTexts])
+  const isExampleText = useMemo(() => {
+    const matches = exampleMatcher(knownTexts)
+    return (text: string) => matches(text) || isCatalogText(text)
+  }, [knownTexts])
   // Procura os textos de exemplo sem atrasar a digitação: a lista pode esperar a pessoa parar.
   const settledData = useDeferredValue(data)
   const exampleSections = useMemo(
@@ -983,9 +1021,33 @@ export function Editor(props: EditorProps) {
                 onClose={() => setDialog(null)}
                 onPhotoChanged={addPhoto}
                 onPublish={publish}
-                exampleSections={exampleSections.map(
-                  (section) => editorConfig.components[section.type]?.label ?? section.type,
-                )}
+                exampleSections={exampleSections.map((section) => ({
+                  id: String(section.props.id),
+                  label: editorConfig.components[section.type]?.label ?? section.type,
+                }))}
+                linkless={buttonsWithoutLink(data).map((button) => ({
+                  id: button.sectionId,
+                  label: button.label,
+                  section:
+                    editorConfig.components[button.sectionType as PageComponent['type']]?.label ??
+                    button.sectionType,
+                }))}
+                onGoTo={(id) => {
+                  setDialog(null)
+                  goToSection(id)
+                }}
+                personalityPending={
+                  personality !== props.livePersonality
+                    ? PERSONALITY_LABELS[personality].name
+                    : null
+                }
+                slugTakenBy={
+                  isHome
+                    ? null
+                    : (props.pages.find(
+                        (other) => other.id !== pageId && other.slug === settings.slug,
+                      )?.title ?? null)
+                }
                 page={{
                   title: settings.title,
                   googleTitle: googleTitle(
@@ -1056,7 +1118,7 @@ export function Editor(props: EditorProps) {
 
             {dialog === 'settings' && (
               <PageSettingsDialog
-                automaticDescription={extractDescription(data) ?? ''}
+                automaticDescription={extractDescription(data, isExampleText) ?? ''}
                 onClose={() => setDialog(null)}
                 onSave={saveSettings}
                 settings={settings}

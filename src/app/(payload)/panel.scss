@@ -1937,10 +1937,14 @@ $media-stacked: 1279px;
     color: var(--gp-warn);
     font-size: var(--gp-fs-small);
     font-weight: 600;
+    // Nome de arquivo comprido não passa da borda do cartão no celular (achado 9.3).
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 6px;

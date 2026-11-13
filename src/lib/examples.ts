@@ -48,6 +48,18 @@ export const KEEPABLE_TEXTS: readonly string[] = [
   'Receba o orçamento',
   'Receba o valor',
   'Combine a entrega',
+  // Títulos de seção do catálogo que já servem como estão (achado 2.3): o texto de baixo, os
+  // itens e os depoimentos de exemplo continuam contando.
+  'Nossos produtos',
+  'Preços',
+  'No Instagram',
+  'Nosso dia a dia',
+  'O que dizem nossos clientes',
+  'Venha nos visitar',
+  'Vamos conversar?',
+  'Por que escolher a gente',
+  'Assista ao nosso vídeo',
+  'Deixe seus dados e respondemos em pouco tempo.',
 ]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -65,6 +77,13 @@ function collectTexts(value: unknown, found: Set<string>) {
       }
     } else collectTexts(field, found)
   }
+}
+
+/** Os textos corridos de um conteúdo (seções, itens, conteúdo inicial), normalizados. */
+export function textsOf(value: unknown): string[] {
+  const found = new Set<string>()
+  collectTexts(value, found)
+  return [...found]
 }
 
 /**

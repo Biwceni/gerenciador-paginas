@@ -1835,6 +1835,21 @@
   }
 
   /*
+   * Campo opcional vazio (preço, descrição, legenda, texto de abertura): sem o convite o tempo
+   * todo, senão um Cardápio de 30 itens mostra 30 "Clique para escrever" (achado 6.5). O convite
+   * aparece com o mouse sobre o item (ou a seção, para os da seção) e enquanto a pessoa escreve.
+   */
+  & [data-optional] [contenteditable]:empty::before {
+    content: none;
+  }
+
+  & li:hover [data-optional='item'] [contenteditable]:empty::before,
+  & [data-puck-component]:hover [data-optional='section'] [contenteditable]:empty::before,
+  & [data-optional]:focus-within [contenteditable]:empty::before {
+    content: 'Clique para escrever';
+  }
+
+  /*
    * Personalidades (redesign v3). O Clássico é o visual de antes: nada daqui vale para ele. As
    * medidas (letras, cantos, espaços, largura) vêm das variáveis de theme.ts; aqui fica o que muda
    * a arrumação. Uma regra por seletor (ver o aviso lá em cima).

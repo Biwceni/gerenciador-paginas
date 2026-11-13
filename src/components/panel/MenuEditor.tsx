@@ -14,7 +14,7 @@ import {
   SiteFooterView,
   SiteHeaderView,
 } from '@/components/site/SiteChrome'
-import { isSafeURL, validateExternalURL } from '@/lib/links'
+import { externalLink, isSafeURL, validateExternalURL, validateLinkInput } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Header, Media } from '@/payload-types'
@@ -674,7 +674,7 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
       : current === 'section'
         ? `section:${pageID(value) ?? ''}:${value?.section ?? ''}`
         : current
-  const urlCheck = current === 'url' && value?.url ? validateExternalURL(value.url) : true
+  const urlCheck = current === 'url' && value?.url ? validateLinkInput(value.url) : true
   // Duas páginas com o mesmo nome ("Início" e "Início") aparecem com o endereço junto.
   const titles = distinctPageTitles(pages)
 
@@ -725,8 +725,13 @@ function LinkPicker({ label, onChange, pages, value, whatsapp }: PickerProps) {
           <input
             aria-label={`${label}: endereço`}
             className="gp-input"
+            onBlur={() => {
+              // E-mail, telefone e "www.…" viram link sozinhos (achado 3.7).
+              const href = externalLink(value?.url)
+              if (href && href !== value?.url) onChange({ kind: 'url', url: href })
+            }}
             onChange={(event) => onChange({ kind: 'url', url: event.target.value })}
-            placeholder="https://instagram.com/seunegocio"
+            placeholder="Site, e-mail ou telefone"
             value={value?.url ?? ''}
           />
           {urlCheck !== true && <p className="gp-hint gp-hint--warn">{urlCheck}</p>}

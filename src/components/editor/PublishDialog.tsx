@@ -6,6 +6,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { isExamplePhoto } from '@/lib/examples'
+import { panelHref } from '@/lib/panel'
 import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
@@ -39,8 +40,16 @@ type Props = {
     /** Foto escolhida em "Página e Google". */
     seoImage: Media | number | null | undefined
   }
-  /** Nomes das seções que ainda têm texto de exemplo. */
-  exampleSections: string[]
+  /** Seções que ainda têm texto de exemplo, na ordem da página. */
+  exampleSections: { id: string; label: string }[]
+  /** Botões e links com nome e sem destino: no site eles somem. */
+  linkless: { id: string; label: string; section: string }[]
+  /** Fecha a janela e mostra a seção na prévia. */
+  onGoTo: (sectionId: string) => void
+  /** Personalidade escolhida no editor que ainda não foi publicada em Sua marca. */
+  personalityPending: string | null
+  /** Outra página que já usa o endereço desta (o nome dela). */
+  slugTakenBy: string | null
   onClose: () => void
   /** Publica a página; devolve quando terminar (ou lança o erro). */
   onPublish: () => Promise<void>
@@ -56,11 +65,15 @@ export function PublishDialog({
   data,
   page,
   exampleSections,
+  linkless,
+  onGoTo,
+  personalityPending,
+  slugTakenBy,
   onClose,
   onPublish,
   onPhotoChanged,
 }: Props) {
-  const { pageId, homepageId, pages, photoById, whatsappHref, site } = useEditor()
+  const { pageId, homepageId, pages, photoById, whatsappHref, site, adminRoute } = useEditor()
   const [alts, setAlts] = useState<Record<number, string>>({})
   const [addToMenu, setAddToMenu] = useState(true)
   // A página inicial não precisa estar no menu: o logo já leva até ela.
@@ -112,6 +125,9 @@ export function PublishDialog({
     examplePhotos.length > 0 ||
     weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
     draftLinks.length > 0 ||
+    linkless.length > 0 ||
+    personalityPending !== null ||
+    slugTakenBy !== null ||
     whatsappWithoutNumber ||
     missing.length > 0 ||
     menu.kind === 'cannot-add' ||
@@ -198,11 +214,17 @@ export function PublishDialog({
           </button>
           <button
             className="ed-btn ed-btn--primary"
-            disabled={busy || menu.kind === 'loading'}
+            disabled={busy || menu.kind === 'loading' || slugTakenBy !== null}
             onClick={publish}
             type="button"
           >
-            {busy ? 'Publicando…' : hasWarning ? 'Publicar mesmo assim' : 'Publicar agora'}
+            {busy
+              ? 'Publicando…'
+              : menu.kind === 'loading'
+                ? 'Conferindo o menu…'
+                : hasWarning
+                  ? 'Publicar mesmo assim'
+                  : 'Publicar agora'}
           </button>
         </>
       }
@@ -210,6 +232,11 @@ export function PublishDialog({
       title={`Publicar “${page.title}”`}
     >
       <ul className="ed-checks">
+        {slugTakenBy !== null && (
+          <Check title={`O endereço ${page.path} já é da página “${slugTakenBy}”`}>
+            Duas páginas não podem ter o mesmo endereço. Troque em Página e Google para publicar.
+          </Check>
+        )}
         {exampleSections.length ? (
           <Check
             title={
@@ -218,7 +245,8 @@ export function PublishDialog({
                 : `${exampleSections.length} seções ainda têm texto de exemplo`
             }
           >
-            {exampleSections.join(', ')}. Os visitantes vão ver esse texto.
+            Os visitantes vão ver esse texto. Troque pelo seu:
+            <GoToList items={exampleSections} onGoTo={onGoTo} />
           </Check>
         ) : (
           <Check ok title="Sem texto de exemplo" />
@@ -288,12 +316,37 @@ export function PublishDialog({
         ) : (
           <Check ok title="Todas as fotos têm descrição" />
         )}
+        {linkless.length > 0 && (
+          <Check
+            title={
+              linkless.length === 1
+                ? 'Um botão está sem destino'
+                : `${linkless.length} botões estão sem destino`
+            }
+          >
+            Sem destino, o botão não aparece no site. Escolha em &ldquo;Leva para&rdquo;:
+            <GoToList
+              items={linkless.map((button) => ({
+                id: button.id,
+                label: `“${button.label}”, em ${button.section}`,
+              }))}
+              onGoTo={onGoTo}
+            />
+          </Check>
+        )}
         {draftLinks.length ? (
           <Check title="Um botão leva para uma página que ainda não está no ar">
             {draftLinks.join(', ')}. Esse botão não aparece no site até a página ser publicada.
           </Check>
         ) : (
-          <Check ok title="Todos os botões levam para páginas no ar" />
+          linkless.length === 0 && <Check ok title="Todos os botões levam para páginas no ar" />
+        )}
+        {personalityPending !== null && (
+          <Check title={`A personalidade ${personalityPending} ainda não está no ar`}>
+            Publicar esta página não muda a personalidade do site.{' '}
+            <a href={panelHref(adminRoute, 'brand')}>Publique em Sua marca</a> para o site todo
+            mudar.
+          </Check>
         )}
         {whatsappWithoutNumber && (
           <Check title="Botão de WhatsApp sem número">
@@ -318,6 +371,28 @@ export function PublishDialog({
       </ul>
       {error && <p className="ed-hint ed-hint--warn">Não deu para publicar: {error}</p>}
     </Dialog>
+  )
+}
+
+/** Lista de seções com o botão "Ir até" de cada uma. */
+function GoToList({
+  items,
+  onGoTo,
+}: {
+  items: { id: string; label: string }[]
+  onGoTo: (id: string) => void
+}) {
+  return (
+    <span className="ed-goto-list">
+      {items.map((item, index) => (
+        <span className="ed-goto" key={`${item.id}-${index}`}>
+          <span>{item.label}</span>
+          <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
+            Ir até
+          </button>
+        </span>
+      ))}
+    </span>
   )
 }
 

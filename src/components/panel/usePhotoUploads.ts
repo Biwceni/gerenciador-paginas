@@ -3,7 +3,7 @@
 import { useConfig, useUploadHandlers } from '@payloadcms/ui'
 import { useEffect, useId, useRef, useState } from 'react'
 
-import { photoProblem } from '@/lib/photos'
+import { photoLabel, photoProblem, samePhoto } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 
 import { createQueue } from './photoQueue'
@@ -21,6 +21,24 @@ export type PhotoUpload = {
   progress: number
   /** Frase para a pessoa, quando o arquivo não serve. */
   problem?: string
+  /** A foto já está na biblioteca: fica parada, com "Enviar mesmo assim". */
+  duplicate?: boolean
+}
+
+/** O arquivo tem nome e tipo de foto, mas não abre como foto (achado 9.3). */
+class NotAPhoto extends Error {}
+
+const NOT_A_PHOTO = 'Este arquivo não abriu como foto. Use uma foto em JPG, PNG, WebP, AVIF ou GIF.'
+
+/** Confere no navegador se o arquivo abre como imagem, antes de enviar. */
+async function checkOpens(file: File) {
+  if (typeof createImageBitmap !== 'function') return
+  try {
+    const bitmap = await createImageBitmap(file)
+    bitmap.close()
+  } catch {
+    throw new NotAPhoto()
+  }
 }
 
 type Options = {
@@ -28,6 +46,8 @@ type Options = {
   onUploaded?: (photo: Media) => void
   /** A fila esvaziou: as fotos que chegaram e quantas não chegaram. */
   onFinished?: (result: { uploaded: Media[]; problems: number }) => void
+  /** Fotos que já estão na biblioteca: a mesma foto enviada de novo é avisada antes. */
+  library?: readonly Pick<Media, 'filename' | 'filesize' | 'alt'>[]
 }
 
 let nextId = 1
@@ -57,7 +77,8 @@ export function usePhotoUploads(options: Options = {}) {
 
     queue.current = createQueue<PhotoUpload, Media>({
       limit: AT_ONCE,
-      work: (upload) => {
+      work: async (upload) => {
+        await checkOpens(upload.file)
         // Com o Storage ligado, o plugin registra aqui o envio direto. Só na hora de enviar: ele
         // registra num efeito, depois do primeiro desenho, sem desenhar a tela de novo.
         const direct = Boolean(getUploadHandler({ collectionSlug: 'media' }))
@@ -71,9 +92,12 @@ export function usePhotoUploads(options: Options = {}) {
         round.current.uploaded.push(photo)
         latest.current.onUploaded?.(photo)
       },
-      onFail: (upload) => {
+      onFail: (upload, error) => {
         round.current.problems.add(upload.id)
-        change(upload.id, { state: 'failed' })
+        // Tentar de novo não resolve um arquivo que não é foto: a internet não tem culpa.
+        if (error instanceof NotAPhoto)
+          change(upload.id, { state: 'refused', problem: NOT_A_PHOTO })
+        else change(upload.id, { state: 'failed' })
       },
       onIdle: () => {
         const { uploaded, problems } = round.current
@@ -86,13 +110,16 @@ export function usePhotoUploads(options: Options = {}) {
   const addFiles = (files: FileList | File[]) => {
     const added = Array.from(files).map((file): PhotoUpload => {
       const problem = photoProblem(file) ?? undefined
+      const same = problem ? null : samePhoto(file, latest.current.library ?? [])
       return {
         id: nextId++,
         file,
         preview: problem ? null : URL.createObjectURL(file),
-        state: problem ? 'refused' : 'waiting',
+        state: problem || same ? 'refused' : 'waiting',
         progress: 0,
-        problem,
+        problem:
+          problem ?? (same ? `Esta foto já está na biblioteca (${photoLabel(same)}).` : undefined),
+        duplicate: Boolean(same),
       }
     })
     const queued = added.filter((item) => item.state === 'waiting')
@@ -109,7 +136,9 @@ export function usePhotoUploads(options: Options = {}) {
     round.current.problems.delete(upload.id)
     setItems((list) =>
       list.map((item) =>
-        item.id === upload.id ? { ...item, state: 'waiting', progress: 0 } : item,
+        item.id === upload.id
+          ? { ...item, state: 'waiting', progress: 0, problem: undefined, duplicate: false }
+          : item,
       ),
     )
     queue.current?.add([upload])
