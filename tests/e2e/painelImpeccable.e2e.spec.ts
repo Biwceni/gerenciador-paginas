@@ -1,6 +1,7 @@
 import { expect, type Page, test } from '@playwright/test'
 import { getPayload } from 'payload'
 
+import type { Header } from '../../src/payload-types.js'
 import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { login } from '../helpers/login'
@@ -23,6 +24,7 @@ const SCREENS = [
 
 const pageIds: number[] = []
 let photoId: number | null = null
+let previousHeader: Header | null = null
 
 // PNG de 1 pixel, que o servidor consegue ler (sem o Storage, a foto fica no próprio servidor).
 const PNG = Buffer.from(
@@ -91,6 +93,17 @@ test.describe.serial('painel: avaliação Impeccable', () => {
       overrideAccess: true,
     })
     pageIds.push(live.id, draft.id)
+    // O Menu e rodapé precisa de um item no menu para medir o campo de texto: o banco de testes
+    // pode começar vazio.
+    previousHeader = await payload.findGlobal({ slug: 'header', depth: 0, overrideAccess: true })
+    await payload.updateGlobal({
+      slug: 'header',
+      data: {
+        items: [{ label: 'Início', link: { kind: 'page' as const, page: live.id } }],
+        _status: 'published',
+      },
+      overrideAccess: true,
+    })
     // Sem o Storage (S3) a foto não sobe; o teste de Fotos fica de fora, e o resto segue.
     try {
       const photo = await payload.create({
@@ -115,6 +128,13 @@ test.describe.serial('painel: avaliação Impeccable', () => {
 
   test.afterAll(async () => {
     const payload = await panel()
+    if (previousHeader) {
+      await payload.updateGlobal({
+        slug: 'header',
+        data: { ...previousHeader, _status: 'published' },
+        overrideAccess: true,
+      })
+    }
     for (const id of pageIds) {
       await payload.delete({ collection: 'pages', id, overrideAccess: true }).catch(() => undefined)
     }

@@ -306,6 +306,8 @@ test.describe.serial('editor: seções', () => {
     await page.waitForTimeout(500)
     await actions.getByRole('button', { name: 'Descer' }).click()
     await expect.poll(() => order(page)).toEqual(INITIAL)
+    // Mesma espera antes do Duplicar: sem ela, Descer e Duplicar caem no mesmo passo do histórico.
+    await page.waitForTimeout(500)
 
     await actions.getByRole('button', { name: 'Duplicar' }).click()
     await expect.poll(async () => (await order(page)).length).toBe(INITIAL.length + 1)
@@ -383,6 +385,8 @@ test.describe.serial('editor: seções', () => {
 
   test('arrastar continua funcionando: da lista e dentro da prévia', async ({ page }) => {
     // Da lista até a borda entre a primeira e a segunda seção.
+    // A lista pode passar da altura da tela: o item precisa estar à vista para ser segurado.
+    await listItem(page, 'Depoimentos').scrollIntoViewIfNeeded()
     const item = await boxOf(listItem(page, 'Depoimentos'))
     const hero = await boxOf(sectionsIn(page).nth(0))
     await drag(
@@ -430,7 +434,10 @@ test.describe.serial('editor: seções', () => {
 
       await expect(page.getByRole('group', { name: 'Tamanho da tela' })).toBeVisible()
       await expect(page.getByText(/Computador, reduzido para caber/)).toBeVisible()
-      await expect(page.locator('select')).toHaveCount(0)
+      // Nenhum seletor de tamanho: o único select do topo é o da Personalidade.
+      await expect(
+        page.locator('select').filter({ hasNot: page.getByRole('option', { name: 'Clássico' }) }),
+      ).toHaveCount(0)
       await expect(page.locator('#puck-canvas-root')).toHaveCSS('width', '1280px')
 
       const before = await boxOf(page.locator('iframe'))

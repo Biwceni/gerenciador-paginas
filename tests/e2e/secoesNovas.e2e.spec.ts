@@ -257,7 +257,8 @@ test.describe.serial('seções novas (entrega 4)', () => {
       await expect(visitor.locator('.product')).toHaveCount(2)
       await expect(visitor.getByText('Produto sem foto')).toHaveCount(0)
       await expect(
-        visitor.getByRole('link', { name: 'Pedir pelo WhatsApp: Bolo de pote' }),
+        // O Chromium mais novo junta o texto escondido com um espaço antes dos dois-pontos.
+        visitor.getByRole('link', { name: /^Pedir pelo WhatsApp ?: Bolo de pote$/ }),
       ).toHaveAttribute('href', /text=Ol%C3%A1%21\+Quero\+saber\+sobre%3A\+Bolo\+de\+pote/)
 
       // Cardápio com números alinhados.
@@ -358,7 +359,8 @@ test.describe.serial('seções novas (entrega 4)', () => {
     await page.waitForURL((url) => !url.pathname.endsWith('/login'))
     await page.goto(`${BASE}/admin/editor/${editorPageId}`)
 
-    const item = page.locator('.ed-palitem:not([inert])', { hasText: 'Vitrine de produtos' })
+    // Pela lista do Puck: às vezes ele desenha uma cópia do item fora da lista, sem o testid.
+    const item = page.getByTestId('drawer-item:Products').locator('.ed-palitem:not([inert])')
     await expect(item).toContainText('Foto, nome, preço e botão de pedir', { timeout: 120_000 })
     await item.click()
 
