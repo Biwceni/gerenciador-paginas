@@ -10,6 +10,7 @@ import type { Page } from '@/payload-types'
 import { relationID } from '@/lib/relations'
 
 import { thumbnailURL, useEditor } from './context'
+import { counterText } from './CountedField'
 import { Dialog } from './Dialog'
 
 export type PageSettings = Pick<Page, 'title' | 'slug' | 'campaign' | 'seo'>
@@ -47,12 +48,16 @@ export function PageSettingsDialog({
   const slugError = validateSlug(slug)
   const image = seoImage ? photoById[seoImage] : null
 
+  const titleMissing = !title.trim()
+
   const save = async () => {
+    // Antes a janela fechava como se tivesse salvo, e o nome continuava o antigo (achado 9.6).
+    if (titleMissing) return setError('Escreva o nome da página para salvar.')
     if (slugError !== true) return setError(slugError)
     setBusy(true)
     setError(null)
     const next: PageSettings = {
-      title: title.trim() || settings.title,
+      title: title.trim(),
       slug,
       campaign,
       seo: { title: seoTitle.trim(), description: seoDescription.trim(), image: seoImage },
@@ -84,12 +89,22 @@ export function PageSettingsDialog({
     >
       <label className="ed-field">
         <span>Nome da página</span>
-        <input
-          className="ed-input"
-          maxLength={80}
-          onChange={(event) => setTitle(event.target.value)}
-          value={title}
-        />
+        <span className="ed-counted" data-tone={title.length >= 72 ? 'near' : 'ok'}>
+          <input
+            aria-describedby="ed-page-title-count"
+            aria-invalid={titleMissing || undefined}
+            className="ed-input"
+            maxLength={80}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+            value={title}
+          />
+          <span className="ed-counter" id="ed-page-title-count">
+            {titleMissing
+              ? 'Obrigatório: aparece no menu e no Google.'
+              : counterText(title.length, 80)}
+          </span>
+        </span>
       </label>
 
       <label className="ed-field">

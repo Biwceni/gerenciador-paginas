@@ -22,10 +22,12 @@ import {
 } from '@/lib/photoSize'
 import type { Media } from '@/payload-types'
 import { youtubeID } from '@/lib/youtube'
+import { LIMITS } from '@/puck/limits'
 import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
+import { counterText } from './CountedField'
 import { addMenuItem, linksTo, readMenu } from './menu'
 import { ROOT_ZONE } from './puck'
 
@@ -163,22 +165,34 @@ export function PhotoListField<T extends PhotoListItem>({
               )}
             </span>
             <button
-              aria-label="Subir foto"
+              aria-label={`Subir a foto ${index + 1}`}
               className="ed-icon-btn"
               disabled={readOnly || index === 0}
               onClick={() => move(index, index - 1)}
+              title="Subir"
               type="button"
             >
-              ↑
+              <PanelIcon name="up" size={16} />
             </button>
             <button
-              aria-label="Tirar foto da galeria"
+              aria-label={`Descer a foto ${index + 1}`}
+              className="ed-icon-btn"
+              disabled={readOnly || index === value.length - 1}
+              onClick={() => move(index, index + 1)}
+              title="Descer"
+              type="button"
+            >
+              <PanelIcon name="down" size={16} />
+            </button>
+            <button
+              aria-label={`Tirar a foto ${index + 1}`}
               className="ed-icon-btn"
               disabled={readOnly}
               onClick={() => onChange(value.filter((_, i) => i !== index))}
+              title="Tirar"
               type="button"
             >
-              ×
+              <PanelIcon name="x" size={16} />
             </button>
           </div>
         )
@@ -401,14 +415,21 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
 
   return (
     <div className="ed-link-field">
-      <input
-        className="ed-input"
-        disabled={readOnly}
-        maxLength={40}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="Ex.: Serviços"
-        value={value ?? ''}
-      />
+      <div
+        className="ed-counted"
+        data-tone={(value ?? '').length >= LIMITS.menuLabel * 0.9 ? 'near' : 'ok'}
+      >
+        <input
+          aria-label="Nome no menu"
+          className="ed-input"
+          disabled={readOnly}
+          maxLength={LIMITS.menuLabel}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Ex.: Serviços"
+          value={value ?? ''}
+        />
+        <span className="ed-counter">{counterText((value ?? '').length, LIMITS.menuLabel)}</span>
+      </div>
       <span className="ed-hint">
         Para sites de uma página: um link do menu pode levar direto até esta seção.
       </span>

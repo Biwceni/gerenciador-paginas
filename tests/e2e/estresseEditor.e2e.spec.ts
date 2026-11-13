@@ -140,7 +140,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('13.1 coluna cheia: Duplicar fica desligado na 6ª peça', async ({ page }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1'), fullColumns])
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
@@ -155,7 +154,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('13.7 página com 100 seções: Duplicar fica desligado', async ({ page }) => {
-    test.fail()
     test.setTimeout(300_000)
     const content = Array.from({ length: 100 }, (_, i) => cta(i + 1))
     const { id } = await createPage(content)
@@ -169,7 +167,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('11.2 campo com limite mostra quantas letras faltam', async ({ page }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1')])
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
@@ -182,7 +179,6 @@ test.describe('editor: achados do teste de estresse', () => {
     page,
     context,
   }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1')])
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
@@ -198,7 +194,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('13.4 Voltar com mudança não salva pergunta dentro do editor', async ({ page, context }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1')])
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
@@ -235,7 +230,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('9.1 a biblioteca de fotos abre por cima de Página e Google', async ({ page }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1')])
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
@@ -260,7 +254,6 @@ test.describe('editor: achados do teste de estresse', () => {
   test('3.1 e 10.1 palavra comprida cabe na tela do celular, no site publicado', async ({
     page,
   }) => {
-    test.fail()
     const { slug } = await createPage(
       [hero('Hero-a1', '@confeitariaartesanalmrskluanasantoandresp')],
       true,

@@ -31,8 +31,10 @@ function Locked({ children, href, tip }: { children: React.ReactNode; href: stri
       <div aria-hidden="true" inert>
         {children}
       </div>
-      <a className="editor-locked__tip" href={href} rel="noopener" target="_blank">
-        {tip}
+      {/* A área inteira leva para Menu e rodapé, mas o aviso é uma etiqueta pequena no canto, e não
+          um texto por cima do nome do site (achados 2.1 e 2.5). */}
+      <a aria-label={tip} className="editor-locked__tip" href={href} rel="noopener" target="_blank">
+        <span className="editor-locked__tag">Topo e rodapé: mude em Menu e rodapé ↗</span>
       </a>
     </div>
   )

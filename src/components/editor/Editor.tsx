@@ -26,8 +26,6 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import type { z } from 'zod'
-
 import { saveSitePersonality } from '@/components/panel/api'
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { PERSONALITY_TOKENS } from '@/components/site/theme'
@@ -36,17 +34,25 @@ import { findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
-import { COLUMN_PIECES } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
 import { type ContentMetadata, mainHeadingID, type SiteInfo } from '@/puck/references'
 import { CONTENT_VERSION, parsePageContent, type PuckPageData } from '@/puck/schema'
 import { extractDescription, googleTitle } from '@/puck/seo'
 
-import { publishPage, RequestError, saveDraft } from './api'
+import {
+  latestPageVersion,
+  OFFLINE,
+  publishPage,
+  RequestError,
+  saveDraft,
+  stillLoggedIn,
+} from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
+import { CountedField } from './CountedField'
 import { dictionary } from './dictionary'
 import { Dialog } from './Dialog'
 import { createDraftSaver } from './draftSaver'
+import { clearLocalCopy, type LocalCopy, readLocalCopy, writeLocalCopy } from './localCopy'
 import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
@@ -56,10 +62,12 @@ import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { PublishDialog } from './PublishDialog'
 import { type GetPuck, ROOT_ZONE, usePuck } from './puck'
+import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErrors'
 import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
+import { layoutProblem } from './zoneLimits'
 
 export type EditorProps = {
   apiRoute: string
@@ -85,12 +93,19 @@ export type EditorProps = {
 type SaveState =
   | { state: 'saved'; at?: Date }
   | { state: 'pending' | 'saving' }
-  | { state: 'error'; message: string }
+  /** Sem internet: tenta de novo sozinho, e de novo quando a conexão volta. */
+  | { state: 'offline' }
+  /** `target`: onde está o problema, para o "Ir até o campo". */
+  | { state: 'error'; message: string; target?: SaveTarget }
 
 type DialogName = 'publish' | 'versions' | 'settings' | 'more' | null
 
 const SAVE_DELAY = 1200
-const PIECES: readonly string[] = COLUMN_PIECES
+/** Sem internet, tenta salvar de novo depois de 3 s, 6 s, 12 s… até de 30 em 30 s. */
+const RETRY_FIRST = 3000
+const RETRY_MAX = 30000
+/** O Puck guarda o passo no Desfazer 250 ms depois da mudança: o conserto espera ele. */
+const HISTORY_SETTLE = 320
 const UI_ONLY_ACTIONS: readonly string[] = ['setUi', 'registerZone', 'unregisterZone']
 
 // Prévia: começa ocupando o espaço que sobra; fora do celular, o PreviewTools passa a desenhar a
@@ -118,27 +133,33 @@ const plugins: Plugin[] = [
   fieldsPlugin({ icon: <PanelIcon name="sliders" size={20} />, label: 'Opções' }),
 ]
 
-const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
+// Campos de texto com o contador de letras embaixo (o limite vem do formato da página).
+const countedFields = {
+  text: CountedField,
+  textarea: CountedField,
+  richtext: CountedField,
+} as unknown as NonNullable<Parameters<typeof Puck>[0]['overrides']>['fieldTypes']
 
-/** Mensagem de erro de formato que o leigo entende. */
-function friendlyError(error: z.ZodError): string {
-  const issue = error.issues[0]
-  if (issue?.code === 'too_big') {
-    return issue.origin === 'array'
-      ? `Passou do número máximo de itens (${issue.maximum}). Remova algum para salvar.`
-      : `Um texto passou do limite de ${issue.maximum} letras. Encurte para salvar.`
-  }
-  if (issue?.code === 'too_small' && issue.origin === 'array') {
-    return 'Uma seção ficou sem nenhum item. Coloque pelo menos um para salvar.'
-  }
-  return 'Algo na página ficou num formato que não dá para salvar. Desfaça a última mudança.'
-}
+const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
+const dateTimeFormat = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+const FIELDS = editorConfig.components as unknown as FieldsByType
 
 /** Controles da barra de cima, que fica dentro do Puck (override do cabeçalho). */
 type Chrome = {
   title: string
   status: string
+  /** O estado numa palavra, para o celular: "Salvo", "Falta publicar", "Sem internet". */
+  statusShort: string
   statusTone: 'ok' | 'warn' | 'muted'
+  /** O que impede de salvar, com o "Ir até o campo" quando dá para saber onde. */
+  saveAlert: { message: string; canGo: boolean } | null
+  goToProblem: () => void
   canPublish: boolean
   livePath: string | null
   backHref: string
@@ -147,7 +168,8 @@ type Chrome = {
   /** Escolhe a próxima seção que ainda tem texto de exemplo e rola até ela. */
   goToExample: () => void
   open: (dialog: DialogName) => void
-  leave: () => Promise<void>
+  /** Salva o que falta antes de sair. `false`: sobrou mudança sem salvar, e a janela já pergunta. */
+  leave: () => Promise<boolean>
   /** Abre o menu do celular, sabendo se dá para desfazer e refazer. */
   openMore: (history: { canUndo: boolean; canRedo: boolean }) => void
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
@@ -175,8 +197,7 @@ function EditorHeader() {
         href={chrome.backHref}
         onClick={async (event) => {
           event.preventDefault()
-          await chrome.leave()
-          window.location.href = chrome.backHref
+          if (await chrome.leave()) window.location.href = chrome.backHref
         }}
         title="Voltar para as páginas"
       >
@@ -184,8 +205,22 @@ function EditorHeader() {
       </Link>
       <div className="ed-top__title">
         <b>{chrome.title}</b>
-        <span className={`ed-top__status ed-top__status--${chrome.statusTone}`} role="status">
-          {chrome.status}
+        {/* No celular, o estado numa palavra com um ponto de cor; o texto inteiro fica no
+            nome acessível e aparece ao tocar. */}
+        <span
+          aria-label={chrome.status}
+          className={`ed-top__status ed-top__status--${chrome.statusTone}`}
+          role="status"
+          tabIndex={0}
+          title={chrome.status}
+        >
+          <span aria-hidden="true" className="ed-top__status-long">
+            {chrome.status}
+          </span>
+          <span aria-hidden="true" className="ed-top__status-short">
+            <i className="ed-dot" />
+            {chrome.statusShort}
+          </span>
         </span>
       </div>
       <PersonalitySwitch
@@ -253,6 +288,17 @@ function EditorHeader() {
         </button>
       </div>
       <PreviewTools />
+      {chrome.saveAlert && (
+        <div className="ed-save-alert" role="alert">
+          <PanelIcon name="alert" size={18} />
+          <span>{chrome.saveAlert.message}</span>
+          {chrome.saveAlert.canGo && (
+            <button className="ed-btn ed-btn--sm" onClick={chrome.goToProblem} type="button">
+              Ir até o campo
+            </button>
+          )}
+        </div>
+      )}
     </header>
   )
 }
@@ -320,6 +366,10 @@ export function Editor(props: EditorProps) {
   const [dialog, setDialog] = useState<DialogName>(null)
   const [undoState, setUndoState] = useState({ canUndo: false, canRedo: false })
   const [conflict, setConflict] = useState(false)
+  // Voltar com mudança que não foi salva: a janela explica antes de sair.
+  const [leaving, setLeaving] = useState<{ since: Date | null } | null>(null)
+  // Cópia guardada no aparelho numa visita anterior, que não chegou a ser salva.
+  const [recovery, setRecovery] = useState<LocalCopy | null>(null)
   const [photos, setPhotos] = useState(props.photos)
   const [forms, setForms] = useState(props.forms)
   const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
@@ -335,6 +385,13 @@ export function Editor(props: EditorProps) {
   // Versão em que este editor está trabalhando: a que abriu e, depois, a de cada salvamento dele.
   const baseUpdatedAt = useRef(props.page.updatedAt)
   const stopped = useRef(false)
+  // Sem internet: quando tentar de novo, e quanto esperar na próxima vez.
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const retryDelay = useRef(RETRY_FIRST)
+  // Saindo de propósito (Sair mesmo assim, sessão encerrada): o navegador não pergunta de novo.
+  const exiting = useRef(false)
+  // Desde quando há mudança na tela que ainda não foi salva.
+  const unsavedSince = useRef<Date | null>(null)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
   const exampleCursor = useRef(0)
@@ -385,17 +442,39 @@ export function Editor(props: EditorProps) {
     return true
   }, [])
 
+  const isDirty = useCallback(() => JSON.stringify(latest.current) !== lastSaved.current, [])
+
+  // A sessão acabou (Sair em outra aba, senha trocada): guarda a mudança no aparelho e vai para
+  // "Você saiu por segurança", que traz de volta para cá ao entrar de novo.
+  const endSession = useCallback(() => {
+    writeLocalCopy(pageId, latest.current)
+    exiting.current = true
+    const back = `${window.location.pathname}${window.location.search}`
+    const target = new URL(`${adminRoute}/logout-inactivity`, window.location.origin)
+    target.searchParams.set('redirect', back)
+    window.location.href = target.href
+  }, [adminRoute, pageId])
+
+  // A nova tentativa sem internet chama o próprio salvar, que ainda está sendo criado aqui.
+  const flushRef = useRef<() => Promise<void>>(() => Promise.resolve())
+
   // Salva o que está na tela, se mudou desde o último salvamento.
   const flush = useCallback((): Promise<void> => {
     if (timer.current) clearTimeout(timer.current)
     timer.current = null
+    if (retryTimer.current) clearTimeout(retryTimer.current)
+    retryTimer.current = null
     return send(async () => {
       if (stopped.current) return
       const current = latest.current
       const json = JSON.stringify(current)
       if (json === lastSaved.current) return
       const parsed = parsePageContent({ version: CONTENT_VERSION, data: current })
-      if (!parsed.success) return setSave({ state: 'error', message: friendlyError(parsed.error) })
+      if (!parsed.success) {
+        writeLocalCopy(pageId, current)
+        const problem = describeSaveError(parsed.error, current, FIELDS)
+        return setSave({ state: 'error', message: problem.message, target: problem.target })
+      }
       setSave({ state: 'saving' })
       try {
         const { doc } = await saveDraft(
@@ -406,21 +485,51 @@ export function Editor(props: EditorProps) {
         )
         baseUpdatedAt.current = doc.updatedAt
         lastSaved.current = json
+        retryDelay.current = RETRY_FIRST
         setHasChanges(true)
-        setSave(
-          JSON.stringify(latest.current) === json
-            ? { state: 'saved', at: new Date() }
-            : { state: 'pending' },
-        )
+        if (JSON.stringify(latest.current) === json) {
+          unsavedSince.current = null
+          clearLocalCopy(pageId)
+          setSave({ state: 'saved', at: new Date() })
+        } else {
+          setSave({ state: 'pending' })
+        }
       } catch (caught) {
+        writeLocalCopy(pageId, current)
         if (stopIfConflict(caught)) return
+        const status = caught instanceof RequestError ? caught.status : null
+        if (status === OFFLINE) {
+          setSave({ state: 'offline' })
+          // Tenta de novo sozinho, cada vez esperando mais (e já na volta da conexão).
+          retryTimer.current = setTimeout(() => void flushRef.current(), retryDelay.current)
+          retryDelay.current = Math.min(retryDelay.current * 2, RETRY_MAX)
+          return
+        }
+        if (status === 401 || status === 403) {
+          const loggedIn = await stillLoggedIn(apiRoute).catch(() => true)
+          if (!loggedIn) return endSession()
+        }
         setSave({
           state: 'error',
           message: caught instanceof Error ? caught.message : 'sem conexão com o servidor',
         })
       }
     })
-  }, [apiRoute, pageId, send, stopIfConflict])
+  }, [apiRoute, endSession, pageId, send, stopIfConflict])
+
+  useEffect(() => {
+    flushRef.current = flush
+  }, [flush])
+
+  // A conexão voltou: salva na hora o que estava esperando.
+  useEffect(() => {
+    const online = () => {
+      retryDelay.current = RETRY_FIRST
+      void flush()
+    }
+    window.addEventListener('online', online)
+    return () => window.removeEventListener('online', online)
+  }, [flush])
 
   const onChange = useCallback(
     (next: Data) => {
@@ -428,6 +537,7 @@ export function Editor(props: EditorProps) {
       latest.current = puckData
       setData(puckData)
       if (JSON.stringify(puckData) === lastSaved.current) return
+      unsavedSince.current ??= new Date()
       setSave({ state: 'pending' })
       if (timer.current) clearTimeout(timer.current)
       timer.current = setTimeout(() => void flush(), SAVE_DELAY)
@@ -435,15 +545,28 @@ export function Editor(props: EditorProps) {
     [flush],
   )
 
-  // Fechar a aba com mudança ainda não salva: o navegador pergunta antes.
+  // Fechar a aba com mudança ainda não salva: o navegador pergunta antes, e uma cópia fica no
+  // aparelho para o caso de a pessoa fechar mesmo assim.
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!stopped.current && JSON.stringify(latest.current) !== lastSaved.current) {
-        event.preventDefault()
-      }
+      if (exiting.current || !isDirty()) return
+      writeLocalCopy(pageId, latest.current)
+      event.preventDefault()
     }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
+  }, [isDirty, pageId])
+
+  // Uma visita anterior deixou mudança sem salvar neste aparelho: oferece recuperar.
+  useEffect(() => {
+    const copy = readLocalCopy(pageId)
+    if (!copy) return
+    if (JSON.stringify(copy.data) === JSON.stringify(initialData)) clearLocalCopy(pageId)
+    // O aparelho só existe no navegador: a pergunta aparece depois de abrir, não no servidor.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    else setRecovery(copy)
+    // Só ao abrir: depois, a cópia é deste editor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // O indicador de carregamento do Puck é um `<span aria-label>` sem papel (axe
@@ -462,7 +585,27 @@ export function Editor(props: EditorProps) {
     return () => observer.disconnect()
   }, [])
 
-  // Peças das Colunas só existem dentro delas: soltas na página, a mudança é desfeita.
+  /**
+   * Uma mudança que deixaria a página sem salvar (peça solta fora das Colunas, coluna com mais de 6
+   * peças, página com mais de 100 seções) é desfeita na hora. Sai também do Desfazer: o Puck guarda
+   * o passo um instante depois, e o conserto tira esse passo, para o Desfazer não trazer o erro de
+   * volta.
+   */
+  const undoBadChange = useCallback((message: string, previous: Data) => {
+    setTimeout(() => {
+      const puck = getPuck.current?.()
+      if (!puck) return
+      const { histories, index, setHistories } = puck.history
+      const recorded = histories[index]?.state.data as Data | undefined
+      if (index > 0 && recorded && layoutProblem(recorded)) {
+        setHistories(histories.slice(0, index))
+      } else if (layoutProblem(puck.appState.data)) {
+        puck.dispatch({ type: 'setData', data: previous, recordHistory: false })
+      }
+      toast.info(message)
+    }, HISTORY_SETTLE)
+  }, [])
+
   const onAction = useCallback(
     (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
       // O Desfazer do aviso volta a última mudança: depois de outra, ela já não seria a remoção.
@@ -482,16 +625,26 @@ export function Editor(props: EditorProps) {
         })
         return
       }
-      if (!next.data.content.some((item) => PIECES.includes(item.type))) return
-      setTimeout(() => {
-        getPuck.current?.().dispatch({ type: 'setData', data: previous.data })
-        toast.info(
-          'Essa peça só entra dentro de uma seção Colunas. Arraste para dentro de uma coluna.',
-        )
-      })
+      if (UI_ONLY_ACTIONS.includes(action.type)) return
+      const problem = layoutProblem(next.data)
+      if (problem && !layoutProblem(previous.data)) undoBadChange(problem, previous.data)
     },
-    [],
+    [undoBadChange],
   )
+
+  // Conflito: a pessoa escolheu a versão desta tela. Ela passa a ser a mais nova, por cima da
+  // outra (que continua nas Versões, se tinha sido publicada).
+  const keepMine = useCallback(async () => {
+    try {
+      baseUpdatedAt.current = await latestPageVersion(apiRoute, pageId)
+    } catch {
+      return toast.error('Não deu para falar com o servidor. Confira a internet e tente de novo.')
+    }
+    stopped.current = false
+    setConflict(false)
+    lastSaved.current = ''
+    await flush()
+  }, [apiRoute, flush, pageId])
 
   const publish = useCallback(async () => {
     await flush()
@@ -500,7 +653,9 @@ export function Editor(props: EditorProps) {
       // Guardado antes do envio: o que mudar enquanto publica continua contando como não salvo.
       const json = JSON.stringify(latest.current)
       const parsed = parsePageContent({ version: CONTENT_VERSION, data: latest.current })
-      if (!parsed.success) throw new Error(friendlyError(parsed.error))
+      if (!parsed.success) {
+        throw new Error(describeSaveError(parsed.error, latest.current, FIELDS).message)
+      }
       try {
         const { doc } = await publishPage(apiRoute, pageId, parsed.data, baseUpdatedAt.current)
         baseUpdatedAt.current = doc.updatedAt
@@ -536,7 +691,7 @@ export function Editor(props: EditorProps) {
 
   const isHome = pageId === homepageId
   const path = isHome ? '/' : `/${settings.slug}`
-  const unsaved = save.state === 'pending' || save.state === 'saving'
+  const unsaved = save.state !== 'saved'
   const savedAt = save.state === 'saved' ? save.at : undefined
 
   const knownTexts = props.exampleTexts
@@ -547,13 +702,27 @@ export function Editor(props: EditorProps) {
     ? 'Salvamento parado: a página mudou em outro lugar'
     : save.state === 'saving' || save.state === 'pending'
       ? 'Salvando…'
-      : save.state === 'error'
-        ? `Não deu para salvar: ${save.message}`
-        : live && !hasChanges
-          ? 'Tudo no ar'
-          : `Guardado${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''}, falta publicar${
-              live ? '' : ' · rascunho, ainda não está no ar'
-            }`
+      : save.state === 'offline'
+        ? 'Sem internet. As mudanças ficam guardadas aqui e são salvas quando a conexão voltar.'
+        : save.state === 'error'
+          ? `Não deu para salvar: ${save.message}`
+          : live && !hasChanges
+            ? 'Tudo no ar'
+            : `Guardado${savedAt ? ` às ${timeFormat.format(savedAt)}` : ''}, falta publicar${
+                live ? '' : ' · rascunho, ainda não está no ar'
+              }`
+  const statusShort = conflict
+    ? 'Parado'
+    : save.state === 'saving' || save.state === 'pending'
+      ? 'Salvando…'
+      : save.state === 'offline'
+        ? 'Sem internet'
+        : save.state === 'error'
+          ? 'Não salvou'
+          : live && !hasChanges
+            ? 'Tudo no ar'
+            : 'Falta publicar'
+  const problemTarget = save.state === 'error' ? save.target : undefined
 
   // Troca a personalidade na prévia na hora; guarda no rascunho das configurações um pouco depois
   // da última troca, um pedido por vez (as setas do teclado trocam a cada toque). Só o último pedido
@@ -588,8 +757,39 @@ export function Editor(props: EditorProps) {
   const chrome: Chrome = {
     title: settings.title,
     status,
-    statusTone: conflict || save.state === 'error' ? 'warn' : live && !hasChanges ? 'ok' : 'muted',
-    canPublish: !live || hasChanges || unsaved || save.state === 'error',
+    statusShort,
+    statusTone:
+      conflict || save.state === 'error' || save.state === 'offline'
+        ? 'warn'
+        : live && !hasChanges
+          ? 'ok'
+          : 'muted',
+    saveAlert:
+      save.state === 'error' ? { message: save.message, canGo: Boolean(problemTarget) } : null,
+    goToProblem: () => {
+      const puck = getPuck.current?.()
+      if (!puck || !problemTarget) return
+      puck.dispatch({
+        type: 'setUi',
+        ui: {
+          itemSelector: { index: problemTarget.index, zone: problemTarget.zone },
+          rightSideBarVisible: true,
+        },
+        recordHistory: false,
+      })
+      scrollToSection(problemTarget.id)
+      // Com o painel já desenhado, o cursor vai para o campo (se ele estiver aberto na tela).
+      setTimeout(() => {
+        const field = problemTarget.field
+        if (!field) return
+        const input = document.querySelector<HTMLElement>(
+          `form[class*="_PuckFields_"] [name="${CSS.escape(field)}"]`,
+        )
+        input?.scrollIntoView({ block: 'center' })
+        input?.focus()
+      }, 300)
+    },
+    canPublish: !live || hasChanges || unsaved,
     livePath: live ? path : null,
     backHref: panelHref(adminRoute, 'pages'),
     summary: {
@@ -617,9 +817,13 @@ export function Editor(props: EditorProps) {
       setUndoState(history)
       setDialog('more')
     },
-    // Ao sair, guarda também a personalidade que ainda esperava a pausa.
+    // Ao sair, guarda também a personalidade que ainda esperava a pausa. Se sobrou mudança sem
+    // salvar (erro, sem internet, conflito), a janela explica antes, em vez de sair calado.
     leave: async () => {
       await Promise.all([flush(), personalitySaver.flush()])
+      if (!isDirty()) return true
+      setLeaving({ since: unsavedSince.current })
+      return false
     },
     connect,
     personality,
@@ -721,6 +925,7 @@ export function Editor(props: EditorProps) {
                 onAction={(action, next, previous) => onAction(action, next, previous)}
                 onChange={onChange}
                 overrides={{
+                  fieldTypes: countedFields,
                   header: EditorHeader,
                   iframe: EditorFrame,
                   fields: EditorFields,
@@ -732,18 +937,6 @@ export function Editor(props: EditorProps) {
                 ui={initialUi}
               />
             </div>
-
-            {picking && (
-              <PhotoPicker
-                onClose={() => setPicking(null)}
-                onPick={(photo) => {
-                  picking(photo)
-                  setPicking(null)
-                }}
-                onUploaded={addPhoto}
-                photos={photos}
-              />
-            )}
 
             {dialog === 'publish' && (
               <PublishDialog
@@ -835,6 +1028,109 @@ export function Editor(props: EditorProps) {
               />
             )}
 
+            {/* A biblioteca de fotos abre de dentro de outras janelas (Página e Google): fica por
+                último, por cima delas. */}
+            {picking && (
+              <PhotoPicker
+                onClose={() => setPicking(null)}
+                onPick={(photo) => {
+                  picking(photo)
+                  setPicking(null)
+                }}
+                onUploaded={addPhoto}
+                photos={photos}
+              />
+            )}
+
+            {leaving && (
+              <Dialog
+                footer={
+                  <>
+                    <button
+                      className="ed-btn"
+                      onClick={() => {
+                        writeLocalCopy(pageId, latest.current)
+                        exiting.current = true
+                        window.location.href = chrome.backHref
+                      }}
+                      type="button"
+                    >
+                      Sair mesmo assim
+                    </button>
+                    <button
+                      autoFocus
+                      className="ed-btn ed-btn--primary"
+                      onClick={() => {
+                        setLeaving(null)
+                        if (problemTarget) chrome.goToProblem()
+                      }}
+                      type="button"
+                    >
+                      {problemTarget ? 'Corrigir agora' : 'Ficar na página'}
+                    </button>
+                  </>
+                }
+                onClose={() => setLeaving(null)}
+                role="alertdialog"
+                title="Algumas mudanças não foram salvas"
+              >
+                <p className="ed-leave__why">
+                  {conflict
+                    ? 'A página mudou em outra aba ou por outra pessoa, e paramos de salvar aqui.'
+                    : save.state === 'offline'
+                      ? 'Você está sem internet.'
+                      : save.state === 'error'
+                        ? save.message
+                        : 'O último salvamento ainda não terminou.'}
+                </p>
+                <p>
+                  {leaving.since
+                    ? `O que você mudou desde as ${timeFormat.format(leaving.since)} não foi salvo.`
+                    : 'A última mudança não foi salva.'}{' '}
+                  Se sair agora, essas mudanças ficam guardadas só neste aparelho e voltam quando
+                  você abrir esta página de novo.
+                </p>
+              </Dialog>
+            )}
+
+            {recovery && (
+              <Dialog
+                footer={
+                  <>
+                    <button
+                      className="ed-btn"
+                      onClick={() => {
+                        clearLocalCopy(pageId)
+                        setRecovery(null)
+                      }}
+                      type="button"
+                    >
+                      Descartar
+                    </button>
+                    <button
+                      autoFocus
+                      className="ed-btn ed-btn--primary"
+                      onClick={() => {
+                        getPuck.current?.().dispatch({ type: 'setData', data: recovery.data })
+                        setRecovery(null)
+                      }}
+                      type="button"
+                    >
+                      Recuperar as mudanças
+                    </button>
+                  </>
+                }
+                onClose={() => setRecovery(null)}
+                role="alertdialog"
+                title="Há mudanças que não foram salvas"
+              >
+                <p>
+                  Em {dateTimeFormat.format(new Date(recovery.at))}, algumas mudanças nesta página
+                  não chegaram a ser salvas. Elas ficaram guardadas neste aparelho. Quer recuperar?
+                </p>
+              </Dialog>
+            )}
+
             {/* Sem fechar: voltar a editar aqui apagaria o que foi salvo no outro lugar. */}
             {conflict && (
               <div className="ed-overlay">
@@ -852,16 +1148,24 @@ export function Editor(props: EditorProps) {
                   </div>
                   <div className="ed-dialog__body">
                     <p id="ed-conflict-text">
-                      Para não apagar o trabalho de ninguém, paramos de salvar aqui. Carregue a
-                      versão nova para continuar. O que você mudou nesta aba depois do último
-                      salvamento não foi guardado.
+                      Para não apagar o trabalho de ninguém, paramos de salvar aqui. Escolha qual
+                      versão fica: a nova, salva no outro lugar, ou a que está nesta tela.
                     </p>
                   </div>
                   <div className="ed-dialog__foot">
+                    <button className="ed-btn" onClick={keepMine} type="button">
+                      Manter a desta tela
+                    </button>
                     <button
                       autoFocus
                       className="ed-btn ed-btn--primary"
-                      onClick={() => window.location.reload()}
+                      onClick={() => {
+                        // A pessoa escolheu a outra versão: a desta tela não volta perguntando
+                        // ao abrir de novo (para ficar com ela existe "Manter a desta tela").
+                        clearLocalCopy(pageId)
+                        exiting.current = true
+                        window.location.reload()
+                      }}
                       type="button"
                     >
                       Carregar a versão nova

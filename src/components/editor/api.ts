@@ -19,12 +19,21 @@ export class RequestError extends Error {
   }
 }
 
+/** Sem resposta do servidor (sem internet, servidor fora do ar): status 0. */
+export const OFFLINE = 0
+
 export async function request<T>(apiRoute: string, path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiRoute}${path}`, {
-    credentials: 'include',
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
+  let response: Response
+  try {
+    response = await fetch(`${apiRoute}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...init?.headers },
+    })
+  } catch {
+    // O navegador só diz "Failed to fetch": em português, e com o status que separa este caso.
+    throw new RequestError('sem conexão com a internet', OFFLINE)
+  }
   const body = (await response.json().catch(() => ({}))) as T & PayloadError
   if (!response.ok) {
     const error = body.errors?.[0]
@@ -104,4 +113,19 @@ export function publishHeaderItems(apiRoute: string, items: NonNullable<Header['
     method: 'POST',
     body: JSON.stringify({ items, _status: 'published' }),
   })
+}
+
+/** Data da versão mais nova da página (a do rascunho), para salvar por cima depois de um conflito. */
+export async function latestPageVersion(apiRoute: string, pageId: number): Promise<string> {
+  const doc = await request<Pick<Page, 'updatedAt'>>(
+    apiRoute,
+    `/pages/${pageId}?draft=true&depth=0&select[updatedAt]=true`,
+  )
+  return doc.updatedAt
+}
+
+/** A sessão ainda vale? Uma recusa ao salvar pode ser falta de permissão ou sessão encerrada. */
+export async function stillLoggedIn(apiRoute: string): Promise<boolean> {
+  const { user } = await request<{ user: unknown }>(apiRoute, '/users/me')
+  return Boolean(user)
 }

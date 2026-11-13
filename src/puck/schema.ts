@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isSafeURL } from '../lib/links'
 import { type Anim, SECTION_ANIMS } from '../lib/motion'
 import { sanitizeRichText } from '../lib/richtext'
+import { LIMITS, visibleLength } from './limits'
 import { YOUTUBE_ID } from '../lib/youtube'
 
 /**
@@ -44,7 +45,7 @@ export const linkRefSchema = z
   .nullable()
 
 export const buttonSchema = z.object({
-  label: z.string().max(60),
+  label: z.string().max(LIMITS.buttonLabel),
   link: linkRefSchema,
 })
 
@@ -52,9 +53,9 @@ export const buttonSchema = z.object({
 const sectionStyle = z.enum(['light', 'soft', 'brand'])
 
 /** Nome da seção no menu (opcional). Vira a âncora: `/pagina#servicos`. */
-const menuLabel = z.string().max(40)
+const menuLabel = z.string().max(LIMITS.menuLabel)
 
-const title = z.string().max(120)
+const title = z.string().max(LIMITS.title)
 
 /**
  * Animação da seção (redesign v3, entrega 2): "Igual ao site" (padrão), "Sem animação" ou uma das
@@ -226,7 +227,7 @@ export const productsPropsSchema = z.object({
         name: z.string().max(80),
         text: z.string().max(200).default(''),
         // Texto livre: "R$ 45", "a partir de R$ 120", "sob consulta". Vazio: sem preço.
-        price: z.string().max(40).default(''),
+        price: z.string().max(LIMITS.price).default(''),
         // "Pedir pelo WhatsApp" monta a mensagem com o nome do produto; ou um link qualquer.
         button: buttonSchema.nullable().default({ label: '', link: null }),
       }),
@@ -259,7 +260,7 @@ export const priceListPropsSchema = z.object({
             z.object({
               name: z.string().max(80),
               description: z.string().max(160).default(''),
-              price: z.string().max(40).default(''),
+              price: z.string().max(LIMITS.price).default(''),
             }),
           )
           .min(1)
@@ -281,7 +282,7 @@ export const ANNOUNCEMENT_MODES = ['move', 'static'] as const
 export const announcementPropsSchema = z.object({
   id: componentId,
   items: z
-    .array(z.object({ text: z.string().max(80) }))
+    .array(z.object({ text: z.string().max(LIMITS.announcement) }))
     .min(1)
     .max(5),
   mode: z.enum(ANNOUNCEMENT_MODES).default('move'),
@@ -340,8 +341,18 @@ export const linkListPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.LinkList),
 })
 
-/** HTML limpo no servidor (lista fechada de marcações), porque o Puck o desenha sem filtro. */
-const richText = z.string().max(20000).transform(sanitizeRichText)
+/**
+ * HTML limpo no servidor (lista fechada de marcações), porque o Puck o desenha sem filtro. O limite
+ * conta só as letras que aparecem: negrito, itálico e parágrafos não gastam o espaço da pessoa.
+ */
+const richText = z
+  .string()
+  .max(LIMITS.richTextHTML)
+  .transform(sanitizeRichText)
+  .refine((html) => visibleLength(html) <= LIMITS.richTextLetters, {
+    message: `O texto passou do limite de ${LIMITS.richTextLetters} letras.`,
+    params: { visibleMax: LIMITS.richTextLetters },
+  })
 
 export const richTextPropsSchema = z.object({
   id: componentId,
@@ -398,13 +409,13 @@ export const columnButtonPropsSchema = z.object({
   button: buttonSchema.nullable(),
 })
 
-const columnPieceSchema = z.discriminatedUnion('type', [
+export const columnPieceSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ColumnText'), props: columnTextPropsSchema }),
   z.object({ type: z.literal('ColumnImage'), props: columnImagePropsSchema }),
   z.object({ type: z.literal('ColumnButton'), props: columnButtonPropsSchema }),
 ])
 
-const column = z.array(columnPieceSchema).max(6)
+const column = z.array(columnPieceSchema).max(LIMITS.columnPieces)
 
 /** Modelos fixos de colunas (nada de grade de 1 a 12). `thirds` usa as três; os outros, duas. */
 export const COLUMN_LAYOUTS = ['half', 'thirds', 'wide-left', 'wide-right'] as const
@@ -428,7 +439,7 @@ export const columnsPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Columns),
 })
 
-const componentSchema = z.discriminatedUnion('type', [
+export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Hero'), props: heroPropsSchema }),
   z.object({ type: z.literal('TextImage'), props: textImagePropsSchema }),
   z.object({ type: z.literal('Features'), props: featuresPropsSchema }),
@@ -454,7 +465,7 @@ const componentSchema = z.discriminatedUnion('type', [
 
 export const puckDataSchema = z.object({
   root: z.object({ props: z.object({}).default({}) }).default({ props: {} }),
-  content: z.array(componentSchema).max(100),
+  content: z.array(componentSchema).max(LIMITS.sections),
   // Áreas soltas (DropZone) não são usadas: as Colunas guardam as peças nos próprios campos.
   zones: z.record(z.string(), z.array(z.never())).optional(),
 })
