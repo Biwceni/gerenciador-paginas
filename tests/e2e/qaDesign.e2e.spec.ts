@@ -237,6 +237,8 @@ test.describe.serial('QA visual e revisão de design', () => {
   })
 
   test('nenhuma tela do painel rola para o lado (com Minha conta e o editor)', async () => {
+    // São 12 telas em cada largura, e o servidor de desenvolvimento compila cada uma na primeira vez.
+    test.setTimeout(600_000)
     const screens = [
       '/admin',
       '/admin/paginas',

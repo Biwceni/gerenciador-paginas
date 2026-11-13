@@ -40,7 +40,14 @@ async function removePages() {
   const payload = await getPayload({ config })
   await payload.updateGlobal({
     slug: 'site',
-    data: { homepage: null, name: 'Meu site', tagline: null, _status: 'published' },
+    // Outros testes deixam um WhatsApp no site; o início guiado espera um site sem contato.
+    data: {
+      homepage: null,
+      name: 'Meu site',
+      tagline: null,
+      contact: { whatsapp: null, email: null },
+      _status: 'published',
+    },
     overrideAccess: true,
   })
   await payload.updateGlobal({
@@ -240,7 +247,8 @@ test.describe.serial('site novo', () => {
       'href',
       editorHref,
     )
-    expect((await bar.boundingBox())?.height).toBeLessThan(40)
+    // Uma linha só: no celular cada atalho tem 44 px de área de toque, e duas linhas passariam de 80.
+    expect((await bar.boundingBox())?.height).toBeLessThan(60)
     const overflow = await mobile.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     )
@@ -281,7 +289,14 @@ test('a página de login continua sem cookie até entrar de verdade', async ({ b
   await expect(page.getByRole('alert')).toBeVisible()
   expect((await context.cookies()).some((cookie) => cookie.name === 'gp-painel')).toBe(false)
 
-  await page.fill('#lg-pass', testUser.password)
+  // A senha errada é apagada depois do aviso: espera o campo vazio e confere a nova senha antes
+  // de entrar, para o servidor de desenvolvimento, mais lento, não apagar o que foi digitado.
+  const password = page.locator('#lg-pass')
+  await expect(password).toBeFocused()
+  await expect(password).toHaveValue('')
+  await page.waitForLoadState('networkidle')
+  await password.fill(testUser.password)
+  await expect(password).toHaveValue(testUser.password)
   await page.click('button[type="submit"]')
   await page.waitForURL((url) => !url.pathname.endsWith('/login'))
   expect((await context.cookies()).some((cookie) => cookie.name === 'gp-painel')).toBe(true)
