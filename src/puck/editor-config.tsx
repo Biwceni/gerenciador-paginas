@@ -6,14 +6,18 @@ import React from 'react'
 import {
   ArrayItemMoves,
   FormField,
+  HighlightField,
+  IconField,
   LinkField,
   MenuLabelField,
   Notice,
+  OnlyWhen,
   PhotoField,
   PhotoListField,
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
+import { InlineTextMenu, TextMenu } from '@/components/editor/RichTextTools'
 import { ChoiceThumb, type ChoiceThumbName } from '@/components/editor/ChoiceThumbs'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
 import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
@@ -21,7 +25,7 @@ import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
-import { FEATURE_ICON_LABELS } from './components/FeatureIcon'
+import { FeatureIcon, FEATURE_ICON_LABELS } from './components/FeatureIcon'
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
 import {
   type ButtonValue,
@@ -63,6 +67,23 @@ const photo = (label: string, minWidth?: number | 'banner'): CustomField<PhotoRe
     <FieldLabel el="div" label={props.field.label ?? ''}>
       <PhotoField {...props} minWidth={minWidth} />
     </FieldLabel>
+  ),
+})
+
+/**
+ * Campo que só aparece quando a escolha `prop` da seção é uma de `values` (achado 11.5): fora dela
+ * ele não muda nada no site, e só deixava o painel comprido.
+ */
+const onlyWhen = <V,>(
+  custom: CustomField<V>,
+  prop: string,
+  values: readonly unknown[],
+): CustomField<V> => ({
+  ...custom,
+  render: (props) => (
+    <OnlyWhen prop={prop} values={values}>
+      {custom.render(props)}
+    </OnlyWhen>
   ),
 })
 
@@ -138,8 +159,29 @@ const featureMarker = thumbChoice<FeatureMarker>('Marcador', [
   { value: 'photo', label: 'Foto', hint: 'Uma foto pequena e redonda', thumb: 'marker-photo' },
 ])
 
-// O campo Ícone fica sempre no item, como a foto do banner: um campo que aparece e some conforme o
-// marcador (resolveFields) redesenhava o painel a cada mudança e fazia cliques se perderem.
+// O Ícone e a Foto de cada Destaque só aparecem com o marcador deles (achado 4.4). A lista de
+// campos não muda (`onlyWhen`): mudar a lista redesenhava o painel e fazia cliques se perderem.
+const featureIcon: CustomField<(typeof FEATURE_ICONS)[number]> = {
+  type: 'custom',
+  label: 'Ícone',
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <IconField
+        label="Ícone"
+        name={name}
+        onChange={onChange}
+        options={FEATURE_ICONS.map((icon) => ({
+          value: icon,
+          label: FEATURE_ICON_LABELS[icon],
+          icon: <FeatureIcon name={icon} />,
+        }))}
+        readOnly={readOnly}
+        value={value}
+      />
+    </FieldLabel>
+  ),
+}
+
 const featureItems: Field = {
   type: 'array',
   label: 'Destaques',
@@ -148,12 +190,8 @@ const featureItems: Field = {
   arrayFields: {
     title: text('Título'),
     text: textarea('Texto'),
-    icon: {
-      type: 'select',
-      label: 'Ícone (com o marcador "Ícone")',
-      options: FEATURE_ICONS.map((value) => ({ label: FEATURE_ICON_LABELS[value], value })),
-    },
-    photo: photo('Foto (com o marcador "Foto")'),
+    icon: onlyWhen(featureIcon, 'marker', ['icon']),
+    photo: onlyWhen(photo('Foto'), 'marker', ['photo']),
     // Só botões: não guarda nada no item.
     move: {
       type: 'custom',
@@ -240,14 +278,16 @@ const sections: { [K in keyof Components]: Section<K> } = {
   Hero: {
     fields: {
       title: text('Título'),
-      // Não é escrito na página: são palavras que já estão no título.
-      highlight: { type: 'text', label: 'Palavras em destaque (opcional)' },
-      // Campo que não guarda nada: só a explicação do destaque.
-      ...({
-        highlightHint: notice(
-          'Copie do título as palavras que devem ficar em itálico, na cor do site. Ex.: “feito à mão”.',
+      // Não é escrito: a pessoa toca nas palavras do título (achados 11.4 e 3.4).
+      highlight: {
+        type: 'custom',
+        label: 'Palavras em destaque (opcional)',
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <HighlightField {...props} />
+          </FieldLabel>
         ),
-      } as object),
+      },
       text: textarea('Frase'),
       button,
       style: thumbChoice(
@@ -261,7 +301,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         ],
         3,
       ),
-      image: photo('Foto (com "Foto" ou "Foto ao lado")', 'banner'),
+      image: onlyWhen(photo('Foto', 'banner'), 'style', ['image', 'side']),
       align: {
         type: 'radio',
         label: 'Posição do texto',
@@ -442,6 +482,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
           thumb: 'gallery-masonry',
         },
       ]),
+      // Sem fotos, a escolha não muda nada: só aparece com a primeira foto (achado 11.6).
       showCaptions: {
         type: 'radio',
         label: 'Legendas embaixo das fotos',
@@ -449,11 +490,20 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Esconder', value: false },
           { label: 'Mostrar', value: true },
         ],
+        ...({ showWhen: { prop: 'images', filled: true } } as object),
       },
       ...({
-        captionsHint: notice(
-          'Sem legenda escrita, vale a descrição da foto. Na tela cheia, a legenda aparece sempre.',
-        ),
+        captionsHint: {
+          type: 'custom',
+          render: () => (
+            <OnlyWhen filled prop="images">
+              <Notice>
+                Sem legenda escrita, vale a descrição da foto. Na tela cheia, a legenda aparece
+                sempre.
+              </Notice>
+            </OnlyWhen>
+          ),
+        },
       } as object),
       style: sectionStyle,
       menuLabel,
@@ -778,6 +828,9 @@ const sections: { [K in keyof Components]: Section<K> } = {
           horizontalRule: false,
           textAlign: false,
         },
+        // Barra com nomes e botão de link (achados 7.1, 7.5) e cola do Word arrumada (7.4).
+        renderMenu: (props) => <TextMenu {...props} />,
+        renderInlineMenu: (props) => <InlineTextMenu {...props} />,
       },
       style: sectionStyle,
       menuLabel,

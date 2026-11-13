@@ -16,6 +16,40 @@ export function splitHighlight(title: string, words: string): [string, string, s
   ]
 }
 
+export type TitleWord = { text: string; start: number; end: number }
+
+/**
+ * As palavras do título, com onde cada uma começa e termina, para escolher o destaque tocando
+ * nelas. A pontuação do fim ("mão.", "você!") fica fora: o destaque é a palavra.
+ */
+export function titleWords(title: string): TitleWord[] {
+  const words: TitleWord[] = []
+  for (const match of title.matchAll(/\S+/g)) {
+    const raw = match[0]
+    const text = raw.replace(/[.,;:!?…"”’)»]+$/u, '') || raw
+    words.push({ text, start: match.index, end: match.index + text.length })
+  }
+  return words
+}
+
+/**
+ * Quais palavras do título (primeira e última, pela posição em `titleWords`) as palavras em
+ * destaque cobrem, pela mesma regra do site (`splitHighlight`). `null`: nada em destaque.
+ */
+export function highlightRange(title: string, words: string): [number, number] | null {
+  const parts = splitHighlight(title, words)
+  if (!parts) return null
+  const start = parts[0].length
+  const end = start + parts[1].length
+  const list = titleWords(title)
+  const first = list.findIndex((word) => word.end > start)
+  let last = -1
+  list.forEach((word, index) => {
+    if (word.start < end) last = index
+  })
+  return first >= 0 && last >= first ? [first, last] : null
+}
+
 /** Primeira frase da apresentação, se for curta: vai embaixo do nome, no topo do site. */
 export function shortTagline(tagline: string | null | undefined, max = 48): string | null {
   const [sentence = ''] = (tagline ?? '').trim().split(/(?<=[.!?])\s/)

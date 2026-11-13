@@ -1,6 +1,13 @@
 import type { CSSProperties } from 'react'
 
-import { blendColors, deepShade, readableTextColor, readableTint, safeColor } from '@/lib/colors'
+import {
+  blendColors,
+  deepShade,
+  distinctSurface,
+  readableTextColor,
+  readableTint,
+  safeColor,
+} from '@/lib/colors'
 import { DEFAULT_COLORS, FONT_NAME_PATTERN, type Personality, safePersonality } from '@/lib/theme'
 import type { Site } from '@/payload-types'
 
@@ -93,7 +100,7 @@ export const PERSONALITY_TOKENS: Record<Personality, PersonalityTokens> = {
 export function brandShades(colors: Partial<Site['colors']> | null | undefined) {
   const primary = safeColor(colors?.primary, DEFAULT_COLORS.primary)
   const background = safeColor(colors?.background, DEFAULT_COLORS.background)
-  const surface = safeColor(colors?.surface, DEFAULT_COLORS.surface)
+  const surface = siteSurface(colors)
   const deep = deepShade(primary)
   return {
     deep,
@@ -102,6 +109,15 @@ export function brandShades(colors: Partial<Site['colors']> | null | undefined) 
     accentOnDark: readableTint(primary, deep),
     accentOnPhoto: readableTint(primary, blendColors(deep, '#808080', 0.75)),
   }
+}
+
+/** O fundo "Suave" do site, sempre um pouco diferente do fundo (achado 3.2). */
+export function siteSurface(colors: Partial<Site['colors']> | null | undefined): string {
+  return distinctSurface(
+    safeColor(colors?.surface, DEFAULT_COLORS.surface),
+    safeColor(colors?.background, DEFAULT_COLORS.background),
+    safeColor(colors?.text, DEFAULT_COLORS.text),
+  )
 }
 
 /** Personalidade do site (a guardada ou a padrão). Vai no `data-personality` do `body`. */
@@ -124,7 +140,7 @@ export function themeStyle(site: Partial<Site>): CSSProperties {
     '--color-primary': primary,
     '--color-on-primary': readableTextColor(primary),
     '--color-background': safeColor(site.colors?.background, DEFAULT_COLORS.background),
-    '--color-surface': safeColor(site.colors?.surface, DEFAULT_COLORS.surface),
+    '--color-surface': siteSurface(site.colors),
     '--color-text': safeColor(site.colors?.text, DEFAULT_COLORS.text),
     '--color-footer': footer,
     '--color-on-footer': readableTextColor(footer),

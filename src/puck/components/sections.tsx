@@ -911,9 +911,18 @@ export function Video({
         <figure>
           <div className="video__box anim-part">
             {metadata.editing ? (
-              // No editor o vídeo não toca: aparece a capa e um aviso.
+              // No editor o vídeo não toca: aparece a capa (a escolhida, ou a do próprio YouTube, para
+              // a pessoa conferir que colou o vídeo certo, achado 5.2) e um aviso.
               <>
-                {coverPhoto}
+                {coverPhoto ??
+                  (videoId && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt=""
+                      className="video__thumb"
+                      src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`}
+                    />
+                  ))}
                 <EditorPlaceholder>
                   {videoId
                     ? 'No site, o vídeo toca quando a pessoa clica.'
@@ -1177,6 +1186,11 @@ export function Announcement({
     return (
       <div className={classes.join(' ')}>
         <div className="container">{still}</div>
+        {/* No editor a faixa fica parada para dar para escrever nela: o selo diz que no site ela
+            corre, e "Correndo" e "Parada" deixam de parecer iguais (achado 11.6). */}
+        {metadata.editing && mode === 'move' && (
+          <span className="announce__editor-tag">No site, as frases correm →</span>
+        )}
       </div>
     )
   }

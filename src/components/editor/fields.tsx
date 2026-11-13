@@ -5,7 +5,7 @@
 
 import { toast } from '@payloadcms/ui'
 import { createUsePuck, useGetPuck } from '@puckeditor/core'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { Tip } from '@/components/panel/Tip'
@@ -13,7 +13,9 @@ import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
 import { externalLink, validateLinkInput } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
+import { highlightRange, titleWords } from '@/lib/highlight'
 import { photoLabel } from '@/lib/photos'
+import { slugify } from '@/lib/slug'
 import {
   BANNER_MIN_WIDTH,
   heroShowsPhoto,
@@ -29,6 +31,9 @@ import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { counterText } from './CountedField'
+import { restoreField, showUndo } from './undoToast'
+
+export { OnlyWhen, type ShowWhen } from './onlyWhen'
 import { addMenuItem, linksTo, readMenu } from './menu'
 import { ROOT_ZONE } from './puck'
 
@@ -103,6 +108,9 @@ export function PhotoField({
           </button>
         )}
         {photo && <span className="ed-hint">{photo.alt?.trim() || 'Sem descrição'}</span>}
+        {photo && (
+          <span className="ed-hint">Dá para trocar também tocando na foto, na prévia.</span>
+        )}
         {minWidth === 'banner' ? (
           <BannerPhotoNote photo={photo} />
         ) : (
@@ -126,8 +134,10 @@ export function PhotoListField<T extends PhotoListItem>({
   minWidth,
   max = 24,
   captions = false,
-}: FieldProps<T[]> & { minWidth?: number; max?: number; captions?: boolean }) {
+  name,
+}: FieldProps<T[]> & { minWidth?: number; max?: number; captions?: boolean; name?: string }) {
   const { photoById, pickPhoto } = useEditor()
+  const getPuck = useGetPuck()
   const setCaption = (index: number, caption: string) =>
     onChange(value.map((item, i) => (i === index ? { ...item, caption } : item)))
   const move = (from: number, to: number) => {
@@ -152,6 +162,25 @@ export function PhotoListField<T extends PhotoListItem>({
               {photo ? photoLabel(photo) : 'Foto apagada'}
               {minWidth && isSmallPhoto(photo, minWidth) && (
                 <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TITLE}</span>
+              )}
+              {/* Levar a foto direto para qualquer lugar da lista (achado 5.4), sem subir uma a
+                  uma. */}
+              {value.length > 2 && (
+                <label className="ed-photo-list__position">
+                  Posição
+                  <select
+                    className="ed-input"
+                    disabled={readOnly}
+                    onChange={(event) => move(index, Number(event.target.value))}
+                    value={index}
+                  >
+                    {value.map((_, at) => (
+                      <option key={at} value={at}>
+                        {at + 1}ª
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
               {captions && (
                 <input
@@ -189,7 +218,17 @@ export function PhotoListField<T extends PhotoListItem>({
               aria-label={`Tirar a foto ${index + 1}`}
               className="ed-icon-btn"
               disabled={readOnly}
-              onClick={() => onChange(value.filter((_, i) => i !== index))}
+              onClick={() => {
+                const before = value
+                const section = getPuck().selectedItem?.props.id as string | undefined
+                onChange(value.filter((_, i) => i !== index))
+                // Como a seção removida, a foto tirada tem Desfazer (achado 5.5).
+                if (section && name) {
+                  showUndo('Foto tirada da seção.', () =>
+                    restoreField(getPuck, section, name, before),
+                  )
+                }
+              }}
               title="Tirar"
               type="button"
             >
@@ -413,6 +452,38 @@ export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
           O YouTube só é carregado quando o visitante clica para assistir.
         </span>
       )}
+      {value && <VideoCheck videoId={value} />}
+    </div>
+  )
+}
+
+/**
+ * A capa e o nome do vídeo escolhido, para a pessoa conferir que colou o vídeo certo (achado 5.2).
+ * O nome vem do YouTube; sem resposta dele, fica só a capa.
+ */
+function VideoCheck({ videoId }: { videoId: string }) {
+  const [found, setFound] = useState<{ id: string; title: string } | null>(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://youtu.be/${videoId}`)}`
+    fetch(url, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { title?: unknown } | null) => {
+        if (typeof body?.title === 'string') setFound({ id: videoId, title: body.title })
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [videoId])
+  const title = found?.id === videoId ? found.title : null
+
+  return (
+    <div className="ed-video-check">
+      <img
+        alt=""
+        className="ed-pic"
+        src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`}
+      />
+      <span className="ed-hint">{title ? `Vídeo: ${title}` : 'Vídeo escolhido'}</span>
     </div>
   )
 }
@@ -426,7 +497,10 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
   const sectionId = usePuck((state) => state.selectedItem?.props.id as string | undefined)
   const [busy, setBusy] = useState(false)
   const label = (value ?? '').trim()
-  const live = pages.find((page) => page.id === pageId)?.published
+  const page = pages.find((item) => item.id === pageId)
+  const live = page?.published
+  const anchor = slugify(label)
+  const path = page?.slug ? `/${page.slug}` : '/'
 
   const putInMenu = async () => {
     if (!sectionId) return
@@ -470,8 +544,11 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
         />
         <span className="ed-counter">{counterText((value ?? '').length, LIMITS.menuLabel)}</span>
       </div>
+      {/* O nome não aparece na prévia: a dica mostra onde ele vale (achado 11.6). */}
       <span className="ed-hint">
-        Para sites de uma página: um link do menu pode levar direto até esta seção.
+        {anchor
+          ? `Não aparece na página: é o nome do link do menu. Esta seção fica em ${path}#${anchor}.`
+          : 'Para sites de uma página: um link do menu pode levar direto até esta seção.'}
       </span>
       {label && (
         <button
@@ -669,6 +746,119 @@ export function ArrayItemMoves({
         <PanelIcon name="down" size={16} />
         Descer
       </button>
+    </div>
+  )
+}
+
+/**
+ * Ícone de um Destaque, escolhido pelo desenho (achado 4.4): antes era uma lista só de nomes
+ * ("Dente", "Folha"), e a pessoa não via o que ia aparecer. Por baixo, botões de rádio: as setas
+ * do teclado trocam, e o leitor de tela lê o nome de cada um.
+ */
+export function IconField<V extends string>({
+  label,
+  name,
+  onChange,
+  options,
+  readOnly,
+  value,
+}: {
+  label: string
+  name: string
+  onChange: (value: V) => void
+  options: { value: V; label: string; icon: React.ReactNode }[]
+  readOnly?: boolean
+  value: V | undefined
+}) {
+  return (
+    <div aria-label={label} className="ed-icons" role="radiogroup">
+      {options.map((option) => (
+        <label className="ed-icon-choice" key={option.value} title={option.label}>
+          <input
+            checked={value === option.value}
+            className="ed-thumb__input"
+            disabled={readOnly}
+            name={name}
+            onChange={() => onChange(option.value)}
+            type="radio"
+            value={option.value}
+          />
+          {option.icon}
+          <span className="ed-icon-choice__name">{option.label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Palavras em destaque do Banner (achados 11.4 e 3.4): a pessoa toca nas palavras do título, em vez
+ * de copiar. Tocar numa palavra escolhe ela; tocar na do lado aumenta o destaque; tocar na ponta
+ * tira. O destaque é sempre um pedaço seguido do título, como o site desenha.
+ */
+export function HighlightField({ value, onChange, readOnly }: FieldProps<string>) {
+  const title = usePuck((s) => s.selectedItem?.props.title as unknown)
+  const text = typeof title === 'string' ? title : ''
+  const words = titleWords(text)
+  const current = (value ?? '').trim()
+  const range = highlightRange(text, current)
+  const missing = current !== '' && !range
+
+  const choose = (index: number) => {
+    let from = index
+    let to = index
+    if (range) {
+      const [start, end] = range
+      if (index === start - 1) [from, to] = [index, end]
+      else if (index === end + 1) [from, to] = [start, index]
+      else if (index === start && start === end) return onChange('')
+      else if (index === start) [from, to] = [start + 1, end]
+      else if (index === end) [from, to] = [start, end - 1]
+    }
+    onChange(text.slice(words[from].start, words[to].end))
+  }
+
+  if (!words.length) {
+    return <p className="ed-hint">Escreva o título primeiro: as palavras dele aparecem aqui.</p>
+  }
+
+  return (
+    <div className="ed-highlight">
+      <div aria-label="Palavras do título" className="ed-highlight__words" role="group">
+        {words.map((word, index) => (
+          <button
+            aria-pressed={Boolean(range && index >= range[0] && index <= range[1])}
+            className="ed-word"
+            disabled={readOnly}
+            key={`${word.start}-${word.text}`}
+            onClick={() => choose(index)}
+            type="button"
+          >
+            {word.text}
+          </button>
+        ))}
+      </div>
+      {missing ? (
+        <p className="ed-hint ed-hint--warn" role="status">
+          “{current}” não está no título, então nada fica em destaque. Toque nas palavras acima para
+          escolher.
+        </p>
+      ) : (
+        <p className="ed-hint">
+          Toque nas palavras que devem ganhar destaque e na do lado para aumentar. No site elas
+          ficam em itálico, na cor do site; na prévia, sublinhadas.
+        </p>
+      )}
+      {current && (
+        <button
+          className="ed-btn ed-btn--sm ed-btn--ghost"
+          disabled={readOnly}
+          onClick={() => onChange('')}
+          type="button"
+        >
+          Tirar o destaque
+        </button>
+      )}
     </div>
   )
 }

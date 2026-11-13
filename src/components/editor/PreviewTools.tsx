@@ -196,22 +196,27 @@ export function PreviewTools() {
               <PanelIcon name="phone" />
             </button>
           </div>
-          {!onPhone && panelsOpen && (
+          {!onPhone && (
             // Só esconde os painéis: a partir de uns 1350 px, a página de 1280 px cabe sem reduzir. O
             // Puck não deixa travar o zoom de fora (ele recalcula a cada mudança de tamanho).
+            // Com os painéis escondidos, o mesmo lugar traz "Mostrar painéis" (achado 1.5).
             <button
               className="ed-btn ed-btn--sm"
               onClick={() =>
                 dispatch({
                   type: 'setUi',
-                  ui: { leftSideBarVisible: false, rightSideBarVisible: false },
+                  ui: { leftSideBarVisible: !panelsOpen, rightSideBarVisible: !panelsOpen },
                   recordHistory: false,
                 })
               }
-              title="Esconde os painéis para a prévia ficar maior"
+              title={
+                panelsOpen
+                  ? 'Esconde os painéis para a prévia ficar maior'
+                  : 'Mostra de novo os painéis de seções e de opções'
+              }
               type="button"
             >
-              Esconder painéis
+              {panelsOpen ? 'Esconder painéis' : 'Mostrar painéis'}
             </button>
           )}
           <span aria-live="polite">

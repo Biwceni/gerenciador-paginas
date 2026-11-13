@@ -619,6 +619,7 @@ textarea.ed-input {
 
 .ed-check > div {
   display: grid;
+  flex: 1;
   gap: 4px;
   min-width: 0;
 }
@@ -1627,4 +1628,199 @@ textarea.ed-input {
     width: min(340px, calc(100vw - var(--puck-pluginbar-width) - 48px));
     box-shadow: 12px 0 32px rgba(0, 0, 0, 0.18);
   }
+}
+
+/* Campo que não vale para a escolha atual da seção (achado 11.5, `OnlyWhen`): sai do painel. */
+.ed-root [class*='InputWrapper_']:has(> [data-ed-off]),
+.ed-root [class*='PuckFields-field_']:has(> [class*='InputWrapper_'] > [data-ed-off]) {
+  display: none;
+}
+
+/* Título, nome e botão numa caixa que cresce com o texto (achado 11.3). */
+.ed-grow {
+  display: block;
+  overflow: hidden;
+  line-height: 1.4;
+  resize: none;
+}
+
+textarea.ed-grow {
+  resize: none;
+}
+
+/* Ícone de cada Destaque pelo desenho (achado 4.4). */
+.ed-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+}
+
+.ed-icon-choice {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 2px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 8px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  cursor: pointer;
+}
+
+.ed-icon-choice svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ed-icon-choice__name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-icon-choice:hover,
+.ed-icon-choice:has(input:checked) {
+  border-color: var(--ed-accent);
+}
+
+.ed-icon-choice:has(input:checked) {
+  box-shadow: 0 0 0 3px var(--ed-accent-soft);
+}
+
+.ed-icon-choice:has(input:focus-visible) {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+/* Palavras em destaque tocando nas palavras do título (achados 11.4 e 3.4). */
+.ed-highlight {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.ed-highlight__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ed-word {
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 999px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  font: inherit;
+  font-size: var(--gp-fs-help);
+  cursor: pointer;
+}
+
+.ed-word[aria-pressed='true'] {
+  border-color: var(--ed-accent);
+  background: var(--ed-accent);
+  color: var(--ed-on-accent);
+}
+
+.ed-word:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .ed-word {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Capa e nome do vídeo escolhido, para conferir (achado 5.2). */
+.ed-video-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ed-video-check .ed-pic {
+  flex: none;
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+}
+
+/* Link no Texto simples (achado 7.1): o formulário fica embaixo da barra. */
+.ed-rt-link {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--ed-soft);
+}
+
+.ed-rt-link__label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+}
+
+.ed-rt-link__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* No toque, os botões da barra do Texto simples e as ações de cada item com 44 px (achado 11.9). */
+@media (pointer: coarse) {
+  .ed-root [class*='RichTextMenu'] button,
+  .ed-root [class*='ArrayFieldItem-actions_'] button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* "+ Adicionar produto" (achados 4.7 e 11.9): o nome escrito ao lado do "+" do Puck. */
+.ed-list [class*='ArrayField-addButton'][data-label] {
+  gap: 6px;
+  min-height: 44px;
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+}
+
+.ed-list [class*='ArrayField-addButton'][data-label]::after {
+  content: attr(data-label);
+}
+
+/* Duplicar e Remover de cada item sempre à vista, e não só ao passar o mouse (achado 4.7). */
+.ed-root [class*='ArrayFieldItem-actions_'] {
+  opacity: 1;
+}
+
+/* Posição de cada foto da galeria (achado 5.4). */
+.ed-photo-list__position {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--gp-fs-help);
+}
+
+.ed-photo-list__position select {
+  width: auto;
+  min-height: 32px;
+  padding-block: 2px;
+}
+
+/* Versões (achado 10.5): confirmação antes de trocar o rascunho. */
+.ed-confirm {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  max-width: 280px;
 }

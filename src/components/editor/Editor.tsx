@@ -81,6 +81,7 @@ import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErr
 import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
+import { dismissUndo, showUndo } from './undoToast'
 import { VersionsDialog } from './VersionsDialog'
 import { hiddenColumnNotice, layoutProblem } from './zoneLimits'
 
@@ -430,7 +431,6 @@ export function Editor(props: EditorProps) {
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
   const exampleCursor = useRef(0)
-  const removedToast = useRef<string | number | null>(null)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
   }, [])
@@ -620,10 +620,40 @@ export function Editor(props: EditorProps) {
       for (const loader of root.querySelectorAll('[class*="Loader"][aria-label]:not([role])')) {
         loader.setAttribute('role', 'status')
       }
+      // As abas Adicionar, Ordem e Opções do Puck são `div` com clique (achado 2.8): viram botões
+      // para o teclado e o leitor de tela, e dizem qual está aberta.
+      for (const tab of root.querySelectorAll<HTMLElement>('[class*="_NavItem-link_"]')) {
+        if (!tab.hasAttribute('role')) {
+          tab.setAttribute('role', 'button')
+          tab.tabIndex = 0
+          tab.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
+            tab.click()
+          })
+        }
+        const active = Boolean(tab.parentElement?.className.includes('NavItem--active'))
+        if (tab.getAttribute('aria-pressed') !== String(active)) {
+          tab.setAttribute('aria-pressed', String(active))
+        }
+      }
     }
     fix()
-    const observer = new MutationObserver(fix)
-    observer.observe(root, { childList: true, subtree: true })
+    // Troca de classe só conta nas abas (a aba aberta muda a classe do item dela).
+    const observer = new MutationObserver((records) => {
+      const relevant = records.some(
+        (record) =>
+          record.type === 'childList' ||
+          String((record.target as Element).className).includes('NavItem'),
+      )
+      if (relevant) fix()
+    })
+    observer.observe(root, {
+      attributeFilter: ['class'],
+      attributes: true,
+      childList: true,
+      subtree: true,
+    })
     return () => observer.disconnect()
   }, [])
 
@@ -651,21 +681,33 @@ export function Editor(props: EditorProps) {
   const onAction = useCallback(
     (action: PuckAction, next: { data: Data }, previous: { data: Data }) => {
       // O Desfazer do aviso volta a última mudança: depois de outra, ela já não seria a remoção.
-      if (!UI_ONLY_ACTIONS.includes(action.type) && removedToast.current !== null) {
-        toast.dismiss(removedToast.current)
-        removedToast.current = null
-      }
+      if (!UI_ONLY_ACTIONS.includes(action.type)) dismissUndo()
       if (action.type === 'remove') {
         const message = action.zone === ROOT_ZONE ? 'Seção removida.' : 'Peça removida.'
         // O Puck deixaria a seção de baixo escolhida, e a pessoa não pediu para mexer nela.
         setTimeout(() => {
           const puck = getPuck.current?.()
           puck?.dispatch({ type: 'setUi', ui: { itemSelector: null }, recordHistory: false })
-          removedToast.current = toast.info(message, {
-            action: { label: 'Desfazer', onClick: () => getPuck.current?.().history.back() },
-          })
+          showUndo(message, () => getPuck.current?.().history.back())
         })
         return
+      }
+      if (action.type === 'duplicate') {
+        // A cópia fica escolhida e à vista, logo abaixo da original (achado 9.7). Antes o painel
+        // voltava para "Página" e a pessoa não via onde ela tinha entrado.
+        setTimeout(() => {
+          const puck = getPuck.current?.()
+          const index = action.sourceIndex + 1
+          const zone = action.sourceZone
+          const copy = puck?.getItemBySelector({ index, zone })
+          if (!puck || !copy || layoutProblem(puck.appState.data)) return
+          puck.dispatch({
+            type: 'setUi',
+            ui: { itemSelector: { index, zone } },
+            recordHistory: false,
+          })
+          scrollToSection(String(copy.props.id))
+        }, HISTORY_SETTLE)
       }
       if (UI_ONLY_ACTIONS.includes(action.type)) return
       const problem = layoutProblem(next.data)

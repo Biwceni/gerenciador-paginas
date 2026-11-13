@@ -130,7 +130,7 @@ test.describe('editor: salvar sem perder trabalho', () => {
     const id = await createPage()
     await open(page, id)
     await pickHero(page)
-    const title = fields(page).locator('input[type="text"]').first()
+    const title = fields(page).locator('textarea[data-line="one"]').first()
     await expect(fields(page)).toContainText('15 de 120')
     await title.fill('x'.repeat(125))
     await expect(fields(page)).toContainText('125 de 120. Passou 5: encurte para salvar.')
@@ -144,10 +144,12 @@ test.describe('editor: salvar sem perder trabalho', () => {
     // Tirando a escolha da seção, o Ir até o campo volta para ela.
     await page.keyboard.press('Escape')
     await alert.getByRole('button', { name: 'Ir até o campo' }).click()
-    await expect(fields(page).locator('input[type="text"]').first()).toHaveValue('x'.repeat(125))
+    await expect(fields(page).locator('textarea[data-line="one"]').first()).toHaveValue(
+      'x'.repeat(125),
+    )
     expect((await saved(id)).content.data.content[0].props.title).toBe('Página de teste')
 
-    await fields(page).locator('input[type="text"]').first().fill('Título certo')
+    await fields(page).locator('textarea[data-line="one"]').first().fill('Título certo')
     await expect(alert).toHaveCount(0, { timeout: 10_000 })
     await expect
       .poll(async () => (await saved(id)).content.data.content[0].props.title, { timeout: 15_000 })
@@ -163,7 +165,7 @@ test.describe('editor: salvar sem perder trabalho', () => {
     await open(page, id)
     await pickHero(page)
     await context.setOffline(true)
-    await fields(page).locator('input[type="text"]').first().fill('Feito sem internet')
+    await fields(page).locator('textarea[data-line="one"]').first().fill('Feito sem internet')
     await expect(page.locator('.ed-top__status')).toHaveAttribute('aria-label', /Sem internet/, {
       timeout: 10_000,
     })

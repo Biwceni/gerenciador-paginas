@@ -10,6 +10,8 @@ import React, {
   useState,
 } from 'react'
 
+import { FieldLabel } from '@puckeditor/core'
+
 import { countsVisibleLetters, fieldLimit } from '@/puck/fieldLimits'
 import { visibleLength } from '@/puck/limits'
 
@@ -75,6 +77,74 @@ function usePausedChange(onChange: Change | undefined) {
   return { deferred, flush }
 }
 
+/** Junta as linhas: título, nome e botão são de uma linha só, mesmo quando a caixa quebra. */
+const oneLine = (text: string) => text.replace(/\s*[\r\n]+\s*/g, ' ')
+
+/**
+ * Texto de uma linha do painel numa caixa que cresce (achado 11.3): o título de duas linhas fica
+ * inteiro à vista, em vez de andar para o lado dentro de um campo estreito. Por baixo continua
+ * sendo uma linha só: Enter não quebra, e o que se cola com quebras vira espaço. Como o campo do
+ * Puck, guarda o texto enquanto tem o foco e volta a seguir a página quando o foco sai.
+ */
+export function GrowingText({
+  id,
+  label,
+  name,
+  onChange,
+  placeholder,
+  readOnly,
+  value,
+}: {
+  id?: string
+  label: string
+  name: string
+  onChange: Change
+  placeholder?: string
+  readOnly?: boolean
+  value: unknown
+}) {
+  const outside = typeof value === 'string' ? value : ''
+  const [local, setLocal] = useState(outside)
+  const [focused, setFocused] = useState(false)
+  const box = useRef<HTMLTextAreaElement>(null)
+  if (!focused && local !== outside) setLocal(outside)
+
+  // A altura acompanha o texto (o `field-sizing` ainda não vale em todo navegador).
+  useEffect(() => {
+    const area = box.current
+    if (!area) return
+    area.style.height = 'auto'
+    area.style.height = `${area.scrollHeight}px`
+  }, [local])
+
+  return (
+    <FieldLabel el="label" label={label} readOnly={readOnly}>
+      <textarea
+        autoComplete="off"
+        className="ed-input ed-grow"
+        data-line="one"
+        id={id}
+        name={name}
+        onBlur={() => setFocused(false)}
+        onChange={(event) => {
+          const next = oneLine(event.currentTarget.value)
+          setLocal(next)
+          onChange(next)
+        }}
+        onFocus={() => setFocused(true)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.preventDefault()
+        }}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        ref={box}
+        rows={1}
+        value={local}
+      />
+    </FieldLabel>
+  )
+}
+
 /**
  * Campos de texto do painel (override `fieldTypes` do Puck) com o limite à vista: o campo de
  * sempre, e embaixo "32 de 60". Perto do fim o número muda de cor; passou, o campo fica marcado e
@@ -83,14 +153,18 @@ function usePausedChange(onChange: Change | undefined) {
 export function CountedField({
   children,
   field,
+  id: fieldId,
   name,
   onChange,
+  readOnly,
   value,
 }: {
   children: React.ReactNode
-  field?: { type?: string }
+  field?: { type?: string; label?: string; placeholder?: string }
+  id?: string
   name: string
   onChange?: Change
+  readOnly?: boolean
   value?: unknown
 }) {
   const paused = field?.type === 'text' || field?.type === 'textarea'
@@ -106,9 +180,21 @@ export function CountedField({
     [deferred, value],
   )
   const field_ =
-    paused && isValidElement(children)
-      ? cloneElement(children as React.ReactElement<{ onChange?: Change }>, { onChange: onTyped })
-      : children
+    field?.type === 'text' ? (
+      <GrowingText
+        id={fieldId}
+        label={field.label ?? name}
+        name={name}
+        onChange={onTyped}
+        placeholder={field.placeholder}
+        readOnly={readOnly}
+        value={value}
+      />
+    ) : paused && isValidElement(children) ? (
+      cloneElement(children as React.ReactElement<{ onChange?: Change }>, { onChange: onTyped })
+    ) : (
+      children
+    )
   const shown = paused && typed && Object.is(typed.over, value) ? typed.text : value
   const type = usePuck((s) => s.selectedItem?.type)
   const max = fieldLimit(type, name)
