@@ -213,7 +213,6 @@ test.describe('editor: achados do teste de estresse', () => {
   })
 
   test('8.1 no celular, tocar numa peça coloca dentro das Colunas', async ({ page }) => {
-    test.fail()
     const { id } = await createPage([hero('Hero-a1'), fullColumns])
     await page.setViewportSize({ width: 390, height: 844 })
     await signIn(page)
@@ -227,6 +226,141 @@ test.describe('editor: achados do teste de estresse', () => {
     await photo.first().scrollIntoViewIfNeeded()
     await photo.first().click()
     await expect(page.getByText(/em qual coluna/i)).toBeVisible({ timeout: 5_000 })
+    // A primeira coluna já tem 6 peças: não dá para escolher.
+    await expect(page.getByRole('button', { name: /Coluna 1/ })).toBeDisabled()
+    await page.getByRole('button', { name: /Coluna 2/ }).click()
+    await expect(page.getByText('Foto colocada na Coluna 2.')).toBeVisible()
+    await expect(
+      preview(page).locator('[data-puck-dropzone="Columns-c1:column2"] > [data-puck-component]'),
+    ).toHaveCount(2)
+    await expect
+      .poll(
+        async () => {
+          const columns = (await savedContent(id))[1].props.column2 as { type: string }[]
+          return columns.map((item) => item.type)
+        },
+        { timeout: 15_000 },
+      )
+      .toEqual(['ColumnText', 'ColumnImage'])
+  })
+
+  test('8.1 sem Colunas na página, a peça oferece pôr uma seção Colunas', async ({ page }) => {
+    const { id } = await createPage([hero('Hero-a1')])
+    await page.setViewportSize({ width: 390, height: 844 })
+    await signIn(page)
+    await openEditor(page, id, 1)
+    await page.locator('[class*="NavItem-link"]', { hasText: 'Adicionar' }).first().click()
+    await page.waitForTimeout(800)
+    const photo = page.locator('.ed-palitem:not([inert])', {
+      has: page.locator('.ed-palitem__name', { hasText: /^Foto$/ }),
+    })
+    await photo.first().scrollIntoViewIfNeeded()
+    await photo.first().click()
+    await page.getByRole('button', { name: 'Colocar uma seção Colunas' }).click()
+    await expect(sections(page)).toHaveCount(2)
+    await page.getByRole('button', { name: /Coluna 1/ }).click()
+    await expect(page.getByText('Foto colocada na Coluna 1.')).toBeVisible()
+  })
+
+  test('11.1 no celular, escolher no painel mostra a seção e a barra Ajustado', async ({
+    page,
+  }) => {
+    const { id } = await createPage([hero('Hero-a1'), cta(1)])
+    await page.setViewportSize({ width: 390, height: 844 })
+    await signIn(page)
+    await openEditor(page, id, 2)
+    await pick(page, sections(page).nth(1))
+    if (!(await fields(page).count())) {
+      await page.locator('[class*="NavItem-link"]', { hasText: 'Opções' }).first().click()
+      await page.waitForTimeout(800)
+    }
+    const soft = fields(page).locator('label', { hasText: 'Suave' }).first()
+    await soft.scrollIntoViewIfNeeded()
+    await soft.click()
+    const bar = page.locator('.ed-adjusted')
+    await expect(bar).toContainText('Ajustado: Suave')
+    // O histórico do Puck junta mudanças com menos de 250 ms entre elas; uma pessoa não é tão rápida.
+    await page.waitForTimeout(800)
+    // O painel desceu e a prévia aparece.
+    await expect(fields(page)).toHaveCount(0)
+    await bar.getByRole('button', { name: 'Voltar às opções' }).click()
+    await expect(fields(page)).toHaveCount(1)
+    await expect(bar).toHaveCount(0)
+
+    // Desfazer na barra volta o fundo de antes.
+    await soft.scrollIntoViewIfNeeded()
+    await fields(page).locator('label', { hasText: 'Cor do site' }).first().click()
+    await expect(bar).toContainText('Ajustado: Cor do site')
+    await page.waitForTimeout(800)
+    await bar.getByRole('button', { name: 'Desfazer' }).click()
+    await expect(bar).toHaveCount(0)
+    await expect
+      .poll(async () => (await savedContent(id))[1].props.style, { timeout: 15_000 })
+      .toBe('soft')
+    // O Desfazer do topo também fica à mão no celular.
+    await expect(page.getByRole('button', { name: 'Desfazer', exact: true }).first()).toBeVisible()
+  })
+
+  test('8.5 trocar Três iguais por Duas iguais avisa que a peça fica guardada', async ({
+    page,
+  }) => {
+    const thirds = {
+      ...fullColumns,
+      props: {
+        ...fullColumns.props,
+        layout: 'thirds',
+        column1: [piece('ColumnText-p1', 'Peça 1')],
+        column3: [piece('ColumnText-r1', 'Na terceira')],
+      },
+    }
+    const { id } = await createPage([hero('Hero-a1'), thirds])
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await signIn(page)
+    await openEditor(page, id, 2)
+    await pick(page, sections(page).nth(1))
+    await fields(page).locator('label', { hasText: 'Duas iguais' }).first().click()
+    await expect(page.getByText(/A peça da Coluna 3 fica guardada/)).toBeVisible()
+    await expect
+      .poll(async () => (await savedContent(id))[1].props.column3, { timeout: 15_000 })
+      .toHaveLength(1)
+  })
+
+  test('13.5 o texto digitado vai para a seção certa, mesmo trocando de seção logo depois', async ({
+    page,
+  }) => {
+    const { id } = await createPage([hero('Hero-a1'), cta(1)])
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await signIn(page)
+    await openEditor(page, id, 2)
+    await pick(page, sections(page).first())
+    const title = fields(page).locator('input[type="text"]').first()
+    await title.click()
+    await page.keyboard.press('End')
+    await page.keyboard.type(' nova')
+    // Sem esperar a pausa: escolhe a outra seção na hora.
+    await sections(page)
+      .nth(1)
+      .click({ position: { x: 6, y: 6 } })
+    await expect(preview(page).getByText('Página de teste nova')).toBeVisible()
+    await expect
+      .poll(async () => (await savedContent(id)).map((item) => item.props.title), {
+        timeout: 15_000,
+      })
+      .toEqual(['Página de teste nova', 'Seção 1'])
+  })
+
+  test('no tablet, o catálogo abre por cima e a prévia não encolhe', async ({ page }) => {
+    const { id } = await createPage([hero('Hero-a1')])
+    await page.setViewportSize({ width: 800, height: 1100 })
+    await signIn(page)
+    await openEditor(page, id, 1)
+    const frame = page.locator('iframe').first()
+    const before = (await frame.boundingBox())?.width ?? 0
+    await page.locator('[class*="NavItem-link"]', { hasText: 'Adicionar' }).first().click()
+    await expect(page.locator('.ed-palitem').first()).toBeVisible()
+    await page.waitForTimeout(800)
+    const after = (await frame.boundingBox())?.width ?? 0
+    expect(after).toBeGreaterThanOrEqual(before * 0.9)
   })
 
   test('9.1 a biblioteca de fotos abre por cima de Página e Google', async ({ page }) => {

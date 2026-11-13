@@ -1440,3 +1440,168 @@ textarea.ed-input {
   flex: none;
   white-space: nowrap;
 }
+
+/* "Colocar a Foto em qual coluna?" (entrega 2, achados 8.1 e 8.2): as colunas desenhadas, lado a
+   lado como na página, cada uma um botão grande o bastante para o polegar. */
+.ed-colpick {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ed-colpick--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ed-colpick__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 12px 8px;
+  border: 2px dashed var(--ed-line-strong);
+  border-radius: 12px;
+  background: var(--ed-soft);
+  color: var(--ed-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ed-colpick__col:hover:not(:disabled),
+.ed-colpick__col:focus-visible {
+  border-color: var(--ed-accent);
+  border-style: solid;
+  background: var(--ed-accent-soft);
+}
+
+.ed-colpick__col:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ed-colpick__pieces {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.ed-colpick__pieces span {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--ed-line);
+}
+
+.ed-colpick__sections {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.ed-colpick__sections legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ed-colpick__sections label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+/* "Ajustado: Suave · Desfazer · Voltar às opções" (entrega 2, achado 11.1): no celular, depois de
+   uma escolha no painel, a prévia mostra a seção mudada e esta barra fica logo acima do menu de
+   baixo. */
+.ed-adjusted {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--ed-nav-height, 76px) + 12px);
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--ed-text);
+  color: var(--ed-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.ed-adjusted__text {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ed-adjusted .ed-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+}
+
+/* Tela de toque também no tablet (achado 1.8): botões e campos com 44 px, como no celular. */
+@media (pointer: coarse) {
+  .ed-icon-btn,
+  .ed-icon-btn--sm,
+  .ed-photo-list__item .ed-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ed-btn,
+  .ed-btn--sm,
+  .ed-input,
+  .ed-switch {
+    min-height: 44px;
+  }
+
+  /* Sem mouse não existe "passar por cima": Duplicar e Remover de cada item ficam à vista. */
+  .ed-root [class*='ArrayFieldItem-actions_'] {
+    opacity: 1;
+  }
+}
+
+/* Item de lista com nome comprido (achado 4.6): o nome corta com reticências e Duplicar e Remover
+   ficam sempre no mesmo lugar, dentro do painel. */
+.ed-root [class*='ArrayFieldItem-summary_'] {
+  min-width: 0;
+}
+
+.ed-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-root [class*='ArrayFieldItem-rhs_'] {
+  flex: none;
+}
+
+/* Tablet (achado 2.7): o catálogo "Adicionar seção" abre por cima da prévia, em vez de espremer a
+   prévia para 35%. A prévia fica com a largura de sempre, e o catálogo desliza sobre ela. */
+@media (min-width: 638px) and (max-width: 1023px) {
+  .ed-root
+    [class*='PuckLayout--leftSideBarVisible']:not([class*='PuckLayout--rightSideBarVisible'])
+    [class*='PuckLayout-inner'] {
+    grid-template-columns: var(--puck-pluginbar-width) 0 var(--puck-frame-width) 0 !important;
+  }
+
+  .ed-root [class*='Sidebar--left'][class*='Sidebar--isVisible'] {
+    position: absolute;
+    /* Medido a partir da área do painel, que já começa ao lado da barra de ícones. */
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    width: min(340px, calc(100vw - var(--puck-pluginbar-width) - 48px));
+    box-shadow: 12px 0 32px rgba(0, 0, 0, 0.18);
+  }
+}

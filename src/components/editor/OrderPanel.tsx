@@ -20,6 +20,15 @@ const LABELS: Record<string, string> = SECTION_LABELS
  * navegador; o celular não arrasta assim, e por isso as setas ficam sempre à vista.
  */
 export function OrderPanel() {
+  // O Puck desenha a aba mesmo fechada: a lista só existe com ela aberta, senão cada letra digitada
+  // no painel redesenharia a lista inteira das seções (achado 13.5).
+  const open = usePuck(
+    (s) => s.appState.ui.leftSideBarVisible && s.appState.ui.plugin.current === 'outline',
+  )
+  return open ? <OrderList /> : <></>
+}
+
+function OrderList() {
   const content = usePuck((s) => s.appState.data.content) as PageComponent[]
   const selector = usePuck((s) => s.appState.ui.itemSelector)
   const dispatch = usePuck((s) => s.dispatch)

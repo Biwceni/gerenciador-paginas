@@ -42,3 +42,24 @@ export function layoutProblem(data: Data): string | null {
   }
   return null
 }
+
+/**
+ * As Colunas passaram de "Três iguais" para um modelo de duas e a terceira tinha peças (achado
+ * 8.5): elas somem da página, mas ficam guardadas. Devolve o aviso, ou `null`.
+ */
+export function hiddenColumnNotice(next: Data, previous: Data): string | null {
+  for (const item of next.content) {
+    if (item.type !== 'Columns' || item.props.layout === 'thirds') continue
+    const before = previous.content.find((old) => old.props.id === item.props.id)
+    if (before?.props.layout !== 'thirds') continue
+    const pieces: unknown = item.props.column3
+    const count = Array.isArray(pieces) ? pieces.length : 0
+    if (!count) continue
+    const what =
+      count === 1
+        ? 'A peça da Coluna 3 fica guardada'
+        : `As ${count} peças da Coluna 3 ficam guardadas`
+    return `${what}, sem aparecer na página. Ela${count === 1 ? '' : 's'} volta${count === 1 ? '' : 'm'} se você escolher "Três iguais" de novo.`
+  }
+  return null
+}

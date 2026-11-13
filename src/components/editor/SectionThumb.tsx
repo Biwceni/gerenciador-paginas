@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 
 import type { Components } from '@/puck/config'
 
@@ -237,7 +237,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   ColumnButton: 'Um botão, dentro de uma coluna',
 }
 
-export function SectionThumb({
+function SectionThumbDrawing({
   className = 'ed-palitem__thumb',
   type,
 }: {
@@ -250,3 +250,6 @@ export function SectionThumb({
     </svg>
   )
 }
+
+/** Desenho fixo: não muda a cada letra digitada, então não redesenha (achado 13.5). */
+export const SectionThumb = memo(SectionThumbDrawing)

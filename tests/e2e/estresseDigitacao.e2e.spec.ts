@@ -184,7 +184,6 @@ test.describe('editor: digitar numa página grande', () => {
   test('13.5 digitar na página de 40 seções é tão rápido quanto numa de uma seção', async ({
     page,
   }) => {
-    test.fail()
     test.setTimeout(500_000)
     const small = await createPage([HERO])
     const big = await createPage(bigPage())
