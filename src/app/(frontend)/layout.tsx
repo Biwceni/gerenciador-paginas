@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
+import { SiteReveal } from '@/components/site/SiteReveal'
 import { sitePersonality, themeStyle } from '@/components/site/theme'
 import { getSite, populatedMedia } from '@/lib/content'
 import { fallbackFontFaces } from '@/lib/fontFallback'
@@ -85,6 +86,7 @@ ${fallbacks}`),
           Pular para o conteúdo
         </a>
         {children}
+        <SiteReveal />
       </body>
     </html>
   )

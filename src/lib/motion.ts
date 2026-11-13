@@ -6,8 +6,9 @@
  *   animações pensadas para aquela seção. Nunca uma lista aberta de qualquer efeito em qualquer
  *   seção: o leigo montaria um site agitado demais.
  *
- * Tudo é CSS (`styles.css`, regras `.anim--*`): o banner anima ao abrir a página; as outras seções,
- * ao rolar, só onde o navegador tem `animation-timeline`. Sem suporte, nada fica escondido.
+ * Os quadros são CSS (`styles.css`, regras `.anim--*`): o banner anima ao abrir a página; as outras
+ * seções, uma vez, quando entram na tela (`SiteReveal.tsx`), em todo navegador. Sem JavaScript, nada
+ * fica escondido.
  */
 
 export const MOTIONS = ['nenhum', 'suave', 'marcante'] as const

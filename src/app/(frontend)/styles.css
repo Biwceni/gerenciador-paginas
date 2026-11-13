@@ -2362,8 +2362,8 @@
  * (`--stagger`, com a posição `--i` do item). Quem põe para andar são poucas regras gerais:
  *
  * - Banner: ao abrir a página, por tempo (funciona em todo navegador, sem JavaScript).
- * - Outras seções: ao rolar (`animation-timeline: view()`), só onde o navegador tem suporte. Sem
- *   suporte, a seção aparece parada e inteira: nada começa escondido.
+ * - Outras seções: uma vez, por tempo, quando entram na tela (`SiteReveal.tsx`), em todo navegador.
+ *   Sem JavaScript, a seção aparece parada e inteira: nada começa escondido.
  * - "Ver a animação" do editor: a classe `anim-play`, por alguns segundos, toca por tempo.
  * - Quem pediu menos movimento vê só a seção esmaecer, rápido.
  *
@@ -2553,18 +2553,22 @@
 
 @media (prefers-reduced-motion: no-preference) {
   /*
-   * Seções: ao rolar, cada uma entra enquanto aparece na tela (até 45% da entrada). Nas que entram
-   * em sequência, o atraso para no 5º item (min(--i, 4)): numa galeria grande no fim da página, o
-   * intervalo das últimas fotos passaria do fim da entrada e elas nunca terminariam de aparecer.
+   * Seções: cada uma toca a animação uma vez, por tempo, quando entra na tela (achados 12.1 a
+   * 12.4; `SiteReveal.tsx` põe `anim-wait` no que ainda está fora da tela e troca por `anim-in`
+   * quando chega). Desacelera no fim, como o banner. Nas que entram em sequência, o atraso para no
+   * 5º item (min(--i, 4)): numa galeria grande, as últimas fotos não demoram mais que as primeiras.
    */
-  @supports (animation-timeline: view()) {
-    .site[data-animate] .anim .anim-part {
-      animation: var(--anim) linear both;
-      animation-timeline: view();
-      animation-range: entry calc(min(var(--i, 0), 4) * var(--stagger, 0) * 6%) entry
-        calc(45% + min(var(--i, 0), 4) * var(--stagger, 0) * 6%);
-    }
+  .site[data-animate] .anim.anim-wait .anim-part {
+    animation: var(--anim) var(--dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--delay, calc(min(var(--i, 0), 4) * var(--stagger, 0) * 90ms)) both paused;
+  }
 
+  .site[data-animate] .anim.anim-in .anim-part {
+    animation: var(--anim) var(--dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--delay, calc(min(var(--i, 0), 4) * var(--stagger, 0) * 90ms)) both;
+  }
+
+  @supports (animation-timeline: view()) {
     /* Paralaxe leve da foto de fundo do banner (até 12%), conforme ele sai da tela. */
     .site[data-animate] .hero.section--image.anim--linhas {
       view-timeline: --site-hero block;
@@ -2652,10 +2656,17 @@
 
   /* "Ver a animação" no editor: toca uma vez, por tempo, a seção escolhida (o mesmo teto). */
   .site .anim-play .anim-part {
-    animation: var(--anim) var(--dur, 0.8s) cubic-bezier(0.16, 1, 0.3, 1)
-      var(--delay, calc(min(var(--i, 0), 4) * var(--stagger, 0) * 110ms)) both;
+    animation: var(--anim) var(--dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--delay, calc(min(var(--i, 0), 4) * var(--stagger, 0) * 90ms)) both;
     animation-timeline: auto;
     animation-range: normal;
+  }
+}
+
+/* Impresso, tudo aparece inteiro, mesmo o que ainda esperava chegar à tela. */
+@media print {
+  .site .anim-part {
+    animation: none !important;
   }
 }
 
