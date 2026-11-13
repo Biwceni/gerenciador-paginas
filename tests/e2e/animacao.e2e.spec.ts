@@ -267,6 +267,32 @@ test.describe.serial('animação do site e das seções', () => {
     await context.close()
   })
 
+  test('cada seção toca sozinha ao entrar na tela e termina inteira, mesmo parada (12.1 a 12.4)', async ({
+    browser,
+  }) => {
+    await publishMotion('marcante')
+    const { context, visitor } = await visit(browser, { viewport: { width: 390, height: 844 } })
+    const section = visitor.locator('.section', { has: visitor.locator('.cta') })
+    const text = visitor.locator('.cta > p')
+    // Fora da tela, a seção espera parada no primeiro quadro.
+    await expect(section).toHaveClass(/anim-wait/)
+    expect(await text.evaluate((element) => getComputedStyle(element).animationPlayState)).toBe(
+      'paused',
+    )
+    // Rola até ela e para: a animação vai até o fim sozinha, por tempo, e não pela rolagem.
+    await section.evaluate((element) => element.scrollIntoView({ block: 'center' }))
+    await expect(section).toHaveClass(/anim-in/)
+    const style = await text.evaluate((element) => {
+      const css = getComputedStyle(element)
+      return { duration: css.animationDuration, timeline: css.animationTimeline }
+    })
+    expect(style).toEqual({ duration: '0.6s', timeline: 'auto' })
+    await expect
+      .poll(() => text.evaluate((element) => getComputedStyle(element).opacity), { timeout: 2000 })
+      .toBe('1')
+    await context.close()
+  })
+
   test('no editor: muda a animação da seção, "Ver a animação" não salva nada, e publica', async ({
     browser,
   }) => {
@@ -276,6 +302,13 @@ test.describe.serial('animação do site e das seções', () => {
     // A prévia não anima sozinha.
     const preview = page.frameLocator('iframe')
     await expect(preview.locator('body')).not.toHaveAttribute('data-animate', /.*/)
+    // 12.5: os painéis do editor entram com uma transição curta.
+    expect(
+      await page
+        .locator('[class*="Sidebar--isVisible"]')
+        .first()
+        .evaluate((element) => getComputedStyle(element).animationName),
+    ).toMatch(/^ed-panel-in/)
 
     await selectSection(page, 1)
     const field = page.getByRole('radiogroup', { name: 'Animação' })

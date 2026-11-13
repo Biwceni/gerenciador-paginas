@@ -1824,3 +1824,59 @@ textarea.ed-grow {
   justify-items: start;
   max-width: 280px;
 }
+
+/*
+ * Movimento do editor (achado 12.5): painéis, catálogo e opções entram com uma transição curta, para
+ * a pessoa sentir a resposta do toque. Só transparência e deslocamento, de 0,15 a 0,25 s.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .ed-root [class*='Sidebar--isVisible'] {
+    animation: ed-panel-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ed-root [class*='Sidebar--right'][class*='Sidebar--isVisible'] {
+    animation-name: ed-panel-in-right;
+  }
+
+  .ed-root form[class*='_PuckFields_'] {
+    animation: ed-fade-in 0.18s ease-out;
+  }
+
+  .ed-root .ed-panel {
+    animation: ed-fade-in 0.18s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 637px) {
+  .ed-root [class*='Sidebar--isVisible'],
+  .ed-root [class*='Sidebar--right'][class*='Sidebar--isVisible'] {
+    animation-name: ed-panel-up;
+  }
+}
+
+@keyframes ed-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@keyframes ed-panel-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes ed-panel-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes ed-fade-in {
+  from {
+    opacity: 0;
+  }
+}
