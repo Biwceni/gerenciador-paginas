@@ -1,6 +1,14 @@
 'use client'
 
-import React, { useEffect, useId, useRef } from 'react'
+import React, {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 
 import { countsVisibleLetters, fieldLimit } from '@/puck/fieldLimits'
 import { visibleLength } from '@/puck/limits'
@@ -17,6 +25,56 @@ export function counterText(length: number, max: number): string {
     : base
 }
 
+/** Quanto esperar a pessoa parar de digitar para levar o texto à prévia (achado 13.5). */
+export const TYPING_PAUSE = 250
+
+type Change = (value: unknown, ...rest: unknown[]) => void
+
+/**
+ * Leva o texto à prévia só quando a pessoa para de digitar (achado 13.5). Numa página grande,
+ * cada letra levada na hora redesenha a página inteira, e no celular cada tecla demorava. O campo
+ * mostra a letra na hora (o Puck guarda o texto no próprio campo enquanto ele tem o foco); a prévia
+ * e o salvamento recebem o texto depois de uma pausa, ao sair do campo ou ao fechar a aba. Sair do
+ * campo vem antes de qualquer outra escolha (outra seção, Publicar), então o texto nunca vai para
+ * a seção errada.
+ */
+function usePausedChange(onChange: Change | undefined) {
+  const pending = useRef<unknown[] | null>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const latest = useRef(onChange)
+  useEffect(() => {
+    latest.current = onChange
+  })
+
+  const flush = useCallback(() => {
+    clearTimeout(timer.current)
+    const args = pending.current
+    pending.current = null
+    if (args) latest.current?.(...(args as [unknown, ...unknown[]]))
+  }, [])
+
+  const deferred = useCallback<Change>(
+    (...args) => {
+      pending.current = args
+      clearTimeout(timer.current)
+      timer.current = setTimeout(flush, TYPING_PAUSE)
+    },
+    [flush],
+  )
+
+  useEffect(() => {
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', flush)
+      flush()
+    }
+  }, [flush])
+
+  return { deferred, flush }
+}
+
 /**
  * Campos de texto do painel (override `fieldTypes` do Puck) com o limite à vista: o campo de
  * sempre, e embaixo "32 de 60". Perto do fim o número muda de cor; passou, o campo fica marcado e
@@ -24,18 +82,39 @@ export function counterText(length: number, max: number): string {
  */
 export function CountedField({
   children,
+  field,
   name,
+  onChange,
   value,
 }: {
   children: React.ReactNode
+  field?: { type?: string }
   name: string
+  onChange?: Change
   value?: unknown
 }) {
+  const paused = field?.type === 'text' || field?.type === 'textarea'
+  const { deferred, flush } = usePausedChange(onChange)
+  // O texto que a pessoa vê no campo, antes de chegar à prévia (para o contador). Vale enquanto o
+  // valor do Puck for o de quando a pessoa digitou; um Desfazer, por exemplo, troca o valor e manda.
+  const [typed, setTyped] = useState<{ text: unknown; over: unknown } | null>(null)
+  const onTyped = useCallback<Change>(
+    (next, ...rest) => {
+      setTyped({ text: next, over: value })
+      deferred(next, ...rest)
+    },
+    [deferred, value],
+  )
+  const field_ =
+    paused && isValidElement(children)
+      ? cloneElement(children as React.ReactElement<{ onChange?: Change }>, { onChange: onTyped })
+      : children
+  const shown = paused && typed && Object.is(typed.over, value) ? typed.text : value
   const type = usePuck((s) => s.selectedItem?.type)
   const max = fieldLimit(type, name)
   const id = useId()
   const box = useRef<HTMLDivElement>(null)
-  const text = typeof value === 'string' ? value : ''
+  const text = typeof shown === 'string' ? shown : ''
   const length = countsVisibleLetters(type, name) ? visibleLength(text) : text.length
   const over = max !== null && length > max
 
@@ -50,12 +129,20 @@ export function CountedField({
     else input.removeAttribute('aria-invalid')
   }, [id, max, over])
 
-  if (max === null) return <>{children}</>
+  if (max === null) {
+    return paused ? (
+      <div onBlur={flush} style={{ display: 'contents' }}>
+        {field_}
+      </div>
+    ) : (
+      <>{children}</>
+    )
+  }
   const tone = over ? 'over' : length >= max * 0.9 ? 'near' : 'ok'
 
   return (
-    <div className="ed-counted" data-tone={tone} ref={box}>
-      {children}
+    <div className="ed-counted" data-tone={tone} onBlur={paused ? flush : undefined} ref={box}>
+      {field_}
       <span aria-live={over ? 'polite' : 'off'} className="ed-counter" id={id}>
         {counterText(length, max)}
       </span>

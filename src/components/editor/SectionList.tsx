@@ -1,12 +1,13 @@
 'use client'
 
 import { toast } from '@payloadcms/ui'
-import React from 'react'
+import React, { memo } from 'react'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { type Components, COLUMN_PIECES, PIECE_LABELS, SECTION_LABELS } from '@/puck/config'
 import { insertIndex } from '@/puck/insertPosition'
 
+import { requestPiece } from './ColumnPicker'
 import { useAddSection } from './insert'
 import { ROOT_ZONE, usePuck } from './puck'
 import { fullZoneReason, zoneMax } from './zoneLimits'
@@ -65,16 +66,16 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
 }
 
 /** Uma seção da lista (override do Puck): clicar coloca na página; arrastar é com o Puck. */
-export function EditorDrawerItem({ name }: { name: string; children?: React.ReactNode }) {
+function DrawerItem({ name }: { name: string; children?: React.ReactNode }) {
   const addSection = useAddSection()
   const full = usePuck((s) => s.appState.data.content.length >= zoneMax(ROOT_ZONE))
   const add = () => {
     if (full && !PIECES.includes(name)) {
       toast.info(fullZoneReason(ROOT_ZONE))
     } else if (PIECES.includes(name)) {
-      toast.info(
-        'Essa peça só entra dentro de uma seção Colunas. Arraste para dentro de uma coluna.',
-      )
+      // Pergunta em qual coluna: no celular não dá para arrastar (8.1), e no computador o clique
+      // também precisa funcionar (8.2).
+      requestPiece(name)
     } else {
       addSection(name)
     }
@@ -122,4 +123,14 @@ export function EditorDrawerItem({ name }: { name: string; children?: React.Reac
       </span>
     </div>
   )
+}
+
+/**
+ * O Puck redesenha a lista inteira a cada letra digitada no painel. O item só depende do nome da
+ * seção, então fica como está (achado 13.5).
+ */
+const MemoItem = memo(DrawerItem)
+
+export function EditorDrawerItem({ name }: { name: string; children?: React.ReactNode }) {
+  return <MemoItem name={name} />
 }

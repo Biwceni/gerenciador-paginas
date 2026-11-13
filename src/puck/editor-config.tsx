@@ -86,6 +86,12 @@ const button: Field = {
  * Escolha por miniatura (um desenho de cada opção), para as variações visuais das seções: a pessoa
  * vê a arrumação antes de escolher, em vez de ler o nome numa lista.
  */
+/**
+ * Nome do item na lista do painel, num elemento próprio: comprido, ele corta com reticências e não
+ * empurra Duplicar e Remover para fora do painel (achado 4.6).
+ */
+const itemName = (name: string) => <span className="ed-item-name">{name}</span>
+
 const thumbChoice = <V extends string>(
   label: string,
   options: { value: V; label: string; hint?: string; thumb: ChoiceThumbName }[],
@@ -165,7 +171,7 @@ const featureItems: Field = {
     icon: 'check',
     photo: null,
   },
-  getItemSummary: (item: { title?: string }) => item.title || 'Destaque',
+  getItemSummary: (item: { title?: string }) => itemName(item.title || 'Destaque'),
 }
 
 // Produtos da Vitrine. Como nos Destaques, os botões Subir e Descer ficam em cada item.
@@ -197,7 +203,7 @@ const productItems: Field = {
     price: '',
     button: { label: 'Pedir pelo WhatsApp', link: { kind: 'whatsapp' } },
   },
-  getItemSummary: (item: { name?: string }) => item.name || 'Produto',
+  getItemSummary: (item: { name?: string }) => itemName(item.name || 'Produto'),
 }
 
 /** Animação da seção (redesign v3, entrega 2): no fim das opções, escolhida por miniatura. */
@@ -351,7 +357,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
           name: 'Nome do cliente',
           photo: null,
         },
-        getItemSummary: (item) => item.name || 'Depoimento',
+        getItemSummary: (item) => itemName(item.name || 'Depoimento'),
       },
       style: sectionStyle,
       menuLabel,
@@ -386,7 +392,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 12,
         arrayFields: { question: text('Pergunta'), answer: textarea('Resposta') },
         defaultItemProps: { question: 'Nova pergunta?', answer: 'Escreva a resposta aqui.' },
-        getItemSummary: (item) => item.question || 'Pergunta',
+        getItemSummary: (item) => itemName(item.question || 'Pergunta'),
       },
       style: sectionStyle,
       menuLabel,
@@ -539,7 +545,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
               price: text('Preço'),
             },
             defaultItemProps: { name: 'Novo item', description: '', price: 'R$ 0,00' },
-            getItemSummary: (item) => item.name || 'Item',
+            getItemSummary: (item) => itemName(item.name || 'Item'),
           },
         },
         defaultItemProps: {
@@ -547,7 +553,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
           image: null,
           items: [{ name: 'Novo item', description: '', price: 'R$ 0,00' }],
         },
-        getItemSummary: (item) => item.name || 'Grupo',
+        getItemSummary: (item) => itemName(item.name || 'Grupo'),
       },
       ...({
         pricesHint: notice(
@@ -587,7 +593,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 5,
         arrayFields: { text: text('Frase curta') },
         defaultItemProps: { text: 'Escreva o aviso aqui' },
-        getItemSummary: (item) => item.text || 'Frase',
+        getItemSummary: (item) => itemName(item.text || 'Frase'),
       },
       mode: thumbChoice('Movimento', [
         {
@@ -700,7 +706,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 12,
         arrayFields: { label: text('Texto do botão'), link },
         defaultItemProps: { label: 'Novo link', link: null },
-        getItemSummary: (item) => item.label || 'Link',
+        getItemSummary: (item) => itemName(item.label || 'Link'),
       },
       style: sectionStyle,
       anim: animField('LinkList'),

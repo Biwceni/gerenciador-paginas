@@ -104,13 +104,17 @@ export const PUCK_COLORS = `:root {
   --puck-slot-component-color-overlay-border: rgb(47 67 201 / 50%);
   --puck-slot-component-color-border-selected: #2f43c9;
 }
-${SELECTION_HALO}`
+${SELECTION_HALO}
+/* Tela de toque (celular e tablet): os botões da barrinha com 44 px (achados 1.3 e 1.8). */
+@media (pointer: coarse) {
+  [class*='_ActionBarAction_'] { min-width: 44px; min-height: 44px; justify-content: center; }
+}`
 
 /** Espaço acima da seção escolhida, da altura da barrinha (maior no celular, com toque de 44 px). */
 export function barSpace(id: string): string {
   const target = `[data-puck-component="${id.replace(/["\\]/g, '')}"]`
   return `${target} { margin-top: 48px; scroll-margin-top: 56px; }
-@media (max-width: 637px) { ${target} { margin-top: 56px; scroll-margin-top: 64px; } }`
+@media (max-width: 637px), (pointer: coarse) { ${target} { margin-top: 56px; scroll-margin-top: 64px; } }`
 }
 
 /**

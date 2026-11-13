@@ -485,12 +485,15 @@ test.describe.serial('editor: seções', () => {
       await openEditor(page)
     })
 
-    test('topo só com voltar, nome e Publicar, e o resto no menu ⋯', async ({ page }) => {
+    test('topo só com voltar, nome, Desfazer e Publicar, e o resto no menu ⋯', async ({ page }) => {
       const top = page.locator('.ed-top')
       await expect(top.getByRole('link', { name: 'Voltar para as páginas' })).toBeVisible()
       await expect(top.getByText('Página do teste do editor')).toBeVisible()
       await expect(top.getByRole('button', { name: 'Publicar' })).toBeVisible()
-      for (const name of ['Desfazer', 'Refazer', 'Versões', 'Página e Google']) {
+      // Desfazer fica à vista no celular (achado 1.7); o resto vai para o menu ⋯.
+      await expect(top.getByRole('button', { name: 'Desfazer' })).toBeVisible()
+      await expect(top.getByRole('button', { name: 'Desfazer' })).toBeDisabled()
+      for (const name of ['Refazer', 'Versões', 'Página e Google']) {
         await expect(top.getByRole('button', { name })).toBeHidden()
       }
 

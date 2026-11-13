@@ -2,6 +2,8 @@
 
 import React from 'react'
 
+import { announceChange } from './adjusted'
+
 type Props = {
   name: string
   value: string
@@ -42,7 +44,10 @@ export function VisualChoiceField({
             className="ed-thumb__input"
             disabled={readOnly}
             name={name}
-            onChange={() => onChange(option.value)}
+            onChange={() => {
+              onChange(option.value)
+              announceChange(option.label)
+            }}
             type="radio"
             value={option.value}
           />

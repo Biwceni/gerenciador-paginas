@@ -21,6 +21,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -50,6 +51,8 @@ import {
 import { type EditorPageSummary, EditorProvider } from './context'
 import { CountedField } from './CountedField'
 import { dictionary } from './dictionary'
+import { AdjustedBar, ChoiceField } from './adjusted'
+import { ColumnPicker } from './ColumnPicker'
 import { Dialog } from './Dialog'
 import { createDraftSaver } from './draftSaver'
 import { clearLocalCopy, type LocalCopy, readLocalCopy, writeLocalCopy } from './localCopy'
@@ -67,7 +70,7 @@ import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { VersionsDialog } from './VersionsDialog'
-import { layoutProblem } from './zoneLimits'
+import { hiddenColumnNotice, layoutProblem } from './zoneLimits'
 
 export type EditorProps = {
   apiRoute: string
@@ -138,6 +141,8 @@ const countedFields = {
   text: CountedField,
   textarea: CountedField,
   richtext: CountedField,
+  radio: ChoiceField,
+  select: ChoiceField,
 } as unknown as NonNullable<Parameters<typeof Puck>[0]['overrides']>['fieldTypes']
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -260,6 +265,17 @@ function EditorHeader() {
             Ver no site
           </a>
         )}
+        {/* No celular, Desfazer fica à vista, e não só no menu ⋯ (achado 1.7). */}
+        <button
+          aria-label="Desfazer"
+          className="ed-icon-btn ed-show-sm"
+          disabled={!history.hasPast}
+          onClick={history.back}
+          title="Desfazer"
+          type="button"
+        >
+          <PanelIcon name="undo" />
+        </button>
         {/* Sem nada para publicar, vira um aviso legível ("Publicada", com o visto), não um botão
             apagado. */}
         <button
@@ -288,6 +304,8 @@ function EditorHeader() {
         </button>
       </div>
       <PreviewTools />
+      <ColumnPicker />
+      <AdjustedBar />
       {chrome.saveAlert && (
         <div className="ed-save-alert" role="alert">
           <PanelIcon name="alert" size={18} />
@@ -363,6 +381,8 @@ export function Editor(props: EditorProps) {
   const [live, setLive] = useState(props.page.live)
   const [hasChanges, setHasChanges] = useState(props.page.hasChanges)
   const [save, setSave] = useState<SaveState>({ state: 'saved' })
+  // O último "salvo", para voltar a ele quando a mudança se desfaz antes de salvar.
+  const settled = useRef<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
   const [undoState, setUndoState] = useState({ canUndo: false, canRedo: false })
   const [conflict, setConflict] = useState(false)
@@ -468,7 +488,12 @@ export function Editor(props: EditorProps) {
       if (stopped.current) return
       const current = latest.current
       const json = JSON.stringify(current)
-      if (json === lastSaved.current) return
+      if (json === lastSaved.current) {
+        // Mudou e voltou (ou o Puck só arrumou a página ao abrir): nada a salvar.
+        unsavedSince.current = null
+        setSave(settled.current)
+        return
+      }
       const parsed = parsePageContent({ version: CONTENT_VERSION, data: current })
       if (!parsed.success) {
         writeLocalCopy(pageId, current)
@@ -490,7 +515,8 @@ export function Editor(props: EditorProps) {
         if (JSON.stringify(latest.current) === json) {
           unsavedSince.current = null
           clearLocalCopy(pageId)
-          setSave({ state: 'saved', at: new Date() })
+          settled.current = { state: 'saved', at: new Date() }
+          setSave(settled.current)
         } else {
           setSave({ state: 'pending' })
         }
@@ -536,7 +562,8 @@ export function Editor(props: EditorProps) {
       const puckData = next as PuckPageData
       latest.current = puckData
       setData(puckData)
-      if (JSON.stringify(puckData) === lastSaved.current) return
+      // Sem montar o texto da página inteira a cada letra (achado 13.5): só marca que mudou. A
+      // comparação com o que já está salvo fica para a pausa, no salvar.
       unsavedSince.current ??= new Date()
       setSave({ state: 'pending' })
       if (timer.current) clearTimeout(timer.current)
@@ -628,6 +655,8 @@ export function Editor(props: EditorProps) {
       if (UI_ONLY_ACTIONS.includes(action.type)) return
       const problem = layoutProblem(next.data)
       if (problem && !layoutProblem(previous.data)) undoBadChange(problem, previous.data)
+      const hidden = hiddenColumnNotice(next.data, previous.data)
+      if (hidden) toast.info(hidden, { duration: 8000 })
     },
     [undoBadChange],
   )
@@ -695,7 +724,12 @@ export function Editor(props: EditorProps) {
   const savedAt = save.state === 'saved' ? save.at : undefined
 
   const knownTexts = props.exampleTexts
-  const exampleSections = useMemo(() => findExampleSections(data, knownTexts), [data, knownTexts])
+  // Procura os textos de exemplo sem atrasar a digitação: a lista pode esperar a pessoa parar.
+  const settledData = useDeferredValue(data)
+  const exampleSections = useMemo(
+    () => findExampleSections(settledData, knownTexts),
+    [settledData, knownTexts],
+  )
   const googleSite = { name: site.name, tagline }
 
   const status = conflict
@@ -830,6 +864,10 @@ export function Editor(props: EditorProps) {
     changePersonality,
   }
 
+  // Só o id do título principal, e não a página: um `metadata` novo a cada letra redesenharia todas
+  // as seções da prévia (achado 13.5).
+  const mainHeading = mainHeadingID(data)
+
   // O que as seções precisam para desenhar na prévia. Todas as páginas contam (até rascunhos):
   // no editor, o botão aparece; a checagem de Publicar avisa do rascunho.
   const metadata: ContentMetadata = useMemo(
@@ -844,10 +882,10 @@ export function Editor(props: EditorProps) {
       anchors: {},
       whatsappHref,
       site,
-      mainHeadingId: mainHeadingID(data),
+      mainHeadingId: mainHeading,
       editing: true,
     }),
-    [data, formById, homepageId, pageId, photoById, props.pages, site, whatsappHref],
+    [formById, homepageId, mainHeading, pageId, photoById, props.pages, site, whatsappHref],
   )
 
   const context = useMemo(

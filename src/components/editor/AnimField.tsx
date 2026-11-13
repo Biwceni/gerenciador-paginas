@@ -2,7 +2,7 @@
 
 import { toast } from '@payloadcms/ui'
 import { createUsePuck } from '@puckeditor/core'
-import React from 'react'
+import React, { memo } from 'react'
 
 import { panelHref } from '@/lib/panel'
 import {
@@ -16,9 +16,11 @@ import {
   sectionAnimValues,
 } from '@/lib/motion'
 
+import { announceChange } from './adjusted'
 import { useEditor } from './context'
 import { VisualChoiceField } from './VisualChoiceField'
 import { previewDocument } from './insert'
+import { MOBILE_WIDTH } from './puck'
 
 const usePuck = createUsePuck()
 
@@ -29,7 +31,7 @@ const PLAY_MS = 3000
  * Miniatura de cada animação, nas cores do site: um desenho simples do que se mexe (como no
  * protótipo v3). `currentColor` é o texto do site; `--ed-site-primary`, a cor principal.
  */
-function AnimThumb({ value }: { value: SectionAnim }) {
+function AnimThumbDrawing({ value }: { value: SectionAnim }) {
   const accent = 'var(--ed-site-primary, var(--ed-accent))'
   const arrow = (d: string) => (
     <path
@@ -147,6 +149,9 @@ function AnimThumb({ value }: { value: SectionAnim }) {
   )
 }
 
+/** Desenho fixo: não muda a cada letra digitada, então não redesenha (achado 13.5). */
+const AnimThumb = memo(AnimThumbDrawing)
+
 /** Relógio de cada seção tocando, para tocar de novo sem a classe sumir no meio. */
 const playing = new WeakMap<HTMLElement, number>()
 
@@ -212,7 +217,16 @@ export function AnimField({
       toast.info('Esta seção está sem animação.')
       return
     }
-    if (!id || !playSection(id)) toast.info('Não deu para achar a seção na prévia.')
+    if (!id) return
+    // No celular o painel cobre a prévia (achado 11.8): ele desce antes, e a animação toca na tela.
+    if (window.innerWidth < MOBILE_WIDTH) {
+      announceChange('tocando na prévia', { label: 'Animação:', quiet: true })
+      window.setTimeout(() => {
+        if (!playSection(id)) toast.info('Não deu para achar a seção na prévia.')
+      }, 350)
+      return
+    }
+    if (!playSection(id)) toast.info('Não deu para achar a seção na prévia.')
   }
 
   return (
