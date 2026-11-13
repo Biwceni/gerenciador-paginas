@@ -1,11 +1,13 @@
 'use client'
 
 import { setDeep, useGetPuck } from '@puckeditor/core'
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useDeferredValue, useEffect } from 'react'
 
 import { applySiteTheme } from '@/components/site/theme'
 import { safeStyleText } from '@/lib/theme'
+import { hiddenSections } from '@/puck/hiddenSections'
 import { findPhotoPath } from '@/puck/photoPaths'
+import type { PuckPageData } from '@/puck/schema'
 
 import { useEditor } from './context'
 import { usePuck } from './puck'
@@ -111,6 +113,18 @@ ${SELECTION_HALO}
 /* Tela de toque (celular e tablet): os botões da barrinha com 44 px (achados 1.3 e 1.8). */
 @media (pointer: coarse) {
   [class*='_ActionBarAction_'] { min-width: 44px; min-height: 44px; justify-content: center; }
+}
+/* Seção que não aparece no site (achado 13.2): uma etiqueta com o motivo, com texto e borda
+   tracejada (não só cor). */
+[data-ed-hidden] { position: relative; outline: 2px dashed #b45309; outline-offset: -2px; }
+[data-ed-hidden]::after {
+  content: 'Não aparece no site: ' attr(data-ed-hidden);
+  position: absolute; left: 12px; bottom: 12px; z-index: 2; max-width: calc(100% - 24px);
+  padding: 0.35em 0.8em; border: 1px dashed #b45309; border-radius: 8px;
+  background: #fff7ed; color: #7c2d12;
+  /* A prévia do computador aparece reduzida: a letra cresce com a largura para continuar legível. */
+  font: 600 clamp(13px, 1.6vw, 22px)/1.3 system-ui, sans-serif;
+  pointer-events: none;
 }`
 
 /** Espaço acima da seção escolhida, da altura da barrinha (maior no celular, com toque de 44 px). */
@@ -165,8 +179,34 @@ export function EditorFrame({
   }, [frame, selectedId])
 
   usePhotoTap(frame, selectedId)
+  useHiddenTags(frame)
 
   return <>{children}</>
+}
+
+/**
+ * Etiqueta "Não aparece no site" nas seções que o site esconde (achado 13.2). Confere a página sem
+ * pressa (`useDeferredValue`), para não atrasar a digitação.
+ */
+function useHiddenTags(frame: Document | undefined) {
+  const { photoById } = useEditor()
+  const data = useDeferredValue(usePuck((s) => s.appState.data))
+  useEffect(() => {
+    if (!frame) return
+    const hidden = new Map(
+      hiddenSections(data as unknown as PuckPageData, (id) => Boolean(photoById[id])).map(
+        (section) => [section.id, section.reason],
+      ),
+    )
+    const sections = frame.querySelectorAll<HTMLElement>(
+      '[data-puck-dropzone="root:default-zone"] > [data-puck-component]',
+    )
+    for (const section of sections) {
+      const reason = hidden.get(section.dataset.puckComponent ?? '')
+      if (reason) section.dataset.edHidden = reason
+      else delete section.dataset.edHidden
+    }
+  })
 }
 
 /**

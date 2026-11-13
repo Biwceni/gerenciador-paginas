@@ -253,9 +253,11 @@ export default buildConfig({
           // Sair pelo menu e fim da sessão por tempo sem uso.
           loggedOutSuccessfully: 'Você saiu do painel.',
           loggedOutInactivity: 'Você saiu por segurança depois de um tempo sem uso.',
-          stayLoggedIn: 'Continuar no painel',
+          // Aviso 1 minuto antes de a sessão acabar (achado 1.1). No editor, o que já foi salvo fica.
+          stayLoggedIn: 'Continuar conectado',
+          logOut: 'Sair agora',
           youAreInactive:
-            'Faz um tempo que você não mexe no painel. Por segurança, ele vai fechar em instantes. Quer continuar?',
+            'Sua sessão vai acabar em 1 minuto, por segurança. O que você já fez fica salvo. Quer continuar conectado?',
         },
       },
     },

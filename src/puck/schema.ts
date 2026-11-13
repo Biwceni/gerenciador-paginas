@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { isSafeURL } from '../lib/links'
+import { slugify } from '../lib/slug'
 import { type Anim, SECTION_ANIMS } from '../lib/motion'
 import { sanitizeRichText } from '../lib/richtext'
 import { LIMITS, visibleLength } from './limits'
@@ -52,8 +53,17 @@ export const buttonSchema = z.object({
 /** Fundo da seção: claro (fundo do site), suave ou na cor principal. */
 const sectionStyle = z.enum(['light', 'soft', 'brand'])
 
-/** Nome da seção no menu (opcional). Vira a âncora: `/pagina#servicos`. */
-const menuLabel = z.string().max(LIMITS.menuLabel)
+/**
+ * Nome da seção no menu (opcional). Vira a âncora: `/pagina#servicos`. Só emoji ou símbolos ("⭐⭐")
+ * não viram âncora, e o botão que leva até a seção cairia no topo da página (achado 13.8).
+ */
+export const MENU_LABEL_NEEDS_WORD =
+  'precisa de pelo menos uma letra ou número, para o link chegar até a seção. Use uma palavra, como “Novidades ⭐”.'
+
+const menuLabel = z
+  .string()
+  .max(LIMITS.menuLabel)
+  .refine((value) => !value.trim() || slugify(value) !== '', { message: MENU_LABEL_NEEDS_WORD })
 
 const title = z.string().max(LIMITS.title)
 

@@ -80,11 +80,12 @@ export function sectionChecks(
   }
 
   const instagramSections = data.content.filter((item) => item.type === 'InstagramStrip')
-  const fewPhotos = instagramSections.some(
-    (item) =>
-      item.type === 'InstagramStrip' &&
-      item.props.images.filter(withPhoto).length < INSTAGRAM_MIN_PHOTOS,
-  )
+  // Sem nenhuma foto a seção nem aparece: esse aviso é o das seções escondidas (hiddenSections.ts).
+  const fewPhotos = instagramSections.some((item) => {
+    if (item.type !== 'InstagramStrip') return false
+    const count = item.props.images.filter(withPhoto).length
+    return count > 0 && count < INSTAGRAM_MIN_PHOTOS
+  })
   if (fewPhotos) {
     checks.push({
       title: 'A seção Instagram tem menos de 4 fotos',
