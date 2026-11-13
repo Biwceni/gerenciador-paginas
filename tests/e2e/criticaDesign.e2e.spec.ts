@@ -362,7 +362,7 @@ test.describe.serial('crítica de design', () => {
       'Terceiro',
       'Primeiro',
     ])
-    await expect(page.locator('input[name="items[2].title"]').locator('visible=true')).toHaveValue(
+    await expect(page.locator('[name="items[2].title"]').locator('visible=true')).toHaveValue(
       'Primeiro',
     )
   })

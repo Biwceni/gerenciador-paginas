@@ -741,7 +741,7 @@
 
   /*
    * Palavras em destaque no título: itálico, na cor do site com contraste de leitura em cada fundo
-   * (theme.ts). Na prévia do editor, só a cor (`::highlight`, EditorHighlight.tsx).
+   * (theme.ts). Na prévia do editor, a cor e um sublinhado (`::highlight`, EditorHighlight.tsx).
    */
   .hero {
     --hero-em: var(--color-accent-text);
@@ -760,8 +760,12 @@
     color: var(--hero-em);
   }
 
+  /* O itálico não cabe num destaque do CSS: na prévia vai sublinhado, e assim aparece também no
+     fundo "Cor do site", em que a cor é a do texto (achado 11.4). */
   & ::highlight(site-highlight) {
     color: var(--hero-em);
+    text-decoration: underline 0.06em;
+    text-underline-offset: 0.12em;
   }
 
   .hero__text {
@@ -1537,6 +1541,15 @@
     border-radius: var(--radius-media, 16px);
     overflow: hidden;
     background: var(--color-primary);
+  }
+
+  /* Capa do próprio YouTube, só na prévia do editor (achado 5.2). */
+  .video__thumb {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .section--brand .video__box {
@@ -3355,6 +3368,21 @@
 
 .site .announce__mark {
   opacity: 0.6;
+}
+
+/* Só no editor (achado 11.6): a faixa fica parada para dar para escrever, e o selo avisa que no
+   site ela corre. */
+.site .announce__editor-tag {
+  flex: none;
+  margin-inline-end: 12px;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
+  white-space: nowrap;
 }
 
 .site .announce__track {

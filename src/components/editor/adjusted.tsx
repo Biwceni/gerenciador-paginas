@@ -4,6 +4,7 @@ import { useGetPuck } from '@puckeditor/core'
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { previewDocument } from './insert'
+import { OnlyWhen, type ShowWhen } from './onlyWhen'
 import { MOBILE_WIDTH, usePuck } from './puck'
 
 /**
@@ -192,7 +193,7 @@ export function ChoiceField({
   value,
 }: {
   children: React.ReactNode
-  field: { options?: { label: string; value: unknown }[] }
+  field: { options?: { label: string; value: unknown }[]; showWhen?: ShowWhen }
   value?: unknown
 }) {
   const box = useRef<HTMLDivElement>(null)
@@ -204,5 +205,6 @@ export function ChoiceField({
     const option = field.options?.find((item) => item.value === value)
     if (option) announceChange(option.label)
   }, [field.options, value])
-  return <div ref={box}>{children}</div>
+  const shown = <div ref={box}>{children}</div>
+  return field.showWhen ? <OnlyWhen {...field.showWhen}>{shown}</OnlyWhen> : shown
 }

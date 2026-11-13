@@ -37,6 +37,7 @@ export function Photo({ media, sizes, priority, className, fill, alt: ownAlt }: 
     <Image
       alt={alt}
       className={className}
+      data-media-id={media.id}
       fill
       priority={priority}
       sizes={sizes}
@@ -48,6 +49,7 @@ export function Photo({ media, sizes, priority, className, fill, alt: ownAlt }: 
     <Image
       alt={alt}
       className={className}
+      data-media-id={media.id}
       height={media.height ?? 800}
       priority={priority}
       sizes={sizes}

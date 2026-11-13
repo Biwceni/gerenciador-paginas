@@ -1,10 +1,13 @@
 'use client'
 
+import { setDeep, useGetPuck } from '@puckeditor/core'
 import React, { createContext, useContext, useEffect } from 'react'
 
 import { applySiteTheme } from '@/components/site/theme'
 import { safeStyleText } from '@/lib/theme'
+import { findPhotoPath } from '@/puck/photoPaths'
 
+import { useEditor } from './context'
 import { usePuck } from './puck'
 
 type FrameStyle = {
@@ -161,5 +164,72 @@ export function EditorFrame({
     return () => style.remove()
   }, [frame, selectedId])
 
+  usePhotoTap(frame, selectedId)
+
   return <>{children}</>
+}
+
+/**
+ * Trocar a foto tocando nela na prévia (recurso de editar na prévia): com a seção já escolhida, um
+ * toque na foto abre a biblioteca, e a escolhida entra no lugar dela. O primeiro toque continua
+ * escolhendo a seção, como antes.
+ */
+function usePhotoTap(frame: Document | undefined, selectedId: string | undefined) {
+  const getPuck = useGetPuck()
+  const { pickPhoto } = useEditor()
+  useEffect(() => {
+    if (!frame || !selectedId) return
+    const selected = () =>
+      frame.querySelector<HTMLElement>(`[data-puck-component="${CSS.escape(selectedId)}"]`)
+    const onClick = (event: MouseEvent) => {
+      // O Puck desliga o clique dentro das seções (`pointer-events: none`): a foto tocada é a que
+      // está embaixo do ponto do toque.
+      const section = selected()
+      const image = [...(section?.querySelectorAll<HTMLElement>('[data-media-id]') ?? [])].find(
+        (element) => {
+          const box = element.getBoundingClientRect()
+          return (
+            box.width > 0 &&
+            event.clientX >= box.left &&
+            event.clientX <= box.right &&
+            event.clientY >= box.top &&
+            event.clientY <= box.bottom
+          )
+        },
+      )
+      if (!section || !image) return
+      // Uma foto de uma peça das Colunas é da peça, não da seção.
+      if (image.closest('[data-puck-component]') !== section) return
+      const puck = getPuck()
+      const item = puck.getItemById(selectedId)
+      const path = item && findPhotoPath(item.props, Number(image.dataset.mediaId))
+      if (!item || !path) return
+      event.preventDefault()
+      event.stopPropagation()
+      pickPhoto((picked) => {
+        const now = getPuck()
+        const current = now.getItemById(selectedId)
+        const selector = now.getSelectorForId(selectedId)
+        if (!current || !selector) return
+        const old = path
+          .split(/\.|\[|\]\.?/)
+          .filter(Boolean)
+          .reduce<unknown>(
+            (node, key) => (node as Record<string, unknown> | undefined)?.[key],
+            current.props,
+          )
+        now.dispatch({
+          type: 'replace',
+          destinationIndex: selector.index,
+          destinationZone: selector.zone,
+          data: {
+            ...current,
+            props: setDeep(current.props, path, { ...(old as object), mediaId: picked.id }),
+          },
+        })
+      })
+    }
+    frame.addEventListener('click', onClick, true)
+    return () => frame.removeEventListener('click', onClick, true)
+  }, [frame, getPuck, pickPhoto, selectedId])
 }

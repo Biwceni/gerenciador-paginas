@@ -149,7 +149,7 @@ async function medianLatency(page: Page, id: number, count: number): Promise<num
     await page.locator('[class*="NavItem-link"]', { hasText: 'Opções' }).first().click()
     await page.waitForTimeout(1_000)
   }
-  await panel.locator('input[type="text"]').first().click()
+  await panel.locator('textarea[data-line="one"]').first().click()
   await page.keyboard.press('End')
 
   const cdp = await page.context().newCDPSession(page)

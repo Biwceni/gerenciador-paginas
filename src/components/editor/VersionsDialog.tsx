@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { parsePageContent, type PuckPageData } from '@/puck/schema'
+import { versionChanges } from '@/puck/versionDiff'
 
 import { listPublishedVersions, type PageVersion } from './api'
 import { Dialog } from './Dialog'
@@ -21,6 +22,8 @@ type Props = {
 export function VersionsDialog({ apiRoute, pageId, onClose, onRestore }: Props) {
   const [versions, setVersions] = useState<PageVersion[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // A versão que a pessoa pediu para voltar: antes de trocar o rascunho, uma confirmação (10.5).
+  const [asking, setAsking] = useState<string | null>(null)
 
   useEffect(() => {
     listPublishedVersions(apiRoute, pageId)
@@ -43,25 +46,63 @@ export function VersionsDialog({ apiRoute, pageId, onClose, onRestore }: Props) 
         <ul className="ed-rows">
           {versions.map((version, index) => {
             const parsed = parsePageContent(version.version.content)
+            const older = versions[index + 1]
+            const olderParsed = older ? parsePageContent(older.version.content) : null
             const sections = parsed.success ? parsed.data.data.content.length : null
+            const changes = parsed.success
+              ? versionChanges(
+                  parsed.data.data,
+                  olderParsed?.success
+                    ? olderParsed.data.data
+                    : olderParsed
+                      ? { content: [] }
+                      : null,
+                )
+              : null
+            const live = index === 0
             return (
               <li className="ed-row-item" key={version.id}>
                 <div>
                   <b>{dateFormat.format(new Date(version.updatedAt))}</b>
-                  {index === 0 && <span className="ed-chip ed-chip--ok">No ar agora</span>}
+                  {live && <span className="ed-chip ed-chip--ok">No ar agora</span>}
                   <span className="ed-muted">
                     {version.version.title}
                     {sections !== null && ` · ${sections} ${sections === 1 ? 'seção' : 'seções'}`}
                   </span>
+                  {changes && <span className="ed-hint">{changes}</span>}
                 </div>
-                <button
-                  className="ed-btn ed-btn--sm"
-                  disabled={!parsed.success}
-                  onClick={() => parsed.success && onRestore(parsed.data.data)}
-                  type="button"
-                >
-                  Voltar para esta
-                </button>
+                {asking === version.id ? (
+                  <div className="ed-confirm" role="group" aria-label="Confirmar">
+                    <span className="ed-hint">
+                      {live
+                        ? 'O rascunho volta a ser igual ao que está no ar, e as mudanças ainda não publicadas se perdem.'
+                        : 'O rascunho passa a ser esta versão. O site só muda quando você publicar.'}
+                    </span>
+                    <button
+                      className="ed-btn ed-btn--sm ed-btn--primary"
+                      onClick={() => parsed.success && onRestore(parsed.data.data)}
+                      type="button"
+                    >
+                      {live ? 'Descartar e voltar' : 'Voltar para esta'}
+                    </button>
+                    <button
+                      className="ed-btn ed-btn--sm ed-btn--ghost"
+                      onClick={() => setAsking(null)}
+                      type="button"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="ed-btn ed-btn--sm"
+                    disabled={!parsed.success}
+                    onClick={() => setAsking(version.id)}
+                    type="button"
+                  >
+                    {live ? 'Descartar o rascunho' : 'Voltar para esta'}
+                  </button>
+                )}
               </li>
             )
           })}

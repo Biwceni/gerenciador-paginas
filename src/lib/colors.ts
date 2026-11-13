@@ -68,3 +68,18 @@ export function deepShade(color: string): string {
 export function safeColor(value: string | null | undefined, fallback: string): string {
   return value && HEX_COLOR_PATTERN.test(value) ? value.toLowerCase() : fallback
 }
+
+/**
+ * O fundo "Suave" um pouco diferente do fundo do site (achado 3.2). Num site escuro, as duas cores
+ * escolhidas costumam ficar quase iguais, e a pessoa troca "Igual ao site" por "Suave" achando que
+ * nada mudou. Só quando estão perto demais o suave vai um pouco na direção da cor do texto; o
+ * resto fica como a pessoa escolheu (o cinza claro padrão sobre o branco já passa).
+ */
+export function distinctSurface(surface: string, background: string, text: string, min = 1.1) {
+  if (contrastRatio(surface, background) >= min) return surface
+  for (let amount = 0.04; amount <= 0.3; amount += 0.02) {
+    const next = blendColors(text, surface, amount)
+    if (contrastRatio(next, background) >= min) return next
+  }
+  return blendColors(text, background, 0.12)
+}
