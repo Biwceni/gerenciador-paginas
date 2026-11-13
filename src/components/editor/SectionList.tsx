@@ -8,7 +8,8 @@ import { type Components, COLUMN_PIECES, PIECE_LABELS, SECTION_LABELS } from '@/
 import { insertIndex } from '@/puck/insertPosition'
 
 import { useAddSection } from './insert'
-import { usePuck } from './puck'
+import { ROOT_ZONE, usePuck } from './puck'
+import { fullZoneReason, zoneMax } from './zoneLimits'
 import { NEW_SECTIONS, SECTION_DESCRIPTIONS, SectionThumb } from './SectionThumb'
 
 const PIECES: readonly string[] = COLUMN_PIECES
@@ -41,6 +42,7 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
     return content[insertIndex(content, itemSelector) - 1]?.type ?? null
   })
   const where = above ? `abaixo de “${LABELS[above] ?? above}”` : 'no fim da página'
+  const full = usePuck((s) => s.appState.data.content.length >= zoneMax(ROOT_ZONE))
 
   return (
     <div className="ed-panel">
@@ -55,6 +57,7 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
           <span className="ed-show-phone">Toque para colocar {where}.</span> As miniaturas já usam
           as cores do seu site.
         </p>
+        {full && <p className="ed-hint ed-hint--warn">{fullZoneReason(ROOT_ZONE)}</p>}
       </div>
       {children}
     </div>
@@ -64,8 +67,11 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
 /** Uma seção da lista (override do Puck): clicar coloca na página; arrastar é com o Puck. */
 export function EditorDrawerItem({ name }: { name: string; children?: React.ReactNode }) {
   const addSection = useAddSection()
+  const full = usePuck((s) => s.appState.data.content.length >= zoneMax(ROOT_ZONE))
   const add = () => {
-    if (PIECES.includes(name)) {
+    if (full && !PIECES.includes(name)) {
+      toast.info(fullZoneReason(ROOT_ZONE))
+    } else if (PIECES.includes(name)) {
       toast.info(
         'Essa peça só entra dentro de uma seção Colunas. Arraste para dentro de uma coluna.',
       )
@@ -78,6 +84,7 @@ export function EditorDrawerItem({ name }: { name: string; children?: React.Reac
     // O botão (foco, papel e nome) é o item do Puck em volta deste, que o dnd-kit já deixa focável:
     // um segundo botão aqui dentro seria um botão dentro de outro (axe nested-interactive).
     <div
+      aria-disabled={full && !PIECES.includes(name) ? true : undefined}
       className="ed-palitem"
       onClick={add}
       ref={(element) => {

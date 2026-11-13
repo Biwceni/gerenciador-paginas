@@ -5,6 +5,8 @@ import React, { createContext, useContext, useEffect } from 'react'
 import { applySiteTheme } from '@/components/site/theme'
 import { safeStyleText } from '@/lib/theme'
 
+import { usePuck } from './puck'
+
 type FrameStyle = {
   /** Variáveis de cor e fonte das configurações (as mesmas do `body` do site). */
   theme: Record<string, string>
@@ -104,6 +106,13 @@ export const PUCK_COLORS = `:root {
 }
 ${SELECTION_HALO}`
 
+/** Espaço acima da seção escolhida, da altura da barrinha (maior no celular, com toque de 44 px). */
+export function barSpace(id: string): string {
+  const target = `[data-puck-component="${id.replace(/["\\]/g, '')}"]`
+  return `${target} { margin-top: 48px; scroll-margin-top: 56px; }
+@media (max-width: 637px) { ${target} { margin-top: 56px; scroll-margin-top: 64px; } }`
+}
+
 /**
  * Dentro do iframe da prévia. O Puck não copia os estilos do painel (`syncHostStyles: false`), que
  * mudariam o visual do site; aqui entram só o CSS do site, as cores e as fontes.
@@ -136,6 +145,17 @@ export function EditorFrame({
     if (fontFaces) addStyle(safeStyleText(fontFaces))
     return () => added.forEach((element) => element.remove())
   }, [frame, theme, fontFaces])
+
+  // A barrinha da seção (ou da peça) escolhida fica acima dela, no espaço que a prévia abre ali:
+  // assim ela não cobre o menu do site nem o título da seção de cima (achados 1.4, 2.6 e 8.3).
+  const selectedId = usePuck((s) => s.selectedItem?.props.id as string | undefined)
+  useEffect(() => {
+    if (!frame || !selectedId) return
+    const style = frame.createElement('style')
+    style.textContent = barSpace(selectedId)
+    frame.head.appendChild(style)
+    return () => style.remove()
+  }, [frame, selectedId])
 
   return <>{children}</>
 }

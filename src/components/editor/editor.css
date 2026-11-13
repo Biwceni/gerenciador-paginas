@@ -1284,3 +1284,159 @@ textarea.ed-input {
     font-size: var(--gp-fs-field-touch);
   }
 }
+
+/* Entrega 1 (teste de estresse): limite de letras à vista em todo campo que tem limite. */
+.ed-counted {
+  display: grid;
+  gap: 4px;
+}
+
+.ed-counter {
+  justify-self: end;
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-help);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.ed-counted[data-tone='near'] .ed-counter {
+  color: var(--ed-warn);
+}
+
+.ed-counted[data-tone='over'] .ed-counter {
+  justify-self: stretch;
+  color: var(--gp-danger);
+  font-weight: 600;
+  text-align: left;
+}
+
+.ed-counted[data-tone='over'] :is(input, textarea, [contenteditable='true']) {
+  border-color: var(--gp-danger);
+  box-shadow: 0 0 0 1px var(--gp-danger);
+}
+
+/* Página com 100 seções: o catálogo fica apagado (o aviso no topo dele diz por quê). */
+.ed-palitem[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.ed-section-actions__why {
+  flex-basis: 100%;
+}
+
+/* Estado do salvamento: o texto inteiro no computador; no celular, uma palavra com um ponto de
+   cor, e o texto inteiro aparece num balão ao tocar (achado 1.9). */
+.ed-top {
+  position: relative;
+}
+
+.ed-top__status-short {
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@media (max-width: 637px) {
+  .ed-top__status-long {
+    display: none;
+  }
+
+  .ed-top__status-short {
+    display: inline-flex;
+  }
+
+  .ed-top__status:focus-visible,
+  .ed-top__status:focus {
+    outline: none;
+  }
+
+  .ed-top__status:focus .ed-top__status-long {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% - 6px);
+    left: 10px;
+    right: 10px;
+    display: block;
+    padding: 10px 12px;
+    border: 1px solid var(--ed-line);
+    border-radius: 10px;
+    background: var(--ed-bg);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+    color: var(--ed-text);
+    font-weight: 400;
+    white-space: normal;
+  }
+}
+
+/* O que impede de salvar, logo abaixo da barra de cima, com o "Ir até o campo" (achado 11.2). */
+.ed-save-alert {
+  position: absolute;
+  z-index: 35;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--gp-danger) 35%, transparent);
+  background: var(--gp-danger-soft);
+  color: var(--gp-danger);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ed-save-alert > span {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.ed-save-alert .ed-btn {
+  flex: none;
+}
+
+.ed-leave__why {
+  font-weight: 600;
+}
+
+/* Lista de fotos da Galeria e do Instagram: cabe no painel, com Subir, Descer e Tirar sempre à
+   vista (achado 5.1). Antes o nome sem quebra alargava a linha para fora do painel. */
+.ed-photo-list,
+.ed-photo-list__item {
+  min-width: 0;
+}
+
+.ed-photo-list__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+}
+
+.ed-photo-list__item > .ed-pic,
+.ed-photo-list__item > .ed-icon-btn {
+  flex: none;
+}
+
+.ed-photo-list__name {
+  min-width: 0;
+}
+
+.ed-photo-list__caption {
+  min-width: 0;
+}
+
+/* "Desfazer" do aviso de seção removida numa linha só, sem quebrar em "Desfa / zer" (achado 2.2). */
+[data-sonner-toast] [data-button] {
+  flex: none;
+  white-space: nowrap;
+}

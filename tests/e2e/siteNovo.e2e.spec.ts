@@ -196,10 +196,12 @@ test.describe.serial('site novo', () => {
 
     // Recarregar traz o que a outra aba salvou, sem perguntar se quer sair.
     await warning.getByRole('button', { name: 'Carregar a versão nova' }).click()
-    await expect(tabA.getByRole('alertdialog')).toHaveCount(0)
     await expect(tabA.frameLocator('iframe').locator('h1').first()).toHaveText(
       'Título da aba B de novo',
     )
+    // Escolhida a versão nova, a desta aba não volta perguntando se quer recuperar.
+    await tabA.waitForTimeout(1500)
+    await expect(tabA.getByRole('alertdialog')).toHaveCount(0)
     await tabA.close()
     await tabB.close()
   })

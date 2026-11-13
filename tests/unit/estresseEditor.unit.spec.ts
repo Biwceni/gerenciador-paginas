@@ -47,7 +47,7 @@ const richText = (paragraphs: number) => ({
 const visibleLetters = (html: string) => html.replace(/<[^>]+>/g, '').length
 
 describe('13.3 Texto simples: o limite conta as letras que a pessoa vê', () => {
-  it.fails('aceita cerca de 9.700 letras com negrito e itálico', () => {
+  it('aceita cerca de 9.700 letras com negrito e itálico', () => {
     const section = richText(180)
     expect(visibleLetters(section.props.body)).toBeLessThan(10_000)
     expect(section.props.body.length).toBeGreaterThan(20_000)
