@@ -51,7 +51,9 @@ export async function readMenu(
     if (draft._status === 'draft') {
       return {
         kind: 'cannot-add',
-        reason: 'O menu tem mudanças ainda não publicadas. Coloque em Menu e rodapé.',
+        // Achado 1.10: antes a frase juntava o motivo e o que fazer, e parecia outro problema.
+        reason:
+          'Ela não entra por aqui porque o menu tem outras mudanças guardadas, ainda não publicadas. Coloque a página em Menu e rodapé e publique o menu lá.',
       }
     }
     return { kind: 'can-add', items }

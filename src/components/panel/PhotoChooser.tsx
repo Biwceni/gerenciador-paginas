@@ -27,6 +27,7 @@ type Props = {
  */
 export function PhotoChooser({ title, photos, onPick, onUploaded, onClose }: Props) {
   const uploads = usePhotoUploads({
+    library: photos,
     onUploaded,
     onFinished: ({ uploaded, problems }) => {
       if (uploaded.length === 1 && !problems) onPick(uploaded[0])

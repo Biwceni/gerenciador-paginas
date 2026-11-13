@@ -11,7 +11,7 @@ import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { toFormDefinition } from '@/lib/forms'
 import { getServerURL } from '@/lib/site'
-import { previewFontFaces } from '@/lib/theme'
+import { previewFontFaces, safePersonality } from '@/lib/theme'
 import { parsePageContent } from '@/puck/schema'
 import { pageSummary } from '@/puck/summary'
 
@@ -83,7 +83,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
     // A página inicial é a que está no ar: a escolhida num rascunho ainda não vale.
     payload.findGlobal({
       slug: 'site',
-      select: { homepage: true },
+      select: { homepage: true, personality: true },
       depth: 0,
       draft: false,
       ...access,
@@ -135,6 +135,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       apiRoute={payload.config.routes.api}
       domain={new URL(getServerURL()).host}
       exampleTexts={exampleTexts}
+      livePersonality={safePersonality(liveSite.personality)}
       fontFaces={previewFontFaces(site)}
       forms={forms.docs.map(toFormDefinition)}
       homepageId={siteLinks(liveSite).homepageId}

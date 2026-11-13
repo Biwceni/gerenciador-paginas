@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react'
 
-import { slugify, validateSlug } from '@/lib/slug'
+import { slugify, uniqueSlug, validateSlug } from '@/lib/slug'
 import type { Page } from '@/payload-types'
 import { relationID } from '@/lib/relations'
 
@@ -34,7 +34,7 @@ export function PageSettingsDialog({
   onClose,
   onSave,
 }: Props) {
-  const { pageId, homepageId, photoById, pickPhoto } = useEditor()
+  const { pageId, homepageId, photoById, pickPhoto, pages } = useEditor()
   const [title, setTitle] = useState(settings.title)
   const [slug, setSlug] = useState(settings.slug)
   const [campaign, setCampaign] = useState(Boolean(settings.campaign))
@@ -45,7 +45,19 @@ export function PageSettingsDialog({
   const [error, setError] = useState<string | null>(null)
 
   const isHome = pageId === homepageId
-  const slugError = validateSlug(slug)
+  // Endereço de outra página: avisa na hora, com o nome dela e um endereço livre (achado 9.2).
+  const others = pages.filter((other) => other.id !== pageId)
+  const owner = isHome ? undefined : others.find((other) => other.slug === slug)
+  const suggestion = owner
+    ? uniqueSlug(
+        slug,
+        others.map((other) => other.slug),
+      )
+    : null
+  const slugError =
+    owner && suggestion
+      ? `O endereço /${slug} já é da página “${owner.title}”. Use outro, como /${suggestion}.`
+      : validateSlug(slug)
   const image = seoImage ? photoById[seoImage] : null
 
   const titleMissing = !title.trim()
@@ -112,6 +124,8 @@ export function PageSettingsDialog({
         <span className="ed-prefix">
           <span>{window.location.host}/</span>
           <input
+            aria-describedby="ed-page-slug-hint"
+            aria-invalid={(!isHome && slugError !== true) || undefined}
             className="ed-input"
             disabled={isHome}
             maxLength={80}
@@ -119,12 +133,20 @@ export function PageSettingsDialog({
             value={slug}
           />
         </span>
-        <span className="ed-hint">
+        <span
+          className={`ed-hint${!isHome && slugError !== true ? ' ed-hint--warn' : ''}`}
+          id="ed-page-slug-hint"
+        >
           {isHome
             ? 'Esta é a página inicial: ela abre no endereço principal do site.'
             : slugError === true
               ? 'Use palavras curtas, sem acento. Mudar o endereço quebra links que alguém já tenha salvo.'
               : slugError}
+          {suggestion && (
+            <button className="ed-btn ed-btn--sm" onClick={() => setSlug(suggestion)} type="button">
+              Usar /{suggestion}
+            </button>
+          )}
         </span>
       </label>
 

@@ -71,6 +71,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
   // Fotos que acabaram de chegar: aparecem na hora, antes de a tela ser relida do servidor.
   const [arrived, setArrived] = useState<Media[]>([])
   const uploads = usePhotoUploads({
+    library: [...arrived, ...photos],
     onUploaded: (photo) => setArrived((list) => [photo, ...list]),
     onFinished: ({ uploaded }) => {
       if (!uploaded.length) return

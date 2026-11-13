@@ -25,3 +25,27 @@ export function photoProblem(file: { type: string; size: number }): string | nul
 export function photoLabel(photo: { alt?: string | null; filename?: string | null }): string {
   return photo.alt?.trim() || photo.filename || 'Foto'
 }
+
+/** "Foto-Praia (2).JPG" e "foto-praia-3.jpg" → "foto-praia": o nome sem extensão e sem o número
+ * que o sistema põe no fim quando o nome se repete. */
+const nameStem = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/, '')
+    .replace(/(?<!\d)[\s_-]*\(?\d{1,4}\)?$/, '')
+
+/**
+ * A foto da biblioteca que parece ser o mesmo arquivo (mesmo tamanho em bytes e mesmo nome, fora o
+ * número do fim), para avisar antes de enviar uma cópia (achado 9.5). `null` quando não há.
+ */
+export function samePhoto<T extends { filename?: string | null; filesize?: number | null }>(
+  file: { name: string; size: number },
+  library: readonly T[],
+): T | null {
+  const stem = nameStem(file.name)
+  return (
+    library.find(
+      (photo) => photo.filesize === file.size && nameStem(photo.filename ?? '') === stem,
+    ) ?? null
+  )
+}

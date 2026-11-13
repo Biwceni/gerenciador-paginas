@@ -1,4 +1,5 @@
 import { richTextToPlain } from '../lib/richtext'
+import { CATALOG_TEXTS } from './catalogTexts'
 import type { ColumnPiece, PageComponent, PuckPageData } from './schema'
 
 const MAX_DESCRIPTION = 160
@@ -46,11 +47,27 @@ function sectionText(item: PageComponent): string {
   }
 }
 
-/** Descrição automática para o Google: o primeiro texto corrido da página. */
-export function extractDescription(data: PuckPageData): string | null {
+const CATALOG = new Set(CATALOG_TEXTS)
+const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()
+
+/** Texto que ninguém escreveu: o que a seção traz ao entrar, ou o "Lorem ipsum" de preencher. */
+export const isCatalogText = (text: string): boolean => {
+  const clean = normalize(text)
+  return CATALOG.has(clean) || /\blorem ipsum\b/.test(clean)
+}
+
+/**
+ * Descrição automática para o Google: o primeiro texto corrido da página que não seja texto de
+ * exemplo (achado 9.4). `isExample` recebe o texto já em minúsculas e sem espaços sobrando; o
+ * editor passa também os textos dos modelos prontos.
+ */
+export function extractDescription(
+  data: PuckPageData,
+  isExample: (normalized: string) => boolean = isCatalogText,
+): string | null {
   for (const item of data.content) {
     const text = sectionText(item)
-    if (text.trim()) return truncate(text, MAX_DESCRIPTION)
+    if (text.trim() && !isExample(normalize(text))) return truncate(text, MAX_DESCRIPTION)
   }
   return null
 }

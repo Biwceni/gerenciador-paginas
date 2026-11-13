@@ -27,6 +27,7 @@ type Props = {
 export function PhotoPicker({ photos, onPick, onUploaded, onClose }: Props) {
   const [query, setQuery] = useState('')
   const uploads = usePhotoUploads({
+    library: photos,
     onUploaded,
     onFinished: ({ uploaded, problems }) => {
       if (uploaded.length === 1 && !problems) onPick(uploaded[0])

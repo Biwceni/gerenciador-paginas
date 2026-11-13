@@ -7,7 +7,13 @@ import type { PageContent } from '@/puck/schema'
 // Conversa do editor com a API do Payload. A sessão vai pelo cookie do painel, e as permissões
 // são conferidas no servidor como em qualquer outra tela.
 
-type PayloadError = { errors?: { message?: string; data?: { errors?: { message?: string }[] } }[] }
+type PayloadError = {
+  errors?: { message?: string; data?: { errors?: { message?: string; path?: string }[] } }[]
+}
+
+/** Endereço que já é de outra página: o Payload só diz "Valor deve ser único" (achado 10.2). */
+const SLUG_TAKEN =
+  'esse endereço já é de outra página. Troque o endereço em "Página e Google" e publique de novo.'
 
 /** Erro da API com o status, para quem precisa separar uma recusa (ex.: 409, conflito) das outras. */
 export class RequestError extends Error {
@@ -37,7 +43,11 @@ export async function request<T>(apiRoute: string, path: string, init?: RequestI
   const body = (await response.json().catch(() => ({}))) as T & PayloadError
   if (!response.ok) {
     const error = body.errors?.[0]
-    const detail = error?.data?.errors?.[0]?.message
+    const field = error?.data?.errors?.[0]
+    const detail =
+      field?.path === 'slug' && /únic|unique/i.test(field.message ?? '')
+        ? SLUG_TAKEN
+        : field?.message
     throw new RequestError(detail || error?.message || `Erro ${response.status}`, response.status)
   }
   return body

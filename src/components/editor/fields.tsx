@@ -10,7 +10,8 @@ import React, { useState } from 'react'
 import { PanelIcon } from '@/components/panel/PanelIcon'
 import { Tip } from '@/components/panel/Tip'
 import { DEFAULT_FORM, toFormDefinition } from '@/lib/forms'
-import { isSafeURL, validateExternalURL } from '@/lib/links'
+import { externalLink, validateLinkInput } from '@/lib/links'
+import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import { photoLabel } from '@/lib/photos'
 import {
@@ -214,6 +215,11 @@ export function PhotoListField<T extends PhotoListItem>({
           + Adicionar foto
         </button>
       )}
+      {value.length >= max && (
+        <p className="ed-hint" role="status">
+          {value.length} de {max}: é o máximo de fotos desta seção. Para colocar outra, tire uma.
+        </p>
+      )}
     </div>
   )
 }
@@ -235,7 +241,7 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
   const { pages, pageId, whatsappHref } = useEditor()
   // Seções desta página vêm do que está na tela agora, não do que foi salvo.
   const content = usePuck((state) => state.appState.data.content)
-  const [url, setURL] = useState(value?.kind === 'url' ? value.url : '')
+  const [url, setURL] = useState(value?.kind === 'url' ? value.url.replace(/^mailto:/, '') : '')
   const [choosingURL, setChoosingURL] = useState(value?.kind === 'url')
 
   const currentSections = content.flatMap((item) => {
@@ -248,13 +254,18 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
     if (raw === '') return onChange(null)
     if (raw === 'whatsapp') return onChange({ kind: 'whatsapp' })
     // Sem endereço válido ainda, o link fica vazio (e não com o destino antigo escondido).
-    if (raw === OTHER_SITE) return onChange(isSafeURL(url) ? { kind: 'url', url } : null)
+    if (raw === OTHER_SITE) {
+      const href = externalLink(url)
+      return onChange(href ? { kind: 'url', url: href } : null)
+    }
     const [kind, page, section] = raw.split(':')
     if (kind === 'page') return onChange({ kind: 'page', pageId: Number(page) })
     onChange({ kind: 'section', pageId: Number(page), sectionId: section })
   }
 
-  const urlError = choosingURL && url ? validateExternalURL(url) : true
+  const titles = distinctPageTitles(pages)
+  const urlError = choosingURL && url ? validateLinkInput(url) : true
+  const urlHref = choosingURL ? externalLink(url) : null
   const selected = choosingURL ? OTHER_SITE : optionValue(value)
   const linkedPage =
     value && (value.kind === 'page' || value.kind === 'section')
@@ -278,7 +289,8 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
             .filter((page) => !page.archived || page.id === linkedPage?.id)
             .map((page) => (
               <option key={page.id} value={`page:${page.id}`}>
-                {page.title}
+                {/* Duas páginas com o mesmo nome: o endereço diferencia (achado 3.5). */}
+                {titles.get(page.id) ?? page.title}
                 {page.archived ? ' (arquivada)' : page.published ? '' : ' (rascunho)'}
               </option>
             ))}
@@ -317,15 +329,29 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
             className="ed-input"
             disabled={readOnly}
             onChange={(event) => {
-              const next = event.target.value.trim()
+              const next = event.target.value
               setURL(next)
-              onChange(isSafeURL(next) ? { kind: 'url', url: next } : null)
+              const href = externalLink(next)
+              onChange(href ? { kind: 'url', url: href } : null)
             }}
-            placeholder="https://"
-            type="url"
+            placeholder="Site, e-mail ou telefone"
+            type="text"
             value={url}
           />
-          {urlError !== true && <span className="ed-hint ed-hint--warn">{urlError}</span>}
+          {urlError !== true ? (
+            <span className="ed-hint ed-hint--warn">{urlError}</span>
+          ) : (
+            urlHref &&
+            urlHref !== url.trim() && (
+              <span className="ed-hint">
+                {urlHref.startsWith('mailto:')
+                  ? `Abre um e-mail para ${url.trim()}.`
+                  : urlHref.startsWith('tel:')
+                    ? `Liga para ${url.trim()}.`
+                    : `Leva para ${urlHref}.`}
+              </span>
+            )
+          )}
         </>
       )}
       {value?.kind === 'whatsapp' && !whatsappHref && (
@@ -367,6 +393,20 @@ export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
         <span className="ed-hint ed-hint--warn">
           Esse endereço não é de um vídeo do YouTube. Copie o link do vídeo no botão Compartilhar do
           YouTube.
+          {/* O vídeo de antes continua guardado e é ele que vai para o site (achado 5.3). */}
+          {value && (
+            <>
+              {' '}
+              Enquanto isso, a seção continua com o vídeo de antes.{' '}
+              <button
+                className="ed-btn ed-btn--sm"
+                onClick={() => setText(`https://youtu.be/${value}`)}
+                type="button"
+              >
+                Voltar ao vídeo de antes
+              </button>
+            </>
+          )}
         </span>
       ) : (
         <span className="ed-hint">
@@ -461,6 +501,9 @@ export function FormField({ value, onChange, readOnly, field }: FieldProps<FormR
   const { adminRoute, apiRoute, forms, addForm } = useEditor()
   const [creating, setCreating] = useState(false)
   const selected = value ? forms.find((form) => form.id === value.formId) : undefined
+  // O padrão já existe: o botão escolhe ele, em vez de criar outra cópia a cada clique (achado 7.2).
+  const existingDefault = forms.find((form) => form.title === DEFAULT_FORM.title)
+  const repeated = (title: string) => forms.filter((form) => form.title === title).length > 1
 
   const createDefault = async () => {
     setCreating(true)
@@ -498,6 +541,8 @@ export function FormField({ value, onChange, readOnly, field }: FieldProps<FormR
           {forms.map((form) => (
             <option key={form.id} value={form.id}>
               {form.title || `Formulário ${form.id}`}
+              {/* Dois com o mesmo nome: o número diferencia (é o da tela Formulários). */}
+              {form.title && repeated(form.title) ? ` (nº ${form.id})` : ''}
             </option>
           ))}
         </select>
@@ -513,6 +558,15 @@ export function FormField({ value, onChange, readOnly, field }: FieldProps<FormR
             Mudar as perguntas
           </a>
         </p>
+      ) : existingDefault ? (
+        <button
+          className="ed-btn ed-btn--sm"
+          disabled={readOnly}
+          onClick={() => onChange({ formId: existingDefault.id })}
+          type="button"
+        >
+          Usar o formulário “{existingDefault.title}”
+        </button>
       ) : (
         <button
           className="ed-btn ed-btn--sm"

@@ -66,6 +66,13 @@ type WithMetadata<P> = Omit<P, 'anim'> & {
 const filled = (text: React.ReactNode) =>
   typeof text === 'string' ? text.trim() !== '' : text != null
 
+/**
+ * Campo opcional na prévia do editor (lá o texto chega como o campo de escrever do Puck, não como
+ * texto): sem o "Clique para escrever" o tempo todo (achado 6.5). No site, nada muda.
+ */
+const optional = (text: React.ReactNode, scope: 'item' | 'section') =>
+  typeof text === 'string' ? undefined : scope
+
 /** Parágrafos separados por linha em branco; quebra simples vira quebra de linha. */
 function Paragraphs({ text }: { text: React.ReactNode }) {
   if (typeof text !== 'string') return <p className="editable-paragraphs">{text}</p>
@@ -843,7 +850,9 @@ export function ColumnImage({ image, caption, metadata }: WithMetadata<ColumnIma
   return (
     <figure className="column-image">
       <Photo media={photo} sizes="(max-width: 720px) 100vw, 540px" />
-      {filled(caption) && <figcaption>{caption}</figcaption>}
+      {filled(caption) && (
+        <figcaption data-optional={optional(caption, 'section')}>{caption}</figcaption>
+      )}
     </figure>
   )
 }
@@ -915,7 +924,9 @@ export function Video({
               <VideoPlayer cover={coverPhoto} title={title} videoId={videoId} />
             )}
           </div>
-          {filled(caption) && <figcaption>{caption}</figcaption>}
+          {filled(caption) && (
+            <figcaption data-optional={optional(caption, 'section')}>{caption}</figcaption>
+          )}
         </figure>
       </div>
     </Section>
@@ -939,7 +950,11 @@ function SectionHead({
     <div className="section-head anim-part">
       <div className="section-head__text">
         {filled(title) && <h2 className="section-title">{title}</h2>}
-        {filled(text) && <p className="section-lead">{text}</p>}
+        {filled(text) && (
+          <p className="section-lead" data-optional={optional(text, 'section')}>
+            {text}
+          </p>
+        )}
       </div>
       {aside}
     </div>
@@ -1018,7 +1033,11 @@ export function Products({
                 <div className="product__body">
                   {filled(item.name) && <h3 className="product__name">{item.name}</h3>}
                   {filled(item.text) && <p className="product__text">{item.text}</p>}
-                  {filled(item.price) && <p className="product__price">{item.price}</p>}
+                  {filled(item.price) && (
+                    <p className="product__price" data-optional={optional(item.price, 'item')}>
+                      {item.price}
+                    </p>
+                  )}
                   {metadata.editing
                     ? item.button && <span className="product__link">{label}</span>
                     : href &&
@@ -1099,7 +1118,12 @@ export function PriceList({
                         <span aria-hidden="true" className="price-item__leader" />
                         <span className="price-item__price">{item.price}</span>
                         {filled(item.description) && (
-                          <span className="price-item__description">{item.description}</span>
+                          <span
+                            className="price-item__description"
+                            data-optional={optional(item.description, 'item')}
+                          >
+                            {item.description}
+                          </span>
                         )}
                       </li>
                     ))}
