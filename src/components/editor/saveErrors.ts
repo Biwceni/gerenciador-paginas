@@ -128,6 +128,9 @@ export function describeSaveError(
   if (issue.code === 'custom' && /letras/.test(issue.message)) {
     return { message: `${named} ${place}: ${issue.message} Encurte para salvar.`, target }
   }
+  if (issue.code === 'custom' && /letra ou número/.test(issue.message)) {
+    return { message: `${named} ${place} ${issue.message}`, target }
+  }
   if (issue.code === 'too_big' && issue.origin === 'array') {
     return {
       message: `${named} ${place} passou do máximo de ${issue.maximum} itens. Remova um para salvar.`,

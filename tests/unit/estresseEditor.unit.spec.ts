@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { sectionChecks } from '@/puck/checks'
+import { hiddenSections } from '@/puck/hiddenSections'
 import { CONTENT_VERSION, parsePageContent } from '@/puck/schema'
 
 // Achados do teste de estresse do editor (rodada 13) que dá para conferir sem abrir a tela.
@@ -62,10 +62,15 @@ describe('13.3 Texto simples: o limite conta as letras que a pessoa vê', () => 
 })
 
 describe('13.8 Nome no menu só com emoji', () => {
-  it.fails('é recusado, porque não vira endereço da seção', () => {
+  it('é recusado, porque não vira endereço da seção', () => {
     const section = richText(1)
     section.props.menuLabel = '⭐⭐'
     expect(parsePageContent(page([hero, section])).success).toBe(false)
+  })
+  it('com uma palavra junto do emoji, vale', () => {
+    const section = richText(1)
+    section.props.menuLabel = 'Novidades ⭐'
+    expect(parsePageContent(page([hero, section])).success).toBe(true)
   })
 })
 
@@ -141,14 +146,23 @@ describe('13.2 Seções que não vão aparecer no site', () => {
     expect(parsePageContent(page(empty)).success).toBe(true)
   })
 
-  it.fails('o Publicar avisa cada uma, pelo nome da seção', () => {
+  it('o Publicar avisa cada uma, com o motivo', () => {
     const parsed = parsePageContent(page(empty))
     if (!parsed.success) throw new Error('página inválida')
-    const words = sectionChecks(parsed.data.data, { hasPhoto: () => true, instagram: '@loja' })
-      .map((check) => `${check.title} ${check.text}`)
-      .join(' ')
-    for (const name of ['Vídeo', 'Galeria', 'Formulário', 'Instagram', 'Colunas']) {
-      expect(words).toContain(name)
-    }
+    const hidden = hiddenSections(parsed.data.data, () => true)
+    expect(hidden.map((section) => section.type)).toEqual([
+      'Video',
+      'Gallery',
+      'Form',
+      'InstagramStrip',
+      'Columns',
+    ])
+    expect(hidden[0].reason).toBe('falta o endereço do vídeo')
+  })
+
+  it('o banner e as seções com conteúdo não entram no aviso', () => {
+    const parsed = parsePageContent(page([hero, richText(1)]))
+    if (!parsed.success) throw new Error('página inválida')
+    expect(hiddenSections(parsed.data.data, () => true)).toEqual([])
   })
 })

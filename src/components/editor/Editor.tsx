@@ -37,7 +37,9 @@ import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/the
 import type { Media } from '@/payload-types'
 import { editorConfig } from '@/puck/editor-config'
 import { CATALOG_TEXTS } from '@/puck/catalogTexts'
+import { sectionAnchors } from '@/puck/anchors'
 import {
+  buttonsToUnnamedSection,
   buttonsWithoutLink,
   type ContentMetadata,
   mainHeadingID,
@@ -1066,6 +1068,21 @@ export function Editor(props: EditorProps) {
                 exampleSections={exampleSections.map((section) => ({
                   id: String(section.props.id),
                   label: editorConfig.components[section.type]?.label ?? section.type,
+                }))}
+                unnamedLinks={buttonsToUnnamedSection(data, (target, section) =>
+                  target === pageId
+                    ? Boolean(sectionAnchors(data)[section])
+                    : Boolean(
+                        props.pages
+                          .find((page) => page.id === target)
+                          ?.sections.some((item) => item.id === section),
+                      ),
+                ).map((button) => ({
+                  id: button.sectionId,
+                  label: button.label,
+                  section:
+                    editorConfig.components[button.sectionType as PageComponent['type']]?.label ??
+                    button.sectionType,
                 }))}
                 linkless={buttonsWithoutLink(data).map((button) => ({
                   id: button.sectionId,

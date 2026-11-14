@@ -26,7 +26,8 @@ import {
 import type { Media } from '@/payload-types'
 import { youtubeID } from '@/lib/youtube'
 import { LIMITS } from '@/puck/limits'
-import type { FormRef, LinkRef, PhotoRef } from '@/puck/schema'
+import { sectionAnchors } from '@/puck/anchors'
+import type { FormRef, LinkRef, PhotoRef, PuckPageData } from '@/puck/schema'
 
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
@@ -283,10 +284,21 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
   const [url, setURL] = useState(value?.kind === 'url' ? value.url.replace(/^mailto:/, '') : '')
   const [choosingURL, setChoosingURL] = useState(value?.kind === 'url')
 
+  // Só as seções com âncora (nome no menu que vira endereço) servem de destino.
+  const anchors = sectionAnchors({ content } as unknown as Pick<PuckPageData, 'content'>)
   const currentSections = content.flatMap((item) => {
     const label = 'menuLabel' in item.props ? String(item.props.menuLabel ?? '').trim() : ''
-    return label ? [{ id: String(item.props.id), label }] : []
+    return anchors[String(item.props.id)] ? [{ id: String(item.props.id), label }] : []
   })
+  // O destino é uma seção que perdeu o nome no menu (ou saiu): no site, o botão vai para o topo da
+  // página. Antes a lista mostrava "Escolha…", como se o botão estivesse sem destino (achado 13.6).
+  const unnamedSection =
+    value?.kind === 'section' &&
+    !(
+      value.pageId === pageId
+        ? currentSections
+        : (pages.find((page) => page.id === value.pageId)?.sections ?? [])
+    ).some((section) => section.id === value.sectionId)
 
   const select = (raw: string) => {
     setChoosingURL(raw === OTHER_SITE)
@@ -321,6 +333,9 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
         value={selected}
       >
         <option value="">Escolha…</option>
+        {unnamedSection && (
+          <option value={selected}>Seção sem nome no menu (vai para o topo da página)</option>
+        )}
         <option value="whatsapp">WhatsApp da empresa</option>
         <optgroup label="Páginas do site">
           {/* Arquivada só aparece se for o destino que já estava escolhido. */}
@@ -392,6 +407,12 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
             )
           )}
         </>
+      )}
+      {unnamedSection && (
+        <span className="ed-hint ed-hint--warn">
+          A seção deste botão ficou sem &ldquo;Nome no menu&rdquo; (ou saiu da página), então ele
+          leva para o topo da página. Dê um nome à seção ou escolha outro destino.
+        </span>
       )}
       {value?.kind === 'whatsapp' && !whatsappHref && (
         <span className="ed-hint ed-hint--warn">
@@ -534,6 +555,7 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
         data-tone={(value ?? '').length >= LIMITS.menuLabel * 0.9 ? 'near' : 'ok'}
       >
         <input
+          aria-invalid={label && !anchor ? true : undefined}
           aria-label="Nome no menu"
           className="ed-input"
           disabled={readOnly}
@@ -545,12 +567,17 @@ export function MenuLabelField({ value, onChange, readOnly }: FieldProps<string>
         <span className="ed-counter">{counterText((value ?? '').length, LIMITS.menuLabel)}</span>
       </div>
       {/* O nome não aparece na prévia: a dica mostra onde ele vale (achado 11.6). */}
-      <span className="ed-hint">
-        {anchor
-          ? `Não aparece na página: é o nome do link do menu. Esta seção fica em ${path}#${anchor}.`
-          : 'Para sites de uma página: um link do menu pode levar direto até esta seção.'}
+      <span
+        className={`ed-hint${label && !anchor ? ' ed-hint--warn' : ''}`}
+        role={label && !anchor ? 'alert' : undefined}
+      >
+        {label && !anchor
+          ? 'Use pelo menos uma letra ou número, como “Novidades ⭐”. Só com emoji ou símbolos, o link não chega até a seção e a página não salva.'
+          : anchor
+            ? `Não aparece na página: é o nome do link do menu. Esta seção fica em ${path}#${anchor}.`
+            : 'Para sites de uma página: um link do menu pode levar direto até esta seção.'}
       </span>
-      {label && (
+      {anchor && (
         <button
           className="ed-btn ed-btn--sm"
           disabled={readOnly || busy || !sectionId}

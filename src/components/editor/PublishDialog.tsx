@@ -11,6 +11,8 @@ import { photoLabel } from '@/lib/photos'
 import type { Media } from '@/payload-types'
 import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import { sectionChecks } from '@/puck/checks'
+import { SECTION_LABELS } from '@/puck/config'
+import { hiddenSections } from '@/puck/hiddenSections'
 import type { PuckPageData } from '@/puck/schema'
 
 import { updatePhotoAlt } from './api'
@@ -44,6 +46,8 @@ type Props = {
   exampleSections: { id: string; label: string }[]
   /** Botões e links com nome e sem destino: no site eles somem. */
   linkless: { id: string; label: string; section: string }[]
+  /** Botões que levam para uma seção sem nome no menu: no site, vão para o topo (achado 13.6). */
+  unnamedLinks: { id: string; label: string; section: string }[]
   /** Fecha a janela e mostra a seção na prévia. */
   onGoTo: (sectionId: string) => void
   /** Personalidade escolhida no editor que ainda não foi publicada em Sua marca. */
@@ -66,6 +70,7 @@ export function PublishDialog({
   page,
   exampleSections,
   linkless,
+  unnamedLinks,
   onGoTo,
   personalityPending,
   slugTakenBy,
@@ -98,6 +103,11 @@ export function PublishDialog({
     hasPhoto: (id) => Boolean(photoById[id]),
     instagram: site.instagram,
   })
+  // Seções que o site não mostra (achado 13.2), com o motivo e o "Ir até".
+  const hidden = hiddenSections(data, (id) => Boolean(photoById[id])).map((section) => ({
+    id: section.id,
+    label: `${(SECTION_LABELS as Record<string, string>)[section.type] ?? 'Seção'}: ${section.reason}`,
+  }))
   // Aviso leve: não muda o botão para "Publicar mesmo assim".
   const homeHeroWithoutPhoto =
     pageId === homepageId && heroWithoutPhoto(data, (id) => Boolean(photoById[id]))
@@ -122,10 +132,12 @@ export function PublishDialog({
   const hasWarning =
     data.content.length === 0 ||
     exampleSections.length > 0 ||
+    hidden.length > 0 ||
     examplePhotos.length > 0 ||
     weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
     draftLinks.length > 0 ||
     linkless.length > 0 ||
+    unnamedLinks.length > 0 ||
     personalityPending !== null ||
     slugTakenBy !== null ||
     whatsappWithoutNumber ||
@@ -251,6 +263,20 @@ export function PublishDialog({
         ) : (
           <Check ok title="Sem texto de exemplo" />
         )}
+        {hidden.length > 0 && (
+          <Check
+            title={
+              hidden.length === 1
+                ? 'Uma seção não vai aparecer no site'
+                : `${hidden.length} seções não vão aparecer no site`
+            }
+          >
+            {hidden.length === 1
+              ? 'No editor ela aparece, mas no site fica de fora (ou vazia) até ganhar conteúdo:'
+              : 'No editor elas aparecem, mas no site ficam de fora (ou vazias) até ganharem conteúdo:'}
+            <GoToList items={hidden} onGoTo={onGoTo} />
+          </Check>
+        )}
         {examplePhotos.length > 0 && (
           <Check
             title={
@@ -315,6 +341,24 @@ export function PublishDialog({
           </Check>
         ) : (
           <Check ok title="Todas as fotos têm descrição" />
+        )}
+        {unnamedLinks.length > 0 && (
+          <Check
+            title={
+              unnamedLinks.length === 1
+                ? 'Um botão leva para uma seção sem nome no menu'
+                : `${unnamedLinks.length} botões levam para seções sem nome no menu`
+            }
+          >
+            No site, ele leva para o topo da página. Dê um nome à seção ou escolha outro destino:
+            <GoToList
+              items={unnamedLinks.map((button) => ({
+                id: button.id,
+                label: `“${button.label}”, em ${button.section}`,
+              }))}
+              onGoTo={onGoTo}
+            />
+          </Check>
         )}
         {linkless.length > 0 && (
           <Check

@@ -19,3 +19,29 @@
   letter-spacing: -0.01em;
   color: var(--theme-text);
 }
+
+// Aviso de que a sessão vai acabar (achado 1.1): um cartão no meio da tela, como as outras janelas
+// do painel, em vez de texto solto sobre o fundo borrado. Vale também por cima do editor.
+.confirmation-modal__wrapper {
+  max-width: 480px;
+  margin: 16px;
+  padding: 28px;
+  border: 1px solid var(--gp-line);
+  border-radius: 16px;
+  background: var(--gp-surface);
+  color: var(--gp-ink);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 18%);
+}
+
+.confirmation-modal__content h1 {
+  font-size: var(--gp-fs-heading);
+}
+
+.confirmation-modal__content p {
+  color: var(--gp-muted);
+  font-size: var(--gp-fs-text);
+}
+
+.confirmation-modal__controls {
+  flex-wrap: wrap;
+}

@@ -244,3 +244,36 @@ export function buttonsWithoutLink(
   }
   return found
 }
+
+/**
+ * Botões que levam para uma seção que perdeu o "Nome no menu" (ou saiu da página). No site eles
+ * levam para o topo da página, e o "Leva para" mostrava "Escolha…" (achado 13.6). `named` diz se a
+ * seção ainda tem âncora: na página aberta, pelo que está na tela; nas outras, pelo que foi salvo.
+ */
+export function buttonsToUnnamedSection(
+  data: PuckPageData,
+  named: (pageId: number, sectionId: string) => boolean,
+): { sectionId: string; sectionType: string; label: string }[] {
+  const found: { sectionId: string; sectionType: string; label: string }[] = []
+  for (const section of data.content) {
+    const walk = (value: unknown) => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (!value || typeof value !== 'object') return
+      const record = value as Record<string, unknown>
+      const link = record.link as { kind?: string; pageId?: number; sectionId?: string } | null
+      const label = typeof record.label === 'string' ? record.label.trim() : ''
+      if (
+        label &&
+        link?.kind === 'section' &&
+        typeof link.pageId === 'number' &&
+        typeof link.sectionId === 'string' &&
+        !named(link.pageId, link.sectionId)
+      ) {
+        found.push({ sectionId: String(section.props.id), sectionType: section.type, label })
+      }
+      Object.values(record).forEach(walk)
+    }
+    walk(section.props)
+  }
+  return found
+}
