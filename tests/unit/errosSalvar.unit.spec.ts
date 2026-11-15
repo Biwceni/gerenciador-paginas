@@ -59,6 +59,8 @@ describe('erro de salvar com o lugar do problema', () => {
       index: 0,
       id: 'Hero-a1',
       field: 'title',
+      // O tipo abre a aba do painel em que o campo está (A2).
+      type: 'Hero',
     })
   })
 
@@ -114,6 +116,7 @@ describe('erro de salvar com o lugar do problema', () => {
       index: 1,
       id: 'ColumnText-1',
       field: 'title',
+      type: 'ColumnText',
     })
   })
 })

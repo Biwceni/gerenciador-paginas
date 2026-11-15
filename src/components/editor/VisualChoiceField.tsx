@@ -12,6 +12,8 @@ type Props = {
   options: VisualOption[]
   label?: string
   columns?: 2 | 3
+  /** Miniaturas pequenas numa fileira que desliza para o lado, em vez da grade (Animação, G6). */
+  strip?: boolean
 }
 
 export type VisualOption = { value: string; label: string; hint?: string; thumb: React.ReactNode }
@@ -30,11 +32,21 @@ export function VisualChoiceField({
   value,
   label,
   columns = 2,
+  strip = false,
 }: Props) {
+  const row = React.useRef<HTMLDivElement>(null)
+  // Na fileira, a escolhida aparece ao abrir o painel, mesmo quando é uma das últimas.
+  React.useEffect(() => {
+    if (!strip || !row.current) return
+    const checked = row.current.querySelector<HTMLElement>('input:checked')?.closest('label')
+    if (checked) row.current.scrollLeft = checked.offsetLeft - row.current.offsetLeft - 8
+    // Só ao abrir: depois, quem rola é a pessoa.
+  }, [strip])
   return (
     <div
       aria-label={label}
-      className={`ed-thumbs${columns === 3 ? ' ed-thumbs--3' : ''}`}
+      className={`ed-thumbs${strip ? ' ed-thumbs--strip' : columns === 3 ? ' ed-thumbs--3' : ''}`}
+      ref={row}
       role="radiogroup"
     >
       {options.map((option) => (

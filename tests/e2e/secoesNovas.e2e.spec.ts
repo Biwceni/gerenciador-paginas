@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
+import { openFieldTab } from '../helpers/editor'
 
 // Redesign v3, entrega 4: seções novas para vender, no banco de TEST_DATABASE_URL.
 
@@ -367,7 +368,8 @@ test.describe.serial('seções novas (entrega 4)', () => {
     // Na prévia, o aviso no lugar da foto que falta.
     const preview = page.frameLocator('iframe')
     await expect(preview.getByText('Escolha uma foto sua do produto').first()).toBeVisible()
-    // Arrumação por miniatura.
+    // Arrumação por miniatura, na aba Aparência (A2).
+    await openFieldTab(page, 'Aparência')
     const layout = page.getByRole('radiogroup', { name: 'Arrumação' })
     await expect(layout.getByRole('radio', { name: /3 por linha/ })).toBeChecked()
     await layout.getByRole('radio', { name: /Lista com foto/ }).check()
