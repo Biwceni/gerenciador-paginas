@@ -1478,10 +1478,22 @@ time {
   }
 }
 
+// Dois por linha e, com número ímpar de modelos (os dois do ramo e o Papel), o último fica no
+// centro, como na Vitrine do site. No celular, um por linha.
 .gp-tplsites {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
+
+  > .gp-tplsite {
+    flex: 1 1 260px;
+    max-width: calc((100% - 16px) / 2);
+
+    @media (max-width: 640px) {
+      max-width: none;
+    }
+  }
 }
 
 .gp-tplsite {

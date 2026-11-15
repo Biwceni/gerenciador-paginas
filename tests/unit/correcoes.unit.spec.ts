@@ -175,8 +175,8 @@ describe('"Começar de novo"', () => {
 describe('contraste dos modelos', () => {
   const sites = templateSeeds.filter((seed) => seed.kind === 'site')
 
-  it('os 28 visuais passam AA na frase do banner, no item do menu e nos links', () => {
-    expect(sites).toHaveLength(28)
+  it('os 42 visuais (3 por ramo ou tipo de site) passam AA na frase do banner, no item do menu e nos links', () => {
+    expect(sites).toHaveLength(42)
     for (const seed of sites) {
       const colors = seed.site?.colors
       if (!colors) throw new Error(`${seed.key} sem cores`)

@@ -274,8 +274,8 @@ export function StartWizard({
 
   const pagesNote = (template: StartTemplate) =>
     template.pageTitles.length > 1
-      ? `Os dois já vêm com ${template.pageTitles.length} páginas: ${template.pageTitles.join(', ')}.`
-      : 'Os dois são uma página só, já montada.'
+      ? `Todos já vêm com ${template.pageTitles.length} páginas: ${template.pageTitles.join(', ')}.`
+      : 'Todos são uma página só, já montada.'
 
   return (
     <div className="gp-onboard">

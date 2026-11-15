@@ -66,7 +66,7 @@ export type Segment = (typeof SEGMENTS)[number]['value']
 
 /**
  * Ramos do "Site da empresa" (redesign v3, entrega 6): escolhem as páginas, a ordem das seções e os
- * textos de exemplo, e sugerem a personalidade, as letras e as cores dos dois modelos de cada um.
+ * textos de exemplo, e sugerem a personalidade, as letras e as cores dos três modelos de cada um (os dois do ramo e o Papel).
  */
 export const BUSINESSES = [
   {

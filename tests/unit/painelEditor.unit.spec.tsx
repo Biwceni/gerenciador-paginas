@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CHOICE_THUMBS, ChoiceThumb } from '@/components/editor/ChoiceThumbs'
 import { createDraftSaver } from '@/components/editor/draftSaver'
-import { PUCK_COLORS } from '@/components/editor/EditorFrame'
+import { PUCK_COLORS, splitSelectors } from '@/components/editor/EditorFrame'
 import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
 import { PersonalitySwitch } from '@/components/editor/PersonalitySwitch'
 import { NEW_SECTIONS, SectionThumb } from '@/components/editor/SectionThumb'
@@ -336,5 +336,29 @@ describe('fila da personalidade (createDraftSaver)', () => {
     expect(calls.map((call) => call.value)).toEqual(['aconchego'])
     calls[0].done()
     await done
+  })
+})
+
+describe('CSS do site na prévia', () => {
+  it('separa os seletores só nas vírgulas de fora dos parênteses', () => {
+    expect(
+      splitSelectors(".site[data-personality='papel'] :is(.hero__title, .page-title)"),
+    ).toEqual([".site[data-personality='papel'] :is(.hero__title, .page-title)"])
+    expect(splitSelectors('.site .a:not(.b, .c), .site .d')).toEqual([
+      '.site .a:not(.b, .c)',
+      '.site .d',
+    ])
+    expect(splitSelectors('.site .a, .painel .b')).toEqual(['.site .a', '.painel .b'])
+  })
+
+  it('toda regra do site com :is() ou :not() em lista começa em .site em cada parte', () => {
+    // Uma regra que mistura `.site` com outra coisa ficaria fora da prévia do editor e dos modelos.
+    const css = readFileSync(path.join(process.cwd(), 'src/app/(frontend)/styles.css'), 'utf8')
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, '').match(/^\.site[^{]*\{/gm) ?? []
+    const withLists = rules.filter((rule) => /:(is|not|where)\([^)]*,/.test(rule))
+    expect(withLists.length).toBeGreaterThan(0)
+    for (const rule of withLists) {
+      for (const selector of splitSelectors(rule.slice(0, -1))) expect(selector).toMatch(/^\.site/)
+    }
   })
 })

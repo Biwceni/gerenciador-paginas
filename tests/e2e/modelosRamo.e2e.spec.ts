@@ -165,7 +165,7 @@ test.describe.serial('modelos por ramo', () => {
     await page.fill('#ob-whatsapp', '(34) 99999-0000')
     await page.getByRole('button', { name: 'Continuar' }).click()
 
-    // Os dois modelos sugerem a personalidade do ramo; a prévia já tem o nome e a cidade.
+    // Os modelos sugerem a personalidade do ramo (e o Papel, igual em todos); a prévia já tem o nome e a cidade.
     await expect(page.getByRole('heading', { name: 'Escolha um modelo' })).toBeVisible()
     await expect(page.getByText('Personalidade Vitrine', { exact: true })).toBeVisible()
     await expect(page.getByText(/Personalidade Aconchego/)).toBeVisible()
@@ -214,12 +214,11 @@ test.describe.serial('modelos por ramo', () => {
     photos = await replacePhotos(site.homepage as number)
 
     await page.goto(`${BASE}/admin/editor/${site.homepage}`)
-    await expect(
-      page
-        .frameLocator('iframe')
-        .first()
-        .getByText(/Escolha uma foto sua/),
-    ).toHaveCount(0)
+    const preview = page.frameLocator('iframe').first()
+    // Espera a prévia montar: sem isso, a contagem de baixo passa antes de existir seção e o clique
+    // em Publicar chega antes do editor estar pronto.
+    await expect(preview.locator('[data-puck-component]').first()).toBeVisible({ timeout: 60_000 })
+    await expect(preview.getByText(/Escolha uma foto sua/)).toHaveCount(0)
     await page.getByRole('button', { name: 'Publicar', exact: true }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByText(/seções ainda têm texto de exemplo/)).toBeVisible()
