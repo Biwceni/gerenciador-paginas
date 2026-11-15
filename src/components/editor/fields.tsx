@@ -605,6 +605,12 @@ export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
   )
 }
 
+/** Nome do vídeo para conferir: até 80 letras, cortado com "…" (o nome inteiro fica no `title`). */
+export function shortTitle(title: string, max = 80): string {
+  const clean = title.replace(/\s+/g, ' ').trim()
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean
+}
+
 /**
  * A capa e o nome do vídeo escolhido, para a pessoa conferir que colou o vídeo certo (achado 5.2).
  * O nome (e, no Vimeo, a capa) vem do próprio YouTube ou Vimeo; sem resposta, fica o aviso curto.
@@ -657,7 +663,9 @@ function VideoCheck({ video }: { video: VideoRef }) {
   return (
     <div className="ed-video-check">
       {thumb && <img alt="" className="ed-pic" src={thumb} />}
-      <span className="ed-hint">{info?.title ? `Vídeo: ${info.title}` : 'Vídeo escolhido'}</span>
+      <span className="ed-hint" title={info?.title ?? undefined}>
+        {info?.title ? `Vídeo: ${shortTitle(info.title)}` : 'Vídeo escolhido'}
+      </span>
     </div>
   )
 }

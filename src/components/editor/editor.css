@@ -347,6 +347,8 @@ textarea.ed-input {
   font-size: var(--gp-fs-help);
   line-height: 1.4;
   text-wrap: pretty;
+  /* Nome de arquivo ou endereço sem espaços quebra a linha em vez de alargar o painel. */
+  overflow-wrap: anywhere;
 }
 
 .ed-hint--warn {
@@ -1940,6 +1942,11 @@ textarea.ed-grow {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.ed-video-check .ed-hint {
+  flex: 1;
+  min-width: 0;
 }
 
 .ed-video-check .ed-pic {
