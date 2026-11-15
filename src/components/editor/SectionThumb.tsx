@@ -226,7 +226,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   LinkList: 'Botões grandes, como no “link na bio”',
   Columns: 'Duas ou três colunas com texto, foto ou botão',
   RichText: 'Um título e parágrafos, sem foto',
-  Video: 'Um vídeo do YouTube na página',
+  Video: 'Um vídeo do YouTube ou do Vimeo na página',
   Form: 'Um dos seus formulários, para o visitante preencher',
   Privacy: 'Como você cuida dos dados, com o contato das Configurações',
   Announcement: 'Frase curta: promoção, temporada, horário',

@@ -12,7 +12,7 @@ import {
   splitTitleLines,
 } from '@/lib/motion'
 import { instagramLink } from '@/lib/links'
-import { youtubeThumbURL } from '@/lib/youtube'
+import { parseVideo, youtubeThumbURL } from '@/lib/youtube'
 import { privacyBlocks } from '@/lib/privacy'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
@@ -1086,16 +1086,18 @@ export function Video({
 }: WithMetadata<VideoProps>) {
   if (!videoId && !metadata.editing) return null
   const photo = getPhoto(metadata, cover)
-  // Sem foto de capa, a miniatura do próprio YouTube (C15, achado Video-1), pelo nosso servidor.
+  const video = parseVideo(videoId)
+  // Sem foto de capa, a miniatura do próprio YouTube (C15, achado Video-1), pelo nosso servidor. O
+  // Vimeo não tem endereço fixo de miniatura: sem capa escolhida, fica a cor do site com o play.
   const coverPhoto = photo ? (
     <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 860px" />
-  ) : videoId ? (
+  ) : video?.provider === 'youtube' ? (
     <Image
       alt=""
       className="video__thumb"
       fill
       sizes="(max-width: 720px) 100vw, 860px"
-      src={youtubeThumbURL(videoId)}
+      src={youtubeThumbURL(video.id)}
     />
   ) : null
 
@@ -1113,7 +1115,7 @@ export function Video({
                 <EditorPlaceholder>
                   {videoId
                     ? 'No site, o vídeo toca quando a pessoa clica.'
-                    : 'Cole o endereço do vídeo do YouTube nas opções da seção'}
+                    : 'Cole o endereço do vídeo do YouTube ou do Vimeo nas opções da seção'}
                 </EditorPlaceholder>
               </>
             ) : (

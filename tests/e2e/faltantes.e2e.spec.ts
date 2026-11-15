@@ -175,12 +175,12 @@ test.describe('editor: o que faltou do teste de estresse', () => {
     const dialog = await openPublish(page)
     const check = dialog.locator('.ed-check', { hasText: 'seções não vão aparecer no site' })
     await expect(check).toContainText('2 seções não vão aparecer no site')
-    await expect(check).toContainText('Vídeo do YouTube: falta o endereço do vídeo')
+    await expect(check).toContainText('Vídeo: falta o endereço do vídeo')
     await expect(check).toContainText('Galeria de fotos: não tem nenhuma foto')
     await expect(dialog.getByRole('button', { name: 'Publicar mesmo assim' })).toBeVisible()
     await check.getByRole('button', { name: 'Ir até' }).first().click()
     await expect(dialog).toHaveCount(0)
-    await expect(page.getByRole('heading', { name: 'Vídeo do YouTube', level: 2 })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Vídeo', exact: true, level: 2 })).toBeVisible()
   })
 
   test('13.6 botão para uma seção sem nome no menu: o "Leva para" diz isso', async ({ page }) => {
