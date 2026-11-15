@@ -86,6 +86,7 @@ export function pageBuilder() {
         menuLabel: o.menu ?? '',
         title: o.title,
         marker: o.marker ?? (o.items.some((item) => item[2]) ? 'icon' : 'none'),
+        steps: 'grid',
         items: o.items.map(([title, text, icon]) => ({
           title,
           text,
@@ -155,6 +156,8 @@ export function pageBuilder() {
       props: {
         id: id('Contact', o.id),
         menuLabel: o.menu ?? '',
+        show: ['whatsapp', 'phone', 'email', 'address', 'hours'],
+        featured: 'whatsapp',
         title: o.title,
         text: o.text,
         style: o.style ?? 'light',
@@ -195,6 +198,7 @@ export function pageBuilder() {
       type: 'LinkList',
       props: {
         id: id('LinkList'),
+        menuLabel: '',
         title: '{nome}',
         text: o.text,
         items: o.items.map((item) => button(item.label, item.link)),

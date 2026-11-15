@@ -8,6 +8,7 @@ import {
   ColumnImage,
   Columns,
   ColumnText,
+  ColumnTitle,
   Contact,
   Faq,
   Features,
@@ -32,6 +33,7 @@ import type {
   ColumnImageProps,
   ColumnsProps,
   ColumnTextProps,
+  ColumnTitleProps,
   ContactProps,
   FaqProps,
   FeaturesProps,
@@ -74,6 +76,7 @@ export type Components = {
   PriceList: Props<PriceListProps>
   Announcement: Props<AnnouncementProps>
   InstagramStrip: Props<InstagramStripProps>
+  ColumnTitle: Props<ColumnTitleProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
   ColumnButton: Props<ColumnButtonProps>
@@ -101,10 +104,11 @@ export const SECTION_LABELS = {
   Privacy: 'Política de privacidade',
 } as const
 
-export const COLUMN_PIECES = ['ColumnText', 'ColumnImage', 'ColumnButton'] as const
+export const COLUMN_PIECES = ['ColumnTitle', 'ColumnText', 'ColumnImage', 'ColumnButton'] as const
 
 export const PIECE_LABELS = {
-  ColumnText: 'Título e texto',
+  ColumnTitle: 'Título',
+  ColumnText: 'Texto',
   ColumnImage: 'Foto',
   ColumnButton: 'Botão',
 } as const
@@ -204,6 +208,10 @@ export const renderConfig: Config<Components> = {
     InstagramStrip: {
       label: SECTION_LABELS.InstagramStrip,
       render: ({ puck, ...props }) => <InstagramStrip {...props} metadata={meta(puck)} />,
+    },
+    ColumnTitle: {
+      label: PIECE_LABELS.ColumnTitle,
+      render: ({ puck: _puck, ...props }) => <ColumnTitle {...props} />,
     },
     ColumnText: {
       label: PIECE_LABELS.ColumnText,

@@ -209,6 +209,7 @@ describe('desenho com a animação', () => {
     const html = renderToStaticMarkup(
       <Features
         id="f"
+        steps="grid"
         items={[
           { title: 'Um', text: '', icon: 'check', photo: null },
           { title: 'Dois', text: '', icon: 'check', photo: null },

@@ -90,6 +90,8 @@ const pages: SeedPage[] = [
           menuLabel: 'Endereço',
           title: 'Venha nos visitar',
           text: SHORT,
+          show: ['whatsapp', 'phone', 'email', 'address', 'hours'],
+          featured: 'whatsapp',
           style: 'light',
           anim: 'site',
         },
@@ -201,6 +203,7 @@ const pages: SeedPage[] = [
           menuLabel: '',
           title: 'Por que nosso café é diferente',
           marker: 'none',
+          steps: 'grid',
           items: ['Grão escolhido', 'Torra semanal', 'Preparo na hora'].map((title) => ({
             title,
             text: SHORT,

@@ -21,6 +21,7 @@ const text = (value: unknown) =>
 /** Peça das Colunas que o site mostra (a mesma regra das peças em `sections.tsx`). */
 export function pieceShows(piece: Piece, hasPhoto: (id: number) => boolean): boolean {
   const props = piece.props
+  if (piece.type === 'ColumnTitle') return Boolean(text(props.title))
   if (piece.type === 'ColumnText') return Boolean(text(props.title) || text(props.text))
   if (piece.type === 'ColumnImage') {
     const image = props.image as { mediaId: number } | null | undefined

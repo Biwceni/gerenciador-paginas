@@ -109,7 +109,7 @@ describe('erro de salvar com o lugar do problema', () => {
     }
     const result = problem([hero('Bolos'), columns])
     expect(result.message).toBe(
-      '"Título" em Título e texto (2ª peça da Coluna 1), em Colunas passou do limite de 120 letras. Encurte para salvar.',
+      '"Título" em Texto (2ª peça da Coluna 1), em Colunas passou do limite de 120 letras. Encurte para salvar.',
     )
     expect(result.target).toEqual({
       zone: 'Columns-c1:column1',

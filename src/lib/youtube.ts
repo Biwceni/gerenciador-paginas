@@ -34,3 +34,8 @@ export function youtubeID(value: string | null | undefined): string | null {
 export function youtubeEmbedURL(id: string): string {
   return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`
 }
+
+/** Miniatura do vídeo (480x360), para a capa automática. Sempre pelo otimizador de imagens. */
+export function youtubeThumbURL(id: string): string {
+  return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`
+}

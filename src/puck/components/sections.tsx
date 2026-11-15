@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import React from 'react'
 
 import { Photo } from '@/components/site/Photo'
@@ -11,15 +12,25 @@ import {
   splitTitleLines,
 } from '@/lib/motion'
 import { instagramLink } from '@/lib/links'
+import { youtubeThumbURL } from '@/lib/youtube'
 import { privacyBlocks } from '@/lib/privacy'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 
-import { announcementRun, testimonialColumns, whatsAppMessageHref } from '../layout'
+import {
+  announcementRun,
+  balancedSplit,
+  priceGroupWeight,
+  testimonialColumns,
+  whatsAppMessageHref,
+} from '../layout'
+import { AnnounceRotate, AnnounceStrip, ANNOUNCE_STILL_MAX } from './AnnounceMotion'
 import { AutoRotate } from './AutoRotate'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
-import { COLUMN_COUNT, INSTAGRAM_MIN_PHOTOS } from '../schema'
+import { COLUMN_COUNT, CONTACT_CHANNELS, INSTAGRAM_MIN_PHOTOS } from '../schema'
 import type {
+  ColumnTitleProps,
+  ContactChannel,
   AnnouncementProps,
   CallToActionProps,
   ColumnButtonProps,
@@ -225,8 +236,9 @@ export function Hero(props: WithMetadata<HeroProps>) {
           ? 'side'
           : 'soft'
         : props.style
-  // Com a foto ao lado, o texto fica sempre à esquerda.
-  const align = style === 'side' ? 'left' : props.align
+  // Com a foto ao lado, o texto fica num dos lados: "No centro" vale como à esquerda, e "À direita"
+  // põe a foto do lado esquerdo (C1, achado Hero-1).
+  const align = style === 'side' && props.align === 'center' ? 'left' : props.align
   const isMain = metadata.mainHeadingId === id
   const Heading = isMain ? 'h1' : 'h2'
   const anim = sectionAnim('Hero', props.anim, metadata)
@@ -235,6 +247,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
     style === 'side' ? 'section--soft hero--side' : `section--${style}`,
     'hero',
     align === 'center' && 'hero--center',
+    align === 'right' && (style === 'side' ? 'hero--photo-left' : 'hero--right'),
     !photo && 'hero--plain',
     // Frase longa no título: tamanho menor que o de uma ou duas palavras, para não ocupar a tela.
     // No editor, o título é o elemento da edição no lugar (não é texto): não dá para medir, e
@@ -287,7 +300,7 @@ export function Hero(props: WithMetadata<HeroProps>) {
               fill
               media={photo}
               priority={isMain && !metadata.editing}
-              sizes="(max-width: 720px) 100vw, 480px"
+              sizes="(max-width: 720px) 100vw, 50vw"
             />
           </div>
         )}
@@ -300,6 +313,9 @@ export function Hero(props: WithMetadata<HeroProps>) {
     </section>
   )
 }
+
+/** Letras a partir das quais o texto do Texto com foto é longo: a foto acompanha a leitura. */
+export const TEXT_IMAGE_LONG = 600
 
 export function TextImage({
   id,
@@ -316,10 +332,16 @@ export function TextImage({
   // Sem foto no site, o texto fica no centro, na largura de leitura (e não meia tela vazia). No
   // editor continua o aviso "Escolha uma foto" no lugar dela.
   const solo = !photo && !metadata.editing
+  // Só a foto (C5, achado TextImage-1): no centro e mais larga, sem meia tela vazia ao lado.
+  const photoOnly = Boolean(photo) && !metadata.editing && !filled(title) && !filled(text)
+  // Texto longo (achado TextImage-3): a foto fica parada no topo enquanto o texto passa.
+  const long = typeof text === 'string' && text.trim().length > TEXT_IMAGE_LONG
   const classes = [
     'container text-image anim-part',
     side === 'left' && 'text-image--left',
     solo && 'text-image--solo',
+    photoOnly && 'text-image--photo-only',
+    long && !photoOnly && 'text-image--long',
   ]
 
   return (
@@ -330,14 +352,22 @@ export function TextImage({
       style={style}
     >
       <div className={classes.filter(Boolean).join(' ')}>
-        <div className="text-image__text anim-part">
-          {filled(title) && <h2>{title}</h2>}
-          <Paragraphs text={text} />
-        </div>
+        {!photoOnly && (
+          <div className="text-image__text anim-part">
+            {filled(title) && <h2>{title}</h2>}
+            <Paragraphs text={text} />
+          </div>
+        )}
         {(photo || metadata.editing) && (
           <div className="text-image__photo anim-part">
             {photo ? (
-              <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 540px" />
+              <Photo
+                fill
+                media={photo}
+                sizes={
+                  photoOnly ? '(max-width: 720px) 100vw, 960px' : '(max-width: 720px) 100vw, 540px'
+                }
+              />
             ) : (
               <EditorPlaceholder>Escolha uma foto sua nas opções da seção</EditorPlaceholder>
             )}
@@ -357,6 +387,7 @@ export function Features({
   title,
   items,
   marker = 'none',
+  steps = 'grid',
   style,
   anim,
   metadata,
@@ -367,6 +398,8 @@ export function Features({
   if (!shown.length) return null
   const two = shown.length % 2 === 0 && shown.length < 6
   const List = marker === 'number' ? 'ol' : 'ul'
+  // Linha de passos (C6, L-Features): os números ligados por uma linha, um passo em cada coluna.
+  const lined = marker === 'number' && steps === 'line' && shown.length > 1
 
   return (
     <Section
@@ -377,7 +410,11 @@ export function Features({
     >
       <div className="container anim-part">
         <SectionTitle title={title} />
-        <List className={`features${two ? ' features--two' : ''}`} data-count={shown.length}>
+        <List
+          className={`features${two ? ' features--two' : ''}${lined ? ' features--steps' : ''}`}
+          data-count={shown.length}
+          style={lined ? ({ '--n': shown.length } as React.CSSProperties) : undefined}
+        >
           {shown.map((item, index) => (
             <li className="features__item anim-part" key={index} style={order(index)}>
               {marker === 'number' && (
@@ -429,6 +466,15 @@ export function Testimonials({
 }: WithMetadata<TestimonialsProps>) {
   const shown = metadata.editing ? items : items.filter((item) => filled(item.quote))
   if (!shown.length) return null
+  // C7: com 3 ou mais, o primeiro em destaque, grande, e os outros em duas colunas. Quando algum
+  // tem foto, todos guardam a altura dela, e os nomes ficam alinhados.
+  const listClass = [
+    'testimonials',
+    shown.length >= 3 && 'testimonials--featured',
+    shown.some((item) => getPhoto(metadata, item.photo ?? null)) && 'testimonials--photos',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <Section
@@ -443,7 +489,7 @@ export function Testimonials({
             celular, uma faixa que desliza e troca sozinha (A7, achado G5); no editor, parada. */}
         {metadata.editing ? (
           <ul
-            className="testimonials"
+            className={listClass}
             data-count={shown.length}
             style={columns(testimonialColumns(shown.length))}
           >
@@ -476,7 +522,7 @@ export function Testimonials({
         ) : (
           <AutoRotate count={shown.length} label="depoimentos">
             <ul
-              className="testimonials"
+              className={listClass}
               data-count={shown.length}
               style={columns(testimonialColumns(shown.length))}
             >
@@ -520,7 +566,8 @@ export function Faq({ id, title, items, style, anim, metadata }: WithMetadata<Fa
 
   return (
     <Section anim={sectionAnim('Faq', anim, metadata)} id={id} metadata={metadata} style={style}>
-      <div className="container anim-part">
+      {/* C8 (L-Faq): no computador, o título à esquerda, parado, e as perguntas à direita. */}
+      <div className={`container anim-part${filled(title) ? ' faq-layout' : ''}`}>
         <SectionTitle title={title} />
         <div className="faq">
           {shown.map((item, index) => (
@@ -532,13 +579,13 @@ export function Faq({ id, title, items, style, anim, metadata }: WithMetadata<Fa
                   aria-hidden="true"
                   className="faq__arrow"
                   fill="none"
-                  height="20"
+                  height="24"
                   stroke="currentColor"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
                   viewBox="0 0 24 24"
-                  width="20"
+                  width="24"
                 >
                   <path d="M6 9l6 6 6-6" />
                 </svg>
@@ -632,26 +679,63 @@ export function CallToAction({
 export { mapsURL }
 
 /** Contato e endereço: os dados vêm das configurações e mudam no site todo. */
-export function Contact({ id, title, text, style, anim, metadata }: WithMetadata<ContactProps>) {
+/** O que o botão do canal em destaque diz. */
+const FEATURED_ACTION: Record<string, string> = {
+  whatsapp: 'Chamar no WhatsApp',
+  phone: 'Ligar agora',
+  email: 'Mandar um e-mail',
+}
+
+/**
+ * Contato e endereço: os dados vêm das configurações e mudam no site todo. A seção escolhe quais
+ * canais mostra e qual fica em destaque, num bloco na cor do site com botão (C11, L-Contact).
+ */
+export function Contact({
+  id,
+  title,
+  text,
+  show = [...CONTACT_CHANNELS],
+  featured = 'whatsapp',
+  style,
+  anim,
+  metadata,
+}: WithMetadata<ContactProps>) {
   const { whatsapp, phone, email, address, hours } = metadata.site.contact
   const whatsappHref = whatsAppURL(whatsapp)
-  type Item = { icon: ContactIconName; label: string; value: string; href?: string; extra?: string }
-  const items: Item[] = []
+  type Item = {
+    key: ContactChannel
+    icon: ContactIconName
+    label: string
+    value: string
+    href?: string
+    extra?: string
+  }
+  const all: Item[] = []
   if (whatsapp && whatsappHref) {
-    items.push({ icon: 'whatsapp', label: 'WhatsApp', value: whatsapp, href: whatsappHref })
+    all.push({
+      key: 'whatsapp',
+      icon: 'whatsapp',
+      label: 'WhatsApp',
+      value: whatsapp,
+      href: whatsappHref,
+    })
   }
   if (phone) {
-    items.push({
+    all.push({
+      key: 'phone',
       icon: 'phone',
       label: 'Telefone',
       value: phone,
       href: telHref(phone) ?? undefined,
     })
   }
-  if (email) items.push({ icon: 'mail', label: 'E-mail', value: email, href: `mailto:${email}` })
+  if (email) {
+    all.push({ key: 'email', icon: 'mail', label: 'E-mail', value: email, href: `mailto:${email}` })
+  }
   // O endereço abre o mapa: a linha inteira é o link.
   if (address) {
-    items.push({
+    all.push({
+      key: 'address',
       icon: 'map',
       label: 'Endereço',
       value: address,
@@ -659,7 +743,11 @@ export function Contact({ id, title, text, style, anim, metadata }: WithMetadata
       extra: 'Ver no mapa',
     })
   }
-  if (hours) items.push({ icon: 'clock', label: 'Horário', value: hours })
+  if (hours) all.push({ key: 'hours', icon: 'clock', label: 'Horário', value: hours })
+  const items = all.filter((item) => show.includes(item.key))
+  // O destaque só vale para um canal mostrado e preenchido; sem ele, todos ficam em linhas.
+  const highlight = items.find((item) => item.key === featured && item.href)
+  const rows = items.filter((item) => item !== highlight)
 
   return (
     <Section
@@ -674,39 +762,62 @@ export function Contact({ id, title, text, style, anim, metadata }: WithMetadata
           <Paragraphs text={text} />
         </div>
         {items.length > 0 ? (
-          <ul className="contact__list">
-            {items.map((item) => {
-              // A linha inteira (ícone, rótulo e valor) é a área de toque, com pelo menos 44 px.
-              const body = (
-                <>
-                  <ContactIcon name={item.icon} />
-                  <span className="contact__text">
-                    <span className="contact__label">{item.label}</span>
-                    <span className="contact__value">{item.value}</span>
-                    {item.extra && <span className="contact__map">{item.extra}</span>}
+          <div className="contact__channels">
+            {highlight && (
+              <div className="contact__featured">
+                <span className="contact__featured-label">
+                  <ContactIcon name={highlight.icon} />
+                  {highlight.label}
+                </span>
+                <span className="contact__featured-value">{highlight.value}</span>
+                {metadata.editing ? (
+                  <span className="button contact__featured-button">
+                    {FEATURED_ACTION[highlight.key]}
                   </span>
-                </>
-              )
-              return (
-                <li key={item.label}>
-                  {item.href && !metadata.editing ? (
-                    <SiteLink className="contact__item contact__item--link" href={item.href}>
-                      {body}
-                    </SiteLink>
-                  ) : (
-                    <div className={`contact__item${item.href ? ' contact__item--link' : ''}`}>
-                      {body}
-                    </div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+                ) : (
+                  <SiteLink className="button contact__featured-button" href={highlight.href ?? ''}>
+                    {FEATURED_ACTION[highlight.key]}
+                  </SiteLink>
+                )}
+              </div>
+            )}
+            {rows.length > 0 && (
+              <ul className="contact__list">
+                {rows.map((item) => {
+                  // A linha inteira (ícone, rótulo e valor) é a área de toque, com pelo menos 44 px.
+                  const body = (
+                    <>
+                      <ContactIcon name={item.icon} />
+                      <span className="contact__text">
+                        <span className="contact__label">{item.label}</span>
+                        <span className="contact__value">{item.value}</span>
+                        {item.extra && <span className="contact__map">{item.extra}</span>}
+                      </span>
+                    </>
+                  )
+                  return (
+                    <li key={item.key}>
+                      {item.href && !metadata.editing ? (
+                        <SiteLink className="contact__item contact__item--link" href={item.href}>
+                          {body}
+                        </SiteLink>
+                      ) : (
+                        <div className={`contact__item${item.href ? ' contact__item--link' : ''}`}>
+                          {body}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
         ) : (
           metadata.editing && (
             <EditorPlaceholder>
-              WhatsApp, telefone, e-mail, endereço e horário aparecem aqui quando forem preenchidos
-              nas Configurações do site.
+              {all.length
+                ? 'Nenhum canal marcado em "Mostrar nesta seção".'
+                : 'WhatsApp, telefone, e-mail, endereço e horário aparecem aqui quando forem preenchidos nas Configurações do site.'}
             </EditorPlaceholder>
           )
         )}
@@ -855,8 +966,11 @@ export function Columns({
   anim,
   columns,
   metadata,
+  emptyColumn,
 }: Omit<WithMetadata<ColumnsProps>, 'column1' | 'column2' | 'column3'> & {
   columns: React.ReactNode[]
+  /** Só no editor: o quadro da coluna vazia, com os atalhos de peças (C13). */
+  emptyColumn?: (n: number) => React.ReactNode
 }) {
   return (
     <Section
@@ -869,11 +983,18 @@ export function Columns({
         {columns.slice(0, COLUMN_COUNT[layout]).map((column, index) => (
           <div className="columns__column anim-part" key={index} style={order(index)}>
             {column}
+            {metadata.editing && emptyColumn?.(index + 1)}
           </div>
         ))}
       </div>
     </Section>
   )
+}
+
+/** Peça Título (C13): um título sozinho na coluna. */
+export function ColumnTitle({ title }: ColumnTitleProps) {
+  if (!filled(title)) return null
+  return <h3 className="column-title">{title}</h3>
 }
 
 export function ColumnText({ title, text }: ColumnTextProps) {
@@ -947,8 +1068,17 @@ export function Video({
 }: WithMetadata<VideoProps>) {
   if (!videoId && !metadata.editing) return null
   const photo = getPhoto(metadata, cover)
+  // Sem foto de capa, a miniatura do próprio YouTube (C15, achado Video-1), pelo nosso servidor.
   const coverPhoto = photo ? (
     <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 860px" />
+  ) : videoId ? (
+    <Image
+      alt=""
+      className="video__thumb"
+      fill
+      sizes="(max-width: 720px) 100vw, 860px"
+      src={youtubeThumbURL(videoId)}
+    />
   ) : null
 
   return (
@@ -961,15 +1091,7 @@ export function Video({
               // No editor o vídeo não toca: aparece a capa (a escolhida, ou a do próprio YouTube, para
               // a pessoa conferir que colou o vídeo certo, achado 5.2) e um aviso.
               <>
-                {coverPhoto ??
-                  (videoId && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      alt=""
-                      className="video__thumb"
-                      src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`}
-                    />
-                  ))}
+                {coverPhoto}
                 <EditorPlaceholder>
                   {videoId
                     ? 'No site, o vídeo toca quando a pessoa clica.'
@@ -1032,6 +1154,9 @@ function productHref(item: ProductItem, metadata: ContentMetadata): string | nul
   return getHref(metadata, link)
 }
 
+/** Preço até este tamanho cabe ao lado de tudo; maior ("a partir de R$ 1.200,00") fica menor, numa linha só. */
+export const PRODUCT_PRICE_SHORT = 14
+
 /** Tamanho da foto do produto em cada arrumação, para o navegador baixar a medida certa. */
 const PRODUCT_PHOTO_SIZES = {
   three: '(max-width: 460px) 100vw, (max-width: 720px) 50vw, 380px',
@@ -1072,6 +1197,15 @@ export function Products({
             const photo = getPhoto(metadata, item.image ?? null)
             const href = metadata.editing ? null : productHref(item, metadata)
             const label = item.button?.label
+            const whats = item.button?.link?.kind === 'whatsapp'
+            // Botão cheio, com o ícone do WhatsApp quando abre a conversa (C3, achado Products-3).
+            const buttonInside = (
+              <>
+                {whats && <ContactIcon name="whatsapp" />}
+                <span className="product__link-text">{label}</span>
+              </>
+            )
+            const price = typeof item.price === 'string' ? item.price.trim() : ''
             return (
               <li className="product anim-part" key={index} style={order(index)}>
                 <div className="product__photo">
@@ -1090,24 +1224,32 @@ export function Products({
                   {filled(item.name) && <h3 className="product__name">{item.name}</h3>}
                   {filled(item.text) && <p className="product__text">{item.text}</p>}
                   {filled(item.price) && (
-                    <p className="product__price" data-optional={optional(item.price, 'item')}>
+                    <p
+                      className="product__price"
+                      data-long={price.length > PRODUCT_PRICE_SHORT || undefined}
+                      data-optional={optional(item.price, 'item')}
+                    >
                       {item.price}
                     </p>
                   )}
                   {metadata.editing
-                    ? item.button && <span className="product__link">{label}</span>
+                    ? item.button && (
+                        <span className={`product__link${whats ? ' product__link--whats' : ''}`}>
+                          {buttonInside}
+                        </span>
+                      )
                     : href &&
                       typeof label === 'string' &&
                       label.trim() && (
-                        <SiteLink className="product__link" href={href}>
-                          {label}
+                        <SiteLink
+                          className={`product__link${whats ? ' product__link--whats' : ''}`}
+                          href={href}
+                        >
+                          {buttonInside}
                           {/* Os botões repetem o texto: o nome do produto diz qual é qual. */}
                           {typeof item.name === 'string' && (
                             <span className="visually-hidden">: {item.name}</span>
                           )}
-                          <span aria-hidden="true" className="product__arrow">
-                            →
-                          </span>
                         </SiteLink>
                       )}
                 </div>
@@ -1143,6 +1285,41 @@ export function PriceList({
   if (!shown.length) return null
   // Um grupo só ocupa a largura de leitura, mesmo com "Duas colunas".
   const single = layout === 'one' || shown.length === 1
+  const split = balancedSplit(
+    shown.map((group) => priceGroupWeight(group.items.length, Boolean(group.image))),
+  )
+  const renderGroup = (group: (typeof shown)[number], groupIndex: number) => {
+    const photo = getPhoto(metadata, group.image ?? null)
+    return (
+      <div className={`price-group${photo ? ' price-group--photo' : ''}`} key={groupIndex}>
+        {photo && (
+          <div className="price-group__photo anim-part">
+            <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 320px" />
+          </div>
+        )}
+        <div className="price-group__body">
+          {filled(group.name) && <h3 className="price-group__name anim-part">{group.name}</h3>}
+          <ul className="price-group__items">
+            {group.items.map((item, index) => (
+              <li className="price-item anim-part" key={index} style={order(index)}>
+                <span className="price-item__name">{item.name}</span>
+                <span aria-hidden="true" className="price-item__leader" />
+                <span className="price-item__price">{item.price}</span>
+                {filled(item.description) && (
+                  <span
+                    className="price-item__description"
+                    data-optional={optional(item.description, 'item')}
+                  >
+                    {item.description}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Section
@@ -1154,40 +1331,16 @@ export function PriceList({
       <div className="container anim-part">
         <SectionHead text={text} title={title} />
         <div className={`prices prices--${leader}${single ? ' prices--one' : ''}`}>
-          {shown.map((group, groupIndex) => {
-            const photo = getPhoto(metadata, group.image ?? null)
-            return (
-              <div className={`price-group${photo ? ' price-group--photo' : ''}`} key={groupIndex}>
-                {photo && (
-                  <div className="price-group__photo anim-part">
-                    <Photo fill media={photo} sizes="(max-width: 720px) 100vw, 320px" />
-                  </div>
-                )}
-                <div className="price-group__body">
-                  {filled(group.name) && (
-                    <h3 className="price-group__name anim-part">{group.name}</h3>
+          {single
+            ? shown.map(renderGroup)
+            : // Duas colunas equilibradas, na ordem: os primeiros grupos à esquerda (C4).
+              [shown.slice(0, split), shown.slice(split)].map((column, columnIndex) => (
+                <div className="prices__column" key={columnIndex}>
+                  {column.map((group, index) =>
+                    renderGroup(group, index + (columnIndex ? split : 0)),
                   )}
-                  <ul className="price-group__items">
-                    {group.items.map((item, index) => (
-                      <li className="price-item anim-part" key={index} style={order(index)}>
-                        <span className="price-item__name">{item.name}</span>
-                        <span aria-hidden="true" className="price-item__leader" />
-                        <span className="price-item__price">{item.price}</span>
-                        {filled(item.description) && (
-                          <span
-                            className="price-item__description"
-                            data-optional={optional(item.description, 'item')}
-                          >
-                            {item.description}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              </div>
-            )
-          })}
+              ))}
         </div>
       </div>
     </Section>
@@ -1196,9 +1349,8 @@ export function PriceList({
 
 /**
  * Faixa de aviso: até 5 frases curtas. "Correndo": a faixa corre sem parar e para com o mouse em
- * cima, com o foco ou no botão de parar; quem pediu menos movimento a vê parada (tudo CSS, funciona
- * sem JavaScript). O leitor de tela lê o aviso inteiro uma vez (`aria-label`); a trilha repetida
- * fica escondida dele. "Parada": as frases lado a lado, no centro. No editor, sempre parada.
+ * cima, o dedo encostado ou o foco do teclado; quem pediu menos movimento a vê parada. O leitor de tela lê o aviso inteiro uma vez (`aria-label`); a trilha repetida
+ * fica escondida dele. "Parada": até duas frases lado a lado, no centro; com mais, uma por vez. No editor, sempre parada.
  */
 export function Announcement({
   items,
@@ -1212,7 +1364,11 @@ export function Announcement({
   if (!texts.length) return null
   const moving = mode === 'move' && !metadata.editing
   // Fundo próprio (e não `section--*`): a faixa fina não muda o espaço da seção seguinte.
-  const classes = ['announce', `announce--${style}`, `announce--${moving ? 'move' : 'static'}`]
+  const className = `announce announce--${style} announce--${moving ? 'move' : 'static'}`
+  const plain = texts.map((text) => String(text).replace(/\s+/g, ' ').trim())
+  const label = `Aviso: ${plain.join('. ')}`
+  // Parada com mais de duas frases: no site, uma por vez (C2, achado Announcement-2).
+  const rotating = mode === 'static' && texts.length > ANNOUNCE_STILL_MAX
 
   const still = (
     <p aria-hidden={moving || undefined} className="announce__still">
@@ -1229,20 +1385,30 @@ export function Announcement({
     </p>
   )
 
+  if (rotating && !metadata.editing) {
+    return (
+      <AnnounceStrip className={className} label={label}>
+        <AnnounceRotate texts={plain} />
+      </AnnounceStrip>
+    )
+  }
+
   if (!moving) {
     return (
-      <div className={classes.join(' ')}>
+      <div className={className}>
         <div className="container">{still}</div>
-        {/* No editor a faixa fica parada para dar para escrever nela: o selo diz que no site ela
-            corre, e "Correndo" e "Parada" deixam de parecer iguais (achado 11.6). */}
+        {/* No editor a faixa fica parada para dar para escrever nela: o selo diz o que ela faz no
+            site, e "Correndo" e "Parada" deixam de parecer iguais (achado 11.6). */}
         {metadata.editing && mode === 'move' && (
           <span className="announce__editor-tag">No site, as frases correm →</span>
+        )}
+        {metadata.editing && rotating && (
+          <span className="announce__editor-tag">No site, uma frase por vez</span>
         )}
       </div>
     )
   }
 
-  const plain = texts.map((text) => String(text).replace(/\s+/g, ' ').trim())
   const run = announcementRun(plain)
   // Mesma velocidade com textos curtos ou longos: ~0,2 s por letra de cada metade (~60 px/s).
   const letters = run.reduce((sum, text) => sum + text.length + 4, 0)
@@ -1260,39 +1426,15 @@ export function Announcement({
     </span>
   )
 
+  // Sem botão de parar (C2): a faixa para com o mouse em cima, o dedo encostado ou o foco.
   return (
-    <div className={classes.join(' ')}>
-      <div aria-label={`Aviso: ${plain.join('. ')}`} className="announce__note" role="note">
-        {still}
-        <div aria-hidden="true" className="announce__track" style={duration}>
-          {half(1)}
-          {half(2)}
-        </div>
+    <AnnounceStrip className={className} label={label}>
+      {still}
+      <div aria-hidden="true" className="announce__track" style={duration}>
+        {half(1)}
+        {half(2)}
       </div>
-      {/* Parar a faixa: uma caixa de marcar, para funcionar com o teclado e sem JavaScript. */}
-      <label className="announce__pause">
-        <input className="announce__toggle" type="checkbox" />
-        <svg
-          aria-hidden="true"
-          className="announce__icon announce__icon--pause"
-          height="16"
-          viewBox="0 0 24 24"
-          width="16"
-        >
-          <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor" />
-        </svg>
-        <svg
-          aria-hidden="true"
-          className="announce__icon announce__icon--play"
-          height="16"
-          viewBox="0 0 24 24"
-          width="16"
-        >
-          <path d="M8 5v14l11-7z" fill="currentColor" />
-        </svg>
-        <span className="visually-hidden">Parar a faixa de aviso</span>
-      </label>
-    </div>
+    </AnnounceStrip>
   )
 }
 
@@ -1320,7 +1462,8 @@ function InstagramIcon() {
 /** Colunas da faixa do Instagram: até 6 numa linha; 7 e 8 em 4 + 3 e 4 + 4. No celular, 2 a 4. */
 export function instagramColumns(count: number): { desktop: number; mobile: number } {
   return {
-    desktop: count <= 6 ? Math.max(count, 1) : 4,
+    // Com 6, 3+3 (C9, achado InstagramStrip-1): 6 numa linha ficavam pequenas.
+    desktop: count === 6 ? 3 : count <= 6 ? Math.max(count, 1) : 4,
     mobile: count === 4 ? 2 : count >= 7 ? 4 : 3,
   }
 }

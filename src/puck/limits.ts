@@ -10,8 +10,12 @@ export const LIMITS = {
   menuLabel: 40,
   /** Texto de botão: duas ou três palavras ("Pedir pelo WhatsApp"), numa linha só. */
   buttonLabel: 30,
+  /** Botão de pedir da Vitrine: cabe numa linha no cartão estreito (C3, achado Products-4). */
+  productButton: 22,
   /** Preço livre ("R$ 45", "a partir de R$ 120", "sob consulta"), sem espremer o nome do item. */
   price: 24,
+  /** Depoimento: o que cabe ler de uma vez (C7, achado Testimonials-3). */
+  testimonial: 300,
   /** Frase da Faixa de aviso: uma linha só na faixa. */
   announcement: 70,
   /** Letras que aparecem no Texto simples. As marcações (negrito, parágrafo) não contam. */
