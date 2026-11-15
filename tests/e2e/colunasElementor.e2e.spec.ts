@@ -281,7 +281,7 @@ test.describe('editor: Colunas no estilo Elementor', () => {
     // O painel não anda para o lado: nada entre o formulário e a página fica mais largo que a caixa.
     const wide = await fields(page).evaluate((form) => {
       const out: string[] = []
-      for (let node: HTMLElement | null = form; node; node = node.parentElement) {
+      for (let node: HTMLElement | null = form as HTMLElement; node; node = node.parentElement) {
         if (node.scrollWidth > node.clientWidth + 1) out.push(node.className || node.tagName)
       }
       return out

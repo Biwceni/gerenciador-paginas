@@ -40,3 +40,29 @@ export function EmptyPage() {
     </div>
   )
 }
+
+/**
+ * Fim da página, antes do rodapé (E4): leva a lista de seções e tira a seleção, para a seção
+ * escolhida entrar no fim da página, onde está o botão.
+ */
+export function AddAtEnd() {
+  const empty = usePuck((s) => s.appState.data.content.length === 0)
+  const dispatch = usePuck((s) => s.dispatch)
+  const open = useOpenSectionList()
+  if (empty) return null
+
+  return (
+    <div className="editor-add-end">
+      <button
+        onClick={(event) => {
+          event.stopPropagation()
+          dispatch({ type: 'setUi', ui: { itemSelector: null }, recordHistory: false })
+          open()
+        }}
+        type="button"
+      >
+        <PanelIcon name="plus" size={16} /> Adicionar seção aqui
+      </button>
+    </div>
+  )
+}

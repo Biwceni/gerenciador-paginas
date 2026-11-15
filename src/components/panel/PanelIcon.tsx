@@ -203,6 +203,12 @@ const PATHS = {
       <path d="M8 21h8M12 17v4" />
     </>
   ),
+  tablet: (
+    <>
+      <rect height="20" rx="2" width="16" x="4" y="2" />
+      <path d="M11 18h2" />
+    </>
+  ),
   phone: (
     <>
       <rect height="20" rx="2" width="10" x="7" y="2" />
