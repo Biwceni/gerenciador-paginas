@@ -5,13 +5,14 @@
 export const CATALOG_TEXTS: readonly string[] = [
   'atendimento excelente do começo ao fim. recomendo para todo mundo.',
   'cartão de crédito e débito, pix e dinheiro.',
+  'deixe seus dados e respondemos em pouco tempo.',
   'chame a gente no whatsapp.',
-  'clique no texto para mudar.',
   'como faço para falar com vocês?',
   'conte um pouco mais',
   'descrição curta',
   'escreva a resposta aqui.',
   'escreva aqui o que o cliente disse.',
+  'escreva aqui o texto desta coluna.',
   'escreva aqui um título chamativo',
   'escreva aqui. dá para usar negrito, itálico, listas e links.',
   'escreva o aviso aqui',
@@ -42,6 +43,6 @@ export const CATALOG_TEXTS: readonly string[] = [
   'uma frase curta que explica o que você oferece.',
   'uma frase curta sobre você.',
   'uma frase sobre ele.',
-  'use este espaço para explicar com calma. clique no texto para mudar.',
+  'use este espaço para explicar com calma.',
   'vocês atendem aos sábados?',
 ]

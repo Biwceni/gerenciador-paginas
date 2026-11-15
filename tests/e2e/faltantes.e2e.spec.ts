@@ -203,7 +203,8 @@ test.describe('editor: o que faltou do teste de estresse', () => {
     })
     await openEditor(page, id, 2)
     await pick(page, 0)
-    const select = fields(page).locator('.ed-link-field select').first()
+    // O passo da seção (rodada 2, F11) mostra o destino que ficou sem nome.
+    const select = fields(page).getByLabel('Seção da página').first()
     await expect(select.locator('option:checked')).toHaveText(
       'Seção sem nome no menu (vai para o topo da página)',
     )

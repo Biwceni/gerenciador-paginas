@@ -1868,6 +1868,20 @@
     content: 'Clique para escrever';
   }
 
+  /* Na tela de toque, "Toque" (rodada 2, F7). */
+  @media (pointer: coarse) {
+    & [contenteditable]:empty::before,
+    & li:hover [data-optional='item'] [contenteditable]:empty::before,
+    & [data-puck-component]:hover [data-optional='section'] [contenteditable]:empty::before,
+    & [data-optional]:focus-within [contenteditable]:empty::before {
+      content: 'Toque para escrever';
+    }
+
+    & [data-optional] [contenteditable]:empty::before {
+      content: none;
+    }
+  }
+
   /*
    * Personalidades (redesign v3). O Clássico é o visual de antes: nada daqui vale para ele. As
    * medidas (letras, cantos, espaços, largura) vêm das variáveis de theme.ts; aqui fica o que muda
@@ -3455,15 +3469,22 @@
 
 /* Só no editor (achado 11.6): a faixa fica parada para dar para escrever, e o selo avisa que no
    site ela corre. */
+/* Selo do editor no canto de baixo, sem espremer as frases no celular (rodada 2, F12). */
+.site .announce:has(.announce__editor-tag) {
+  padding-bottom: 30px;
+}
+
 .site .announce__editor-tag {
-  flex: none;
-  margin-inline-end: 12px;
-  padding: 2px 8px;
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  padding: 1px 8px;
   border: 1px solid currentColor;
   border-radius: 999px;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.5;
   opacity: 0.8;
   white-space: nowrap;
 }

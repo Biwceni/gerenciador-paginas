@@ -1400,10 +1400,10 @@ export function Announcement({
         {/* No editor a faixa fica parada para dar para escrever nela: o selo diz o que ela faz no
             site, e "Correndo" e "Parada" deixam de parecer iguais (achado 11.6). */}
         {metadata.editing && mode === 'move' && (
-          <span className="announce__editor-tag">No site, as frases correm →</span>
+          <span className="announce__editor-tag">Correndo no site →</span>
         )}
         {metadata.editing && rotating && (
-          <span className="announce__editor-tag">No site, uma frase por vez</span>
+          <span className="announce__editor-tag">Uma por vez no site</span>
         )}
       </div>
     )

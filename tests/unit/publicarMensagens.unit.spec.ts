@@ -33,6 +33,17 @@ describe('texto de exemplo do catálogo (achados 2.3 e 10.3)', () => {
     expect([...CATALOG_TEXTS].sort()).toEqual(catalogContent())
   })
 
+  // Rodada 2, F6: a frase do Formulário ficou de fora e virou a descrição do Google. Toda seção,
+  // como entra pelo catálogo, não pode dar descrição nem ficar fora do aviso do Publicar.
+  it.each(Object.keys(editorConfig.components).filter((type) => !type.startsWith('Column')))(
+    '%s como vem do catálogo não vira descrição do Google',
+    (type) => {
+      const component = editorConfig.components[type as keyof typeof editorConfig.components]
+      const page = data([{ type, props: { id: `${type}-1`, ...component.defaultProps } }])
+      expect(extractDescription(page)).toBeNull()
+    },
+  )
+
   it('seções no texto do catálogo aparecem no Publicar, e títulos que servem não', () => {
     const page = data([
       {
@@ -76,7 +87,7 @@ describe('descrição automática do Google (achado 9.4)', () => {
         type: 'TextImage',
         props: {
           id: 'A',
-          text: 'Use este espaço para explicar com calma. Clique no texto para mudar.',
+          text: 'Use este espaço para explicar com calma.',
         },
       },
       { type: 'Contact', props: { id: 'B', text: 'Será um prazer receber você.' } },

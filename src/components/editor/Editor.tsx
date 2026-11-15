@@ -66,7 +66,7 @@ import { type EditorPageSummary, EditorProvider } from './context'
 import { CountedField } from './CountedField'
 import { ListLimit } from './ListLimit'
 import { dictionary } from './dictionary'
-import { AdjustedBar, ChoiceField } from './adjusted'
+import { AdjustedBar, KeyboardRoom, ChoiceField } from './adjusted'
 import { ColumnPicker } from './ColumnPicker'
 import { Dialog } from './Dialog'
 import { createDraftSaver } from './draftSaver'
@@ -325,6 +325,7 @@ function EditorHeader() {
       <PreviewTools />
       <ColumnPicker />
       <AdjustedBar />
+      <KeyboardRoom />
       {chrome.saveAlert && (
         <div className="ed-save-alert" role="alert">
           <PanelIcon name="alert" size={18} />
@@ -413,6 +414,11 @@ export function Editor(props: EditorProps) {
   const [forms, setForms] = useState(props.forms)
   const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
   const [data, setData] = useState<PuckPageData>(initialData)
+  // O catálogo só abre sozinho com a página vazia; com seções, a prévia começa grande, sem ele
+  // (rodada 2, F5). "Adicionar seção" continua à vista na barra da esquerda.
+  const [startUi] = useState<Partial<UiState>>(() =>
+    initialData.content.length > 0 ? { ...initialUi, leftSideBarVisible: false } : initialUi,
+  )
   const [personality, setPersonality] = useState<Personality>(() =>
     safePersonality(props.theme['--personality']),
   )
@@ -1067,7 +1073,7 @@ export function Editor(props: EditorProps) {
                   actionBar: EditorActionBar,
                 }}
                 plugins={plugins}
-                ui={initialUi}
+                ui={startUi}
               />
             </div>
 

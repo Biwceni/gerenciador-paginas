@@ -435,20 +435,29 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
     value && (value.kind === 'page' || value.kind === 'section')
       ? pages.find((page) => page.id === value.pageId)
       : null
+  const sectionsOfLinked = linkedPage
+    ? linkedPage.id === pageId
+      ? currentSections
+      : linkedPage.sections
+    : []
+  const pageStep = linkedPage
+    ? `page:${linkedPage.id}`
+    : selected.startsWith('section:')
+      ? ''
+      : selected
 
   return (
     <div className="ed-link-field">
+      {/* Dois passos (rodada 2, F11): primeiro a página, depois, se ela tiver seções com nome, a
+          seção. Numa lista só eram mais de 100 opções num site com várias páginas. */}
       <select
         aria-label={field?.label || 'Leva para'}
         className="ed-input"
         disabled={readOnly}
         onChange={(event) => select(event.target.value)}
-        value={selected}
+        value={pageStep}
       >
         <option value="">Escolha…</option>
-        {unnamedSection && (
-          <option value={selected}>Seção sem nome no menu (vai para o topo da página)</option>
-        )}
         <option value="whatsapp">WhatsApp da empresa</option>
         <optgroup label="Páginas do site">
           {/* Arquivada só aparece se for o destino que já estava escolhido. */}
@@ -458,37 +467,36 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
               <option key={page.id} value={`page:${page.id}`}>
                 {/* Duas páginas com o mesmo nome: o endereço diferencia (achado 3.5). */}
                 {titles.get(page.id) ?? page.title}
+                {page.id === pageId ? ' (esta página)' : ''}
                 {page.archived ? ' (arquivada)' : page.published ? '' : ' (rascunho)'}
               </option>
             ))}
         </optgroup>
-        {currentSections.length > 0 && (
-          <optgroup label="Seções desta página">
-            {currentSections.map((section) => (
-              <option key={section.id} value={`section:${pageId}:${section.id}`}>
+        <option value={OTHER_SITE}>Outro site, e-mail ou telefone…</option>
+      </select>
+
+      {linkedPage && (sectionsOfLinked.length > 0 || unnamedSection) && (
+        <label className="ed-link-field__step">
+          <span className="ed-hint">Seção (opcional)</span>
+          <select
+            aria-label="Seção da página"
+            className="ed-input"
+            disabled={readOnly}
+            onChange={(event) => select(event.target.value)}
+            value={selected}
+          >
+            <option value={`page:${linkedPage.id}`}>Topo da página</option>
+            {unnamedSection && (
+              <option value={selected}>Seção sem nome no menu (vai para o topo da página)</option>
+            )}
+            {sectionsOfLinked.map((section) => (
+              <option key={section.id} value={`section:${linkedPage.id}:${section.id}`}>
                 {section.label}
               </option>
             ))}
-          </optgroup>
-        )}
-        {pages
-          .filter(
-            (page) =>
-              page.id !== pageId &&
-              page.sections.length > 0 &&
-              (!page.archived || page.id === linkedPage?.id),
-          )
-          .map((page) => (
-            <optgroup key={page.id} label={`Seções de ${page.title}`}>
-              {page.sections.map((section) => (
-                <option key={section.id} value={`section:${page.id}:${section.id}`}>
-                  {section.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        <option value={OTHER_SITE}>Outro site, e-mail ou telefone…</option>
-      </select>
+          </select>
+        </label>
+      )}
 
       {choosingURL && (
         <>

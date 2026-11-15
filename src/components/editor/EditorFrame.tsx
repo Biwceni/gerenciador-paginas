@@ -10,7 +10,7 @@ import { findPhotoPath } from '@/puck/photoPaths'
 import type { PuckPageData } from '@/puck/schema'
 
 import { useEditor } from './context'
-import { usePuck } from './puck'
+import { MOBILE_WIDTH, usePuck } from './puck'
 
 type FrameStyle = {
   /** Variáveis de cor e fonte das configurações (as mesmas do `body` do site). */
@@ -135,6 +135,9 @@ ${SELECTION_HALO}
 @media (pointer: coarse) {
   [class*='_ActionBarAction_'] { min-width: 44px; min-height: 44px; justify-content: center; }
 }
+/* Opções abertas no celular (rodada 2, F1): sem a barrinha e sem o espaço dela na faixa. */
+html[data-ed-options] [class*='DraggableComponent-actionsOverlay'] { display: none !important; }
+html[data-ed-options] [data-puck-component] { margin-top: 0 !important; scroll-margin-top: 0 !important; }
 /* Seção que não aparece no site (achado 13.2): uma etiqueta com o motivo, com texto e borda
    tracejada (não só cor). */
 [data-ed-hidden] { position: relative; outline: 2px dashed #b45309; outline-offset: -2px; }
@@ -201,8 +204,36 @@ export function EditorFrame({
 
   usePhotoTap(frame, selectedId)
   useHiddenTags(frame)
+  useOptionsStrip(frame, selectedId)
 
   return <>{children}</>
+}
+
+/**
+ * Opções abertas no celular (rodada 2, F1): a faixa de prévia acima do painel é baixa, então ela
+ * mostra a seção escolhida desde o topo, sem a barrinha preta (Subir, Descer, Duplicar e Remover
+ * estão no fim do próprio painel) e sem o espaço que a prévia abre para ela.
+ */
+function useOptionsStrip(frame: Document | undefined, selectedId: string | undefined) {
+  const optionsOpen = usePuck(
+    (s) => s.appState.ui.leftSideBarVisible && s.appState.ui.plugin?.current === 'fields',
+  )
+  useEffect(() => {
+    if (!frame || !selectedId || !optionsOpen || window.innerWidth >= MOBILE_WIDTH) return
+    const root = frame.documentElement
+    root.setAttribute('data-ed-options', '')
+    // Espera o painel subir e a faixa ficar com a altura final.
+    const timer = setTimeout(() => {
+      const section = frame.querySelector(`[data-puck-component="${CSS.escape(selectedId)}"]`)
+      const view = frame.defaultView
+      if (!section || !view) return
+      view.scrollTo({ top: Math.max(0, section.getBoundingClientRect().top + view.scrollY) })
+    }, 320)
+    return () => {
+      clearTimeout(timer)
+      root.removeAttribute('data-ed-options')
+    }
+  }, [frame, selectedId, optionsOpen])
 }
 
 /**

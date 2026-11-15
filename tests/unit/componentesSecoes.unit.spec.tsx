@@ -163,7 +163,7 @@ describe('C2: Faixa de aviso', () => {
     // No editor, todas à vista para escrever, com o selo do que acontece no site.
     const editor = strip(3, 'static', true)
     expect(editor).not.toContain('announce__still--rotate')
-    expect(editor).toContain('No site, uma frase por vez')
+    expect(editor).toContain('Uma por vez no site')
   })
 
   it('sem botão de pausar: para com mouse, foco e dedo, e fica parada com reduzir movimento', () => {

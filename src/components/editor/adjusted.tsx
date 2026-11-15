@@ -134,7 +134,9 @@ export function AdjustedBar() {
       const shown = match ?? section
       const view = shown.ownerDocument.defaultView
       if (!view) return
-      const top = shown.getBoundingClientRect().top + view.scrollY - (match ? 64 : 0)
+      // Com as Opções abertas a barrinha some (F1): basta uma folga pequena acima do item.
+      const room = shown.ownerDocument.documentElement.hasAttribute('data-ed-options') ? 8 : 64
+      const top = shown.getBoundingClientRect().top + view.scrollY - (match ? room : 0)
       if (!match) shown.scrollIntoView({ behavior: 'smooth', block: 'start' })
       else view.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
     }
@@ -180,6 +182,43 @@ export function AdjustedBar() {
       </button>
     </div>
   )
+}
+
+/**
+ * Teclado aberto no celular (rodada 2, F3): o campo em que a pessoa digita fica na parte que sobra
+ * da tela, e a barra Adicionar · Ordem · Opções sai enquanto o teclado está aberto. O teclado é
+ * percebido pela área visível (`visualViewport`), que encolhe quando ele sobe.
+ */
+export function KeyboardRoom() {
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const root = document.documentElement
+    const update = () => {
+      const open = window.innerWidth < MOBILE_WIDTH && viewport.height < window.innerHeight - 120
+      root.toggleAttribute('data-ed-keyboard', open)
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const onFocus = (event: FocusEvent) => {
+      if (window.innerWidth >= MOBILE_WIDTH) return
+      const target = event.target as HTMLElement | null
+      if (!target?.closest('form[class*="_PuckFields_"]')) return
+      if (!target.matches('input, textarea, select, [contenteditable="true"]')) return
+      // Espera o teclado subir; depois põe o campo no meio do que sobrou da tela.
+      clearTimeout(timer)
+      timer = setTimeout(() => target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350)
+    }
+    viewport.addEventListener('resize', update)
+    document.addEventListener('focusin', onFocus)
+    update()
+    return () => {
+      clearTimeout(timer)
+      viewport.removeEventListener('resize', update)
+      document.removeEventListener('focusin', onFocus)
+      root.removeAttribute('data-ed-keyboard')
+    }
+  }, [])
+  return null
 }
 
 /**
