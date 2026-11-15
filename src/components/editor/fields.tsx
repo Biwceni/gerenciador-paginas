@@ -24,7 +24,7 @@ import {
   SMALL_PHOTO_TITLE,
 } from '@/lib/photoSize'
 import type { Media } from '@/payload-types'
-import { youtubeID } from '@/lib/youtube'
+import { parseVideo, type VideoRef, videoKey, videoOEmbedURL, videoPageURL } from '@/lib/youtube'
 import { LIMITS } from '@/puck/limits'
 import { sectionAnchors } from '@/puck/anchors'
 import {
@@ -550,10 +550,15 @@ export function LinkField({ value, onChange, readOnly, field }: FieldProps<LinkR
   )
 }
 
-/** Endereço do vídeo: o cliente cola o link do YouTube e guardamos só o código do vídeo. */
+/**
+ * Endereço do vídeo: o cliente cola o link do YouTube ou do Vimeo (V1) e guardamos só o código
+ * do vídeo (`vimeo:123` no Vimeo).
+ */
 export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
-  const [text, setText] = useState(value ? `https://youtu.be/${value}` : '')
-  const invalid = text.trim() !== '' && !youtubeID(text)
+  const saved = parseVideo(value)
+  const [text, setText] = useState(saved ? videoPageURL(saved) : '')
+  const invalid = text.trim() !== '' && !parseVideo(text)
+  const provider = parseVideo(text)?.provider ?? saved?.provider
 
   return (
     <div className="ed-link-field">
@@ -562,26 +567,26 @@ export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
         disabled={readOnly}
         onChange={(event) => {
           setText(event.target.value)
-          const id = youtubeID(event.target.value)
-          if (id) onChange(id)
+          const video = parseVideo(event.target.value)
+          if (video) onChange(videoKey(video))
           else if (!event.target.value.trim()) onChange('')
         }}
-        placeholder="https://www.youtube.com/watch?v=…"
+        placeholder="Cole o link do YouTube ou do Vimeo"
         type="url"
         value={text}
       />
       {invalid ? (
         <span className="ed-hint ed-hint--warn">
-          Esse endereço não é de um vídeo do YouTube. Copie o link do vídeo no botão Compartilhar do
-          YouTube.
+          Esse endereço não é de um vídeo do YouTube nem do Vimeo. Copie o link do vídeo no botão
+          Compartilhar do YouTube ou do Vimeo.
           {/* O vídeo de antes continua guardado e é ele que vai para o site (achado 5.3). */}
-          {value && (
+          {saved && (
             <>
               {' '}
               Enquanto isso, a seção continua com o vídeo de antes.{' '}
               <button
                 className="ed-btn ed-btn--sm"
-                onClick={() => setText(`https://youtu.be/${value}`)}
+                onClick={() => setText(videoPageURL(saved))}
                 type="button"
               >
                 Voltar ao vídeo de antes
@@ -591,41 +596,68 @@ export function VideoField({ value, onChange, readOnly }: FieldProps<string>) {
         </span>
       ) : (
         <span className="ed-hint">
-          O YouTube só é carregado quando o visitante clica para assistir.
+          {provider === 'vimeo' ? 'O Vimeo' : 'O YouTube'} só é carregado quando o visitante clica
+          para assistir.
         </span>
       )}
-      {value && <VideoCheck videoId={value} />}
+      {saved && <VideoCheck video={saved} />}
     </div>
   )
 }
 
 /**
  * A capa e o nome do vídeo escolhido, para a pessoa conferir que colou o vídeo certo (achado 5.2).
- * O nome vem do YouTube; sem resposta dele, fica só a capa.
+ * O nome (e, no Vimeo, a capa) vem do próprio YouTube ou Vimeo; sem resposta, fica o aviso curto.
+ * O Vimeo recusa vídeo privado ou com a incorporação desligada: aí o aviso explica (V1).
  */
-function VideoCheck({ videoId }: { videoId: string }) {
-  const [found, setFound] = useState<{ id: string; title: string } | null>(null)
+function VideoCheck({ video }: { video: VideoRef }) {
+  const key = videoKey(video)
+  const [found, setFound] = useState<{
+    key: string
+    title: string | null
+    thumb: string | null
+    blocked: boolean
+  } | null>(null)
   useEffect(() => {
     const controller = new AbortController()
-    const url = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://youtu.be/${videoId}`)}`
-    fetch(url, { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: { title?: unknown } | null) => {
-        if (typeof body?.title === 'string') setFound({ id: videoId, title: body.title })
+    fetch(videoOEmbedURL(video), { signal: controller.signal })
+      .then(async (response) => {
+        if (response.status === 403 || response.status === 404) {
+          setFound({ key, title: null, thumb: null, blocked: video.provider === 'vimeo' })
+          return
+        }
+        if (!response.ok) return
+        const body = (await response.json()) as { title?: unknown; thumbnail_url?: unknown }
+        setFound({
+          key,
+          title: typeof body.title === 'string' ? body.title : null,
+          thumb: typeof body.thumbnail_url === 'string' ? body.thumbnail_url : null,
+          blocked: false,
+        })
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [videoId])
-  const title = found?.id === videoId ? found.title : null
+    // `key` resume o vídeo: o objeto muda a cada desenho.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  const info = found?.key === key ? found : null
+  const thumb =
+    video.provider === 'youtube'
+      ? `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/mqdefault.jpg`
+      : info?.thumb
 
+  if (info?.blocked) {
+    return (
+      <span className="ed-hint ed-hint--warn">
+        O Vimeo não deixa mostrar este vídeo fora do site dele: ele está privado ou com a opção de
+        incorporar desligada. Mude em Privacidade, no Vimeo, ou use outro vídeo.
+      </span>
+    )
+  }
   return (
     <div className="ed-video-check">
-      <img
-        alt=""
-        className="ed-pic"
-        src={`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`}
-      />
-      <span className="ed-hint">{title ? `Vídeo: ${title}` : 'Vídeo escolhido'}</span>
+      {thumb && <img alt="" className="ed-pic" src={thumb} />}
+      <span className="ed-hint">{info?.title ? `Vídeo: ${info.title}` : 'Vídeo escolhido'}</span>
     </div>
   )
 }

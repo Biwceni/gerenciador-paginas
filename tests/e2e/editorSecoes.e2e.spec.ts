@@ -199,9 +199,9 @@ test.describe.serial('editor: seções', () => {
   })
 
   test('um clique na lista coloca a seção no fim e salva', async ({ page }) => {
-    await expect(listItem(page, 'Vídeo do YouTube')).toContainText('Um vídeo do YouTube na página')
-    await expect(listItem(page, 'Vídeo do YouTube').locator('svg')).toBeVisible()
-    await listItem(page, 'Vídeo do YouTube').click()
+    await expect(listItem(page, 'Vídeo')).toContainText('Um vídeo do YouTube ou do Vimeo na página')
+    await expect(listItem(page, 'Vídeo').locator('svg')).toBeVisible()
+    await listItem(page, 'Vídeo').click()
 
     const expected = [...INITIAL, 'Video']
     await expect.poll(() => order(page)).toEqual(expected)

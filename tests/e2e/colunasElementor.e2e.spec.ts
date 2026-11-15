@@ -249,4 +249,33 @@ test.describe('editor: Colunas no estilo Elementor', () => {
     await expect(grid).toHaveClass(/columns--align-center/)
     await expect(preview(page).locator('.columns__column')).toHaveCount(4)
   })
+
+  test('V1 o Vídeo aceita o link do Vimeo', async ({ page }) => {
+    const video = {
+      type: 'Video',
+      props: {
+        id: 'Video-v1',
+        menuLabel: '',
+        title: 'Assista',
+        videoId: '',
+        caption: '',
+        cover: null,
+        style: 'light',
+        anim: 'site',
+      },
+    }
+    const { id } = await createPage([hero('Hero-a1'), video])
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await signIn(page)
+    await openEditor(page, id, 2)
+    await pick(page, sections(page).nth(1))
+    const address = fields(page).getByPlaceholder('Cole o link do YouTube ou do Vimeo')
+    await address.fill('https://vimeo.com/603509817?fl=ip&fe=ec')
+    await expect(fields(page)).toContainText('O Vimeo só é carregado quando o visitante clica')
+    await expect
+      .poll(async () => (await savedContent(id))[1].props.videoId, { timeout: 15_000 })
+      .toBe('vimeo:603509817')
+    await address.fill('https://exemplo.com/video')
+    await expect(fields(page)).toContainText('não é de um vídeo do YouTube nem do Vimeo')
+  })
 })

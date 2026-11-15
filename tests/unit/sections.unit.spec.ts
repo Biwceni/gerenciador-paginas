@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { richTextToPlain, sanitizeRichText } from '@/lib/richtext'
-import { youtubeID } from '@/lib/youtube'
+import { parseVideo, videoEmbedURL, videoKey, youtubeID } from '@/lib/youtube'
 import { sectionAnchors } from '@/puck/anchors'
 import { collectReferences } from '@/puck/references'
 import { CONTENT_VERSION, parsePageContent } from '@/puck/schema'
@@ -233,5 +233,64 @@ describe('endereço do YouTube', () => {
     expect(youtubeID('https://youtube.com.mal.com/watch?v=dQw4w9WgXcQ')).toBeNull()
     expect(youtubeID('https://www.youtube.com/@canal')).toBeNull()
     expect(youtubeID('')).toBeNull()
+  })
+})
+
+describe('vídeo do Vimeo (V1)', () => {
+  it('reconhece os endereços do Vimeo e guarda como vimeo:<número>', () => {
+    for (const url of [
+      'https://vimeo.com/603509817?fl=ip&fe=ec',
+      'vimeo.com/603509817',
+      'https://player.vimeo.com/video/603509817',
+      'https://vimeo.com/channels/staffpicks/603509817',
+      'https://vimeo.com/groups/curtas/videos/603509817',
+    ]) {
+      const video = parseVideo(url)
+      expect(video).toEqual({ provider: 'vimeo', id: '603509817', hash: null })
+      expect(videoKey(video!)).toBe('vimeo:603509817')
+    }
+  })
+
+  it('vídeo não listado guarda o código e o player leva junto', () => {
+    const video = parseVideo('https://vimeo.com/603509817/abc123def0')!
+    expect(videoKey(video)).toBe('vimeo:603509817:abc123def0')
+    expect(parseVideo('https://player.vimeo.com/video/603509817?h=abc123def0')).toEqual(video)
+    expect(videoEmbedURL(video)).toBe(
+      'https://player.vimeo.com/video/603509817?autoplay=1&dnt=1&h=abc123def0',
+    )
+    expect(parseVideo('vimeo:603509817:abc123def0')).toEqual(video)
+  })
+
+  it('YouTube continua igual, e o resto é recusado', () => {
+    expect(parseVideo('https://youtu.be/dQw4w9WgXcQ')).toEqual({
+      provider: 'youtube',
+      id: 'dQw4w9WgXcQ',
+    })
+    expect(videoEmbedURL({ provider: 'youtube', id: 'dQw4w9WgXcQ' })).toContain('youtube-nocookie')
+    expect(parseVideo('https://vimeo.com/')).toBeNull()
+    expect(parseVideo('https://vimeo.com.mal.com/123')).toBeNull()
+    expect(parseVideo('https://exemplo.com/video/123')).toBeNull()
+  })
+
+  it('a seção Vídeo aceita vimeo:<número> e recusa lixo', () => {
+    const video = (videoId: string) =>
+      parse([
+        {
+          type: 'Video',
+          props: {
+            id: 'v',
+            menuLabel: '',
+            title: '',
+            videoId,
+            caption: '',
+            cover: null,
+            style: 'light',
+          },
+        },
+      ])
+    expect(video('vimeo:603509817').success).toBe(true)
+    expect(video('vimeo:603509817:abc123def0').success).toBe(true)
+    expect(video('vimeo:abc').success).toBe(false)
+    expect(video('dQw4w9WgXcQ').success).toBe(true)
   })
 })

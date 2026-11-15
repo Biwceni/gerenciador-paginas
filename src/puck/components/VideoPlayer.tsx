@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 
-import { youtubeEmbedURL } from '@/lib/youtube'
+import { parseVideo, videoEmbedURL } from '@/lib/youtube'
 
 type Props = {
   videoId: string
@@ -12,21 +12,22 @@ type Props = {
 }
 
 /**
- * Capa com botão de play. O YouTube só é carregado depois do clique: antes disso, nada do Google
- * chega a quem visita (mesma ideia das fontes copiadas para o nosso Storage).
+ * Capa com botão de play. O YouTube ou o Vimeo só é carregado depois do clique: antes disso, nada
+ * deles chega a quem visita (mesma ideia das fontes copiadas para o nosso Storage).
  */
 export function VideoPlayer({ videoId, title, cover }: Props) {
   const [playing, setPlaying] = useState(false)
+  const video = parseVideo(videoId)
 
-  if (playing) {
+  if (playing && video) {
     return (
       <iframe
         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
         allowFullScreen
         className="video__frame"
         referrerPolicy="strict-origin-when-cross-origin"
-        src={youtubeEmbedURL(videoId)}
-        title={title || 'Vídeo do YouTube'}
+        src={videoEmbedURL(video)}
+        title={title || (video.provider === 'vimeo' ? 'Vídeo do Vimeo' : 'Vídeo do YouTube')}
       />
     )
   }

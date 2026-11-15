@@ -992,7 +992,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       title: text('Título'),
       videoId: {
         type: 'custom',
-        label: 'Endereço do vídeo no YouTube',
+        label: 'Endereço do vídeo (YouTube ou Vimeo)',
         render: (props) => (
           <FieldLabel el="div" label={props.field.label ?? ''}>
             <VideoField {...props} />

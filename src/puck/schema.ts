@@ -5,7 +5,7 @@ import { slugify } from '../lib/slug'
 import { type Anim, SECTION_ANIMS } from '../lib/motion'
 import { sanitizeRichText } from '../lib/richtext'
 import { LIMITS, visibleLength } from './limits'
-import { YOUTUBE_ID } from '../lib/youtube'
+import { VIMEO_KEY, YOUTUBE_ID } from '../lib/youtube'
 
 /**
  * Formato do conteúdo de uma página: `{ version, data }`, em que `data` é o JSON do Puck.
@@ -398,7 +398,8 @@ export const videoPropsSchema = z.object({
   menuLabel,
   title,
   // Vazio enquanto o cliente não colou o endereço.
-  videoId: z.union([z.literal(''), z.string().regex(YOUTUBE_ID)]),
+  // YouTube (o código de 11 letras) ou Vimeo (`vimeo:123`), V1.
+  videoId: z.union([z.literal(''), z.string().regex(YOUTUBE_ID), z.string().regex(VIMEO_KEY)]),
   caption: z.string().max(200),
   cover: photoRefSchema,
   style: sectionStyle,

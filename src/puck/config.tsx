@@ -100,7 +100,7 @@ export const SECTION_LABELS = {
   LinkList: 'Lista de links',
   Columns: 'Colunas',
   RichText: 'Texto simples',
-  Video: 'Vídeo do YouTube',
+  Video: 'Vídeo',
   Form: 'Formulário',
   Privacy: 'Política de privacidade',
 } as const
