@@ -1,0 +1,70 @@
+# Roda comandos do Payload no banco de TESTE do Supabase (o do gerenciador-paginas-teste.vercel.app).
+# Disparo só manual (aba Actions > "Banco de teste" > Run workflow), por quem tem acesso de escrita.
+# O endereço do banco fica no segredo TESTE_DATABASE_URL do repositório. A trava abaixo recusa
+# qualquer endereço que não seja o do projeto de teste, para nunca mexer no banco de produção.
+name: Banco de teste
+
+on:
+  workflow_dispatch:
+    inputs:
+      comando:
+        description: Comando a rodar no banco de teste
+        required: true
+        type: choice
+        options:
+          - migrate:status
+          - migrate
+          - modelos
+          - modelos atualizar
+
+permissions:
+  contents: read
+
+concurrency:
+  group: banco-teste
+  cancel-in-progress: false
+
+jobs:
+  rodar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.TESTE_DATABASE_URL }}
+      REF_TESTE: yqpqvzoysdlultcpfvbg
+    steps:
+      - name: Conferir que o banco é o de teste
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Falta o segredo TESTE_DATABASE_URL no repositório."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            *"$REF_TESTE"*) echo "Banco de teste confirmado ($REF_TESTE)." ;;
+            *) echo "::error::TESTE_DATABASE_URL não aponta para o projeto de teste ($REF_TESTE). Nada foi rodado."; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: |
+          npm install -g npm@11
+          npm ci
+
+      - name: Rodar "${{ inputs.comando }}"
+        env:
+          COMANDO: ${{ inputs.comando }}
+        run: |
+          # O segredo do Payload só assina sessões de login, que estes comandos não usam.
+          export PAYLOAD_SECRET="$(openssl rand -hex 32)"
+          case "$COMANDO" in
+            migrate:status) npm run payload -- migrate:status ;;
+            migrate) npm run payload -- migrate ;;
+            modelos) npm run modelos ;;
+            "modelos atualizar") npm run modelos -- atualizar ;;
+            *) echo "::error::Comando desconhecido: $COMANDO"; exit 1 ;;
+          esac
