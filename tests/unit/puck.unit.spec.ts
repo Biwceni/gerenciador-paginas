@@ -93,6 +93,55 @@ describe('parsePageContent', () => {
     ).toBe(false)
   })
 
+  it('encurta depoimento e botão da Vitrine salvos antes dos limites novos (C3, C7)', () => {
+    const old = {
+      version: CONTENT_VERSION,
+      data: {
+        root: { props: {} },
+        content: [
+          {
+            type: 'Testimonials',
+            props: {
+              id: 'Testimonials-1',
+              title: 'Clientes',
+              menuLabel: '',
+              style: 'light',
+              items: [{ name: 'Ana', photo: null, quote: 'palavra '.repeat(62).trim() }],
+            },
+          },
+          {
+            type: 'Products',
+            props: {
+              id: 'Products-1',
+              title: 'Vitrine',
+              menuLabel: '',
+              style: 'light',
+              items: [
+                {
+                  name: 'Bolo',
+                  image: null,
+                  button: { link: { kind: 'whatsapp' }, label: 'Pedir pelo WhatsApp agora Pedi' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    }
+    const result = parsePageContent(old)
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    const [testimonials, products] = result.data.data.content as Array<{
+      props: { items: Array<{ quote?: string; button?: { label: string } | null }> }
+    }>
+    const quote = testimonials.props.items[0].quote!
+    expect(quote.length).toBeLessThanOrEqual(300)
+    expect(quote.endsWith('palavra…')).toBe(true)
+    expect(products.props.items[0].button?.label).toBe('Pedir pelo WhatsApp…')
+    // Rodar de novo não muda nada.
+    expect(parsePageContent(result.data)).toEqual(result)
+  })
+
   it('recusa foto guardada como endereço em vez de relação', () => {
     expect(parsePageContent(withHero({ image: 'https://x/foto.jpg' })).success).toBe(false)
   })
