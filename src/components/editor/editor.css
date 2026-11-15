@@ -1283,6 +1283,38 @@ textarea.ed-input {
   gap: 10px;
 }
 
+/*
+ * Animação (G6): miniaturas pequenas numa fileira que desliza para o lado, para a aba não ficar
+ * comprida. Cada uma com o nome embaixo; a dica de "Igual ao site" vai abaixo da fileira.
+ */
+.ed-thumbs--strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.ed-thumbs--strip .ed-thumb {
+  flex: 0 0 84px;
+  width: 84px;
+  padding: 5px;
+  gap: 4px;
+  scroll-snap-align: start;
+}
+
+.ed-thumbs--strip .ed-thumb__text {
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.ed-thumbs--strip .ed-thumb__text .ed-hint {
+  display: none;
+}
+
 .ed-anim__play {
   display: grid;
   gap: 6px;
@@ -1879,4 +1911,40 @@ textarea.ed-grow {
   from {
     opacity: 0;
   }
+}
+
+/*
+ * Abas do painel de opções (A2): Conteúdo, Aparência e Animação. Ficam presas no topo do painel
+ * enquanto as opções rolam, com a aba aberta em anil, como os outros controles do editor.
+ */
+.ed-root [data-puck-tablist] {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--ed-line);
+  background: var(--ed-bg);
+}
+
+.ed-root [data-puck-tablist] [role='tab'] {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+}
+
+.ed-root [data-puck-tablist] [role='tab'][aria-selected='true'] {
+  border-bottom-color: var(--ed-accent);
+  background: none;
+  color: var(--ed-accent);
+}
+
+.ed-root [data-puck-tablist] [role='tab']:not([aria-selected='true']):hover {
+  background: var(--ed-accent-soft);
+  color: var(--ed-text);
 }

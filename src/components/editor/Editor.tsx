@@ -36,6 +36,7 @@ import { panelHref } from '@/lib/panel'
 import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
 import { editorConfig } from '@/puck/editor-config'
+import { tabOf } from '@/puck/fieldTabs'
 import { CATALOG_TEXTS } from '@/puck/catalogTexts'
 import { sectionAnchors } from '@/puck/anchors'
 import {
@@ -890,6 +891,10 @@ export function Editor(props: EditorProps) {
         ui: {
           itemSelector: { index: problemTarget.index, zone: problemTarget.zone },
           rightSideBarVisible: true,
+          // O campo pode estar noutra aba do painel (Aparência, Animação): abre a dele.
+          ...(problemTarget.field && problemTarget.type
+            ? { fieldTab: tabOf(problemTarget.type, problemTarget.field.split(/[.[]/)[0]) }
+            : {}),
         },
         recordHistory: false,
       })

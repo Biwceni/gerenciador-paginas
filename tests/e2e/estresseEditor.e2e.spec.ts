@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
+import { openFieldTab } from '../helpers/editor'
 
 // Achados do teste de estresse do editor (rodadas 1 a 13) que fazem perder trabalho ou são graves,
 // no banco de TEST_DATABASE_URL. `test.fail()` marca o que ainda está errado: o teste passa
@@ -280,6 +281,8 @@ test.describe('editor: achados do teste de estresse', () => {
       await page.locator('[class*="NavItem-link"]', { hasText: 'Opções' }).first().click()
       await page.waitForTimeout(800)
     }
+    // O fundo fica na aba Aparência (A2).
+    await openFieldTab(page, 'Aparência')
     const soft = fields(page).locator('label', { hasText: 'Suave' }).first()
     await soft.scrollIntoViewIfNeeded()
     await soft.click()
@@ -324,6 +327,7 @@ test.describe('editor: achados do teste de estresse', () => {
     await signIn(page)
     await openEditor(page, id, 2)
     await pick(page, sections(page).nth(1))
+    await openFieldTab(page, 'Aparência')
     await fields(page).locator('label', { hasText: 'Duas iguais' }).first().click()
     await expect(page.getByText(/A peça da Coluna 3 fica guardada/)).toBeVisible()
     await expect

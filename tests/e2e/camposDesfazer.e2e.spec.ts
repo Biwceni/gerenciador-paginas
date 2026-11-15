@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
+import { openFieldTab } from '../helpers/editor'
 
 // Entrega 4: campos do painel mais claros (achados 11.3, 11.4, 11.5, 3.6, 4.4, 4.7, 5.4, 7.1,
 // 7.4, 7.5, 2.8) e desfazer com segurança (4.3, 5.5, 9.7, 1.5, 10.5), no banco de
@@ -177,10 +178,13 @@ test.describe('editor: campos mais claros e desfazer com segurança', () => {
     await openEditor(page, id, 1)
     await pick(page, 0)
 
-    // 11.5 e 3.6: com o fundo "Igual ao site", a foto não aparece no painel.
+    // 11.5 e 3.6: com o fundo "Igual ao site", a foto não aparece no painel. Fundo e foto ficam na
+    // aba Aparência; o título, em Conteúdo (A2).
+    await openFieldTab(page, 'Aparência')
     await expect(fields(page).getByRole('button', { name: 'Escolher foto' })).toHaveCount(0)
     await fields(page).locator('label', { hasText: 'Foto ao lado' }).first().click()
     await expect(fields(page).getByRole('button', { name: 'Escolher foto' })).toBeVisible()
+    await openFieldTab(page, 'Conteúdo')
 
     // 11.3: o título fica inteiro à vista, numa caixa que cresce.
     const title = fields(page).locator('textarea[name="title"]')

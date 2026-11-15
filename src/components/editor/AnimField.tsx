@@ -237,8 +237,15 @@ export function AnimField({
         onChange={(next) => onChange(next as SectionAnim)}
         options={options}
         readOnly={readOnly}
+        strip
         value={current}
       />
+      {/* Na fileira, as miniaturas só têm o nome: o que "Igual ao site" dá agora vem aqui. */}
+      {current === 'site' && (
+        <span className="ed-hint">
+          Igual ao site agora: {MOTION_LABELS[motion].name}, {describe(fromSite)}.
+        </span>
+      )}
       <div className="ed-anim__play">
         <button className="ed-btn ed-anim__button" onClick={play} type="button">
           <svg aria-hidden="true" height="16" viewBox="0 0 24 24" width="16">

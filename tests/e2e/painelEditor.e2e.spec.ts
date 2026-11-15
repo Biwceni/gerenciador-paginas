@@ -7,6 +7,7 @@ import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { login } from '../helpers/login'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
+import { openFieldTab } from '../helpers/editor'
 
 // Redesign v3, entrega 5: identidade do produto no painel e no editor (porcelana e anil), no banco
 // de TEST_DATABASE_URL.
@@ -210,6 +211,8 @@ test.describe.serial('Painel e editor no visual do produto', () => {
     await open(page, `/admin/editor/${homeId}`)
     const preview = page.frameLocator('.ed-root iframe').first()
     await preview.locator('[data-puck-component="TextImage-p"]').click()
+    // Lado da foto e fundo ficam na aba Aparência (A2).
+    await openFieldTab(page, 'Aparência')
 
     const side = page.getByRole('radiogroup', { name: 'Lado da foto' })
     await expect(side.getByRole('radio')).toHaveCount(2)

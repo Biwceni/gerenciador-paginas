@@ -368,6 +368,8 @@ test.describe.serial('crítica de design', () => {
   })
 
   test('nenhuma tela do painel nem do site rola para o lado', async () => {
+    // 14 telas em cada largura: com o servidor de testes recém-ligado, passa perto dos 3 minutos.
+    test.setTimeout(360_000)
     const screens = [
       '/admin',
       '/admin/paginas',

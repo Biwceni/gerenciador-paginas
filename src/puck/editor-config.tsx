@@ -26,6 +26,7 @@ import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FeatureIcon, FEATURE_ICON_LABELS } from './components/FeatureIcon'
+import { tabbedFields } from './fieldTabs'
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
 import {
   type ButtonValue,
@@ -935,6 +936,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
 const merge = <K extends keyof Components>(type: K) => ({
   ...renderConfig.components[type],
   ...sections[type],
+  // Painel em abas: Conteúdo, Aparência e Animação (tabela única em `fieldTabs.tsx`).
+  renderFields: tabbedFields(type),
 })
 
 export const editorConfig: Config<Components> = {

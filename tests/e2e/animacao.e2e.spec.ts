@@ -5,6 +5,7 @@ import config from '../../src/payload.config.js'
 import { CONTENT_VERSION } from '../../src/puck/schema.js'
 import { login } from '../helpers/login'
 import { seedTestUser, testUser } from '../helpers/seedUser'
+import { openFieldTab } from '../helpers/editor'
 
 // Redesign v3, entrega 2: animação do site e de cada seção, no banco de TEST_DATABASE_URL.
 
@@ -311,6 +312,8 @@ test.describe.serial('animação do site e das seções', () => {
     ).toMatch(/^ed-panel-in/)
 
     await selectSection(page, 1)
+    // A animação da seção fica na aba Animação do painel (A2).
+    await openFieldTab(page, 'Animação')
     const field = page.getByRole('radiogroup', { name: 'Animação' })
     await expect(field).toBeVisible()
     await expect(field.getByRole('radio', { name: /Igual ao site/ })).toBeChecked()

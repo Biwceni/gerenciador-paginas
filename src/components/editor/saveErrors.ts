@@ -14,6 +14,8 @@ export type SaveTarget = {
   id: string
   /** Nome do campo no Puck: "title", "items[2].title". Vazio quando é a seção inteira. */
   field: string
+  /** Tipo da seção ou da peça, para abrir a aba do painel em que o campo está. */
+  type?: string
 }
 
 export type SaveProblem = { message: string; target?: SaveTarget }
@@ -117,7 +119,7 @@ export function describeSaveError(
   const label = field ? fieldLabel(components, type, field) : null
   const named = label ? `"${label}"` : 'Um texto'
   const place = `em ${where.join(', em ')}`
-  const target: SaveTarget = { zone, index, id, field }
+  const target: SaveTarget = { zone, index, id, field, type }
 
   if (issue.code === 'too_big' && issue.origin === 'string') {
     return {
