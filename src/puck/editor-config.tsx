@@ -19,7 +19,7 @@ import {
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
-import { ColumnPiecesField, EmptyColumn } from '@/components/editor/ColumnPieces'
+import { ColumnPiecesField, ColumnTag, EmptyColumn } from '@/components/editor/ColumnPieces'
 import {
   featureProblem,
   ItemSummary,
@@ -885,7 +885,27 @@ const sections: { [K in keyof Components]: Section<K> } = {
         { value: 'thirds', label: 'Três iguais', thumb: 'cols-thirds' },
         { value: 'wide-left', label: 'Larga e estreita', thumb: 'cols-wide-left' },
         { value: 'wide-right', label: 'Estreita e larga', thumb: 'cols-wide-right' },
+        { value: 'fourths', label: 'Quatro iguais', thumb: 'cols-fourths' },
       ]),
+      // No celular as colunas ficam uma embaixo da outra; a pessoa escolhe qual vem primeiro (C6).
+      mobileOrder: {
+        type: 'radio',
+        label: 'No celular, qual coluna vem primeiro?',
+        options: [
+          { label: 'Coluna 1', value: 'first' },
+          { label: 'A última', value: 'last' },
+        ],
+      },
+      // Só no computador, onde ficam lado a lado (C7).
+      align: {
+        type: 'radio',
+        label: 'Alinhar as colunas',
+        options: [
+          { label: 'No alto', value: 'start' },
+          { label: 'No meio', value: 'center' },
+          { label: 'Embaixo', value: 'end' },
+        ],
+      },
       // Campo que não guarda nada: as peças de cada coluna e os atalhos para pôr mais (C13).
       ...({
         pieces: {
@@ -899,12 +919,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
       column1: { type: 'slot', allow: [...COLUMN_PIECES] },
       column2: { type: 'slot', allow: [...COLUMN_PIECES] },
       column3: { type: 'slot', allow: [...COLUMN_PIECES] },
+      column4: { type: 'slot', allow: [...COLUMN_PIECES] },
       anim: animField('Columns'),
     },
     defaultProps: {
       anim: 'site',
       menuLabel: '',
       layout: 'half',
+      mobileOrder: 'first',
+      align: 'start',
       style: 'light',
       column1: [
         {
@@ -922,6 +945,12 @@ const sections: { [K in keyof Components]: Section<K> } = {
         {
           type: 'ColumnText',
           props: { title: 'Terceira coluna', text: 'Escreva aqui o texto desta coluna.' },
+        },
+      ],
+      column4: [
+        {
+          type: 'ColumnText',
+          props: { title: 'Quarta coluna', text: 'Escreva aqui o texto desta coluna.' },
         },
       ],
     },
@@ -1055,10 +1084,11 @@ const sections: { [K in keyof Components]: Section<K> } = {
 const editorRenders: {
   [K in keyof Components]?: Config<Components>['components'][K]['render']
 } = {
-  Columns: ({ puck, column1: First, column2: Second, column3: Third, ...props }) => (
+  Columns: ({ puck, column1: A, column2: B, column3: C, column4: D, ...props }) => (
     <Columns
       {...props}
-      columns={[<First key="1" />, <Second key="2" />, <Third key="3" />]}
+      columnTag={(n) => <ColumnTag n={n} sectionId={props.id} />}
+      columns={[<A key="1" />, <B key="2" />, <C key="3" />, <D key="4" />]}
       emptyColumn={(n) => <EmptyColumn n={n} sectionId={props.id} />}
       metadata={puck.metadata as ContentMetadata}
     />

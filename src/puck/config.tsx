@@ -63,10 +63,11 @@ export type Components = {
   CallToAction: Props<CallToActionProps>
   Contact: Props<ContactProps>
   LinkList: Props<LinkListProps>
-  Columns: Omit<Props<ColumnsProps>, 'column1' | 'column2' | 'column3'> & {
+  Columns: Omit<Props<ColumnsProps>, 'column1' | 'column2' | 'column3' | 'column4'> & {
     column1: Slot
     column2: Slot
     column3: Slot
+    column4: Slot
   }
   RichText: Props<RichTextProps>
   Video: Props<VideoProps>
@@ -120,6 +121,7 @@ const columnSlots: Partial<Fields<Components['Columns']>> = {
   column1: column,
   column2: column,
   column3: column,
+  column4: column,
 }
 
 const meta = (puck: { metadata: unknown }) => puck.metadata as ContentMetadata
@@ -169,10 +171,10 @@ export const renderConfig: Config<Components> = {
     Columns: {
       label: SECTION_LABELS.Columns,
       fields: columnSlots as Fields<Components['Columns']>,
-      render: ({ puck, column1: First, column2: Second, column3: Third, ...props }) => (
+      render: ({ puck, column1: A, column2: B, column3: C, column4: D, ...props }) => (
         <Columns
           {...props}
-          columns={[<First key="1" />, <Second key="2" />, <Third key="3" />]}
+          columns={[<A key="1" />, <B key="2" />, <C key="3" />, <D key="4" />]}
           metadata={meta(puck)}
         />
       ),

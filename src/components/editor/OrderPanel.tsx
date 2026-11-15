@@ -7,6 +7,8 @@ import { SECTION_LABELS } from '@/puck/config'
 import type { PageComponent } from '@/puck/schema'
 import { sectionSummary } from '@/puck/sectionSummary'
 
+import { columnCount, useMovePiece } from './columnMove'
+import { pieceName } from './ColumnPieces'
 import { HeadingOutline } from './HeadingOutline'
 import { scrollToSection } from './insert'
 import { Tap } from './Tap'
@@ -17,8 +19,8 @@ import { ClosePanel } from './SectionList'
 const LABELS: Record<string, string> = SECTION_LABELS
 
 /**
- * Aba Ordem (no lugar da árvore do Puck, que não mostra o texto nem as setas). Só as seções da
- * página: o que fica dentro das colunas se muda na prévia. Para arrastar a linha, o próprio
+ * Aba Ordem (no lugar da árvore do Puck, que não mostra o texto nem as setas). As seções da página
+ * e, embaixo das Colunas, as peças de cada coluna (C9). Para arrastar a linha, o próprio
  * navegador; o celular não arrasta assim, e por isso as setas ficam sempre à vista.
  */
 export function OrderPanel() {
@@ -126,12 +128,77 @@ function OrderList() {
                 >
                   <PanelIcon name="down" size={15} />
                 </button>
+                {item.type === 'Columns' && <ColumnTree section={item} />}
               </li>
             )
           })}
         </ol>
       )}
       {content.length > 0 && <HeadingOutline />}
+    </div>
+  )
+}
+
+type Piece = { type: string; props: Record<string, unknown> }
+
+/**
+ * As peças de cada coluna, embaixo da linha das Colunas (C9, como o Navegador do Elementor): tocar
+ * numa peça vai até ela e abre as opções; o ⇄ leva a peça para a coluna seguinte.
+ */
+function ColumnTree({ section }: { section: PageComponent }) {
+  const dispatch = usePuck((s) => s.dispatch)
+  const movePiece = useMovePiece()
+  const sectionId = String(section.props.id)
+  const props = section.props as Record<string, unknown>
+  const total = columnCount(props.layout)
+  const select = (zone: string, index: number, id: string) => {
+    dispatch({
+      type: 'setUi',
+      ui: {
+        itemSelector: { index, zone },
+        plugin: { current: 'fields' },
+        ...(window.innerWidth < MOBILE_WIDTH ? { leftSideBarVisible: false } : {}),
+      },
+      recordHistory: false,
+    })
+    scrollToSection(id)
+  }
+  return (
+    <div className="ed-order__tree">
+      {Array.from({ length: total }, (_, at) => {
+        const n = at + 1
+        const raw = props[`column${n}`]
+        const pieces = (Array.isArray(raw) ? raw : []) as Piece[]
+        const next = n === total ? 1 : n + 1
+        return (
+          <div className="ed-order__col" key={n}>
+            <b>Coluna {n}</b>
+            {pieces.length === 0 && <span className="ed-hint">vazia</span>}
+            {pieces.map((piece, index) => (
+              <div className="ed-order__piece" key={String(piece.props.id ?? index)}>
+                <button
+                  className="ed-order__piece-name"
+                  onClick={() =>
+                    select(`${sectionId}:column${n}`, index, String(piece.props.id ?? sectionId))
+                  }
+                  type="button"
+                >
+                  {pieceName(piece)}
+                </button>
+                <button
+                  aria-label={`Levar para a Coluna ${next}`}
+                  className="ed-icon-btn ed-icon-btn--sm"
+                  onClick={() => movePiece(sectionId, n, index, next)}
+                  title={`Levar para a Coluna ${next}`}
+                  type="button"
+                >
+                  <span aria-hidden="true">⇄</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

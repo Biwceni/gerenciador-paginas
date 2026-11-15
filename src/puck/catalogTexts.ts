@@ -31,6 +31,7 @@ export const CATALOG_TEXTS: readonly string[] = [
   'primeira coluna',
   'primeiro destaque',
   'promoção, horário ou temporada',
+  'quarta coluna',
   'quais formas de pagamento vocês aceitam?',
   'segunda coluna',
   'segundo destaque',

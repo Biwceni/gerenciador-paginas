@@ -454,8 +454,11 @@ export const columnPieceSchema = z.discriminatedUnion('type', [
 
 const column = z.array(columnPieceSchema).max(LIMITS.columnPieces)
 
-/** Modelos fixos de colunas (nada de grade de 1 a 12). `thirds` usa as três; os outros, duas. */
-export const COLUMN_LAYOUTS = ['half', 'thirds', 'wide-left', 'wide-right'] as const
+/**
+ * Modelos fixos de colunas (nada de grade de 1 a 12). `thirds` usa três, `fourths` as quatro
+ * (rodada Colunas, C8); os outros, duas.
+ */
+export const COLUMN_LAYOUTS = ['half', 'thirds', 'wide-left', 'wide-right', 'fourths'] as const
 
 /** Quantas colunas cada modelo mostra na página. */
 export const COLUMN_COUNT: Record<(typeof COLUMN_LAYOUTS)[number], number> = {
@@ -463,7 +466,17 @@ export const COLUMN_COUNT: Record<(typeof COLUMN_LAYOUTS)[number], number> = {
   thirds: 3,
   'wide-left': 2,
   'wide-right': 2,
+  fourths: 4,
 }
+
+/** As áreas de peças das Colunas, na ordem. Um modelo de duas guarda as outras sem mostrar. */
+export const COLUMN_SLOTS = ['column1', 'column2', 'column3', 'column4'] as const
+
+/** No celular, qual coluna vem primeiro (C6): a 1ª, como no computador, ou a última. */
+export const COLUMN_MOBILE_ORDERS = ['first', 'last'] as const
+
+/** Alinhamento das colunas no computador (C7): pelo alto, pelo meio ou por baixo. */
+export const COLUMN_ALIGNS = ['start', 'center', 'end'] as const
 
 export const columnsPropsSchema = z.object({
   id: componentId,
@@ -472,6 +485,10 @@ export const columnsPropsSchema = z.object({
   column1: column,
   column2: column,
   column3: column,
+  // Páginas de antes das quatro colunas não têm a quarta.
+  column4: column.default([]),
+  mobileOrder: z.enum(COLUMN_MOBILE_ORDERS).default('first'),
+  align: z.enum(COLUMN_ALIGNS).default('start'),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Columns),
 })
@@ -544,6 +561,11 @@ export type VideoProps = z.infer<typeof videoPropsSchema>
 export type FormProps = z.infer<typeof formPropsSchema>
 export type FormRef = z.infer<typeof formRefSchema>
 export type ColumnsProps = z.infer<typeof columnsPropsSchema>
+
+/** As colunas que aparecem na página, cada uma com as suas peças. */
+export const visibleColumns = (
+  props: Pick<ColumnsProps, 'layout' | (typeof COLUMN_SLOTS)[number]>,
+) => COLUMN_SLOTS.slice(0, COLUMN_COUNT[props.layout]).map((slot) => props[slot] ?? [])
 export type ColumnTextProps = z.infer<typeof columnTextPropsSchema>
 export type ColumnTitleProps = z.infer<typeof columnTitlePropsSchema>
 export type ColumnImageProps = z.infer<typeof columnImagePropsSchema>

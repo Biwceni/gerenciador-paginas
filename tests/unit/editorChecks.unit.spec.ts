@@ -122,6 +122,9 @@ describe('botão de WhatsApp na página', () => {
         ],
         column2: [],
         column3: [],
+        column4: [],
+        mobileOrder: 'first',
+        align: 'start',
         style: 'light',
       },
     }
