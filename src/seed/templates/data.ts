@@ -8,11 +8,12 @@ import { CONTENT_VERSION, type PageComponent } from '../../puck/schema'
 import { pageBuilder, toPage, toSection, whatsapp } from './sections'
 
 // Os modelos (redesign v3, entrega 6): o "Site da empresa" com 8 ramos e os outros 6 tipos de site,
-// 2 modelos cada um, e os modelos de página da "Nova página". Cada ramo tem as páginas e a ordem de
+// 3 modelos cada um, e os modelos de página da "Nova página". Cada ramo tem as páginas e a ordem de
 // seções que fazem sentido para ele, com textos de exemplo de quem tem um pequeno negócio desse
 // ramo: `{nome}` e `{cidade}` viram o nome e a cidade respondidos no Começar. Sem fotos de banco:
-// o lugar de cada foto fica vazio. Os dois modelos de cada ramo são a sugestão de personalidade,
-// letras (`FONT_PAIRS`) e combinação de cores (`brandCombos`, da "Sua marca") para ele.
+// o lugar de cada foto fica vazio. Os dois modelos próprios de cada ramo são a sugestão de
+// personalidade, letras (`FONT_PAIRS`) e combinação de cores (`brandCombos`, da "Sua marca") para
+// ele. O terceiro é o Papel (`PAPEL_LOOK`), igual em todos: o padrão de apresentação dos modelos.
 // `npm run modelos` grava tudo na coleção Modelos.
 
 export type TemplateSeed = Omit<Template, 'id' | 'updatedAt' | 'createdAt'>
@@ -23,7 +24,7 @@ type HeroLook = {
   align: 'left' | 'center' | 'right'
 }
 
-/** Um dos dois modelos de um ramo: a personalidade, as cores e as letras sugeridas. */
+/** Um modelo de um ramo: a personalidade, as cores e as letras sugeridas. */
 type Look = {
   personality: Personality
   combo: BrandComboKey
@@ -52,7 +53,21 @@ type Pack = {
   forms?: TemplateSeed['forms']
   /** Frase do rodapé. */
   footer?: string
+  /** Os dois modelos próprios do ramo. O Papel entra depois deles em todos (`PAPEL_LOOK`). */
   looks: [Look, Look]
+}
+
+/**
+ * O visual Papel em todos os ramos e tipos de site, sempre como terceiro modelo: as cores saem da
+ * cor do ramo (como sairiam do logo) e as letras são o primeiro par do ramo. Nada nele é de um ramo.
+ */
+const PAPEL_LOOK: Look = {
+  personality: 'papel',
+  combo: 'claro',
+  fonts: 0,
+  name: 'Papel',
+  description: 'Cartões de papel com picote, preço pontilhado e títulos fortes',
+  hero: { style: 'side', align: 'left' },
 }
 
 const ADDRESS = 'Rua das Flores, 120 · Centro · {cidade}'
@@ -1971,7 +1986,7 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
   const forms = modelForms(pack.forms, needsContact)
   const business = pack.business ? BUSINESSES.find((item) => item.value === pack.business) : null
 
-  return pack.looks.map((look, lookIndex) => {
+  return [...pack.looks, PAPEL_LOOK].map((look, lookIndex) => {
     const pages = pack.pages.map((page, index) => {
       const b = pageBuilder()
       const items = finishPage(page.build(b), b, {

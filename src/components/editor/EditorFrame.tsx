@@ -25,11 +25,32 @@ export const FrameStyleProvider = FrameStyleContext.Provider
 
 const SITE_SELECTOR = /^\.site(?![\w-])/
 
+/**
+ * Os seletores de uma lista, separados só pelas vírgulas de fora: as de dentro de `:is()`,
+ * `:not()` e outros parênteses fazem parte do mesmo seletor.
+ */
+export function splitSelectors(selectorText: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let start = 0
+  for (let index = 0; index < selectorText.length; index++) {
+    const char = selectorText[index]
+    if (char === '(' || char === '[') depth++
+    else if (char === ')' || char === ']') depth--
+    else if (char === ',' && depth === 0) {
+      parts.push(selectorText.slice(start, index))
+      start = index + 1
+    }
+  }
+  parts.push(selectorText.slice(start))
+  return parts.map((part) => part.trim())
+}
+
 /** Regra do CSS do site: todas começam em `.site` (aninhadas ou já "achatadas" pelo Next). */
-function isSiteRule(rule: CSSRule): boolean {
+export function isSiteRule(rule: CSSRule): boolean {
   return (
     rule instanceof CSSStyleRule &&
-    rule.selectorText.split(',').every((selector) => SITE_SELECTOR.test(selector.trim()))
+    splitSelectors(rule.selectorText).every((selector) => SITE_SELECTOR.test(selector))
   )
 }
 

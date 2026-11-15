@@ -34,21 +34,21 @@ const sites = templateSeeds.filter((seed) => seed.kind === 'site')
 const pageModels = templateSeeds.filter((seed) => seed.kind === 'page')
 
 describe('modelos por ramo (entrega 6)', () => {
-  it('têm 2 modelos para cada ramo do site da empresa e para cada outro tipo de site', () => {
+  it('têm 3 modelos para cada ramo do site da empresa e para cada outro tipo de site', () => {
     for (const business of BUSINESSES) {
       const found = sites.filter((seed) => templateBusiness(seed) === business.value)
-      expect(found, business.value).toHaveLength(2)
+      expect(found, business.value).toHaveLength(3)
       // O campo do banco guarda o grupo do ramo (sem migração).
       for (const seed of found) expect(seed.segment).toBe(business.segment)
     }
     for (const type of SITE_TYPES.filter((item) => item.value !== 'institucional')) {
-      expect(sites.filter((seed) => seed.siteType === type.value)).toHaveLength(2)
+      expect(sites.filter((seed) => seed.siteType === type.value)).toHaveLength(3)
     }
     expect(pageModels).toHaveLength(9)
     expect(new Set(templateSeeds.map((seed) => seed.key)).size).toBe(templateSeeds.length)
   })
 
-  it('cada modelo de site sugere uma personalidade, e os dois de um ramo são diferentes', () => {
+  it('cada modelo de site sugere uma personalidade, e os três de um ramo são diferentes', () => {
     const byPrefix = new Map<string, string[]>()
     for (const seed of sites) {
       const personality = templatePersonality(seed.key)
@@ -56,7 +56,11 @@ describe('modelos por ramo (entrega 6)', () => {
       const prefix = seed.key.split('-')[0]
       byPrefix.set(prefix, [...(byPrefix.get(prefix) ?? []), personality!])
     }
-    for (const [prefix, list] of byPrefix) expect(new Set(list).size, prefix).toBe(2)
+    for (const [prefix, list] of byPrefix) {
+      expect(new Set(list).size, prefix).toBe(3)
+      // O Papel é o mesmo padrão em todos: o terceiro modelo, depois dos dois do ramo.
+      expect(list[2], prefix).toBe('papel')
+    }
   })
 
   it('as letras sugeridas são um dos pares do ramo', () => {
