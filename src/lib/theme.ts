@@ -10,16 +10,28 @@ export const DEFAULT_COLORS = {
 
 /**
  * Personalidade do site (redesign v3): muda formas, tamanhos e a arrumação das seções, sem mexer no
- * conteúdo. `classico` é o visual de antes, o padrão: nenhum site muda sozinho.
+ * conteúdo nem nas cores. `papel` é a direção escolhida no redesenho dos componentes (D1) e o
+ * padrão dos sites novos; quem já tem site fica na personalidade guardada.
  */
-export const PERSONALITIES = ['classico', 'vitrine', 'aconchego', 'editorial'] as const
+export const PERSONALITIES = ['papel', 'classico', 'vitrine', 'aconchego', 'editorial'] as const
 
 export type Personality = (typeof PERSONALITIES)[number]
 
-export const DEFAULT_PERSONALITY: Personality = 'classico'
+/** A personalidade dos sites novos (o padrão do campo e da coluna no banco). */
+export const DEFAULT_PERSONALITY: Personality = 'papel'
+
+/**
+ * Site sem personalidade guardada (ou com uma desconhecida) fica no Clássico, o visual de antes:
+ * nenhum site que já existe muda sozinho.
+ */
+const FALLBACK_PERSONALITY: Personality = 'classico'
 
 /** Nome e descrição de cada personalidade, para o painel. */
 export const PERSONALITY_LABELS: Record<Personality, { name: string; description: string }> = {
+  papel: {
+    name: 'Papel',
+    description: 'Cartões de papel com picote, preço pontilhado e títulos fortes.',
+  },
   classico: { name: 'Clássico', description: 'Limpo e direto, como o site sempre foi.' },
   vitrine: { name: 'Vitrine', description: 'Foto grande, letras enormes, cara de loja.' },
   aconchego: { name: 'Aconchego', description: 'Formas redondas e fotos em arco.' },
@@ -28,7 +40,9 @@ export const PERSONALITY_LABELS: Record<Personality, { name: string; description
 
 /** A personalidade guardada, ou a padrão se vier vazia ou desconhecida. */
 export function safePersonality(value: string | null | undefined): Personality {
-  return PERSONALITIES.includes(value as Personality) ? (value as Personality) : DEFAULT_PERSONALITY
+  return PERSONALITIES.includes(value as Personality)
+    ? (value as Personality)
+    : FALLBACK_PERSONALITY
 }
 
 // Só letras, números e espaços: o nome vai para o CSS do site.

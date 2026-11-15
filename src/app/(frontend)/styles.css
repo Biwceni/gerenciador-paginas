@@ -4482,3 +4482,206 @@
     height: 28px;
   }
 }
+
+/*
+ * Papel (direção B do redesenho dos componentes, D1). Só forma: usa as cores e as letras que o
+ * site escolheu, em qualquer ramo. Títulos em maiúsculas, fios escuros, produtos e depoimentos como
+ * cartões de papel com picote no alto, preço em linha pontilhada e o canal em destaque do Contato
+ * como um bloco de pedido. Os detalhes de papel (número do cartão, rótulo do preço) usam a letra de
+ * máquina do aparelho, sem baixar fonte nenhuma.
+ */
+.site[data-personality='papel'] {
+  --papel-mono: ui-monospace, 'SFMono-Regular', 'Courier New', Courier, monospace;
+  --papel-rule: color-mix(in srgb, var(--color-text) 88%, transparent);
+  --papel-edge: color-mix(in srgb, var(--color-text) 18%, transparent);
+  --papel-slip: var(--color-surface);
+}
+
+.site[data-personality='papel'] .section--soft {
+  --papel-slip: var(--color-background);
+}
+
+.site[data-personality='papel'] .section--brand {
+  --papel-slip: color-mix(in srgb, var(--color-on-primary) 12%, var(--color-primary));
+  --papel-rule: color-mix(in srgb, var(--color-on-primary) 80%, transparent);
+  --papel-edge: color-mix(in srgb, var(--color-on-primary) 30%, transparent);
+}
+
+.site[data-personality='papel'] :is(.hero__title, .section-title, .page-title) {
+  text-transform: uppercase;
+  line-height: 1.02;
+}
+
+.site[data-personality='papel'] .site-header {
+  border-bottom: 2px solid var(--papel-rule);
+}
+
+.site[data-personality='papel'] .hero.hero--side {
+  border-bottom: 2px solid var(--papel-rule);
+}
+
+/* Vitrine: cada produto é um cartão de papel, com número, picote no alto e preço pontilhado. */
+.site[data-personality='papel'] .products:not(.products--list) {
+  counter-reset: papel;
+}
+
+.site[data-personality='papel'] .products:not(.products--list) > .product {
+  position: relative;
+  padding: 34px 16px 16px;
+  border: 1px solid var(--papel-edge);
+  border-top: 0;
+  background: var(--papel-slip);
+  counter-increment: papel;
+}
+
+.site[data-personality='papel'] .products:not(.products--list) > .product::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: -1px;
+  left: -1px;
+  height: 14px;
+  background:
+    radial-gradient(circle at 7px 0, transparent 4.5px, var(--papel-slip) 5px) 0 7px / 14px 7px
+      repeat-x,
+    linear-gradient(var(--papel-edge), var(--papel-edge)) 0 6px / 100% 1px no-repeat;
+}
+
+.site[data-personality='papel'] .products:not(.products--list) > .product::after {
+  content: 'Nº ' counter(papel, decimal-leading-zero) / '';
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-family: var(--papel-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+}
+
+.site[data-personality='papel'] .section--brand .products > .product::after {
+  color: inherit;
+}
+
+.site[data-personality='papel'] .product__photo {
+  border-radius: var(--radius-media);
+}
+
+.site[data-personality='papel'] .product__body {
+  align-items: stretch;
+}
+
+.site[data-personality='papel'] .product__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-headings);
+  font-size: 1.2em;
+  font-weight: 800;
+  color: inherit;
+}
+
+.site[data-personality='papel'] .product__price::before {
+  content: 'Preço' / '';
+  order: -2;
+  font-family: var(--papel-mono);
+  font-size: 0.7em;
+  font-weight: 400;
+}
+
+.site[data-personality='papel'] .product__price::after {
+  content: '';
+  order: -1;
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 2px dotted var(--papel-edge);
+  transform: translateY(-0.3em);
+}
+
+.site[data-personality='papel'] .product__link {
+  border-radius: var(--radius);
+}
+
+/* Cardápio: o nome e o preço já ficam ligados pela linha pontilhada; o preço ganha o peso dos títulos. */
+.site[data-personality='papel'] .price-item__price {
+  font-family: var(--font-headings);
+  font-weight: 800;
+}
+
+.site[data-personality='papel'] .price-item__leader {
+  border-bottom-width: 2px;
+}
+
+/* Depoimentos: cartões de papel; o primeiro em destaque fica escuro, como a tinta. */
+.site[data-personality='papel'] .testimonials figure {
+  padding: clamp(20px, 3cqi, 30px);
+  border: 1px solid var(--papel-edge);
+  background: var(--papel-slip);
+}
+
+.site[data-personality='papel'] .testimonials figcaption {
+  font-family: var(--papel-mono);
+  font-weight: 700;
+}
+
+@container site (min-width: 721px) {
+  .site[data-personality='papel'] .testimonials--featured > li:first-child {
+    max-width: none;
+    text-align: left;
+  }
+
+  .site[data-personality='papel'] .testimonials--featured > li:first-child figure {
+    padding: clamp(32px, 4.4cqi, 56px);
+    border-color: var(--color-text);
+    background: var(--color-text);
+    color: var(--color-background);
+  }
+
+  .site[data-personality='papel'] .testimonials--featured > li:first-child blockquote {
+    font-weight: 800;
+  }
+
+  .site[data-personality='papel'] .testimonials--featured > li:first-child figcaption {
+    justify-content: flex-start;
+  }
+
+  .site[data-personality='papel'] .testimonials--featured > li:first-child .testimonials__mark {
+    justify-self: start;
+    color: inherit;
+  }
+}
+
+/* Contato: o canal em destaque é o bloco de pedido, com contorno escuro e o número grande. */
+.site[data-personality='papel'] .contact__featured {
+  border: 2px solid var(--papel-rule);
+  border-radius: 0;
+  background: var(--papel-slip);
+  color: inherit;
+}
+
+.site[data-personality='papel'] .contact__featured-label {
+  font-family: var(--papel-mono);
+  color: var(--color-accent-text);
+}
+
+.site[data-personality='papel'] .section--brand .contact__featured-label {
+  color: inherit;
+}
+
+.site[data-personality='papel'] .contact__featured-value {
+  font-weight: 800;
+  font-size: clamp(26px, 3.4cqi, 40px);
+}
+
+.site[data-personality='papel'] .section .contact__featured-button {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.site[data-personality='papel'] .section--brand .contact__featured-button {
+  background: var(--color-on-primary);
+  color: var(--color-primary);
+}
+
+.site[data-personality='papel'] .contact__list > li + li {
+  border-top: 2px dotted var(--papel-edge);
+}

@@ -13,7 +13,7 @@ import { toSettingsState, toSiteData } from '@/components/panel/settings'
 import { contrastRatio, readableTint } from '@/lib/colors'
 import { shortTagline, splitHighlight } from '@/lib/highlight'
 import { COLOR_PRESETS } from '@/lib/style-presets'
-import { PERSONALITIES, safePersonality } from '@/lib/theme'
+import { DEFAULT_PERSONALITY, PERSONALITIES, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
 import { Hero } from '@/puck/components/sections'
 import type { ContentMetadata } from '@/puck/references'
@@ -65,15 +65,23 @@ describe('personalidade do site', () => {
       const tokens = PERSONALITY_TOKENS[personality]
       expect(tokens['--container']).toBe('1180px')
       expect(tokens['--section-pad']).toBe('clamp(64px, 10cqi, 128px)')
-      // Títulos de seção até 68 px (o Aconchego, mais suave, fica abaixo).
+      // Títulos de seção até 68 px (o Aconchego, mais suave, fica abaixo; o Papel, em maiúsculas,
+      // fica menor de propósito).
       const maxH2 = Number(tokens['--fs-h2'].match(/cqi, (\d+)px\)$/)?.[1])
-      expect(maxH2).toBeGreaterThanOrEqual(56)
+      expect(maxH2).toBeGreaterThanOrEqual(personality === 'papel' ? 40 : 56)
       expect(maxH2).toBeLessThanOrEqual(68)
       const style = themeStyle({ personality }) as Record<string, string>
       expect(style['--personality']).toBe(personality)
     }
     expect(PERSONALITY_TOKENS.vitrine['--fs-h1']).toMatch(/124px\)$/)
     expect(PERSONALITY_TOKENS.editorial['--fs-h1']).toMatch(/116px\)$/)
+  })
+
+  it('o Papel (direção B do D1) é o padrão dos sites novos, com cantos quase retos', () => {
+    expect(DEFAULT_PERSONALITY).toBe('papel')
+    expect(PERSONALITIES[0]).toBe('papel')
+    expect(PERSONALITY_TOKENS.papel['--radius']).toBe('6px')
+    expect(themeStyle({ personality: 'papel' })).toMatchObject({ '--personality': 'papel' })
   })
 })
 

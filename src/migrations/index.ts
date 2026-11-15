@@ -16,6 +16,8 @@ import * as migration_20261101_190417_descricao_foto_opcional from './20261101_1
 import * as migration_20261101_190421_pagina_de_privacidade from './20261101_190421_pagina_de_privacidade';
 import * as migration_20261107_180330_personalidade_do_site from './20261107_180330_personalidade_do_site';
 import * as migration_20261107_205051_animacao_do_site from './20261107_205051_animacao_do_site';
+import * as migration_20261115_022319_personalidade_papel from './20261115_022319_personalidade_papel';
+import * as migration_20261115_022320_personalidade_papel_padrao from './20261115_022320_personalidade_papel_padrao';
 
 export const migrations = [
   {
@@ -106,6 +108,16 @@ export const migrations = [
   {
     up: migration_20261107_205051_animacao_do_site.up,
     down: migration_20261107_205051_animacao_do_site.down,
-    name: '20261107_205051_animacao_do_site'
+    name: '20261107_205051_animacao_do_site',
+  },
+  {
+    up: migration_20261115_022319_personalidade_papel.up,
+    down: migration_20261115_022319_personalidade_papel.down,
+    name: '20261115_022319_personalidade_papel',
+  },
+  {
+    up: migration_20261115_022320_personalidade_papel_padrao.up,
+    down: migration_20261115_022320_personalidade_papel_padrao.down,
+    name: '20261115_022320_personalidade_papel_padrao',
   },
 ];

@@ -585,9 +585,53 @@ function migrate(raw: unknown): unknown {
   return content
 }
 
+/** Corta um texto salvo que passou de um limite que diminuiu, no fim de uma palavra, com "…". */
+function shorten(value: unknown, max: number): unknown {
+  if (typeof value !== 'string' || value.length <= max) return value
+  const cut = value.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
+
+/**
+ * Limites que diminuíram sem mudar a versão (componentes, C3 e C7). Um texto salvo antes, maior que
+ * o limite novo, faria a página inteira deixar de abrir no site e no editor; aqui ele é encurtado.
+ * Só mexe em texto que passou do limite, então rodar de novo não muda nada.
+ */
+function fitTightenedLimits(raw: unknown): unknown {
+  const content = raw as { data?: { content?: unknown } } | null
+  const sections = content?.data?.content
+  if (!Array.isArray(sections)) return raw
+  const fitted = sections.map((section: { type?: unknown; props?: Record<string, unknown> }) => {
+    const items = section?.props?.items
+    if (!Array.isArray(items)) return section
+    if (section.type === 'Testimonials') {
+      const next = items.map((item: Record<string, unknown> | null) =>
+        item && typeof item === 'object'
+          ? { ...item, quote: shorten(item.quote, LIMITS.testimonial) }
+          : item,
+      )
+      return { ...section, props: { ...section.props, items: next } }
+    }
+    if (section.type === 'Products') {
+      const next = items.map((item: { button?: Record<string, unknown> | null } | null) =>
+        item?.button && typeof item.button === 'object'
+          ? {
+              ...item,
+              button: { ...item.button, label: shorten(item.button.label, LIMITS.productButton) },
+            }
+          : item,
+      )
+      return { ...section, props: { ...section.props, items: next } }
+    }
+    return section
+  })
+  return { ...content, data: { ...content!.data, content: fitted } }
+}
+
 /** Migra para a versão atual e confere o formato. Campos desconhecidos são descartados. */
 export function parsePageContent(raw: unknown) {
-  return pageContentSchema.safeParse(migrate(raw ?? emptyPageContent()))
+  return pageContentSchema.safeParse(fitTightenedLimits(migrate(raw ?? emptyPageContent())))
 }
 
 /** Mensagem curta com o primeiro problema, para o painel. */
