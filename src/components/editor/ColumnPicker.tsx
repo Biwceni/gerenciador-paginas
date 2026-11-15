@@ -27,6 +27,9 @@ const setRequest = (next: string | null) => {
 /** Pede para colocar uma peça (Título, Texto, Foto, Botão) numa coluna. */
 export const requestPiece = (type: string) => setRequest(type)
 
+/** A pergunta "em qual coluna" está aberta (ela mesma coloca a seção Colunas, se faltar). */
+export const pieceRequested = () => request !== null
+
 const LABELS: Record<string, string> = PIECE_LABELS
 const article = (type: string) => (type === 'ColumnImage' ? 'a' : 'o')
 const ordinal = (n: number) => `${n}ª`

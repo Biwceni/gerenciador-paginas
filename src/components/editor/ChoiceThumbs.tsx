@@ -250,6 +250,14 @@ export const CHOICE_THUMBS = {
       <Column w={52} x={40} />
     </>
   ),
+  'cols-fourths': (
+    <>
+      <Column w={17} x={8} />
+      <Column w={17} x={30} />
+      <Column w={17} x={53} />
+      <Column w={17} x={75} />
+    </>
+  ),
   // Marcador dos Destaques.
   'marker-none': (
     <>

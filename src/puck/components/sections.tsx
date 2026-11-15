@@ -962,16 +962,33 @@ export function LinkList({
 export function Columns({
   id,
   layout,
+  mobileOrder = 'first',
+  align = 'start',
   style,
   anim,
   columns,
   metadata,
   emptyColumn,
-}: Omit<WithMetadata<ColumnsProps>, 'column1' | 'column2' | 'column3'> & {
-  columns: React.ReactNode[]
-  /** Só no editor: o quadro da coluna vazia, com os atalhos de peças (C13). */
-  emptyColumn?: (n: number) => React.ReactNode
-}) {
+  columnTag,
+}: Omit<
+  WithMetadata<ColumnsProps>,
+  'column1' | 'column2' | 'column3' | 'column4' | 'mobileOrder' | 'align'
+> &
+  Partial<Pick<ColumnsProps, 'mobileOrder' | 'align'>> & {
+    columns: React.ReactNode[]
+    /** Só no editor: o quadro da coluna vazia, ou o "+ Peça nesta coluna" (C13, C1). */
+    emptyColumn?: (n: number) => React.ReactNode
+    /** Só no editor: o selo "Coluna 1" em cima de cada coluna (C1, C5). */
+    columnTag?: (n: number) => React.ReactNode
+  }) {
+  const classes = [
+    'container',
+    'columns',
+    `columns--${layout}`,
+    mobileOrder === 'last' && 'columns--mobile-last',
+    align !== 'start' && `columns--align-${align}`,
+    'anim-part',
+  ]
   return (
     <Section
       anim={sectionAnim('Columns', anim, metadata)}
@@ -979,9 +996,10 @@ export function Columns({
       metadata={metadata}
       style={style}
     >
-      <div className={`container columns columns--${layout} anim-part`}>
+      <div className={classes.filter(Boolean).join(' ')}>
         {columns.slice(0, COLUMN_COUNT[layout]).map((column, index) => (
           <div className="columns__column anim-part" key={index} style={order(index)}>
+            {metadata.editing && columnTag?.(index + 1)}
             {column}
             {metadata.editing && emptyColumn?.(index + 1)}
           </div>

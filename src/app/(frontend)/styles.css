@@ -1450,6 +1450,19 @@
     grid-template-columns: 1fr 2fr;
   }
 
+  .columns--fourths {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Alinhar as colunas (C7): no computador, onde ficam lado a lado. */
+  .columns--align-center {
+    align-items: center;
+  }
+
+  .columns--align-end {
+    align-items: end;
+  }
+
   .columns__column {
     display: grid;
     gap: 18px;
@@ -1599,12 +1612,25 @@
     outline-offset: -6px;
   }
 
+  /* Quatro colunas no tablet: duas por linha (C8). */
+  @container site (min-width: 721px) and (max-width: 1023px) {
+    .columns--fourths {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @container site (max-width: 720px) {
     .features,
     .features--two,
     .contact,
     .columns {
       grid-template-columns: 1fr;
+    }
+
+    /* No celular, a última coluna primeiro (C6): a ordem de leitura acompanha a da tela. */
+    .columns--mobile-last {
+      display: flex;
+      flex-direction: column-reverse;
     }
 
     .testimonials {
@@ -4406,7 +4432,17 @@
 .site .columns__column,
 .site
   .columns__column
-  > :not(.column-title, .column-text, .column-image, .column-button, .columns__empty, .button, a) {
+  > :not(
+    .column-title,
+    .column-text,
+    .column-image,
+    .column-button,
+    .columns__empty,
+    .columns__tag,
+    .columns__add,
+    .button,
+    a
+  ) {
   display: grid;
   gap: 20px;
   align-content: start;
@@ -4421,6 +4457,51 @@
 .site .column-title {
   font-size: var(--fs-h3);
   line-height: 1.2;
+}
+
+/* Só no editor, com a seção escolhida: o selo de cada coluna (C1, C5) e o "+ Peça" (C1). */
+.site .columns__tag {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #2f43c9;
+  color: #fff;
+  font:
+    600 13px/1.4 system-ui,
+    sans-serif;
+}
+
+.site .columns__tag-where {
+  display: none;
+}
+
+@container site (max-width: 720px) {
+  .site .columns__tag-where {
+    display: inline;
+  }
+}
+
+.site .columns__add {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px dashed color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font:
+    600 14px/1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+  /* O editor desliga o clique dentro das seções; estes botões precisam dele. */
+  pointer-events: auto;
+}
+
+.site .columns__add:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.site .columns__empty--more {
+  padding: 16px;
 }
 
 /* Só no editor: a coluna vazia, um quadro tracejado com os atalhos de peças. */
@@ -4444,7 +4525,7 @@
 }
 
 .site .columns__empty .ed-piece-add__btn {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1.5px solid currentColor;
   border-radius: 999px;
@@ -4453,6 +4534,7 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .site .columns__empty .ed-piece-add__btn:hover {

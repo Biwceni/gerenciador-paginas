@@ -125,6 +125,9 @@ describe('textos de exemplo', () => {
         column1: [{ type: 'ColumnText', props: { id: 'c1', title: '', text: PLAIN } }],
         column2: [],
         column3: [],
+        column4: [],
+        mobileOrder: 'first',
+        align: 'start',
         style: 'light',
       },
     }

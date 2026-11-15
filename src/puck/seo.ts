@@ -1,6 +1,6 @@
 import { richTextToPlain } from '../lib/richtext'
 import { CATALOG_TEXTS } from './catalogTexts'
-import type { ColumnPiece, PageComponent, PuckPageData } from './schema'
+import { type ColumnPiece, COLUMN_SLOTS, type PageComponent, type PuckPageData } from './schema'
 
 const MAX_DESCRIPTION = 160
 
@@ -12,9 +12,7 @@ function truncate(text: string, max: number): string {
 }
 
 const columnPieces = (item: PageComponent): ColumnPiece[] =>
-  item.type === 'Columns'
-    ? [...item.props.column1, ...item.props.column2, ...item.props.column3]
-    : []
+  item.type === 'Columns' ? COLUMN_SLOTS.flatMap((slot) => item.props[slot] ?? []) : []
 
 /** Texto corrido de uma seção, na ordem em que aparece. */
 function sectionText(item: PageComponent): string {

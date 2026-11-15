@@ -1,6 +1,6 @@
 import { instagramLink } from '../lib/links'
 import { pieceShows } from './hiddenSections'
-import { COLUMN_COUNT, INSTAGRAM_MIN_PHOTOS, type PuckPageData } from './schema'
+import { INSTAGRAM_MIN_PHOTOS, type PuckPageData, visibleColumns } from './schema'
 
 // O que falta nas seções para irem ao ar inteiras (redesign v3, entrega 4). Vira aviso no Publicar:
 // nenhum bloqueia, como as outras checagens.
@@ -102,10 +102,10 @@ export function sectionChecks(
   // vazias já entram nas seções que não vão aparecer (hiddenSections.ts).
   const emptyColumns = data.content.reduce((count, item) => {
     if (item.type !== 'Columns') return count
-    const columns = [item.props.column1, item.props.column2, item.props.column3].slice(
-      0,
-      COLUMN_COUNT[item.props.layout],
-    ) as { type: string; props: Record<string, unknown> }[][]
+    const columns = visibleColumns(item.props) as {
+      type: string
+      props: Record<string, unknown>
+    }[][]
     const empty = columns.filter((pieces) => !pieces.some((piece) => pieceShows(piece, hasPhoto)))
     return empty.length && empty.length < columns.length ? count + empty.length : count
   }, 0)

@@ -1,5 +1,5 @@
 import { richTextToPlain } from '../lib/richtext'
-import { COLUMN_COUNT, type PageComponent } from './schema'
+import { type PageComponent, visibleColumns } from './schema'
 
 const MAX_ITEMS = 2
 
@@ -39,8 +39,7 @@ export function sectionSummary(item: PageComponent): string {
     case 'Columns':
       return list(
         // Só as colunas que aparecem: o modelo de duas guarda a terceira sem mostrar.
-        [item.props.column1, item.props.column2, item.props.column3]
-          .slice(0, COLUMN_COUNT[item.props.layout])
+        visibleColumns(item.props)
           .flat()
           .map((piece) => {
             if (piece.type === 'ColumnTitle') return piece.props.title

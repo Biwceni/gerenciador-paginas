@@ -1,4 +1,4 @@
-import { COLUMN_COUNT, type PuckPageData } from './schema'
+import { type PuckPageData, visibleColumns } from './schema'
 
 // Seções que não vão aparecer no site (achado 13.2). O site esconde a seção sem conteúdo (vídeo sem
 // endereço, galeria sem foto, destaques vazios); as Colunas sem peças viram um espaço vazio e o
@@ -72,10 +72,7 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
     case 'RichText':
       return text(item.props.title) || text(item.props.body) ? null : 'está sem título e sem texto'
     case 'Columns': {
-      const columns = [item.props.column1, item.props.column2, item.props.column3].slice(
-        0,
-        COLUMN_COUNT[item.props.layout],
-      ) as Piece[][]
+      const columns = visibleColumns(item.props) as Piece[][]
       return columns.some((pieces) => pieces.some((piece) => pieceShows(piece, hasPhoto)))
         ? null
         : 'está sem nenhuma peça e fica um espaço vazio'

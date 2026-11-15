@@ -105,6 +105,7 @@ export function fillPhotoSlots(data: PuckPageData): { data: PuckPageData; count:
             column1: item.props.column1.map(piece),
             column2: item.props.column2.map(piece),
             column3: item.props.column3.map(piece),
+            column4: item.props.column4.map(piece),
           },
         }
       default:

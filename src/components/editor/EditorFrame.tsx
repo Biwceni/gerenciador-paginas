@@ -135,6 +135,8 @@ ${SELECTION_HALO}
 @media (pointer: coarse) {
   [class*='_ActionBarAction_'] { min-width: 44px; min-height: 44px; justify-content: center; }
 }
+/* "← Coluna 1" e "Coluna 2 →" na barrinha de uma peça das Colunas (C2). */
+.ed-move-col { padding: 0 6px; font: 600 12px/1 system-ui, sans-serif; white-space: nowrap; }
 /* Opções abertas no celular (rodada 2, F1): sem a barrinha e sem o espaço dela na faixa. */
 html[data-ed-options] [class*='DraggableComponent-actionsOverlay'] { display: none !important; }
 html[data-ed-options] [data-puck-component] { margin-top: 0 !important; scroll-margin-top: 0 !important; }

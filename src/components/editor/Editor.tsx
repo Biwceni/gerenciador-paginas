@@ -67,7 +67,8 @@ import { CountedField } from './CountedField'
 import { ListLimit } from './ListLimit'
 import { dictionary } from './dictionary'
 import { AdjustedBar, KeyboardRoom, ChoiceField } from './adjusted'
-import { ColumnPicker } from './ColumnPicker'
+import { ColumnPicker, pieceRequested } from './ColumnPicker'
+import { askColumnsLayout, ColumnsLayoutPicker, wasLayoutCancel } from './ColumnsLayoutPicker'
 import { Dialog } from './Dialog'
 import { createDraftSaver } from './draftSaver'
 import { clearLocalCopy, type LocalCopy, readLocalCopy, writeLocalCopy } from './localCopy'
@@ -324,6 +325,7 @@ function EditorHeader() {
       </div>
       <PreviewTools />
       <ColumnPicker />
+      <ColumnsLayoutPicker />
       <AdjustedBar />
       <KeyboardRoom />
       {chrome.saveAlert && (
@@ -692,6 +694,7 @@ export function Editor(props: EditorProps) {
       // O Desfazer do aviso volta a última mudança: depois de outra, ela já não seria a remoção.
       if (!UI_ONLY_ACTIONS.includes(action.type)) dismissUndo()
       if (action.type === 'remove') {
+        if (wasLayoutCancel()) return
         const message = action.zone === ROOT_ZONE ? 'Seção removida.' : 'Peça removida.'
         // O Puck deixaria a seção de baixo escolhida, e a pessoa não pediu para mexer nela.
         setTimeout(() => {
@@ -717,6 +720,16 @@ export function Editor(props: EditorProps) {
           })
           scrollToSection(String(copy.props.id))
         }, HISTORY_SETTLE)
+      }
+      // Seção Colunas nova: pergunta como dividir (C3). A pergunta das peças já cuida da dela.
+      if (
+        action.type === 'insert' &&
+        action.componentType === 'Columns' &&
+        (action.destinationZone ?? ROOT_ZONE) === ROOT_ZONE &&
+        !pieceRequested()
+      ) {
+        const added = next.data.content[action.destinationIndex]
+        if (added) askColumnsLayout(String(added.props.id))
       }
       if (UI_ONLY_ACTIONS.includes(action.type)) return
       const problem = layoutProblem(next.data)
