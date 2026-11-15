@@ -989,9 +989,11 @@ export function Editor(props: EditorProps) {
       addForm,
       adminRoute,
       pickPhoto: (onPick: (photo: Media) => void) => setPicking(() => onPick),
+      updatePhoto: addPhoto,
     }),
     [
       addForm,
+      addPhoto,
       adminRoute,
       apiRoute,
       forms,
@@ -1006,8 +1008,14 @@ export function Editor(props: EditorProps) {
   )
 
   const preview = useMemo(
-    () => ({ ...props.chrome, campaign: Boolean(settings.campaign) }),
-    [props.chrome, settings.campaign],
+    () => ({
+      ...props.chrome,
+      campaign: Boolean(settings.campaign),
+      pageTitle: settings.title,
+      isHome,
+      openPageSettings: () => setDialog('settings'),
+    }),
+    [props.chrome, settings.campaign, settings.title, isHome],
   )
 
   // Tema da prévia com a personalidade escolhida aqui (as medidas dela e o `data-personality`).

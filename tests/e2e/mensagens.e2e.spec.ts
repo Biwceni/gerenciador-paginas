@@ -178,7 +178,7 @@ test.describe.serial('mensagens e formulários', () => {
 
     await page.goto(`${BASE}/${SLUG}`, { waitUntil: 'networkidle' })
     await page.getByLabel('Como você se chama?').fill('Ana Souza')
-    const phone = page.getByLabel('WhatsApp')
+    const phone = page.getByLabel('WhatsApp', { exact: true })
     await phone.fill('abc')
     await page.getByLabel('E-mail').fill('ana@exemplo.com')
     await page.getByLabel(/Mensagem/).fill('=1+1 tem café?')

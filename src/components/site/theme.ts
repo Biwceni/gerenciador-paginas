@@ -4,6 +4,7 @@ import {
   blendColors,
   deepShade,
   distinctSurface,
+  minReadableOpacity,
   readableTextColor,
   readableTint,
   safeColor,
@@ -136,19 +137,31 @@ export function themeStyle(site: Partial<Site>): CSSProperties {
   const shades = brandShades(site.colors)
   const personality = sitePersonality(site)
 
+  const background = safeColor(site.colors?.background, DEFAULT_COLORS.background)
+  const surface = siteSurface(site.colors)
+  const text = safeColor(site.colors?.text, DEFAULT_COLORS.text)
+  const onPrimary = readableTextColor(primary)
+  const onFooter = readableTextColor(footer)
+
   return {
     '--color-primary': primary,
-    '--color-on-primary': readableTextColor(primary),
-    '--color-background': safeColor(site.colors?.background, DEFAULT_COLORS.background),
-    '--color-surface': siteSurface(site.colors),
-    '--color-text': safeColor(site.colors?.text, DEFAULT_COLORS.text),
+    '--color-on-primary': onPrimary,
+    '--color-background': background,
+    '--color-surface': surface,
+    '--color-text': text,
     '--color-footer': footer,
-    '--color-on-footer': readableTextColor(footer),
+    '--color-on-footer': onFooter,
     '--color-deep': shades.deep,
     '--color-on-deep': shades.onDeep,
     '--color-accent-text': shades.accentText,
     '--color-accent-on-dark': shades.accentOnDark,
     '--color-accent-on-photo': shades.accentOnPhoto,
+    // Piso de opacidade dos textos suaves em cada fundo (achado G4): 4,5:1 sempre.
+    '--soft-min-light': String(minReadableOpacity(text, background)),
+    '--soft-min-soft': String(minReadableOpacity(text, surface)),
+    '--soft-min-brand': String(minReadableOpacity(onPrimary, primary)),
+    '--soft-min-footer': String(minReadableOpacity(onFooter, footer)),
+    '--soft-min-deep': String(minReadableOpacity(shades.onDeep, shades.deep)),
     '--font-headings': fontStack(site.fonts?.headings || site.fonts?.body),
     '--font-body': fontStack(site.fonts?.body),
     '--personality': personality,

@@ -2,7 +2,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { Features, Hero } from '@/puck/components/sections'
+import { CallToAction, Features, Hero } from '@/puck/components/sections'
 import { type ContentMetadata, heroWithoutPhoto } from '@/puck/references'
 import { CONTENT_VERSION, type FeaturesProps, parsePageContent } from '@/puck/schema'
 import { templateSeeds } from '@/seed/templates/data'
@@ -58,7 +58,7 @@ describe('Destaques: marcador', () => {
   it('sem marcador: lista sem números e sem ícones', () => {
     const html = features({})
     expect(html).toMatch(
-      /^<section[^>]*><div class="container anim-part">.*<ul class="features features--two">/,
+      /^<section[^>]*><div class="container anim-part">.*<ul class="features features--two" data-count="2">/,
     )
     expect(html).not.toContain('features__number')
     expect(html).not.toContain('features__icon')
@@ -67,7 +67,7 @@ describe('Destaques: marcador', () => {
 
   it('números só no passo a passo, numa lista numerada', () => {
     const html = features({ marker: 'number' })
-    expect(html).toContain('<ol class="features features--two">')
+    expect(html).toContain('<ol class="features features--two" data-count="2">')
     expect(html).toContain('<span aria-hidden="true" class="features__number">2</span>')
   })
 
@@ -181,5 +181,42 @@ describe('Banner: Foto ao lado', () => {
     // Foto apagada da biblioteca conta como sem foto.
     expect(heroWithoutPhoto(data({ mediaId: 3 }), () => false)).toBe(true)
     expect(heroWithoutPhoto(parse([oldFeatures]).data!.data, () => true)).toBe(false)
+  })
+})
+
+describe('Chamada para ação no editor', () => {
+  // No editor o Puck entrega o texto do botão como o campo de escrever, não como texto: a seção
+  // não pode quebrar ao conferir se está vazia (B1).
+  it('aparece com o texto do botão vindo como campo de escrever', () => {
+    const editable = <span contentEditable>Fale com a gente</span>
+    const html = renderToStaticMarkup(
+      <CallToAction
+        anim="site"
+        button={{ label: editable as unknown as string, link: { kind: 'whatsapp' } }}
+        id="cta"
+        menuLabel=""
+        metadata={{ ...metadata, editing: true }}
+        style="brand"
+        text=""
+        title=""
+      />,
+    )
+    expect(html).toContain('Fale com a gente')
+  })
+
+  it('no site, toda vazia, some', () => {
+    const html = renderToStaticMarkup(
+      <CallToAction
+        anim="site"
+        button={{ label: '  ', link: { kind: 'whatsapp' } }}
+        id="cta"
+        menuLabel=""
+        metadata={metadata}
+        style="brand"
+        text=""
+        title=""
+      />,
+    )
+    expect(html).toBe('')
   })
 })

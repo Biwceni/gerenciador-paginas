@@ -7,6 +7,7 @@ import { SECTION_LABELS } from '@/puck/config'
 import type { PageComponent } from '@/puck/schema'
 import { sectionSummary } from '@/puck/sectionSummary'
 
+import { HeadingOutline } from './HeadingOutline'
 import { scrollToSection } from './insert'
 import { MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { useMoveSection } from './SectionActions'
@@ -127,6 +128,7 @@ function OrderList() {
           })}
         </ol>
       )}
+      {content.length > 0 && <HeadingOutline />}
     </div>
   )
 }

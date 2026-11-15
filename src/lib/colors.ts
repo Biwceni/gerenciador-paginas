@@ -23,9 +23,30 @@ export function contrastRatio(a: string, b: string): number {
  * As cores são livres, então o texto se adapta em vez de bloquear a escolha.
  */
 export function readableTextColor(background: string): string {
-  return contrastRatio(background, DARK_TEXT) >= contrastRatio(background, LIGHT_TEXT)
-    ? DARK_TEXT
-    : LIGHT_TEXT
+  const dark = contrastRatio(background, DARK_TEXT)
+  const light = contrastRatio(background, LIGHT_TEXT)
+  const best = Math.max(dark, light)
+  // Nas cores do meio (um laranja, um verde médio), nem o quase preto nem o branco chegam a 4,5:1
+  // (o melhor dá 4,35:1). O preto puro sempre chega: ele entra só nesses casos (achado G4).
+  if (best < MIN_TEXT_CONTRAST && contrastRatio(background, '#000000') > best) return '#000000'
+  return dark >= light ? DARK_TEXT : LIGHT_TEXT
+}
+
+/** Contraste mínimo de texto da WCAG AA (texto normal). */
+export const MIN_TEXT_CONTRAST = 4.5
+
+/**
+ * A menor opacidade com que `text` pode aparecer sobre `background` e ainda ler com 4,5:1. É o piso
+ * dos textos "suaves" do site (rótulos, legendas, respostas), que usam opacidade: o CSS faz
+ * `max(0.75, piso)`, e numa cor de fundo difícil o texto fica mais forte em vez de sumir.
+ */
+export function minReadableOpacity(text: string, background: string): number {
+  for (let opacity = 0.5; opacity < 1; opacity += 0.05) {
+    if (contrastRatio(blendColors(text, background, opacity), background) >= MIN_TEXT_CONTRAST) {
+      return Math.round(opacity * 100) / 100
+    }
+  }
+  return 1
 }
 
 /**

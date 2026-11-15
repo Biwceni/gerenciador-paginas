@@ -408,6 +408,7 @@ textarea.ed-input {
 
 .ed-photo-field {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px;
 }
@@ -415,6 +416,7 @@ textarea.ed-input {
 .ed-photo-field__actions {
   display: grid;
   gap: 6px;
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -443,39 +445,110 @@ textarea.ed-input {
 
 .ed-photo-list {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
+/* Cada foto em duas linhas (A5): miniatura, nome e ⋯ em cima; a legenda inteira embaixo. */
 .ed-photo-list__item {
-  display: flex;
-  align-items: center;
+  display: grid;
   gap: 6px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--ed-line);
+  border-radius: 8px;
 }
 
-.ed-photo-list__item .ed-icon-btn {
-  width: 30px;
-  height: 30px;
-  font-size: 15px;
+.ed-photo-list__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .ed-photo-list__name {
-  flex: 1;
-  overflow: hidden;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
   font-size: var(--gp-fs-small);
+}
+
+.ed-photo-list__label {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Legenda de cada foto (Galeria): embaixo do nome, na largura toda. */
-.ed-photo-list__name:has(.ed-photo-list__caption) {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
+.ed-photo-list__name .ed-hint {
+  white-space: normal;
 }
 
 .ed-photo-list__caption {
   width: 100%;
+  min-width: 0;
   min-height: 36px;
+}
+
+.ed-photo-menu {
+  position: relative;
+}
+
+.ed-photo-menu .ed-icon-btn {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ed-photo-menu__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 10px;
+  background: var(--ed-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.ed-photo-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ed-text);
+  font: inherit;
+  font-size: var(--gp-fs-small);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-photo-menu__item:hover:not(:disabled),
+.ed-photo-menu__item:focus-visible {
+  background: var(--ed-accent-soft);
+}
+
+.ed-photo-menu__item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ed-photo-menu__item--danger {
+  color: var(--gp-danger);
+}
+
+.ed-photo-menu__position {
+  display: grid;
+  gap: 4px;
+  padding: 4px 10px 8px;
+  font-size: var(--gp-fs-small);
 }
 
 .ed-link-field {
@@ -1041,7 +1114,7 @@ textarea.ed-input {
   /* Toque de 44 px no celular: botões, setas da Ordem, X das janelas e campos. */
   .ed-icon-btn,
   .ed-icon-btn--sm,
-  .ed-photo-list__item .ed-icon-btn {
+  .ed-photo-menu .ed-icon-btn {
     width: 44px;
     height: 44px;
   }
@@ -1466,31 +1539,6 @@ textarea.ed-input {
   font-weight: 600;
 }
 
-/* Lista de fotos da Galeria e do Instagram: cabe no painel, com Subir, Descer e Tirar sempre à
-   vista (achado 5.1). Antes o nome sem quebra alargava a linha para fora do painel. */
-.ed-photo-list,
-.ed-photo-list__item {
-  min-width: 0;
-}
-
-.ed-photo-list__item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-}
-
-.ed-photo-list__item > .ed-pic,
-.ed-photo-list__item > .ed-icon-btn {
-  flex: none;
-}
-
-.ed-photo-list__name {
-  min-width: 0;
-}
-
-.ed-photo-list__caption {
-  min-width: 0;
-}
-
 /* "Desfazer" do aviso de seção removida numa linha só, sem quebrar em "Desfa / zer" (achado 2.2). */
 [data-sonner-toast] [data-button] {
   flex: none;
@@ -1635,6 +1683,26 @@ textarea.ed-input {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Resumo do item (A5): nome (com o começo do texto quando repete) e o aviso de que não aparece. */
+.ed-item-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ed-item-detail {
+  color: var(--ed-muted);
+  font-weight: 400;
+}
+
+.ed-item-warn {
+  color: var(--ed-warn);
+  font-size: var(--gp-fs-help);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: normal;
 }
 
 .ed-root [class*='ArrayFieldItem-rhs_'] {
@@ -1947,4 +2015,65 @@ textarea.ed-grow {
 .ed-root [data-puck-tablist] [role='tab']:not([aria-selected='true']):hover {
   background: var(--ed-accent-soft);
   color: var(--ed-text);
+}
+
+/* Títulos da página (B2, PK-titulos), embaixo da Ordem das seções. */
+.ed-headings {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ed-line);
+}
+
+.ed-headings__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-headings__item--2 {
+  padding-left: 14px;
+}
+
+.ed-headings__item--3 {
+  padding-left: 28px;
+}
+
+.ed-headings__button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ed-text);
+  font: inherit;
+  font-size: var(--gp-fs-small);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-headings__button:hover,
+.ed-headings__button:focus-visible {
+  background: var(--ed-accent-soft);
+}
+
+.ed-headings__level {
+  color: var(--ed-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ed-headings__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

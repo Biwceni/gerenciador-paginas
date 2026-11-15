@@ -19,6 +19,10 @@ type Props = {
   viewer: boolean
 }
 
+/** Quantas fotos aparecem antes do "Ver mais fotos": no computador e no celular (2 colunas). */
+export const GALLERY_FOLD = 12
+export const GALLERY_FOLD_MOBILE = 10
+
 const order = (index: number) => ({ '--i': index }) as React.CSSProperties
 
 /** Troca a foto com a transição do navegador, quando ele tem e a pessoa não pediu menos movimento. */
@@ -45,6 +49,7 @@ export function GalleryGrid({
   const dialog = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLButtonElement | null>(null)
   const [current, setCurrent] = useState<number | null>(null)
+  const [showAll, setShowAll] = useState(false)
   const total = photos.length
 
   const open = (index: number, button: HTMLButtonElement) => {
@@ -118,15 +123,37 @@ export function GalleryGrid({
     showCaptions && 'gallery--captions',
   ]
 
+  // Muitas fotos (A7, achado G5): no site, as primeiras 12 (10 no celular) e "Ver mais fotos". A
+  // ordem continua a da lista, e a tela cheia passa por todas.
+  const folded = viewer && total > GALLERY_FOLD && !showAll
+
   return (
     <>
       <ul
         className={classes.filter(Boolean).join(' ')}
         data-count={total}
+        data-folded={folded || undefined}
         style={{ '--cols': columns } as React.CSSProperties}
       >
         {items}
       </ul>
+      {folded && (
+        <button
+          className="button button--ghost gallery__more"
+          onClick={() => setShowAll(true)}
+          type="button"
+        >
+          Ver mais fotos
+          <span className="gallery__more-count gallery__more-count--wide">
+            {' '}
+            (mais {total - GALLERY_FOLD})
+          </span>
+          <span className="gallery__more-count gallery__more-count--narrow">
+            {' '}
+            (mais {total - GALLERY_FOLD_MOBILE})
+          </span>
+        </button>
+      )}
       {viewer && (
         <dialog
           aria-label="Fotos da galeria"

@@ -17,6 +17,12 @@ import {
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
+import {
+  featureProblem,
+  ItemSummary,
+  linkProblem,
+  productProblem,
+} from '@/components/editor/ItemSummary'
 import { InlineTextMenu, TextMenu } from '@/components/editor/RichTextTools'
 import { ChoiceThumb, type ChoiceThumbName } from '@/components/editor/ChoiceThumbs'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
@@ -210,7 +216,16 @@ const featureItems: Field = {
     icon: 'check',
     photo: null,
   },
-  getItemSummary: (item: { title?: string }) => itemName(item.title || 'Destaque'),
+  getItemSummary: (item: { title?: string; text?: string }) => (
+    <ItemSummary
+      detail={item.text}
+      fallback="Destaque"
+      field="items"
+      item={item}
+      nameKey="title"
+      problem={featureProblem}
+    />
+  ),
 }
 
 // Produtos da Vitrine. Como nos Destaques, os botões Subir e Descer ficam em cada item.
@@ -242,7 +257,16 @@ const productItems: Field = {
     price: '',
     button: { label: 'Pedir pelo WhatsApp', link: { kind: 'whatsapp' } },
   },
-  getItemSummary: (item: { name?: string }) => itemName(item.name || 'Produto'),
+  getItemSummary: (item: { name?: string; text?: string }) => (
+    <ItemSummary
+      detail={item.text}
+      fallback="Produto"
+      field="items"
+      item={item}
+      nameKey="name"
+      problem={productProblem}
+    />
+  ),
 }
 
 /** Animação da seção (redesign v3, entrega 2): no fim das opções, escolhida por miniatura. */
@@ -398,7 +422,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
           name: 'Nome do cliente',
           photo: null,
         },
-        getItemSummary: (item) => itemName(item.name || 'Depoimento'),
+        getItemSummary: (item) => (
+          <ItemSummary
+            detail={item.quote}
+            fallback="Depoimento"
+            field="items"
+            item={item}
+            nameKey="name"
+          />
+        ),
       },
       style: sectionStyle,
       menuLabel,
@@ -433,7 +465,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 12,
         arrayFields: { question: text('Pergunta'), answer: textarea('Resposta') },
         defaultItemProps: { question: 'Nova pergunta?', answer: 'Escreva a resposta aqui.' },
-        getItemSummary: (item) => itemName(item.question || 'Pergunta'),
+        getItemSummary: (item) => (
+          <ItemSummary
+            detail={item.answer}
+            fallback="Pergunta"
+            field="items"
+            item={item}
+            nameKey="question"
+          />
+        ),
       },
       style: sectionStyle,
       menuLabel,
@@ -595,16 +635,19 @@ const sections: { [K in keyof Components]: Section<K> } = {
               description: text('Descrição curta (opcional)'),
               price: text('Preço'),
             },
-            defaultItemProps: { name: 'Novo item', description: '', price: 'R$ 0,00' },
+            // Preço vazio, como na Vitrine (A6, achado PriceList-3): um "R$ 0,00" esquecido ia ao ar.
+            defaultItemProps: { name: 'Novo item', description: '', price: '' },
             getItemSummary: (item) => itemName(item.name || 'Item'),
           },
         },
         defaultItemProps: {
           name: 'Novo grupo',
           image: null,
-          items: [{ name: 'Novo item', description: '', price: 'R$ 0,00' }],
+          items: [{ name: 'Novo item', description: '', price: '' }],
         },
-        getItemSummary: (item) => itemName(item.name || 'Grupo'),
+        getItemSummary: (item) => (
+          <ItemSummary fallback="Grupo" field="groups" item={item} nameKey="name" />
+        ),
       },
       ...({
         pricesHint: notice(
@@ -627,8 +670,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
           name: 'Nome do grupo',
           image: null,
           items: [
-            { name: 'Nome do item', description: 'Descrição curta', price: 'R$ 0,00' },
-            { name: 'Nome do item', description: '', price: 'R$ 0,00' },
+            { name: 'Nome do item', description: 'Descrição curta', price: '' },
+            { name: 'Nome do item', description: '', price: '' },
           ],
         },
       ],
@@ -644,7 +687,9 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 5,
         arrayFields: { text: text('Frase curta') },
         defaultItemProps: { text: 'Escreva o aviso aqui' },
-        getItemSummary: (item) => itemName(item.text || 'Frase'),
+        getItemSummary: (item) => (
+          <ItemSummary fallback="Frase" field="items" item={item} nameKey="text" />
+        ),
       },
       mode: thumbChoice('Movimento', [
         {
@@ -757,7 +802,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
         max: 12,
         arrayFields: { label: text('Texto do botão'), link },
         defaultItemProps: { label: 'Novo link', link: null },
-        getItemSummary: (item) => itemName(item.label || 'Link'),
+        getItemSummary: (item) => (
+          <ItemSummary
+            fallback="Link"
+            field="items"
+            item={item}
+            nameKey="label"
+            problem={linkProblem}
+          />
+        ),
       },
       style: sectionStyle,
       anim: animField('LinkList'),

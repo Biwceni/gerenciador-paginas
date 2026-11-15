@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import { request, updatePhotoAlt } from '@/components/editor/api'
 import { thumbnailURL } from '@/components/editor/context'
+import { FocusPicker } from '@/components/editor/FocusPicker'
 import type { PhotoUse } from '@/hooks/protectPhoto'
 import { editorPath } from '@/lib/editor'
 import { isExamplePhoto } from '@/lib/examples'
@@ -339,6 +340,17 @@ function PhotoDetail({
                   ? 'Não deu para salvar. Confira a internet e tente de novo.'
                   : 'Ajuda o Google e pessoas que usam leitor de tela. Salva sozinho.'}
         </span>
+      </div>
+
+      <div className="gp-field">
+        <span className="gp-label">Recorte da foto</span>
+        <FocusPicker
+          apiRoute={apiRoute}
+          hintClass="gp-hint"
+          key={photo.id}
+          onSaved={() => onAltSaved()}
+          photo={photo}
+        />
       </div>
 
       <div className="gp-field">

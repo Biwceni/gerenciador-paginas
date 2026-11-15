@@ -54,6 +54,8 @@ export function Photo({ media, sizes, priority, className, fill, alt: ownAlt }: 
       priority={priority}
       sizes={sizes}
       src={media.url}
+      // Fotos cortadas pelo CSS (object-fit: cover) também centram no ponto de foco (A4).
+      style={objectPosition ? { objectPosition } : undefined}
       unoptimized={unoptimized}
       width={media.width ?? 1200}
     />

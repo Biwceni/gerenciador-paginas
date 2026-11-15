@@ -322,11 +322,13 @@ test.describe('editor: campos mais claros e desfazer com segurança', () => {
     await openEditor(page, id, 1)
     await pick(page, 0)
 
-    // 5.4: a primeira foto vai direto para o fim.
-    await fields(page).getByLabel('Posição').first().selectOption('2')
+    // 5.4: a primeira foto vai direto para o fim, pelo menu ⋯ da foto (A5).
+    await fields(page).getByRole('button', { name: 'Mais ações da foto 1' }).click()
+    await fields(page).getByLabel('Levar para').selectOption('2')
     await expect.poll(order).toEqual([photos[1], photos[2], photos[0]])
 
     // 5.5: tirar a foto tem Desfazer.
+    await fields(page).getByRole('button', { name: 'Mais ações da foto 1' }).click()
     await fields(page).getByRole('button', { name: 'Tirar a foto 1' }).click()
     await expect(page.getByText('Foto tirada da seção.')).toBeVisible()
     await expect.poll(order).toEqual([photos[2], photos[0]])
