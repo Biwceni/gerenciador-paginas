@@ -192,6 +192,8 @@ test.describe.serial('editor: seções', () => {
     await page.click('button[type="submit"]')
     await page.waitForURL((url) => !url.pathname.endsWith('/login'))
     await openEditor(page)
+    // Com seções, o editor abre com o catálogo fechado (rodada 2, F5): estes testes usam a lista.
+    await page.locator('[class*="_NavItem-link_"]', { hasText: 'Adicionar' }).first().click()
     // A página ainda está assentando logo depois de abrir.
     await expect(page.locator('.ed-palitem:not([inert])').first()).toBeVisible()
   })

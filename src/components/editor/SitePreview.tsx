@@ -95,7 +95,7 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
     <>
       <Locked
         href={preview.headerAdminHref}
-        tip="O topo e o rodapé você muda em Menu e rodapé. Clique para abrir."
+        tip="O topo e o rodapé você muda em Menu e rodapé. Abre em outra aba."
       >
         {preview.campaign ? preview.headerCampaign : preview.header}
       </Locked>
@@ -106,7 +106,7 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
       </main>
       <Locked
         href={preview.footerAdminHref}
-        tip="O topo e o rodapé você muda em Menu e rodapé. Clique para abrir."
+        tip="O topo e o rodapé você muda em Menu e rodapé. Abre em outra aba."
       >
         {preview.campaign ? preview.footerCampaign : preview.footer}
       </Locked>

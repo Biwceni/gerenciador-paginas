@@ -9,6 +9,7 @@ import { sectionSummary } from '@/puck/sectionSummary'
 
 import { HeadingOutline } from './HeadingOutline'
 import { scrollToSection } from './insert'
+import { Tap } from './Tap'
 import { MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { useMoveSection } from './SectionActions'
 import { ClosePanel } from './SectionList'
@@ -55,7 +56,9 @@ function OrderList() {
       <ClosePanel />
       <div>
         <h3>Ordem das seções</h3>
-        <p className="ed-hint">Clique para ir até a seção. Use as setas para mudar de lugar.</p>
+        <p className="ed-hint">
+          <Tap /> para ir até a seção. Use as setas para mudar de lugar.
+        </p>
       </div>
       {content.length === 0 ? (
         <p className="ed-hint">A página ainda não tem seções.</p>

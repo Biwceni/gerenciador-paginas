@@ -29,6 +29,7 @@ import {
 import { InlineTextMenu, TextMenu } from '@/components/editor/RichTextTools'
 import { ChoiceThumb, type ChoiceThumbName } from '@/components/editor/ChoiceThumbs'
 import { SitePreviewRoot } from '@/components/editor/SitePreview'
+import { Tap } from '@/components/editor/Tap'
 import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
 import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
@@ -382,7 +383,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       anim: 'site',
       menuLabel: '',
       title: 'Conte um pouco mais',
-      text: 'Use este espaço para explicar com calma. Clique no texto para mudar.',
+      text: 'Use este espaço para explicar com calma.',
       image: null,
       side: 'right',
       style: 'light',
@@ -743,7 +744,9 @@ const sections: { [K in keyof Components]: Section<K> } = {
     },
     defaultProps: {
       items: [{ text: 'Escreva o aviso aqui' }, { text: 'Promoção, horário ou temporada' }],
-      mode: 'move',
+      // Começa parada (rodada 2, F13): faixa correndo sem parar chama a atenção o tempo todo e o
+      // Impeccable aponta como "marquee". Quem quiser movimento escolhe Correndo.
+      mode: 'static',
       style: 'brand',
     },
   },
@@ -906,19 +909,19 @@ const sections: { [K in keyof Components]: Section<K> } = {
       column1: [
         {
           type: 'ColumnText',
-          props: { title: 'Primeira coluna', text: 'Clique no texto para mudar.' },
+          props: { title: 'Primeira coluna', text: 'Escreva aqui o texto desta coluna.' },
         },
       ],
       column2: [
         {
           type: 'ColumnText',
-          props: { title: 'Segunda coluna', text: 'Clique no texto para mudar.' },
+          props: { title: 'Segunda coluna', text: 'Escreva aqui o texto desta coluna.' },
         },
       ],
       column3: [
         {
           type: 'ColumnText',
-          props: { title: 'Terceira coluna', text: 'Clique no texto para mudar.' },
+          props: { title: 'Terceira coluna', text: 'Escreva aqui o texto desta coluna.' },
         },
       ],
     },
@@ -1035,7 +1038,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
   // Com a peça Título (C13), o Texto chega sem título; o campo continua, para quem quiser os dois.
   ColumnText: {
     fields: { title: text('Título (opcional)'), text: textarea('Texto') },
-    defaultProps: { title: '', text: 'Clique no texto para mudar.' },
+    defaultProps: { title: '', text: 'Escreva aqui o texto desta coluna.' },
   },
   ColumnImage: {
     fields: { image: photo('Foto', SECTION_MIN_WIDTH), caption: text('Legenda (opcional)') },
@@ -1077,9 +1080,16 @@ export const editorConfig: Config<Components> = {
     render: ({ children }) => <SitePreviewRoot>{children}</SitePreviewRoot>,
     fields: {
       ...({
-        notice: notice(
-          'Clique numa seção da página para ver as opções dela. Para mudar um texto, clique nele e digite. Nome, endereço e Google ficam em "Página e Google".',
-        ),
+        notice: {
+          type: 'custom',
+          render: () => (
+            <Notice>
+              <Tap /> numa seção da página para ver as opções dela. Para mudar um texto,{' '}
+              <Tap lower /> nele e digite. Nome, endereço e Google ficam em &ldquo;Página e
+              Google&rdquo;.
+            </Notice>
+          ),
+        },
       } as object),
     },
   },

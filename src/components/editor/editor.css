@@ -266,6 +266,21 @@
   }
 }
 
+/* "Clique" e "Toque" (componente Tap): um ou outro, conforme a tela. */
+.ed-touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .ed-touch {
+    display: inline;
+  }
+
+  .ed-mouse {
+    display: none;
+  }
+}
+
 .ed-show-phone {
   display: none;
 }
@@ -612,10 +627,22 @@ textarea.ed-input {
 
 .ed-dialog__foot {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 20px;
   border-top: 1px solid var(--ed-line);
+}
+
+/* "Colocar no menu" do Publicar: uma linha só, acima dos botões. */
+.ed-publish-menu {
+  flex: 1 1 100%;
+  margin-bottom: 4px;
+}
+
+.ed-link-field__step {
+  display: grid;
+  gap: 4px;
 }
 
 .ed-picker-bar {
@@ -1205,6 +1232,17 @@ textarea.ed-input {
     right: 0;
     display: inline-flex;
   }
+
+  /* Teclado aberto (rodada 2, F3): a barra de baixo sai para sobrar espaço para o campo. */
+  html[data-ed-keyboard] .ed-root [class*='PuckLayout-nav'] {
+    display: none;
+  }
+
+  /* A Ordem tem margem própria: o X fica dentro dela, como no catálogo (rodada 2, F8). */
+  .ed-order > .ed-panel__close {
+    top: 12px;
+    right: 16px;
+  }
 }
 
 /* Resumo da página, no painel da direita, quando nenhuma seção está escolhida. */
@@ -1396,6 +1434,14 @@ textarea.ed-input {
 .ed-anim__button {
   justify-self: start;
   min-height: 44px;
+}
+
+/* "Abrir Sua marca": botão de 44 px em vez de um link de 17 px (rodada 2, F14). */
+.ed-anim__brand {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 /* Títulos do editor na letra de títulos do painel (Familjen Grotesk). */
@@ -1995,9 +2041,14 @@ textarea.ed-grow {
   background: var(--ed-bg);
 }
 
+/* As três abas dividem a largura em partes iguais: "Animação" não fica cortada no painel de 273 px
+   do computador (rodada 2, F4). */
 .ed-root [data-puck-tablist] [role='tab'] {
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 4px;
+  white-space: nowrap;
   border-radius: 0;
   border-bottom: 3px solid transparent;
   background: none;
@@ -2191,7 +2242,7 @@ textarea.ed-grow {
 
 .ed-pieces__item {
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 10px;
   border: 0;
   border-radius: 8px;
@@ -2213,7 +2264,8 @@ textarea.ed-grow {
 }
 
 .ed-pieces .ed-piece-add__btn {
-  min-height: 36px;
+  /* 44 px como os outros botões do painel (rodada 2, F16). */
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--ed-line);
   border-radius: 999px;

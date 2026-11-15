@@ -221,6 +221,18 @@ export function PublishDialog({
       }
       footer={
         <>
+          {/* Fica sempre à vista, junto dos botões: a pessoa decide antes de publicar, mesmo com
+              uma lista comprida de avisos (rodada 2, F9). */}
+          {menu.kind === 'can-add' && (
+            <label className="ed-switch ed-publish-menu">
+              <input
+                checked={addToMenu}
+                onChange={(event) => setAddToMenu(event.target.checked)}
+                type="checkbox"
+              />
+              Colocar esta página no menu do topo e do rodapé
+            </label>
+          )}
           <button className="ed-btn" onClick={onClose} type="button">
             Agora não
           </button>
@@ -395,18 +407,6 @@ export function PublishDialog({
         {whatsappWithoutNumber && (
           <Check title="Botão de WhatsApp sem número">
             Ele fica escondido até você pôr o número em Configurações.
-          </Check>
-        )}
-        {menu.kind === 'can-add' && (
-          <Check title="Esta página não está no menu">
-            <label className="ed-switch">
-              <input
-                checked={addToMenu}
-                onChange={(event) => setAddToMenu(event.target.checked)}
-                type="checkbox"
-              />
-              Colocar no menu do topo e do rodapé
-            </label>
           </Check>
         )}
         {menu.kind === 'cannot-add' && (

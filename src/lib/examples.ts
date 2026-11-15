@@ -59,7 +59,6 @@ export const KEEPABLE_TEXTS: readonly string[] = [
   'Vamos conversar?',
   'Por que escolher a gente',
   'Assista ao nosso vídeo',
-  'Deixe seus dados e respondemos em pouco tempo.',
 ]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()

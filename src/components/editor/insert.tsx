@@ -11,14 +11,29 @@ import { MOBILE_WIDTH, ROOT_ZONE } from './puck'
 export const previewDocument = (): Document | null =>
   document.querySelector<HTMLIFrameElement>('.ed-root iframe')?.contentDocument ?? null
 
+/**
+ * Onde rolar a prévia para mostrar `section`: centralizada quando cabe, senão pelo começo. Nos dois
+ * casos sobra acima dela o espaço da barrinha (56 px; 64 px no celular), para a barra ficar no
+ * espaço da seção de cima e não por cima do título (rodada 2, F2).
+ */
+export function sectionScrollTop(section: Element, view: Window): number {
+  const box = section.getBoundingClientRect()
+  const room = view.matchMedia('(max-width: 637px), (pointer: coarse)').matches ? 64 : 56
+  const free = view.innerHeight - box.height
+  const above = free > room * 2 ? free / 2 : room
+  return Math.max(0, box.top + view.scrollY - above)
+}
+
 /** Mostra uma seção na prévia. Espera o Puck desenhar, porque a página acabou de mudar. */
 export function scrollToSection(id: string) {
   requestAnimationFrame(() =>
-    requestAnimationFrame(() =>
-      previewDocument()
-        ?.querySelector(`[data-puck-component="${CSS.escape(id)}"]`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
-    ),
+    requestAnimationFrame(() => {
+      const doc = previewDocument()
+      const section = doc?.querySelector(`[data-puck-component="${CSS.escape(id)}"]`)
+      const view = doc?.defaultView
+      if (!section || !view) return
+      view.scrollTo({ top: sectionScrollTop(section, view), behavior: 'smooth' })
+    }),
   )
 }
 

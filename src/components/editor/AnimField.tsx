@@ -253,13 +253,15 @@ export function AnimField({
           </svg>
           Ver a animação
         </button>
-        <span className="ed-hint">
-          A animação do site muda em{' '}
-          <a href={`${panelHref(adminRoute, 'brand')}#mc-animacao`} rel="noopener" target="_blank">
-            Sua marca
-          </a>
-          .
-        </span>
+        <span className="ed-hint">A animação do site muda em Sua marca.</span>
+        <a
+          className="ed-btn ed-btn--sm ed-anim__brand"
+          href={`${panelHref(adminRoute, 'brand')}#mc-animacao`}
+          rel="noopener"
+          target="_blank"
+        >
+          Abrir Sua marca ↗
+        </a>
       </div>
     </div>
   )
