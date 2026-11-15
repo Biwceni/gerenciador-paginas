@@ -1,8 +1,44 @@
 'use client'
 
+import { createUsePuck } from '@puckeditor/core'
 import React, { createContext, useContext } from 'react'
 
+import { mainHeadingID } from '@/puck/references'
+import type { PuckPageData } from '@/puck/schema'
+
 import { EmptyPage } from './EmptyPage'
+
+const usePuck = createUsePuck()
+
+/**
+ * O título que a página ganha no site quando não começa com um Banner (B2, achado G2): na prévia,
+ * igual ao site, travado, com a etiqueta que diz por que aparece e onde muda. Na página inicial ele
+ * fica escondido no site, e aqui também não aparece.
+ */
+function PageTitle({ preview }: { preview: Preview }) {
+  const hasMainHeading = usePuck((s) =>
+    Boolean(mainHeadingID(s.appState.data as unknown as PuckPageData)),
+  )
+  const empty = usePuck((s) => s.appState.data.content.length === 0)
+  if (hasMainHeading || empty || preview.isHome || !preview.pageTitle) return null
+  return (
+    <div className="editor-locked editor-page-title">
+      <h1 aria-hidden="true" className="container page-title">
+        {preview.pageTitle}
+      </h1>
+      <button
+        className="editor-locked__tip"
+        onClick={() => preview.openPageSettings?.()}
+        type="button"
+      >
+        <span className="editor-locked__tag">
+          Título da página: aparece porque a página não começa com um Banner. Mude em Página e
+          Google
+        </span>
+      </button>
+    </div>
+  )
+}
 
 /** Topo e rodapé do site, já desenhados pelo servidor (normal e de página de campanha). */
 export type SiteChrome = {
@@ -15,11 +51,21 @@ export type SiteChrome = {
   footerAdminHref: string
 }
 
-type Preview = SiteChrome & { campaign: boolean }
+type Preview = SiteChrome & {
+  campaign: boolean
+  /** Nome da página: vira o título principal no site quando ela não começa com um Banner. */
+  pageTitle?: string
+  /** Página inicial: o título fica escondido no site (só para o Google e o leitor de tela). */
+  isHome?: boolean
+  openPageSettings?: () => void
+}
 
 const SitePreviewContext = createContext<Preview | null>(null)
 
 export const SitePreviewProvider = SitePreviewContext.Provider
+
+/** Para a lista de títulos (aba Ordem): saber se é a página inicial. */
+export const SitePreviewContextForOutline = SitePreviewContext
 
 /**
  * Parte do site que não muda nesta página: aparece igual ao site (sem desbotar) e, ao passar o mouse
@@ -54,6 +100,7 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
         {preview.campaign ? preview.headerCampaign : preview.header}
       </Locked>
       <main id="conteudo">
+        <PageTitle preview={preview} />
         {children}
         <EmptyPage />
       </main>

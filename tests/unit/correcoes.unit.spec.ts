@@ -194,7 +194,7 @@ describe('contraste dos modelos', () => {
       expect(contrastWarnings(preset.colors), preset.name).toEqual([])
   })
 
-  it('avisa da cor principal usada como texto e da frase do banner', () => {
+  it('avisa da cor principal usada como texto; a frase do banner se ajusta sozinha (G4)', () => {
     const labels = contrastWarnings({
       primary: '#d94a63',
       background: '#ffffff',
@@ -203,7 +203,8 @@ describe('contraste dos modelos', () => {
       footer: '#111111',
     }).map((warning) => warning.label)
     expect(labels).toContain('Links e item do menu na cor principal')
-    expect(labels).toContain('Frase do banner na cor principal')
+    // A frase fica mais forte em vez de passar do limite: não há o que avisar.
+    expect(labels).not.toContain('Frase do banner na cor principal')
   })
 
   it('mistura as cores como a opacidade do CSS', () => {

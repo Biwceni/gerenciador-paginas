@@ -1,5 +1,6 @@
 import { instagramLink } from '../lib/links'
-import { INSTAGRAM_MIN_PHOTOS, type PuckPageData } from './schema'
+import { pieceShows } from './hiddenSections'
+import { COLUMN_COUNT, INSTAGRAM_MIN_PHOTOS, type PuckPageData } from './schema'
 
 // O que falta nas seções para irem ao ar inteiras (redesign v3, entrega 4). Vira aviso no Publicar:
 // nenhum bloqueia, como as outras checagens.
@@ -76,6 +77,42 @@ export function sectionChecks(
         '# itens ainda têm nome de exemplo',
       ),
       text: 'Troque “Nome do produto” ou “Nome do item” pelo nome de verdade.',
+    })
+  }
+
+  // Destaques com o marcador Foto: o item sem foto fica só com o texto, igual a "Nenhum" (B1,
+  // achado Features-2).
+  const featuresWithoutPhoto = data.content
+    .flatMap((item) =>
+      item.type === 'Features' && item.props.marker === 'photo' ? item.props.items : [],
+    )
+    .filter((item) => (item.title.trim() || item.text.trim()) && !withPhoto(item.photo)).length
+  if (featuresWithoutPhoto) {
+    checks.push({
+      title: plural(
+        featuresWithoutPhoto,
+        'Um destaque está sem foto',
+        '# destaques estão sem foto',
+      ),
+      text: 'O marcador escolhido é Foto: sem ela, o destaque fica só com o texto. Escolha a foto no item, nas opções da seção.',
+    })
+  }
+
+  // Colunas com alguma coluna vazia: fica um buraco no meio da seção (B1, achado Columns-4). Todas
+  // vazias já entram nas seções que não vão aparecer (hiddenSections.ts).
+  const emptyColumns = data.content.reduce((count, item) => {
+    if (item.type !== 'Columns') return count
+    const columns = [item.props.column1, item.props.column2, item.props.column3].slice(
+      0,
+      COLUMN_COUNT[item.props.layout],
+    ) as { type: string; props: Record<string, unknown> }[][]
+    const empty = columns.filter((pieces) => !pieces.some((piece) => pieceShows(piece, hasPhoto)))
+    return empty.length && empty.length < columns.length ? count + empty.length : count
+  }, 0)
+  if (emptyColumns) {
+    checks.push({
+      title: plural(emptyColumns, 'Uma coluna está vazia', '# colunas estão vazias'),
+      text: 'Ela deixa um espaço em branco na seção Colunas. Coloque uma peça nela ou escolha um modelo com menos colunas.',
     })
   }
 

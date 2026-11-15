@@ -212,8 +212,8 @@ test.describe.serial('personalidades do site', () => {
     await publishPersonality('editorial')
     await page.setViewportSize({ width: 1440, height: 900 })
     await open(page, '/')
-    // Três destaques lado a lado no computador; o site estreitado vira uma coluna, com a janela
-    // do mesmo tamanho.
+    // Três destaques lado a lado no computador; o site estreitado fica com dois por linha (A7),
+    // com a janela do mesmo tamanho.
     const lefts = () =>
       page
         .locator('.features__item')
@@ -222,7 +222,7 @@ test.describe.serial('personalidades do site', () => {
     await page.evaluate(() => {
       document.body.style.width = '400px'
     })
-    expect(new Set(await lefts()).size).toBe(1)
+    expect(new Set(await lefts()).size).toBe(2)
   })
 
   test('Vitrine: topo por cima da foto fica sólido ao rolar; com menos movimento, topo de sempre', async () => {
@@ -261,7 +261,8 @@ test.describe.serial('personalidades do site', () => {
       ).size
     await expect.poll(columns).toBe(3)
     await page.getByRole('button', { name: 'Ver como celular' }).click()
-    await expect.poll(columns).toBe(1)
+    // No celular, dois destaques por linha (A7).
+    await expect.poll(columns).toBe(2)
   })
 
   test('Sua marca: escolher a personalidade muda a prévia e só vai ao ar ao publicar', async () => {

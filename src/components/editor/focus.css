@@ -1,0 +1,67 @@
+/*
+ * Ponto de foco da foto (A4): a foto inteira com um ponto no que não pode ser cortado, e embaixo os
+ * três recortes que as seções usam, já centrados nele.
+ */
+.ed-focus {
+  display: grid;
+  flex: 1 0 100%;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ed-focus__photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ed-line-strong, var(--gp-line-strong, #c9c9d1));
+  border-radius: 8px;
+  background: var(--ed-bg, var(--gp-surface, #fff));
+  cursor: crosshair;
+}
+
+.ed-focus__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ed-focus__photo:focus-visible {
+  outline: 2px solid var(--ed-accent, var(--gp-accent, #3b4bd8));
+  outline-offset: 2px;
+}
+
+.ed-focus__dot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--ed-accent, var(--gp-accent, #3b4bd8));
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.ed-focus__crops {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.6fr;
+  align-items: end;
+  gap: 6px;
+}
+
+.ed-focus__crop {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.ed-focus__crop img {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}

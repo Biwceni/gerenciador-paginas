@@ -19,7 +19,7 @@ const text = (value: unknown) =>
   typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : ''
 
 /** Peça das Colunas que o site mostra (a mesma regra das peças em `sections.tsx`). */
-function pieceShows(piece: Piece, hasPhoto: (id: number) => boolean): boolean {
+export function pieceShows(piece: Piece, hasPhoto: (id: number) => boolean): boolean {
   const props = piece.props
   if (piece.type === 'ColumnText') return Boolean(text(props.title) || text(props.text))
   if (piece.type === 'ColumnImage') {
@@ -78,6 +78,14 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
       return columns.some((pieces) => pieces.some((piece) => pieceShows(piece, hasPhoto)))
         ? null
         : 'está sem nenhuma peça e fica um espaço vazio'
+    }
+    case 'CallToAction': {
+      const button = item.props.button
+      return text(item.props.title) ||
+        text(item.props.text) ||
+        (button?.label.trim() && button.link)
+        ? null
+        : 'está sem título, frase e botão'
     }
     case 'Form':
       return item.props.form ? null : 'falta escolher qual formulário, e só o título aparece'

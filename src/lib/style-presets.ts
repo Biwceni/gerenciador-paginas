@@ -1,4 +1,4 @@
-import { blendColors, contrastRatio, readableTextColor } from './colors'
+import { blendColors, contrastRatio, minReadableOpacity, readableTextColor } from './colors'
 
 // Atalhos do visual do site (do protótipo): só pontos de partida, as cores e fontes continuam livres.
 
@@ -163,7 +163,10 @@ export const BANNER_TEXT_OPACITY = 0.92
 
 /** Contraste da frase do banner quando o fundo dele é a cor principal. */
 export function bannerTextRatio(primary: string): number {
-  const text = blendColors(readableTextColor(primary), primary, BANNER_TEXT_OPACITY)
+  const onPrimary = readableTextColor(primary)
+  // Como no site: a frase nunca fica mais clara que o piso que garante 4,5:1 (achado G4).
+  const opacity = Math.max(BANNER_TEXT_OPACITY, minReadableOpacity(onPrimary, primary))
+  const text = blendColors(onPrimary, primary, opacity)
   return contrastRatio(text, primary)
 }
 

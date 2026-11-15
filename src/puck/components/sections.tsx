@@ -16,6 +16,7 @@ import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 
 import { announcementRun, testimonialColumns, whatsAppMessageHref } from '../layout'
+import { AutoRotate } from './AutoRotate'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
 import { COLUMN_COUNT, INSTAGRAM_MIN_PHOTOS } from '../schema'
 import type {
@@ -376,7 +377,7 @@ export function Features({
     >
       <div className="container anim-part">
         <SectionTitle title={title} />
-        <List className={`features${two ? ' features--two' : ''}`}>
+        <List className={`features${two ? ' features--two' : ''}`} data-count={shown.length}>
           {shown.map((item, index) => (
             <li className="features__item anim-part" key={index} style={order(index)}>
               {marker === 'number' && (
@@ -438,38 +439,75 @@ export function Testimonials({
     >
       <div className="container anim-part">
         <SectionTitle title={title} />
-        {/* 3 depoimentos em 3 colunas; 4 em 2 + 2; a última linha estica (nada fica sozinho). */}
-        <ul
-          className="testimonials"
-          data-count={shown.length}
-          style={columns(testimonialColumns(shown.length))}
-        >
-          {shown.map((item, index) => {
-            const photo = getPhoto(metadata, item.photo ?? null)
-            return (
-              <li className="anim-part" key={index} style={order(index)}>
-                <figure>
-                  <span aria-hidden="true" className="testimonials__mark">
-                    “
-                  </span>
-                  <blockquote>
-                    <p>{item.quote}</p>
-                  </blockquote>
-                  {(filled(item.name) || photo) && (
-                    <figcaption>
-                      {photo && (
-                        <span className="testimonials__photo">
-                          <Photo fill media={photo} sizes="48px" />
-                        </span>
+        {/* 3 depoimentos em 3 colunas; 4 em 2 + 2; a última linha estica (nada fica sozinho). No
+            celular, uma faixa que desliza e troca sozinha (A7, achado G5); no editor, parada. */}
+        {metadata.editing ? (
+          <ul
+            className="testimonials"
+            data-count={shown.length}
+            style={columns(testimonialColumns(shown.length))}
+          >
+            {shown.map((item, index) => {
+              const photo = getPhoto(metadata, item.photo ?? null)
+              return (
+                <li className="anim-part" key={index} style={order(index)}>
+                  <figure>
+                    <span aria-hidden="true" className="testimonials__mark">
+                      “
+                    </span>
+                    <blockquote>
+                      <p>{item.quote}</p>
+                    </blockquote>
+                    {(filled(item.name) || photo) && (
+                      <figcaption>
+                        {photo && (
+                          <span className="testimonials__photo">
+                            <Photo fill media={photo} sizes="48px" />
+                          </span>
+                        )}
+                        {item.name}
+                      </figcaption>
+                    )}
+                  </figure>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <AutoRotate count={shown.length} label="depoimentos">
+            <ul
+              className="testimonials"
+              data-count={shown.length}
+              style={columns(testimonialColumns(shown.length))}
+            >
+              {shown.map((item, index) => {
+                const photo = getPhoto(metadata, item.photo ?? null)
+                return (
+                  <li className="anim-part" key={index} style={order(index)}>
+                    <figure>
+                      <span aria-hidden="true" className="testimonials__mark">
+                        “
+                      </span>
+                      <blockquote>
+                        <p>{item.quote}</p>
+                      </blockquote>
+                      {(filled(item.name) || photo) && (
+                        <figcaption>
+                          {photo && (
+                            <span className="testimonials__photo">
+                              <Photo fill media={photo} sizes="48px" />
+                            </span>
+                          )}
+                          {item.name}
+                        </figcaption>
                       )}
-                      {item.name}
-                    </figcaption>
-                  )}
-                </figure>
-              </li>
-            )
-          })}
-        </ul>
+                    </figure>
+                  </li>
+                )
+              })}
+            </ul>
+          </AutoRotate>
+        )}
       </div>
     </Section>
   )
@@ -571,6 +609,15 @@ export function CallToAction({
   metadata,
 }: WithMetadata<CallToActionProps>) {
   const shown = sectionAnim('CallToAction', anim, metadata)
+  // Toda vazia (sem título, frase e botão que leve a algum lugar), ela sumia numa faixa colorida
+  // vazia (B1, achado CallToAction-1): no site, some. O Publicar avisa (hiddenSections.ts).
+  // No editor o texto chega como o campo de escrever do Puck, não como texto: lá ela sempre aparece.
+  if (!metadata.editing) {
+    const buttonShows = Boolean(
+      button && filled(button.label) && getHref(metadata, button.link) !== null,
+    )
+    if (!filled(title) && !filled(text) && !buttonShows) return null
+  }
   return (
     <Section anim={shown} id={id} metadata={metadata} style={style}>
       <div className="container cta anim-part">

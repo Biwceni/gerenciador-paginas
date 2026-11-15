@@ -31,6 +31,7 @@ import type { FormRef, LinkRef, PhotoRef, PuckPageData } from '@/puck/schema'
 
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
+import { FocusPicker } from './FocusPicker'
 import { counterText } from './CountedField'
 import { restoreField, showUndo } from './undoToast'
 
@@ -79,8 +80,9 @@ export function PhotoField({
   readOnly,
   minWidth,
 }: FieldProps<PhotoRef> & { minWidth?: number | 'banner' }) {
-  const { photoById, pickPhoto } = useEditor()
+  const { apiRoute, photoById, pickPhoto, updatePhoto } = useEditor()
   const photo = value ? photoById[value.mediaId] : null
+  const [focusOpen, setFocusOpen] = useState(false)
 
   return (
     <div className="ed-photo-field">
@@ -117,7 +119,26 @@ export function PhotoField({
         ) : (
           <SmallPhotoNote minWidth={minWidth} photo={photo} />
         )}
+        {photo && (
+          <button
+            aria-expanded={focusOpen}
+            className="ed-linkbtn"
+            onClick={() => setFocusOpen((open) => !open)}
+            type="button"
+          >
+            {focusOpen ? 'Fechar o recorte' : 'Ajustar o recorte'}
+          </button>
+        )}
       </div>
+      {photo && focusOpen && (
+        <FocusPicker
+          apiRoute={apiRoute}
+          key={photo.id}
+          onSaved={updatePhoto}
+          photo={photo}
+          readOnly={readOnly}
+        />
+      )}
     </div>
   )
 }
@@ -152,89 +173,52 @@ export function PhotoListField<T extends PhotoListItem>({
     <div className="ed-photo-list">
       {value.map((ref, index) => {
         const photo = photoById[ref.mediaId]
+        const remove = () => {
+          const before = value
+          const section = getPuck().selectedItem?.props.id as string | undefined
+          onChange(value.filter((_, i) => i !== index))
+          // Como a seção removida, a foto tirada tem Desfazer (achado 5.5).
+          if (section && name) {
+            showUndo('Foto tirada da seção.', () => restoreField(getPuck, section, name, before))
+          }
+        }
         return (
+          // Duas linhas por foto (A5: Gallery-1, InstagramStrip-2): miniatura, nome e o menu ⋯ em
+          // cima; a legenda inteira embaixo. Nada mais fica cortado no painel de 274 px.
           <div className="ed-photo-list__item" key={`${ref.mediaId}-${index}`}>
-            {photo ? (
-              <img alt="" className="ed-pic ed-pic--sm" src={thumbnailURL(photo)} />
-            ) : (
-              <span className="ed-pic ed-pic--sm ed-pic--empty">Apagada</span>
+            <div className="ed-photo-list__row">
+              {photo ? (
+                <img alt="" className="ed-pic ed-pic--sm" src={thumbnailURL(photo)} />
+              ) : (
+                <span className="ed-pic ed-pic--sm ed-pic--empty">Apagada</span>
+              )}
+              <span className="ed-photo-list__name">
+                <span className="ed-photo-list__label">
+                  {index + 1}. {photo ? photoLabel(photo) : 'Foto apagada'}
+                </span>
+                {minWidth && isSmallPhoto(photo, minWidth) && (
+                  <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TITLE}</span>
+                )}
+              </span>
+              <PhotoItemMenu
+                count={value.length}
+                index={index}
+                onMove={(to) => move(index, to)}
+                onRemove={remove}
+                readOnly={readOnly}
+              />
+            </div>
+            {captions && (
+              <input
+                aria-label={`Legenda da foto ${index + 1}`}
+                className="ed-input ed-photo-list__caption"
+                disabled={readOnly}
+                maxLength={120}
+                onChange={(event) => setCaption(index, event.target.value)}
+                placeholder={photo?.alt?.trim() || 'Legenda (opcional)'}
+                value={ref.caption ?? ''}
+              />
             )}
-            <span className="ed-photo-list__name">
-              {photo ? photoLabel(photo) : 'Foto apagada'}
-              {minWidth && isSmallPhoto(photo, minWidth) && (
-                <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TITLE}</span>
-              )}
-              {/* Levar a foto direto para qualquer lugar da lista (achado 5.4), sem subir uma a
-                  uma. */}
-              {value.length > 2 && (
-                <label className="ed-photo-list__position">
-                  Posição
-                  <select
-                    className="ed-input"
-                    disabled={readOnly}
-                    onChange={(event) => move(index, Number(event.target.value))}
-                    value={index}
-                  >
-                    {value.map((_, at) => (
-                      <option key={at} value={at}>
-                        {at + 1}ª
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {captions && (
-                <input
-                  aria-label={`Legenda da foto ${index + 1}`}
-                  className="ed-input ed-photo-list__caption"
-                  disabled={readOnly}
-                  maxLength={120}
-                  onChange={(event) => setCaption(index, event.target.value)}
-                  placeholder={photo?.alt?.trim() || 'Legenda (opcional)'}
-                  value={ref.caption ?? ''}
-                />
-              )}
-            </span>
-            <button
-              aria-label={`Subir a foto ${index + 1}`}
-              className="ed-icon-btn"
-              disabled={readOnly || index === 0}
-              onClick={() => move(index, index - 1)}
-              title="Subir"
-              type="button"
-            >
-              <PanelIcon name="up" size={16} />
-            </button>
-            <button
-              aria-label={`Descer a foto ${index + 1}`}
-              className="ed-icon-btn"
-              disabled={readOnly || index === value.length - 1}
-              onClick={() => move(index, index + 1)}
-              title="Descer"
-              type="button"
-            >
-              <PanelIcon name="down" size={16} />
-            </button>
-            <button
-              aria-label={`Tirar a foto ${index + 1}`}
-              className="ed-icon-btn"
-              disabled={readOnly}
-              onClick={() => {
-                const before = value
-                const section = getPuck().selectedItem?.props.id as string | undefined
-                onChange(value.filter((_, i) => i !== index))
-                // Como a seção removida, a foto tirada tem Desfazer (achado 5.5).
-                if (section && name) {
-                  showUndo('Foto tirada da seção.', () =>
-                    restoreField(getPuck, section, name, before),
-                  )
-                }
-              }}
-              title="Tirar"
-              type="button"
-            >
-              <PanelIcon name="x" size={16} />
-            </button>
           </div>
         )
       })}
@@ -259,6 +243,105 @@ export function PhotoListField<T extends PhotoListItem>({
         <p className="ed-hint" role="status">
           {value.length} de {max}: é o máximo de fotos desta seção. Para colocar outra, tire uma.
         </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Menu ⋯ de cada foto da lista: Subir, Descer, levar para qualquer posição (achado 5.4) e Tirar.
+ * Fecha com Esc, ao escolher ou quando o foco sai dele.
+ */
+function PhotoItemMenu({
+  index,
+  count,
+  onMove,
+  onRemove,
+  readOnly,
+}: {
+  index: number
+  count: number
+  onMove: (to: number) => void
+  onRemove: () => void
+  readOnly?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const box = React.useRef<HTMLDivElement>(null)
+  const act = (action: () => void) => {
+    action()
+    setOpen(false)
+  }
+  return (
+    <div
+      className="ed-photo-menu"
+      onBlur={(event) => {
+        if (!box.current?.contains(event.relatedTarget as Node | null)) setOpen(false)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          event.stopPropagation()
+          setOpen(false)
+          box.current?.querySelector<HTMLButtonElement>('button')?.focus()
+        }
+      }}
+      ref={box}
+    >
+      <button
+        aria-expanded={open}
+        aria-label={`Mais ações da foto ${index + 1}`}
+        className="ed-icon-btn"
+        disabled={readOnly}
+        onClick={() => setOpen((current) => !current)}
+        title="Mais ações"
+        type="button"
+      >
+        <span aria-hidden="true">⋯</span>
+      </button>
+      {open && (
+        <div className="ed-photo-menu__list">
+          <button
+            aria-label={`Subir a foto ${index + 1}`}
+            className="ed-photo-menu__item"
+            disabled={index === 0}
+            onClick={() => act(() => onMove(index - 1))}
+            type="button"
+          >
+            <PanelIcon name="up" size={16} /> Subir
+          </button>
+          <button
+            aria-label={`Descer a foto ${index + 1}`}
+            className="ed-photo-menu__item"
+            disabled={index === count - 1}
+            onClick={() => act(() => onMove(index + 1))}
+            type="button"
+          >
+            <PanelIcon name="down" size={16} /> Descer
+          </button>
+          {count > 2 && (
+            <label className="ed-photo-menu__position">
+              Levar para
+              <select
+                className="ed-input"
+                onChange={(event) => act(() => onMove(Number(event.target.value)))}
+                value={index}
+              >
+                {Array.from({ length: count }, (_, at) => (
+                  <option key={at} value={at}>
+                    {at + 1}ª posição
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button
+            aria-label={`Tirar a foto ${index + 1}`}
+            className="ed-photo-menu__item ed-photo-menu__item--danger"
+            onClick={() => act(onRemove)}
+            type="button"
+          >
+            <PanelIcon name="x" size={16} /> Tirar da seção
+          </button>
+        </div>
       )}
     </div>
   )
