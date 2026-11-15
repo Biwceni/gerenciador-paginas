@@ -1015,7 +1015,7 @@ export interface Site {
   /**
    * Muda formas, tamanhos e a arrumação do banner e das seções em todas as páginas. O conteúdo não muda.
    */
-  personality?: ('classico' | 'vitrine' | 'aconchego' | 'editorial') | null;
+  personality?: ('papel' | 'classico' | 'vitrine' | 'aconchego' | 'editorial') | null;
   /**
    * Vale para todas as seções que estão em “Igual ao site”. No editor, cada seção pode ter a sua própria animação ou ficar sem. Quem pediu ao celular para reduzir movimentos vê só um esmaecer.
    */

@@ -20,6 +20,25 @@ export function PersonalityThumb({
   const { primary, background, surface, text } = colors
   const deep = deepShade(primary)
   const shapes: Record<Personality, React.ReactNode> = {
+    papel: (
+      <>
+        <rect fill={background} height="72" width="120" />
+        <rect fill={text} height="1.5" width="104" x="8" y="9" />
+        <rect fill={text} height="8" width="54" x="8" y="16" />
+        <rect fill={primary} height="7" rx="1.5" width="24" x="8" y="29" />
+        <g fill={surface} stroke={text} strokeOpacity=".35" strokeWidth=".8">
+          <rect height="30" width="28" x="8" y="40" />
+          <rect height="30" width="28" x="46" y="40" />
+          <rect height="30" width="28" x="84" y="40" />
+        </g>
+        <g fill={text} opacity=".45">
+          <rect height="1.4" width="20" x="12" y="62" />
+          <rect height="1.4" width="20" x="50" y="62" />
+          <rect height="1.4" width="20" x="88" y="62" />
+        </g>
+        <circle cx="100" cy="24" fill="none" r="10" stroke={primary} strokeWidth="1.6" />
+      </>
+    ),
     classico: (
       <>
         <rect fill={background} height="72" width="120" />

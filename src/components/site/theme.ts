@@ -48,6 +48,18 @@ const NEW_SECTION_PAD = 'clamp(64px, 10cqi, 128px)'
  * não da janela, para as prévias do painel e do editor responderem ao tamanho delas.
  */
 export const PERSONALITY_TOKENS: Record<Personality, PersonalityTokens> = {
+  // Papel (D1, direção B): cantos quase retos, títulos pesados e um pouco menores que os da
+  // Vitrine, porque vão em letras maiúsculas.
+  papel: {
+    '--radius': '6px',
+    '--radius-media': '2px',
+    '--fs-h1': 'clamp(40px, 6cqi, 72px)',
+    '--fs-h2': 'clamp(30px, 4cqi, 46px)',
+    '--heading-weight': '800',
+    '--heading-tracking': '-0.01em',
+    '--section-pad': NEW_SECTION_PAD,
+    '--container': '1180px',
+  },
   classico: {
     '--radius': '999px',
     '--radius-media': '16px',
