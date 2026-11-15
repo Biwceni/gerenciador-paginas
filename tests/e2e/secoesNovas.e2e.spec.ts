@@ -304,7 +304,7 @@ test.describe.serial('seções novas (entrega 4)', () => {
     })
   }
 
-  test('a faixa corre no site e para com o botão (sem pedido de menos movimento)', async ({
+  test('a faixa corre no site e para com o mouse, o foco e o dedo (sem pedido de menos movimento)', async ({
     browser,
   }) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
@@ -313,9 +313,18 @@ test.describe.serial('seções novas (entrega 4)', () => {
     const track = visitor.locator('.announce__track')
     await expect(track).toBeVisible()
     await expect(track).toHaveCSS('animation-play-state', 'running')
-    await visitor.getByRole('checkbox', { name: 'Parar a faixa de aviso' }).check()
-    // Com o botão marcado (e o foco nele), a faixa fica parada.
+    // C2: sem botão de parar.
+    await expect(visitor.locator('.announce input')).toHaveCount(0)
+    await visitor.locator('.announce').hover()
+    await expect(track).toHaveCSS('animation-play-state', 'paused')
     await visitor.mouse.move(0, 800)
+    await expect(track).toHaveCSS('animation-play-state', 'running')
+    await visitor.getByRole('note', { name: /^Aviso:/ }).focus()
+    await expect(track).toHaveCSS('animation-play-state', 'paused')
+    await visitor.getByRole('note', { name: /^Aviso:/ }).blur()
+    await expect(track).toHaveCSS('animation-play-state', 'running')
+    await visitor.locator('.announce').dispatchEvent('pointerdown')
+    await expect(visitor.locator('.announce')).toHaveAttribute('data-held', 'true')
     await expect(track).toHaveCSS('animation-play-state', 'paused')
     await context.close()
   })
@@ -341,13 +350,15 @@ test.describe.serial('seções novas (entrega 4)', () => {
         await context.close()
       }
     }
-    // 3 depoimentos ficam em 3 colunas no computador.
+    // 3 depoimentos no computador: o primeiro em destaque na linha toda, os outros dois lado a
+    // lado embaixo (C7).
     await publishContent(7, 3)
     const { context, visitor } = await visit(browser, 1440)
     const tops = await visitor
       .locator('.testimonials > li')
       .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)))
-    expect(new Set(tops).size).toBe(1)
+    expect(tops[1]).toBeGreaterThan(tops[0])
+    expect(tops[2]).toBe(tops[1])
     await context.close()
   })
 

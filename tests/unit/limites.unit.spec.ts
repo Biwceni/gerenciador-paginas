@@ -15,7 +15,7 @@ describe('limite de cada campo, tirado do formato', () => {
     ['TextImage', 'menuLabel', 40],
     ['Features', 'items[3].title', 80],
     ['Products', 'items[0].price', LIMITS.price],
-    ['Products', 'items[0].button.label', LIMITS.buttonLabel],
+    ['Products', 'items[0].button.label', LIMITS.productButton],
     ['PriceList', 'groups[1].name', 60],
     ['PriceList', 'groups[1].items[4].price', LIMITS.price],
     ['Announcement', 'items[0].text', LIMITS.announcement],

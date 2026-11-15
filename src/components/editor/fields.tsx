@@ -17,9 +17,9 @@ import { highlightRange, titleWords } from '@/lib/highlight'
 import { photoLabel } from '@/lib/photos'
 import { slugify } from '@/lib/slug'
 import {
-  BANNER_MIN_WIDTH,
-  heroShowsPhoto,
+  heroPhotoMinWidth,
   isSmallPhoto,
+  SECTION_MIN_WIDTH,
   SMALL_PHOTO_TEXT,
   SMALL_PHOTO_TITLE,
 } from '@/lib/photoSize'
@@ -27,7 +27,14 @@ import type { Media } from '@/payload-types'
 import { youtubeID } from '@/lib/youtube'
 import { LIMITS } from '@/puck/limits'
 import { sectionAnchors } from '@/puck/anchors'
-import type { FormRef, LinkRef, PhotoRef, PuckPageData } from '@/puck/schema'
+import {
+  CONTACT_CHANNELS,
+  type ContactChannel,
+  type FormRef,
+  type LinkRef,
+  type PhotoRef,
+  type PuckPageData,
+} from '@/puck/schema'
 
 import { request } from './api'
 import { thumbnailURL, useEditor } from './context'
@@ -60,13 +67,36 @@ function SmallPhotoNote({ photo, minWidth }: { photo: Media | null; minWidth?: n
 }
 
 /**
- * A foto do banner: só pede 1.200 px quando o fundo escolhido mostra a foto ("Foto" ou "Foto ao
- * lado"), a mesma regra do Início e da tela Fotos (`photoNeeds`).
+ * A foto do banner: pede 1.200 px com o fundo "Foto" (tela toda) e 700 px com "Foto ao lado"
+ * (metade), a mesma regra do Início e da tela Fotos (`photoNeeds`). Foto pequena para o fundo
+ * "Foto", mas boa para metade da tela: oferece trocar para "Foto ao lado" (C1, achado Hero-2).
  */
 function BannerPhotoNote({ photo }: { photo: Media | null }) {
   const style = usePuck((s) => s.selectedItem?.props.style as unknown)
+  const getPuck = useGetPuck()
+  const min = heroPhotoMinWidth(style)
+  const fitsSide = style === 'image' && photo && !isSmallPhoto(photo, SECTION_MIN_WIDTH)
+  const useSide = () => {
+    const { appState, dispatch, selectedItem } = getPuck()
+    const selector = appState.ui.itemSelector
+    if (!selectedItem || !selector) return
+    dispatch({
+      type: 'replace',
+      destinationIndex: selector.index,
+      destinationZone: selector.zone ?? ROOT_ZONE,
+      data: { ...selectedItem, props: { ...selectedItem.props, style: 'side' } },
+    })
+  }
+  if (!min || !isSmallPhoto(photo, min)) return null
   return (
-    <SmallPhotoNote minWidth={heroShowsPhoto(style) ? BANNER_MIN_WIDTH : undefined} photo={photo} />
+    <>
+      <span className="ed-hint ed-hint--warn">{SMALL_PHOTO_TEXT}</span>
+      {fitsSide && (
+        <button className="ed-btn ed-btn--sm" onClick={useSide} type="button">
+          Usar como Foto ao lado
+        </button>
+      )}
+    </>
   )
 }
 
@@ -970,5 +1000,92 @@ export function HighlightField({ value, onChange, readOnly }: FieldProps<string>
         </button>
       )}
     </div>
+  )
+}
+
+type HeroAlign = 'left' | 'center' | 'right'
+
+const ALIGN_OPTIONS: { value: HeroAlign; label: string }[] = [
+  { value: 'left', label: 'À esquerda' },
+  { value: 'center', label: 'No centro' },
+  { value: 'right', label: 'À direita' },
+]
+
+/**
+ * Posição do texto do Banner (C1, achado Hero-1): sempre à vista, com À esquerda, No centro e À
+ * direita. Com Foto ao lado, À direita põe a foto do lado esquerdo, e No centro fica apagado com a
+ * explicação (o texto precisa de um lado).
+ */
+export function AlignField({
+  name,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<HeroAlign> & { name: string }) {
+  const side = usePuck((s) => s.selectedItem?.props.style === 'side')
+  const current = side && value === 'center' ? 'left' : (value ?? 'left')
+  return (
+    <div className="ed-align">
+      <div aria-label="Posição do texto" className="ed-segmented" role="radiogroup">
+        {ALIGN_OPTIONS.map((option) => {
+          const off = side && option.value === 'center'
+          return (
+            <label
+              className={`ed-segmented__option${off ? ' ed-segmented__option--off' : ''}`}
+              key={option.value}
+            >
+              <input
+                checked={current === option.value}
+                disabled={readOnly || off}
+                name={name}
+                onChange={() => onChange(option.value)}
+                type="radio"
+                value={option.value}
+              />
+              <span>{option.label}</span>
+            </label>
+          )
+        })}
+      </div>
+      {side && (
+        <span className="ed-hint">
+          Com Foto ao lado, o texto fica num dos lados. À direita põe a foto do lado esquerdo.
+        </span>
+      )}
+    </div>
+  )
+}
+
+const CHANNEL_LABELS: Record<ContactChannel, string> = {
+  whatsapp: 'WhatsApp',
+  phone: 'Telefone',
+  email: 'E-mail',
+  address: 'Endereço',
+  hours: 'Horário',
+}
+
+/**
+ * "Mostrar nesta seção" do Contato (C11, achado Contact-2): uma caixa por canal. Os dados vêm das
+ * Configurações; aqui só se escolhe quais aparecem nesta seção.
+ */
+export function ContactChannelsField({ value, onChange, readOnly }: FieldProps<ContactChannel[]>) {
+  const current = value ?? [...CONTACT_CHANNELS]
+  const toggle = (channel: ContactChannel, on: boolean) =>
+    onChange(CONTACT_CHANNELS.filter((item) => (item === channel ? on : current.includes(item))))
+  return (
+    <fieldset className="ed-boxes">
+      <legend className="visually-hidden">Mostrar nesta seção</legend>
+      {CONTACT_CHANNELS.map((channel) => (
+        <label className="ed-box" key={channel}>
+          <input
+            checked={current.includes(channel)}
+            disabled={readOnly}
+            onChange={(event) => toggle(channel, event.target.checked)}
+            type="checkbox"
+          />
+          <span>{CHANNEL_LABELS[channel]}</span>
+        </label>
+      ))}
+    </fieldset>
   )
 }

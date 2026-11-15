@@ -23,6 +23,16 @@ export function heroShowsPhoto(style: unknown): boolean {
   return style === 'image' || style === 'side'
 }
 
+/**
+ * Largura que a foto do banner pede, pelo fundo: "Foto" ocupa a tela toda (1.200 px); "Foto ao
+ * lado" ocupa metade (700 px, como as outras seções). Sem foto à vista, nada.
+ */
+export function heroPhotoMinWidth(style: unknown): number | undefined {
+  if (style === 'image') return BANNER_MIN_WIDTH
+  if (style === 'side') return SECTION_MIN_WIDTH
+  return undefined
+}
+
 /** Largura mínima de uma foto em cada lugar: banner ou outra seção. */
 export function minPhotoWidth(inBanner: boolean): number {
   return inBanner ? BANNER_MIN_WIDTH : SECTION_MIN_WIDTH
@@ -65,7 +75,8 @@ export function photoNeeds(data: PuckPageData | null): Map<number, number> {
         return
       }
       if (record.type === 'Hero') {
-        if (heroShowsPhoto(record.props.style)) walk(image, BANNER_MIN_WIDTH)
+        const min = heroPhotoMinWidth(record.props.style)
+        if (min) walk(image, min)
         walk(rest, SECTION_MIN_WIDTH)
         return
       }

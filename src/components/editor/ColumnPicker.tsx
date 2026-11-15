@@ -24,7 +24,7 @@ const setRequest = (next: string | null) => {
   listeners.forEach((listener) => listener())
 }
 
-/** Pede para colocar uma peça (Foto, Botão, Título e texto) numa coluna. */
+/** Pede para colocar uma peça (Título, Texto, Foto, Botão) numa coluna. */
 export const requestPiece = (type: string) => setRequest(type)
 
 const LABELS: Record<string, string> = PIECE_LABELS

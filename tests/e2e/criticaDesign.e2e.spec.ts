@@ -316,8 +316,9 @@ test.describe.serial('crítica de design', () => {
     const button = await cta.boundingBox()
     expect(name!.x + name!.width).toBeLessThanOrEqual(button!.x)
 
+    // O canal em destaque (C11, WhatsApp) vira um bloco com botão; os outros três ficam na lista.
     const heights = await page
-      .locator('a.contact__item')
+      .locator('a.contact__item, a.contact__featured-button')
       .evaluateAll((items) => items.map((item) => item.getBoundingClientRect().height))
     expect(heights.length).toBe(4)
     for (const height of heights) expect(height).toBeGreaterThanOrEqual(44)

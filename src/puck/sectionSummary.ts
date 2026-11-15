@@ -43,6 +43,7 @@ export function sectionSummary(item: PageComponent): string {
           .slice(0, COLUMN_COUNT[item.props.layout])
           .flat()
           .map((piece) => {
+            if (piece.type === 'ColumnTitle') return piece.props.title
             if (piece.type === 'ColumnText') return piece.props.title || piece.props.text
             if (piece.type === 'ColumnImage') return piece.props.caption
             return piece.props.button?.label

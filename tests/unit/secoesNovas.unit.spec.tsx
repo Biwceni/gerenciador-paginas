@@ -312,7 +312,7 @@ describe('Cardápio com preços', () => {
 describe('Faixa de aviso', () => {
   const items = [{ text: 'Encomendas de Natal abertas' }, { text: 'Kits presente' }]
 
-  it('correndo: o aviso inteiro no aria-label, a trilha escondida e o botão de parar', () => {
+  it('correndo: o aviso inteiro no aria-label, a trilha escondida e a faixa recebe foco', () => {
     const html = renderToStaticMarkup(
       <Announcement id="a" items={items} metadata={metadata()} mode="move" style="brand" />,
     )
@@ -321,8 +321,9 @@ describe('Faixa de aviso', () => {
     expect(html).toContain('role="note"')
     expect(html).toContain('<div aria-hidden="true" class="announce__track" style="--duration:')
     expect(html.match(/class="announce__half"/g)).toHaveLength(2)
-    expect(html).toContain('type="checkbox"')
-    expect(html).toContain('Parar a faixa de aviso')
+    // C2: sem botão de parar; o foco do teclado na faixa a para.
+    expect(html).not.toContain('type="checkbox"')
+    expect(html).toContain('role="note" tabindex="0"')
   })
 
   it('parada, ou no editor: as frases no centro, sem trilha', () => {
@@ -451,6 +452,7 @@ describe('ajustes nas seções que já existem', () => {
     const html = renderToStaticMarkup(
       <Features
         id="f"
+        steps="grid"
         items={[
           { title: 'Bolos', text: '', icon: 'cake', photo: { mediaId: 1 } },
           { title: 'Entrega', text: '', icon: 'truck', photo: null },

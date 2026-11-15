@@ -18,7 +18,10 @@ import { pageBuilder, toPage, toSection, whatsapp } from './sections'
 export type TemplateSeed = Omit<Template, 'id' | 'updatedAt' | 'createdAt'>
 
 type Builder = ReturnType<typeof pageBuilder>
-type HeroLook = { style: 'image' | 'side' | 'light' | 'soft' | 'brand'; align: 'left' | 'center' }
+type HeroLook = {
+  style: 'image' | 'side' | 'light' | 'soft' | 'brand'
+  align: 'left' | 'center' | 'right'
+}
 
 /** Um dos dois modelos de um ramo: a personalidade, as cores e as letras sugeridas. */
 type Look = {

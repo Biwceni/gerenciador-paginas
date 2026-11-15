@@ -53,3 +53,32 @@ export function announcementRun(items: string[], minLength = 240): string[] {
   const times = Math.min(10, Math.max(1, Math.ceil(minLength / length)))
   return Array.from({ length: times }, () => texts).flat()
 }
+
+/**
+ * Peso de um grupo do Cardápio na coluna: os itens, o nome do grupo e a foto (que ocupa como uns
+ * quatro itens). Serve para equilibrar as duas colunas.
+ */
+export function priceGroupWeight(items: number, hasPhoto: boolean): number {
+  return items + 1.5 + (hasPhoto ? 4 : 0)
+}
+
+/**
+ * Quantos grupos vão na primeira coluna para as duas ficarem do tamanho mais parecido, sem mudar a
+ * ordem (C4, achado PriceList-3): os primeiros à esquerda, os outros à direita. Com um grupo, 1.
+ */
+export function balancedSplit(weights: number[]): number {
+  if (weights.length < 2) return weights.length
+  const total = weights.reduce((sum, weight) => sum + weight, 0)
+  let best = 1
+  let bestGap = Infinity
+  let left = 0
+  for (let k = 1; k < weights.length; k++) {
+    left += weights[k - 1]
+    const gap = Math.abs(total - 2 * left)
+    if (gap < bestGap) {
+      best = k
+      bestGap = gap
+    }
+  }
+  return best
+}

@@ -190,11 +190,12 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       ))}
     </>
   ),
+  ColumnTitle: <Bar f={ACCENT} h={7} w={40} x={8} y={16} />,
   ColumnText: (
     <>
-      <Bar f={ACCENT} h={5} w={30} x={8} y={9} />
-      <Bar h={3} r={1.5} w={44} x={8} y={19} />
-      <Bar h={3} r={1.5} w={38} x={8} y={25} />
+      <Bar h={3} r={1.5} w={44} x={8} y={12} />
+      <Bar h={3} r={1.5} w={44} x={8} y={18} />
+      <Bar h={3} r={1.5} w={30} x={8} y={24} />
     </>
   ),
   ColumnImage: <Bar f={ACCENT} h={30} o={0.45} r={3} w={40} x={10} y={5} />,
@@ -232,7 +233,8 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   Products: 'Foto, nome, preço e botão de pedir',
   PriceList: 'Itens e valores, sem precisar de foto',
   InstagramStrip: 'Fotos escolhidas e botão de seguir',
-  ColumnText: 'Título e parágrafo, dentro de uma coluna',
+  ColumnTitle: 'Um título, dentro de uma coluna',
+  ColumnText: 'Um parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',
   ColumnButton: 'Um botão, dentro de uma coluna',
 }

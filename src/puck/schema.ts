@@ -85,7 +85,8 @@ export const heroPropsSchema = z.object({
   // `image`: a foto cobre o fundo, escurecida, com texto branco. `side`: texto à esquerda e a foto
   // ao lado, com cantos arredondados (opção nova, só um valor a mais: a versão continua a 2).
   style: z.enum(['image', 'side', 'light', 'soft', 'brand']),
-  align: z.enum(['left', 'center']),
+  // `right` (componentes, C1): texto à direita; com Foto ao lado, a foto vai para a esquerda.
+  align: z.enum(['left', 'center', 'right']),
   // `compact`: banner baixo, para páginas como Contato (opção nova, com padrão: a versão continua 2).
   height: z.enum(['normal', 'compact']).default('normal'),
   // Palavras do título em itálico, na cor do site (redesign v3; com padrão: a versão continua 2).
@@ -145,6 +146,9 @@ export const featuresPropsSchema = z.object({
   title,
   // `number`: passo a passo (lista numerada). `icon`: cada item com um ícone. `photo`: foto redonda.
   marker: z.enum(FEATURE_MARKERS).default('none'),
+  // Com Números: os passos em grade ou numa linha ligada (componentes, C6; com padrão, a versão
+  // continua a 2).
+  steps: z.enum(['grid', 'line']).default('grid'),
   items: z
     .array(
       z.object({
@@ -168,7 +172,8 @@ export const testimonialsPropsSchema = z.object({
   items: z
     .array(
       z.object({
-        quote: z.string().max(500),
+        // Até 300 letras (componentes, C7): depoimento curto se lê; longo vira um bloco cinza.
+        quote: z.string().max(LIMITS.testimonial),
         name: z.string().max(80),
         photo: photoRefSchema.default(null),
       }),
@@ -238,8 +243,12 @@ export const productsPropsSchema = z.object({
         text: z.string().max(200).default(''),
         // Texto livre: "R$ 45", "a partir de R$ 120", "sob consulta". Vazio: sem preço.
         price: z.string().max(LIMITS.price).default(''),
-        // "Pedir pelo WhatsApp" monta a mensagem com o nome do produto; ou um link qualquer.
-        button: buttonSchema.nullable().default({ label: '', link: null }),
+        // "Pedir pelo WhatsApp" monta a mensagem com o nome do produto; ou um link qualquer. Até 22
+        // letras, para caber numa linha no cartão (componentes, C3).
+        button: buttonSchema
+          .extend({ label: z.string().max(LIMITS.productButton) })
+          .nullable()
+          .default({ label: '', link: null }),
       }),
     )
     .min(1)
@@ -324,11 +333,20 @@ export const callToActionPropsSchema = z.object({
 })
 
 /** Os dados de contato vêm das configurações do site; a seção só tem título e frase. */
+/** Canais do Contato, na ordem em que aparecem (os dados vêm das Configurações). */
+export const CONTACT_CHANNELS = ['whatsapp', 'phone', 'email', 'address', 'hours'] as const
+/** Canais que podem ficar em destaque, num bloco com botão. */
+export const CONTACT_FEATURED = ['whatsapp', 'phone', 'email', 'none'] as const
+
 export const contactPropsSchema = z.object({
   id: componentId,
   menuLabel,
   title,
   text: z.string().max(300),
+  // Componentes, C11 (com padrão: a versão continua a 2). Quais canais esta seção mostra, e qual
+  // fica em destaque, num bloco na cor do site com botão.
+  show: z.array(z.enum(CONTACT_CHANNELS)).default([...CONTACT_CHANNELS]),
+  featured: z.enum(CONTACT_FEATURED).default('whatsapp'),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Contact),
 })
@@ -344,6 +362,8 @@ export const privacyPropsSchema = z.object({
 
 export const linkListPropsSchema = z.object({
   id: componentId,
+  // Componentes, C12 (com padrão: a versão continua a 2): a Lista de links também vira item do menu.
+  menuLabel: menuLabel.default(''),
   title,
   text: z.string().max(300),
   items: z.array(buttonSchema).min(1).max(12),
@@ -414,12 +434,19 @@ export const formPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Form),
 })
 
+/** Peça Título das Colunas (componentes, C13): um título sozinho, entre as outras peças. */
+export const columnTitlePropsSchema = z.object({
+  id: componentId,
+  title: z.string().max(LIMITS.title),
+})
+
 export const columnButtonPropsSchema = z.object({
   id: componentId,
   button: buttonSchema.nullable(),
 })
 
 export const columnPieceSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('ColumnTitle'), props: columnTitlePropsSchema }),
   z.object({ type: z.literal('ColumnText'), props: columnTextPropsSchema }),
   z.object({ type: z.literal('ColumnImage'), props: columnImagePropsSchema }),
   z.object({ type: z.literal('ColumnButton'), props: columnButtonPropsSchema }),
@@ -509,6 +536,7 @@ export type AnnouncementProps = z.infer<typeof announcementPropsSchema>
 export type InstagramStripProps = z.infer<typeof instagramStripPropsSchema>
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>
+export type ContactChannel = (typeof CONTACT_CHANNELS)[number]
 export type PrivacyProps = z.infer<typeof privacyPropsSchema>
 export type LinkListProps = z.infer<typeof linkListPropsSchema>
 export type RichTextProps = z.infer<typeof richTextPropsSchema>
@@ -517,6 +545,7 @@ export type FormProps = z.infer<typeof formPropsSchema>
 export type FormRef = z.infer<typeof formRefSchema>
 export type ColumnsProps = z.infer<typeof columnsPropsSchema>
 export type ColumnTextProps = z.infer<typeof columnTextPropsSchema>
+export type ColumnTitleProps = z.infer<typeof columnTitlePropsSchema>
 export type ColumnImageProps = z.infer<typeof columnImagePropsSchema>
 export type ColumnButtonProps = z.infer<typeof columnButtonPropsSchema>
 

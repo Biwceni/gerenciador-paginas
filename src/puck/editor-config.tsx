@@ -4,7 +4,9 @@ import { type Config, type CustomField, type Field, FieldLabel } from '@puckedit
 import React from 'react'
 
 import {
+  AlignField,
   ArrayItemMoves,
+  ContactChannelsField,
   FormField,
   HighlightField,
   IconField,
@@ -17,6 +19,7 @@ import {
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
+import { ColumnPiecesField, EmptyColumn } from '@/components/editor/ColumnPieces'
 import {
   featureProblem,
   ItemSummary,
@@ -32,10 +35,13 @@ import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
 import { FeatureIcon, FEATURE_ICON_LABELS } from './components/FeatureIcon'
+import { Columns } from './components/sections'
 import { tabbedFields } from './fieldTabs'
+import type { ContentMetadata } from './references'
 import { type Components, COLUMN_PIECES, renderConfig, SECTION_LABELS } from './config'
 import {
   type ButtonValue,
+  CONTACT_CHANNELS,
   FEATURE_ICONS,
   type FeatureMarker,
   INSTAGRAM_MAX_PHOTOS,
@@ -328,12 +334,13 @@ const sections: { [K in keyof Components]: Section<K> } = {
       ),
       image: onlyWhen(photo('Foto', 'banner'), 'style', ['image', 'side']),
       align: {
-        type: 'radio',
+        type: 'custom',
         label: 'Posição do texto',
-        options: [
-          { label: 'À esquerda', value: 'left' },
-          { label: 'No centro', value: 'center' },
-        ],
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <AlignField {...props} />
+          </FieldLabel>
+        ),
       },
       height: {
         type: 'radio',
@@ -385,6 +392,19 @@ const sections: { [K in keyof Components]: Section<K> } = {
     fields: {
       title: text('Título'),
       marker: featureMarker,
+      steps: onlyWhen(
+        thumbChoice<'grid' | 'line'>('Arrumação dos passos', [
+          { value: 'grid', label: 'Grade', hint: 'Lado a lado, em linhas', thumb: 'steps-grid' },
+          {
+            value: 'line',
+            label: 'Linha de passos',
+            hint: 'Os números ligados por uma linha',
+            thumb: 'steps-line',
+          },
+        ]),
+        'marker',
+        ['number'],
+      ),
       items: featureItems,
       style: sectionStyle,
       menuLabel,
@@ -395,6 +415,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       menuLabel: '',
       title: 'Por que escolher a gente',
       marker: 'none',
+      steps: 'grid',
       items: ['Primeiro', 'Segundo', 'Terceiro'].map((name) => ({
         title: `${name} destaque`,
         text: 'Explique em uma ou duas frases.',
@@ -519,7 +540,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
         {
           value: 'masonry',
           label: 'Mosaico',
-          hint: 'Cada foto no formato dela; a ordem vai de cima para baixo, coluna por coluna',
+          hint: 'Cada foto no formato dela, sem cortar, na ordem da lista',
           thumb: 'gallery-masonry',
         },
       ]),
@@ -698,11 +719,16 @@ const sections: { [K in keyof Components]: Section<K> } = {
           hint: 'As frases passam pela faixa',
           thumb: 'announce-move',
         },
-        { value: 'static', label: 'Parada', hint: 'As frases no centro', thumb: 'announce-static' },
+        {
+          value: 'static',
+          label: 'Parada',
+          hint: 'Até 2 frases no centro; com mais, uma por vez',
+          thumb: 'announce-static',
+        },
       ]),
       ...({
         announceHint: notice(
-          'Use para promoção, temporada ou horário especial. Na prévia a faixa fica parada; no site ela corre e para quando a pessoa passa o mouse ou aperta o botão de parar. Quem pediu ao celular para reduzir movimentos vê a faixa parada.',
+          'Use para promoção, temporada ou horário especial. Na prévia a faixa fica parada; no site ela se mexe e para quando a pessoa passa o mouse, encosta o dedo ou chega nela pelo teclado. Quem pediu ao celular para reduzir movimentos vê a faixa parada, com todas as frases.',
         ),
       } as object),
       style: thumbChoice(
@@ -779,6 +805,25 @@ const sections: { [K in keyof Components]: Section<K> } = {
           'WhatsApp, telefone, e-mail, endereço e horário vêm das Configurações do site e mudam no site todo. O botão "Ver no mapa" abre o endereço no Google Maps.',
         ),
       } as object),
+      show: {
+        type: 'custom',
+        label: 'Mostrar nesta seção',
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <ContactChannelsField {...props} />
+          </FieldLabel>
+        ),
+      },
+      featured: {
+        type: 'radio',
+        label: 'Canal em destaque',
+        options: [
+          { label: 'WhatsApp', value: 'whatsapp' },
+          { label: 'Telefone', value: 'phone' },
+          { label: 'E-mail', value: 'email' },
+          { label: 'Nenhum', value: 'none' },
+        ],
+      },
       style: sectionStyle,
       menuLabel,
       anim: animField('Contact'),
@@ -788,6 +833,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
       menuLabel: '',
       title: 'Venha nos visitar',
       text: 'Será um prazer receber você.',
+      show: [...CONTACT_CHANNELS],
+      featured: 'whatsapp',
       style: 'soft',
     },
   },
@@ -813,10 +860,12 @@ const sections: { [K in keyof Components]: Section<K> } = {
         ),
       },
       style: sectionStyle,
+      menuLabel,
       anim: animField('LinkList'),
     },
     defaultProps: {
       anim: 'site',
+      menuLabel: '',
       title: 'Nome do seu negócio',
       text: 'Uma frase curta sobre você.',
       items: [
@@ -834,6 +883,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
         { value: 'wide-left', label: 'Larga e estreita', thumb: 'cols-wide-left' },
         { value: 'wide-right', label: 'Estreita e larga', thumb: 'cols-wide-right' },
       ]),
+      // Campo que não guarda nada: as peças de cada coluna e os atalhos para pôr mais (C13).
+      ...({
+        pieces: {
+          type: 'custom',
+          label: 'Peças',
+          render: () => <ColumnPiecesField />,
+        },
+      } as object),
       style: sectionStyle,
       menuLabel,
       column1: { type: 'slot', allow: [...COLUMN_PIECES] },
@@ -971,9 +1028,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
     },
     defaultProps: { anim: 'site', menuLabel: '', title: PRIVACY_TITLE, style: 'light' },
   },
+  ColumnTitle: {
+    fields: { title: text('Título') },
+    defaultProps: { title: 'Título' },
+  },
+  // Com a peça Título (C13), o Texto chega sem título; o campo continua, para quem quiser os dois.
   ColumnText: {
-    fields: { title: text('Título'), text: textarea('Texto') },
-    defaultProps: { title: 'Título', text: 'Clique no texto para mudar.' },
+    fields: { title: text('Título (opcional)'), text: textarea('Texto') },
+    defaultProps: { title: '', text: 'Clique no texto para mudar.' },
   },
   ColumnImage: {
     fields: { image: photo('Foto', SECTION_MIN_WIDTH), caption: text('Legenda (opcional)') },
@@ -986,9 +1048,24 @@ const sections: { [K in keyof Components]: Section<K> } = {
   },
 }
 
+/** Desenhos só do editor. Colunas: a coluna vazia vira um quadro tracejado com atalhos (C13). */
+const editorRenders: {
+  [K in keyof Components]?: Config<Components>['components'][K]['render']
+} = {
+  Columns: ({ puck, column1: First, column2: Second, column3: Third, ...props }) => (
+    <Columns
+      {...props}
+      columns={[<First key="1" />, <Second key="2" />, <Third key="3" />]}
+      emptyColumn={(n) => <EmptyColumn n={n} sectionId={props.id} />}
+      metadata={puck.metadata as ContentMetadata}
+    />
+  ),
+}
+
 const merge = <K extends keyof Components>(type: K) => ({
   ...renderConfig.components[type],
   ...sections[type],
+  ...(editorRenders[type] ? { render: editorRenders[type] } : {}),
   // Painel em abas: Conteúdo, Aparência e Animação (tabela única em `fieldTabs.tsx`).
   renderFields: tabbedFields(type),
 })

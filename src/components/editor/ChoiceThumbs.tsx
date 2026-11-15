@@ -293,6 +293,43 @@ export const CHOICE_THUMBS = {
       ))}
     </>
   ),
+  'steps-grid': (
+    <>
+      {FEATURE_X.map((x, index) => (
+        <Feature
+          key={x}
+          marker={
+            <text fontSize="13" fontWeight="700" style={{ fill: ACCENT }} x={x} y={21}>
+              {index + 1}
+            </text>
+          }
+          x={x}
+        />
+      ))}
+    </>
+  ),
+  'steps-line': (
+    <>
+      <Box f={ACCENT} h={2} o={0.5} r={1} w={68} x={16} y={15} />
+      {[16, 50, 84].map((x, index) => (
+        <React.Fragment key={x}>
+          <circle cx={x} cy={16} r={8} style={{ fill: ACCENT }} />
+          <text
+            fontSize="10"
+            fontWeight="700"
+            style={{ fill: ON_ACCENT }}
+            textAnchor="middle"
+            x={x}
+            y={19.5}
+          >
+            {index + 1}
+          </text>
+          <Box h={4} w={20} x={x - 10} y={32} />
+          <Box h={3} o={0.5} w={16} x={x - 8} y={40} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
   'marker-photo': (
     <>
       {FEATURE_X.map((x) => (

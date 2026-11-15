@@ -463,7 +463,9 @@ test.describe.serial('animação do site e das seções', () => {
     }
   })
 
-  test('botão do WhatsApp só no celular, e sai da frente na chamada final', async ({ browser }) => {
+  test('botão do WhatsApp só no celular: ícone redondo de 56 px, sempre à vista', async ({
+    browser,
+  }) => {
     const desktop = await visit(browser)
     await expect(desktop.visitor.locator('.wa-float')).toBeHidden()
     await desktop.context.close()
@@ -471,12 +473,24 @@ test.describe.serial('animação do site e das seções', () => {
     const { context, visitor } = await visit(browser, { viewport: { width: 390, height: 800 } })
     const float = visitor.getByRole('link', { name: 'Falar no WhatsApp' })
     await expect(float).toBeVisible()
-    expect(
-      await float.evaluate((element) => element.getBoundingClientRect().height),
-    ).toBeGreaterThanOrEqual(44)
+    const size = await float.evaluate((element) => {
+      const box = element.getBoundingClientRect()
+      return [Math.round(box.width), Math.round(box.height)]
+    })
+    expect(size).toEqual([56, 56])
+    // C16: continua à vista na chamada final (antes saía da frente).
     await visitor.locator('.cta').evaluate((element) => element.scrollIntoView({ block: 'center' }))
-    await expect(visitor.locator('.wa-float')).toHaveAttribute('data-hidden', 'true')
-    await expect(visitor.getByRole('link', { name: 'Falar no WhatsApp' })).toHaveCount(0)
+    await expect(float).toBeVisible()
+    // O rodapé termina acima do botão.
+    await visitor.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    const overlap = await visitor.evaluate(() => {
+      const button = document.querySelector('.wa-float')!.getBoundingClientRect()
+      return [...document.querySelectorAll('.site-footer a')].some((link) => {
+        const box = link.getBoundingClientRect()
+        return box.bottom > button.top && box.top < button.bottom && box.right > button.left
+      })
+    })
+    expect(overlap).toBe(false)
     // Sem rolagem lateral.
     expect(
       await visitor.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

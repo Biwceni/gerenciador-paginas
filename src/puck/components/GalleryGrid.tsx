@@ -90,8 +90,18 @@ export function GalleryGrid({
     />
   )
 
+  // Mosaico em linhas (C9, achado Gallery-3): a ordem da lista, a mesma altura em cada linha e a
+  // largura pelo formato da foto (`--ar`), sem cortar.
+  const ratio = (photo: Media) =>
+    photo.width && photo.height ? Math.round((photo.width / photo.height) * 1000) / 1000 : 1
   const items = entries.map(({ photo, caption }, index) => (
-    <li className="anim-part" key={`${photo.id}-${index}`} style={order(index)}>
+    <li
+      className="anim-part"
+      key={`${photo.id}-${index}`}
+      style={
+        masonry ? ({ ...order(index), '--ar': ratio(photo) } as React.CSSProperties) : order(index)
+      }
+    >
       <figure className="gallery__item">
         <div className="gallery__frame">
           {viewer ? (

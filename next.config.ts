@@ -32,15 +32,20 @@ const nextConfig: NextConfig = {
         pathname: '/media/**',
       },
     ],
-    remotePatterns: storagePublicURL
-      ? [
-          {
-            protocol: 'https',
-            hostname: storagePublicURL.hostname,
-            pathname: `${storagePublicURL.pathname.replace(/\/$/, '')}/**`,
-          },
-        ]
-      : [],
+    remotePatterns: [
+      // Capa automática do Vídeo (componentes, C15): o nosso servidor busca a miniatura do
+      // YouTube e entrega pelo nosso endereço. Nada do Google chega a quem visita antes do play.
+      { protocol: 'https', hostname: 'i.ytimg.com', pathname: '/vi/**' },
+      ...(storagePublicURL
+        ? [
+            {
+              protocol: 'https' as const,
+              hostname: storagePublicURL.hostname,
+              pathname: `${storagePublicURL.pathname.replace(/\/$/, '')}/**`,
+            },
+          ]
+        : []),
+    ],
   },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
