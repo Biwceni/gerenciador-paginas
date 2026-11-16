@@ -271,6 +271,11 @@ test.describe('editor: melhorias do Elementor, etapa 3', () => {
     await expect(mine).toContainText('30 de 30')
     await noSideScroll(page)
 
+    // Com muitas, a lista mostra as primeiras e "Ver todas" abre o resto.
+    await expect(mine.locator('.ed-saved__use')).toHaveCount(4)
+    await mine.getByRole('button', { name: 'Ver todas as 30' }).click()
+    await expect(mine.locator('.ed-saved__use')).toHaveCount(30)
+    await noSideScroll(page)
     await mine.locator('.ed-saved__use', { hasText: 'Banner com foto que não existe mais' }).click()
     await expect(sections(page)).toHaveCount(2)
     await waitSaved(id, (content) => content.length === 2)

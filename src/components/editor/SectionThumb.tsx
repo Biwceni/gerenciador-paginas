@@ -195,8 +195,8 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
     <>
       {[4, 23, 42].map((x) => (
         <React.Fragment key={x}>
-          <text fontSize={13} fontWeight={800} style={{ fill: ACCENT }} x={x} y={21}>
-            {x === 4 ? '12' : x === 23 ? '+3' : '4,9'}
+          <text fontSize={10} fontWeight={800} style={{ fill: ACCENT }} x={x} y={21}>
+            {x === 4 ? '12' : x === 23 ? '+5' : '4,9'}
           </text>
           <Bar h={2.5} r={1.25} w={14} x={x} y={27} />
         </React.Fragment>

@@ -104,6 +104,9 @@ async function deleteSection(apiRoute: string, id: number) {
   await load(apiRoute)
 }
 
+/** Quantas guardadas aparecem antes do "Ver todas". */
+const SAVED_PREVIEW = 4
+
 /** Janela de guardar: miniatura, nome já preenchido e o aviso de que é uma cópia. */
 export function SaveSectionDialog({ item, onClose }: { item: SectionItem; onClose: () => void }) {
   const { apiRoute } = useEditor()
@@ -199,6 +202,8 @@ export function MySections({ full }: { full: boolean }) {
   const saved = useSavedSections(apiRoute)
   const insert = useInsertSection()
   const [renaming, setRenaming] = useState<SavedSection | null>(null)
+  // Com muitas guardadas, a lista não empurra o catálogo para longe: mostra as primeiras.
+  const [all, setAll] = useState(false)
   const titleId = useId()
 
   const use = (section: SavedSection) => {
@@ -258,7 +263,7 @@ export function MySections({ full }: { full: boolean }) {
       )}
       {saved.items.length > 0 && (
         <ul className="ed-saved__list">
-          {saved.items.map((section) => (
+          {(all ? saved.items : saved.items.slice(0, SAVED_PREVIEW)).map((section) => (
             <li className="ed-saved__item" key={section.id}>
               <button
                 aria-disabled={!section.item || full ? true : undefined}
@@ -294,6 +299,16 @@ export function MySections({ full }: { full: boolean }) {
             </li>
           ))}
         </ul>
+      )}
+      {saved.items.length > SAVED_PREVIEW && (
+        <button
+          aria-expanded={all}
+          className="ed-linkbtn ed-saved__all"
+          onClick={() => setAll((open) => !open)}
+          type="button"
+        >
+          {all ? 'Mostrar menos' : `Ver todas as ${saved.items.length}`}
+        </button>
       )}
       {renaming && <RenameDialog onClose={() => setRenaming(null)} section={renaming} />}
     </section>

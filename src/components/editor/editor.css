@@ -2812,6 +2812,11 @@ textarea.ed-grow {
   font-size: var(--gp-fs-text);
 }
 
+.ed-saved__all {
+  justify-self: start;
+  min-height: 32px;
+}
+
 .ed-saved__count {
   color: var(--ed-muted);
   font-size: var(--gp-fs-small);
