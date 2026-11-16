@@ -2467,3 +2467,24 @@ textarea.ed-grow {
     box-shadow: none;
   }
 }
+
+/* "Onde aparece" (E3): na Ordem, a seção que aparece só num aparelho. */
+.ed-order__device {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ed-accent-soft);
+  color: var(--ed-accent);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ed-devices {
+  display: grid;
+  gap: 8px;
+}

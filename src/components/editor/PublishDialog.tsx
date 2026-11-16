@@ -12,13 +12,14 @@ import type { Media } from '@/payload-types'
 import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import { sectionChecks } from '@/puck/checks'
 import { SECTION_LABELS } from '@/puck/config'
+import { deviceLimitedSections, linksToDeviceHidden, menuToDeviceHidden } from '@/puck/devices'
 import { hiddenSections } from '@/puck/hiddenSections'
 import type { PuckPageData } from '@/puck/schema'
 
-import { updatePhotoAlt } from './api'
+import { getHeader, updatePhotoAlt } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { Dialog } from './Dialog'
-import { addMenuItem, linksTo, type MenuState, readMenu } from './menu'
+import { addMenuItem, linksTo, type MenuItems, type MenuState, readMenu } from './menu'
 
 /** Descrição que não ajuda ninguém: nome de arquivo ou uma palavra só (como o "sdfsds" da POC). */
 export function weakAlt(alt: string | null | undefined): boolean {
@@ -108,6 +109,24 @@ export function PublishDialog({
     id: section.id,
     label: `${(SECTION_LABELS as Record<string, string>)[section.type] ?? 'Seção'}: ${section.reason}`,
   }))
+  // "Onde aparece" (E3): seções que aparecem só num aparelho, e botões ou itens do menu que levam
+  // para uma seção escondida no aparelho em que eles aparecem.
+  const sectionName = (type: string) => (SECTION_LABELS as Record<string, string>)[type] ?? 'Seção'
+  const deviceOnly = deviceLimitedSections(data).map((section) => ({
+    id: section.id,
+    label: `${sectionName(section.type)}: só no ${section.devices === 'desktop' ? 'computador' : 'celular'}`,
+  }))
+  const [menuItems, setMenuItems] = useState<MenuItems>([])
+  const deviceLinks = [
+    ...linksToDeviceHidden(data, pageId).map((link) => ({
+      id: link.sectionId,
+      label: `“${link.label}”, em ${sectionName(link.sectionType)} (o destino some no ${link.device})`,
+    })),
+    ...menuToDeviceHidden(data, pageId, menuItems).map((item) => ({
+      id: '',
+      label: `Menu: “${item.label}” (o destino some no ${item.device})`,
+    })),
+  ]
   // Aviso leve: não muda o botão para "Publicar mesmo assim".
   const homeHeroWithoutPhoto =
     pageId === homepageId && heroWithoutPhoto(data, (id) => Boolean(photoById[id]))
@@ -118,6 +137,17 @@ export function PublishDialog({
       if (!target) return ['Página apagada']
       return target.published ? [] : [target.title]
     })
+
+  useEffect(() => {
+    if (!deviceOnly.length) return
+    let active = true
+    getHeader(apiRoute, false)
+      .then((header) => active && setMenuItems(header.items ?? []))
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [apiRoute, deviceOnly.length])
 
   useEffect(() => {
     if (pageId === homepageId) return
@@ -133,6 +163,7 @@ export function PublishDialog({
     data.content.length === 0 ||
     exampleSections.length > 0 ||
     hidden.length > 0 ||
+    deviceLinks.length > 0 ||
     examplePhotos.length > 0 ||
     weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
     draftLinks.length > 0 ||
@@ -289,6 +320,32 @@ export function PublishDialog({
             <GoToList items={hidden} onGoTo={onGoTo} />
           </Check>
         )}
+        {deviceLinks.length > 0 && (
+          <Check
+            title={
+              deviceLinks.length === 1
+                ? 'Um link leva para uma seção escondida num aparelho'
+                : `${deviceLinks.length} links levam para seções escondidas num aparelho`
+            }
+          >
+            Nesse aparelho, o visitante toca e fica no topo da página. Mostre a seção nos dois ou
+            mude o destino:
+            <GoToList items={deviceLinks} onGoTo={onGoTo} />
+          </Check>
+        )}
+        {deviceOnly.length > 0 && (
+          <Check
+            ok
+            title={
+              deviceOnly.length === 1
+                ? 'Uma seção aparece só num aparelho'
+                : `${deviceOnly.length} seções aparecem só num aparelho`
+            }
+          >
+            Confira se é isso mesmo:
+            <GoToList items={deviceOnly} onGoTo={onGoTo} />
+          </Check>
+        )}
         {examplePhotos.length > 0 && (
           <Check
             title={
@@ -431,9 +488,11 @@ function GoToList({
       {items.map((item, index) => (
         <span className="ed-goto" key={`${item.id}-${index}`}>
           <span>{item.label}</span>
-          <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
-            Ir até
-          </button>
+          {item.id && (
+            <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
+              Ir até
+            </button>
+          )}
         </span>
       ))}
     </span>

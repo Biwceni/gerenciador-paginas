@@ -107,6 +107,19 @@ function OrderList() {
                     <b>{LABELS[item.type] ?? item.type}</b>
                     <span>{summary}</span>
                   </span>
+                  {/* "Onde aparece" (E3): ícone e texto, para não ser só um desenho. */}
+                  {index > 0 &&
+                    (item.props.devices === 'desktop' || item.props.devices === 'mobile') && (
+                      <span className="ed-order__device">
+                        <PanelIcon
+                          name={item.props.devices === 'desktop' ? 'desktop' : 'phone'}
+                          size={14}
+                        />
+                        <span>
+                          {item.props.devices === 'desktop' ? 'Só computador' : 'Só celular'}
+                        </span>
+                      </span>
+                    )}
                 </button>
                 <button
                   aria-label={`Subir ${LABELS[item.type] ?? item.type}`}

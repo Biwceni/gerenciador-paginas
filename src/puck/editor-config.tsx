@@ -19,6 +19,7 @@ import {
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
+import { DevicesField } from '@/components/editor/DevicesField'
 import { ColumnPiecesField, ColumnTag, EmptyColumn } from '@/components/editor/ColumnPieces'
 import {
   featureProblem,
@@ -48,6 +49,7 @@ import {
   INSTAGRAM_MAX_PHOTOS,
   type LinkRef,
   type PhotoRef,
+  type SectionDevices,
 } from './schema'
 
 // Configuração do editor: a mesma de desenhar (`renderConfig`), mais os campos que o leigo mexe e
@@ -1095,9 +1097,28 @@ const editorRenders: {
   ),
 }
 
+/** "Onde aparece" (E3), no fim de Aparência de toda seção (as peças das Colunas não têm). */
+const devicesField: CustomField<SectionDevices | undefined> = {
+  type: 'custom',
+  label: 'Onde aparece',
+  render: (props) => (
+    <FieldLabel el="div" label={props.field.label ?? ''}>
+      <DevicesField {...props} />
+    </FieldLabel>
+  ),
+}
+
+const isSection = (type: string) => type in SECTION_LABELS
+
 const merge = <K extends keyof Components>(type: K) => ({
   ...renderConfig.components[type],
   ...sections[type],
+  ...(isSection(type)
+    ? {
+        fields: { ...sections[type].fields, devices: devicesField },
+        defaultProps: { ...sections[type].defaultProps, devices: 'all' },
+      }
+    : {}),
   ...(editorRenders[type] ? { render: editorRenders[type] } : {}),
   // Painel em abas: Conteúdo, Aparência e Animação (tabela única em `fieldTabs.tsx`).
   renderFields: tabbedFields(type),

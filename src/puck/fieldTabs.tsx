@@ -3,7 +3,7 @@
 import { FieldTab } from '@puckeditor/core'
 import React from 'react'
 
-import { type Components } from './config'
+import { type Components, SECTION_LABELS } from './config'
 
 // Abas do painel de opções (componentes, tarefa A2): Conteúdo, Aparência e Animação. A tabela
 // abaixo é a única que diz em que aba fica cada campo de cada seção; um teste confere que todo
@@ -107,6 +107,11 @@ export const FIELD_TABS: { [K in keyof Components]: Record<string, FieldTabName>
   ColumnText: { title: C, text: C },
   ColumnImage: { image: C, caption: C },
   ColumnButton: { button: C },
+}
+
+// "Onde aparece" (E3): em toda seção, no fim de Aparência.
+for (const type of Object.keys(SECTION_LABELS) as (keyof typeof SECTION_LABELS)[]) {
+  FIELD_TABS[type].devices = A
 }
 
 /** A aba de um campo. Campo fora da tabela (não deveria haver) cai em Conteúdo, nunca some. */

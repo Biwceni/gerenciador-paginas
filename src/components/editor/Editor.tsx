@@ -35,6 +35,7 @@ import { exampleMatcher, findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
 import type { Media } from '@/payload-types'
+import { SECTION_LABELS } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
 import { tabOf } from '@/puck/fieldTabs'
 import { CATALOG_TEXTS } from '@/puck/catalogTexts'
@@ -746,6 +747,29 @@ export function Editor(props: EditorProps) {
       if (problem && !layoutProblem(previous.data)) undoBadChange(problem, previous.data)
       const hidden = hiddenColumnNotice(next.data, previous.data)
       if (hidden) toast.info(hidden, { duration: 8000 })
+      // "Onde aparece" (E3): a primeira seção aparece sempre. A que subiu para o topo (ou ficou
+      // nele quando a de cima saiu) volta a aparecer nos dois, com aviso.
+      const first = next.data.content[0]
+      const only = first?.props.devices
+      if (first && (only === 'desktop' || only === 'mobile')) {
+        setTimeout(() => {
+          const puck = getPuck.current?.()
+          const current = puck?.appState.data.content[0]
+          if (!puck || !current || current.props.id !== first.props.id) return
+          puck.dispatch({
+            type: 'replace',
+            destinationIndex: 0,
+            destinationZone: ROOT_ZONE,
+            data: { ...current, props: { ...current.props, devices: 'all' } },
+            recordHistory: false,
+          })
+          const name = (SECTION_LABELS as Record<string, string>)[String(current.type)] ?? 'A seção'
+          toast.info(
+            `“${name}” voltou a aparecer no computador e no celular, porque agora é a primeira seção.`,
+            { duration: 8000 },
+          )
+        })
+      }
     },
     [undoBadChange],
   )

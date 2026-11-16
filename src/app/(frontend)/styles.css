@@ -4816,3 +4816,25 @@
 .site[data-personality='papel'] .contact__list > li + li {
   border-top: 2px dotted var(--papel-edge);
 }
+
+/*
+ * "Onde aparece" (E3): seção só no computador ou só no celular. A caixa não muda o desenho
+ * (`display: contents`); some na largura do outro aparelho, a mesma em que o site já troca para o
+ * desenho do celular (721 px; o tablet segue o computador).
+ */
+.site .only-desktop,
+.site .only-mobile {
+  display: contents;
+}
+
+@container site (max-width: 720px) {
+  .site .only-desktop {
+    display: none;
+  }
+}
+
+@container site (min-width: 721px) {
+  .site .only-mobile {
+    display: none;
+  }
+}
