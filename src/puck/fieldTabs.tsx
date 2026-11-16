@@ -74,6 +74,7 @@ export const FIELD_TABS: { [K in keyof Components]: Record<string, FieldTabName>
   },
   Announcement: { items: C, mode: A, announceHint: A, style: A },
   InstagramStrip: { title: C, images: C, instagramHint: C, menuLabel: C, style: A, anim: M },
+  Stats: { title: C, items: C, statsHint: M, menuLabel: C, style: A, anim: M },
   CallToAction: { title: C, text: C, button: C, menuLabel: C, style: A, anim: M },
   Contact: {
     title: C,

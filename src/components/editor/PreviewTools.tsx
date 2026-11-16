@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 
+import { SectionContextMenu } from './ContextMenu'
 import { useCopyPasteKeys } from './copyPaste'
 import { MOBILE_WIDTH, ONE_PANEL_WIDTH, usePuck } from './puck'
 
@@ -169,7 +170,8 @@ export function PreviewTools() {
   usePanelRules()
   // Ctrl+C e Ctrl+V da seção (E1), fora e dentro da prévia.
   useCopyPasteKeys(typeof document === 'undefined' ? null : document)
-  useCopyPasteKeys(usePreviewDocument())
+  const previewDoc = usePreviewDocument()
+  useCopyPasteKeys(previewDoc)
   const zoom = useCanvasZoom()
   const dispatch = usePuck((s) => s.dispatch)
   const panelsOpen = usePuck(
@@ -282,6 +284,8 @@ export function PreviewTools() {
         </button>,
         rail,
       )}
+      {/* Botão direito na seção e a lista de atalhos (E6). */}
+      <SectionContextMenu doc={previewDoc} />
     </>
   )
 }

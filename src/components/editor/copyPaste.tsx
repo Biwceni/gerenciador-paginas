@@ -87,25 +87,20 @@ export function useCopySection() {
 }
 
 /**
- * Cola a seção copiada onde a lista coloca uma seção nova: abaixo da escolhida ou no fim da
- * página. Entra com identificação nova e fica escolhida e à vista.
+ * Põe uma seção pronta (copiada ou guardada) onde a lista coloca uma seção nova: abaixo da escolhida
+ * ou no fim da página. Entra com identificação nova e fica escolhida e à vista.
  */
-export function usePasteSection() {
+export function useInsertSection() {
   const getPuck = useGetPuck()
   return useCallback(
-    (quiet = false) => {
-      const copied = snapshot()
-      if (!copied) {
-        if (!quiet) toast.info('Nenhuma seção copiada neste aparelho.')
-        return false
-      }
+    (ready: SectionItem) => {
       const { appState, dispatch } = getPuck()
       if (appState.data.content.length >= zoneMax(ROOT_ZONE)) {
         toast.info(fullZoneReason(ROOT_ZONE))
         return false
       }
       const index = insertIndex(appState.data.content, appState.ui.itemSelector)
-      const item = withNewIds(copied)
+      const item = withNewIds(ready)
       // `setData`, e não `insert`: o `insert` abriria a pergunta das Colunas novas, e aqui a seção
       // já vem pronta.
       dispatch({
@@ -131,6 +126,22 @@ export function usePasteSection() {
       return true
     },
     [getPuck],
+  )
+}
+
+/** Cola a seção copiada (E1), como `useInsertSection`. */
+export function usePasteSection() {
+  const insert = useInsertSection()
+  return useCallback(
+    (quiet = false) => {
+      const copied = snapshot()
+      if (!copied) {
+        if (!quiet) toast.info('Nenhuma seção copiada neste aparelho.')
+        return false
+      }
+      return insert(copied)
+    },
+    [insert],
   )
 }
 

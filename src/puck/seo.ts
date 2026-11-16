@@ -41,6 +41,7 @@ function sectionText(item: PageComponent): string {
     case 'Privacy':
     case 'Announcement':
     case 'InstagramStrip':
+    case 'Stats':
       return ''
   }
 }

@@ -45,6 +45,7 @@ import type {
   GalleryProps,
   HeroProps,
   InstagramStripProps,
+  StatsProps,
   LinkListProps,
   PhotoRef,
   PriceListProps,
@@ -1561,6 +1562,41 @@ export function InstagramStrip({
               : 'Escolha de 4 a 8 fotos nas opções da seção'}
           </EditorPlaceholder>
         )}
+      </div>
+    </Section>
+  )
+}
+
+/**
+ * "Números do negócio" (Elementor, E10): 2 a 4 números grandes, cada um com a frase embaixo. O
+ * número já vem escrito no HTML (o Google e quem está sem JavaScript leem o valor certo); a
+ * contagem do zero é só o efeito, ligado com a animação do site (`startReveal`).
+ */
+export function Stats({ id, title, items, style, anim, metadata }: WithMetadata<StatsProps>) {
+  const shown = metadata.editing
+    ? items
+    : items.filter((item) => filled(item.value) || filled(item.text))
+  if (!shown.length) return null
+  return (
+    <Section anim={sectionAnim('Stats', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
+        <SectionTitle title={title} />
+        <ul className="stats" data-items={shown.length}>
+          {shown.map((item, index) => (
+            <li className="stats__item anim-part" key={index} style={order(index)}>
+              <span
+                className="stats__value"
+                // No editor o número é o campo do Puck (não um texto): a contagem é só no site.
+                data-countup={
+                  !metadata.editing && typeof item.value === 'string' ? item.value : undefined
+                }
+              >
+                {item.value}
+              </span>
+              {filled(item.text) && <span className="stats__label">{item.text}</span>}
+            </li>
+          ))}
+        </ul>
       </div>
     </Section>
   )

@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
+import { startCountUp } from '@/lib/countUp'
+
 /** Quanto da seção precisa estar na tela para a animação dela tocar. */
 const ROOT_MARGIN = '0px 0px -12% 0px'
 
@@ -31,6 +33,8 @@ export function startReveal(doc: Document): () => void {
   const play = (section: HTMLElement) => {
     section.classList.remove('anim-wait')
     section.classList.add('anim-in')
+    // Números do negócio (E10): contam do zero junto com a animação da seção.
+    startCountUp(section)
   }
   const observer = new view.IntersectionObserver(
     (entries) => {

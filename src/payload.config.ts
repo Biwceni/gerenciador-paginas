@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Templates } from './collections/Templates'
+import { SavedSections } from './collections/SavedSections'
 import { Users } from './collections/Users'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -262,7 +263,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [Pages, Media, Users, Templates],
+  collections: [Pages, Media, Users, Templates, SavedSections],
   globals: [Site, Header, Footer],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

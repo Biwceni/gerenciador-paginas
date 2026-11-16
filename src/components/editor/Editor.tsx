@@ -80,6 +80,8 @@ import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { BrandDots, BrandPanel } from './BrandPanel'
+import { SAVE_EVENT, SaveSectionDialog, VIEW_EVENT } from './savedSections'
+import type { SectionItem } from '@/puck/sectionClipboard'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { VisitorPreview } from './VisitorPreview'
@@ -464,6 +466,19 @@ export function Editor(props: EditorProps) {
   }, [savedBrand])
   // Mudou Sua marca aqui, neste editor: o "Publicar também Sua marca" já vem marcado.
   const [brandChangedHere, setBrandChangedHere] = useState(false)
+  // Minhas seções (E2): a seção na janela de guardar e a seção guardada em "Ver como fica".
+  const [savingSection, setSavingSection] = useState<SectionItem | null>(null)
+  const [viewingSection, setViewingSection] = useState<SectionItem | null>(null)
+  useEffect(() => {
+    const onSave = (event: Event) => setSavingSection((event as CustomEvent<SectionItem>).detail)
+    const onView = (event: Event) => setViewingSection((event as CustomEvent<SectionItem>).detail)
+    window.addEventListener(SAVE_EVENT, onSave)
+    window.addEventListener(VIEW_EVENT, onView)
+    return () => {
+      window.removeEventListener(SAVE_EVENT, onSave)
+      window.removeEventListener(VIEW_EVENT, onView)
+    }
+  }, [])
   // Sua marca mudou noutra tela (outra aba): a prévia oferece atualizar.
   const [staleBrand, setStaleBrand] = useState<SiteLook | null>(null)
 
@@ -1346,6 +1361,32 @@ export function Editor(props: EditorProps) {
                   Atualizar prévia
                 </button>
               </div>
+            )}
+
+            {savingSection && (
+              <SaveSectionDialog item={savingSection} onClose={() => setSavingSection(null)} />
+            )}
+
+            {viewingSection && (
+              <VisitorPreview
+                campaign
+                chrome={props.chrome}
+                data={{
+                  root: data.root,
+                  content: [viewingSection as PuckPageData['content'][number]],
+                }}
+                fontFaces={fontFaces}
+                isHome={false}
+                metadata={metadata}
+                note={{
+                  label: 'Ver como fica a seção guardada',
+                  title: 'Seção guardada',
+                  hint: 'Assim ela entra na página. Nada muda até você colocar.',
+                }}
+                onClose={() => setViewingSection(null)}
+                pageTitle={settings.title}
+                theme={theme}
+              />
             )}
 
             {dialog === 'visitor' && (

@@ -8,8 +8,22 @@ import { PanelIcon } from '@/components/panel/PanelIcon'
 import { columnCount, parseColumnZone, useMovePiece } from './columnMove'
 import { copiedName, useCopiedSection, useCopySection, usePasteSection } from './copyPaste'
 import { scrollToSection } from './insert'
+import { requestSave } from './savedSections'
+import type { SectionItem } from '@/puck/sectionClipboard'
 import { ROOT_ZONE, usePuck } from './puck'
 import { fullZoneReason, zoneMax } from './zoneLimits'
+
+/** Abre a janela "Guardar em Minhas seções" com a seção escolhida (E2). */
+export function useSaveSelected() {
+  const getPuck = useGetPuck()
+  return useCallback(() => {
+    const { appState, getItemBySelector } = getPuck()
+    const selector = appState.ui.itemSelector
+    if (!selector || (selector.zone && selector.zone !== ROOT_ZONE)) return
+    const item = getItemBySelector(selector) as SectionItem | undefined
+    if (item) requestSave(item)
+  }, [getPuck])
+}
 
 /** Muda uma seção de lugar. A escolha vai junto: o Puck guarda a posição, não a seção. */
 
@@ -61,7 +75,7 @@ function useZoneSize(zone: string | undefined): number {
  * duplicar só enquanto a área tem espaço (100 seções na página, 6 peças na coluna) e remover.
  * São botões nossos, e não os do Puck, para o Duplicar respeitar o limite em todo lugar.
  */
-function useSelectedActions() {
+export function useSelectedActions() {
   const selector = usePuck((s) => s.appState.ui.itemSelector)
   const dispatch = usePuck((s) => s.dispatch)
   const size = useZoneSize(selector?.zone)
@@ -106,7 +120,7 @@ function usePieceNeighbors() {
 }
 
 /** Mac usa ⌘ no lugar do Ctrl nos atalhos. */
-const MOD =
+export const MOD =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'
 
 /**
@@ -120,6 +134,7 @@ function MoreActions() {
   const copied = useCopiedSection()
   const copy = useCopySection()
   const paste = usePasteSection()
+  const save = useSaveSelected()
 
   useEffect(() => {
     if (!open) return
@@ -176,7 +191,10 @@ function MoreActions() {
         <div aria-label="Mais ações" className="ed-barmore__menu" role="menu">
           <button className="ed-barmore__item" onClick={run(copy)} role="menuitem" type="button">
             <PanelIcon name="copy" size={16} />
-            <span>Copiar seção</span>
+            <span>
+              Copiar seção
+              <small>Para colar agora. Fica só neste aparelho.</small>
+            </span>
             <kbd>{MOD}C</kbd>
           </button>
           <button
@@ -190,6 +208,13 @@ function MoreActions() {
             <PanelIcon name="down" size={16} />
             <span>{copied ? `Colar “${copiedName(copied)}” abaixo` : 'Colar abaixo'}</span>
             <kbd>{MOD}V</kbd>
+          </button>
+          <button className="ed-barmore__item" onClick={run(save)} role="menuitem" type="button">
+            <PanelIcon name="layers" size={16} />
+            <span>
+              Guardar em Minhas seções
+              <small>Para usar sempre, em qualquer página e aparelho.</small>
+            </span>
           </button>
         </div>
       )}
@@ -275,6 +300,7 @@ export function SectionActionsPanel() {
     useSelectedActions()
   const neighbors = usePieceNeighbors()
   const copy = useCopySection()
+  const save = useSaveSelected()
   if (!selector) return null
   const isSection = !selector.zone || selector.zone === ROOT_ZONE
 
@@ -313,6 +339,16 @@ export function SectionActionsPanel() {
           type="button"
         >
           <PanelIcon name="copy" size={14} /> Copiar
+        </button>
+      )}
+      {isSection && (
+        <button
+          className="ed-btn ed-btn--sm"
+          onClick={save}
+          title="Para usar sempre, em qualquer página e aparelho"
+          type="button"
+        >
+          <PanelIcon name="layers" size={14} /> Guardar
         </button>
       )}
       <button className="ed-btn ed-btn--sm ed-btn--danger" onClick={remove} type="button">

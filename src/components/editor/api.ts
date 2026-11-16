@@ -114,7 +114,12 @@ export function updatePhotoAlt(apiRoute: string, mediaId: number, alt: string) {
 }
 
 /** Ponto de foco da foto, em % (A4): o centro de todo recorte dela no site. */
-export function updatePhotoFocus(apiRoute: string, mediaId: number, focalX: number, focalY: number) {
+export function updatePhotoFocus(
+  apiRoute: string,
+  mediaId: number,
+  focalX: number,
+  focalY: number,
+) {
   return request<DocResponse<Media>>(apiRoute, `/media/${mediaId}`, {
     method: 'PATCH',
     body: JSON.stringify({ focalX, focalY }),

@@ -8,7 +8,8 @@
 .ed-overlay,
 .ed-visitor,
 .ed-brandpanel,
-.ed-brandstale {
+.ed-brandstale,
+.ed-ctxmenu {
   /*
    * Cores do tema do painel (claro ou escuro, como a pessoa escolheu em Minha conta): o panel.scss
    * troca os `--gp-*` junto com o `data-theme`.
@@ -2789,4 +2790,279 @@ textarea.ed-grow {
 
 .ed-publish-brandfail span {
   flex: 1 1 220px;
+}
+
+/* "Minhas seções" (E2), no alto da lista "Adicionar seção". */
+.ed-saved {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ed-line);
+}
+
+.ed-saved__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ed-saved__head h4 {
+  margin: 0;
+  font-size: var(--gp-fs-text);
+}
+
+.ed-saved__count {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-small);
+  white-space: nowrap;
+}
+
+.ed-saved__empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--ed-line-strong);
+  border-radius: 10px;
+}
+
+.ed-saved__list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-saved__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  background: var(--ed-bg);
+}
+
+.ed-saved__use {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 4px 6px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ed-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-saved__use:hover:not([aria-disabled]) {
+  background: var(--ed-soft);
+}
+
+.ed-saved__use:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+.ed-saved__use[aria-disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.ed-saved__thumb {
+  display: grid;
+  flex: none;
+}
+
+.ed-saved__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--gp-fs-help);
+  line-height: 1.3;
+}
+
+.ed-saved__text b {
+  overflow-wrap: anywhere;
+}
+
+.ed-saved__text span {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-small);
+}
+
+.ed-saved__more {
+  position: relative;
+  flex: none;
+  padding-right: 4px;
+}
+
+.ed-saved__menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  min-width: 170px;
+  padding: 4px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  background: var(--ed-bg);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 16%);
+}
+
+.ed-saved__menu button {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ed-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-saved__menu button:hover,
+.ed-saved__menu button:focus-visible {
+  background: var(--ed-soft);
+  outline: none;
+}
+
+.ed-saved__menu .ed-saved__danger {
+  color: var(--gp-danger, #b42318);
+}
+
+/* Janela "Guardar em Minhas seções". */
+.ed-savedform {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ed-savedform__thumb {
+  display: grid;
+  flex: none;
+  padding-top: 22px;
+}
+
+.ed-savedform__fields {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+/* Botão direito numa seção da prévia (E6): o mesmo menu escuro das ações da seção. */
+.ed-ctxmenu {
+  position: fixed;
+  z-index: 40;
+  display: grid;
+  min-width: 240px;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 4px;
+  border-radius: 10px;
+  background: #1f2440;
+  color: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+  font:
+    500 14px/1.3 system-ui,
+    sans-serif;
+}
+
+.ed-ctxmenu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-ctxmenu button span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ed-ctxmenu kbd {
+  font:
+    12px/1 system-ui,
+    sans-serif;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.ed-ctxmenu button:hover:not(:disabled),
+.ed-ctxmenu button:focus-visible {
+  background: rgb(255 255 255 / 14%);
+  outline: none;
+}
+
+.ed-ctxmenu button:focus-visible {
+  box-shadow: inset 0 0 0 2px #c9cff6;
+}
+
+.ed-ctxmenu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ed-ctxmenu .ed-ctxmenu__danger {
+  color: #ffb4ab;
+}
+
+.ed-ctxmenu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 16%);
+}
+
+/* Lista de atalhos (E6). */
+.ed-shortcuts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.ed-shortcuts > div {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ed-line);
+}
+
+.ed-shortcuts > div:last-child {
+  border-bottom: 0;
+}
+
+.ed-shortcuts dt,
+.ed-shortcuts dd {
+  margin: 0;
+}
+
+.ed-shortcuts kbd {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--ed-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--ed-soft);
+  font:
+    600 13px/1.3 system-ui,
+    sans-serif;
+  white-space: nowrap;
 }

@@ -16,6 +16,7 @@ import {
   Gallery,
   Hero,
   InstagramStrip,
+  Stats,
   LinkList,
   PriceList,
   Privacy,
@@ -41,6 +42,7 @@ import type {
   GalleryProps,
   HeroProps,
   InstagramStripProps,
+  StatsProps,
   LinkListProps,
   PriceListProps,
   PrivacyProps,
@@ -77,6 +79,7 @@ export type Components = {
   PriceList: Props<PriceListProps>
   Announcement: Props<AnnouncementProps>
   InstagramStrip: Props<InstagramStripProps>
+  Stats: Props<StatsProps>
   ColumnTitle: Props<ColumnTitleProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
@@ -95,6 +98,7 @@ export const SECTION_LABELS = {
   Faq: 'Perguntas frequentes',
   Gallery: 'Galeria de fotos',
   InstagramStrip: 'Instagram',
+  Stats: 'Números do negócio',
   CallToAction: 'Chamada para ação',
   Contact: 'Contato e endereço',
   LinkList: 'Lista de links',
@@ -210,6 +214,10 @@ export const renderConfig: Config<Components> = {
     InstagramStrip: {
       label: SECTION_LABELS.InstagramStrip,
       render: ({ puck, ...props }) => <InstagramStrip {...props} metadata={meta(puck)} />,
+    },
+    Stats: {
+      label: SECTION_LABELS.Stats,
+      render: ({ puck, ...props }) => <Stats {...props} metadata={meta(puck)} />,
     },
     ColumnTitle: {
       label: PIECE_LABELS.ColumnTitle,

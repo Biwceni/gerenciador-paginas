@@ -35,6 +35,8 @@ type Props = {
   theme: Record<string, string>
   fontFaces: string | null
   onClose: () => void
+  /** Outro título na barra: "Ver como fica" de uma seção guardada (E2). */
+  note?: { label: string; title: string; hint: string }
 }
 
 /**
@@ -52,6 +54,7 @@ export function VisitorPreview({
   theme,
   fontFaces,
   onClose,
+  note,
 }: Props) {
   const [device, setDevice] = useState<Device>(() =>
     typeof window !== 'undefined' && window.innerWidth < MOBILE_WIDTH ? 'phone' : 'desktop',
@@ -179,11 +182,18 @@ export function VisitorPreview({
   const mainHeading = Boolean(siteMetadata.mainHeadingId)
 
   return createPortal(
-    <div aria-label="Ver como visitante" aria-modal="true" className="ed-visitor" role="dialog">
+    <div
+      aria-label={note?.label ?? 'Ver como visitante'}
+      aria-modal="true"
+      className="ed-visitor"
+      role="dialog"
+    >
       <div className="ed-visitor__bar">
         <div className="ed-visitor__note">
-          <b>Prévia do rascunho</b>
-          <span className="ed-visitor__hint">Só você vê. Ainda não está no ar.</span>
+          <b>{note?.title ?? 'Prévia do rascunho'}</b>
+          <span className="ed-visitor__hint">
+            {note?.hint ?? 'Só você vê. Ainda não está no ar.'}
+          </span>
         </div>
         {!smallScreen && (
           <div aria-label="Tamanho da tela" className="ed-visitor__devices" role="group">
@@ -231,7 +241,9 @@ export function VisitorPreview({
             {campaign ? chrome.headerCampaign : chrome.header}
             <main id="conteudo">
               {!mainHeading && (
-                <h1 className={isHome ? 'visually-hidden' : 'container page-title'}>{pageTitle}</h1>
+                <h1 className={isHome || note ? 'visually-hidden' : 'container page-title'}>
+                  {pageTitle}
+                </h1>
               )}
               <Render config={renderConfig} data={data} metadata={siteMetadata} />
             </main>

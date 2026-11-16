@@ -49,6 +49,10 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
       return item.props.groups.some((group) => group.items.some((entry) => text(entry.name)))
         ? null
         : 'nenhum item tem nome'
+    case 'Stats':
+      return item.props.items.some((entry) => text(entry.value) || text(entry.text))
+        ? null
+        : 'os números estão vazios'
     case 'Features':
       return item.props.items.some((entry) => text(entry.title) || text(entry.text))
         ? null
