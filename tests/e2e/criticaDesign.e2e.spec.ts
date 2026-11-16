@@ -186,16 +186,21 @@ test.describe.serial('crítica de design', () => {
   test.afterAll(async () => {
     const payload = await panel()
     if (previous) {
-      await payload.updateGlobal({
-        slug: 'header',
-        data: { ...previous.header, _status: 'published' },
-        overrideAccess: true,
-      })
-      await payload.updateGlobal({
-        slug: 'site',
-        data: { ...previous.site, _status: 'published' },
-        overrideAccess: true,
-      })
+      // Um menu guardado que aponta para uma página já apagada não pode impedir o resto da limpeza.
+      await payload
+        .updateGlobal({
+          slug: 'header',
+          data: { ...previous.header, _status: 'published' },
+          overrideAccess: true,
+        })
+        .catch(() => undefined)
+      await payload
+        .updateGlobal({
+          slug: 'site',
+          data: { ...previous.site, _status: 'published' },
+          overrideAccess: true,
+        })
+        .catch(() => undefined)
     }
     if (homeId) {
       await payload.delete({
@@ -324,15 +329,15 @@ test.describe.serial('crítica de design', () => {
     for (const height of heights) expect(height).toBeGreaterThanOrEqual(44)
   })
 
-  test('menu do celular com fundo escuro, que fecha ao tocar', async () => {
+  test('menu do celular em tela cheia, que fecha ao tocar num link', async () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await open(page, '/')
     await page.getByRole('button', { name: 'Abrir menu' }).click()
-    const backdrop = page.locator('.site-header__backdrop')
-    await expect(backdrop).toBeVisible()
-    await page.mouse.click(195, 800)
-    await expect(backdrop).toHaveCount(0)
-    await expect(page.locator('#menu-celular')).toBeHidden()
+    // Desde a avaliação de 2026-11-16 (T3) o menu ocupa a tela toda: não há fundo escuro atrás.
+    const menu = page.locator('#menu-celular')
+    await expect(menu).toBeVisible()
+    await menu.getByRole('link').first().click()
+    await expect(menu).toBeHidden()
 
     // Esc também fecha, com o foco de volta no ☰.
     await page.getByRole('button', { name: 'Abrir menu' }).click()

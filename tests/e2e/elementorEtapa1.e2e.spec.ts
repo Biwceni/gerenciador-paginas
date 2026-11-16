@@ -400,6 +400,16 @@ test.describe('editor: melhorias do Elementor, etapa 1', () => {
     // Botões de verdade (no editor eles são só texto).
     const inside = site.getByRole('link', { name: 'Ir para o fim' })
     await expect(inside).toBeVisible()
+    // Espera a entrada animada terminar: clicar no meio dela faz o Playwright rolar o botão para
+    // baixo do topo preso (T2).
+    await inside.evaluate((element) =>
+      Promise.all(
+        element
+          .closest('section')!
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      ),
+    )
     await inside.click()
     expect(page.url()).toContain(`/admin/editor/${id}`)
     await expect

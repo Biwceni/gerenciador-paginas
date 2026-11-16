@@ -371,13 +371,6 @@
     z-index: 6;
   }
 
-  .site-header__backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 5;
-    background: rgb(0 0 0 / 45%);
-  }
-
   .site-header--compact .site-header__mobile:not([hidden]) {
     display: grid;
   }
@@ -5009,6 +5002,11 @@
     transform 0.25s ease;
 }
 
+/* No editor o topo não acompanha a rolagem: ficaria por cima da seção que a pessoa vai tocar. */
+.site[data-editor] .site-header {
+  position: relative;
+}
+
 .site .site-header__bar {
   transition: padding-block 0.2s;
 }
@@ -5254,11 +5252,6 @@
   .site .site-header__mobile:not([hidden]) {
     animation: none;
   }
-}
-
-/* O fundo escuro de antes não existe mais: o menu já cobre a página. */
-.site .site-header__backdrop {
-  display: none;
 }
 
 /*

@@ -84,7 +84,8 @@ function useStickyHeader(button: React.RefObject<HTMLButtonElement | null>, open
   useEffect(() => {
     const header = button.current?.closest<HTMLElement>('.site-header')
     const view = header?.ownerDocument.defaultView
-    if (!header || !view) return
+    // No editor o topo fica parado (`data-editor`): sem encolher, nada se mexe embaixo do mouse.
+    if (!header || !view || header.closest('[data-editor]')) return
     const root = header.ownerDocument.documentElement
     const calm = view.matchMedia('(prefers-reduced-motion: reduce)')
 
