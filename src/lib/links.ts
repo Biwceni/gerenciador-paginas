@@ -185,3 +185,24 @@ export function validateSocial(
   }
   return true
 }
+
+/** Mensagem que já vem escrita no WhatsApp quando o dono não escreveu uma (W2). */
+export const DEFAULT_WHATSAPP_MESSAGE = 'Olá! Vim pelo site.'
+
+/**
+ * Como a conversa começa (W2): a mensagem das Configurações (ou a padrão) e a página de onde a
+ * pessoa tocou, para o dono saber de onde ela veio: "Olá! Vim pelo site. (página Cardápio)".
+ */
+export function whatsAppGreeting(message: string | null | undefined, page?: string | null) {
+  const text = message?.replace(/\s+/g, ' ').trim() || DEFAULT_WHATSAPP_MESSAGE
+  const where = page?.replace(/\s+/g, ' ').trim()
+  return where ? `${text} (página ${where})` : text
+}
+
+/** O link do WhatsApp com a mensagem pronta; um link que já tem mensagem (produtos) fica como está. */
+export function withWhatsAppText(href: string, text: string): string {
+  const url = new URL(href)
+  if (url.hostname !== 'wa.me' || url.searchParams.get('text')) return href
+  url.searchParams.set('text', text)
+  return url.toString()
+}

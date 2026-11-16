@@ -279,3 +279,15 @@ export function currentCombo(colors: SiteColors, combos: BrandCombo[]): BrandCom
     )
   return combos.find((combo) => same(combo.colors, colors))?.key ?? null
 }
+
+/**
+ * O logo some sobre este fundo (T6): a maior parte do que se vê dele tem quase a mesma luz do fundo
+ * (contraste abaixo de 1,6:1). Um logo escuro num topo escuro, por exemplo. Aí ele ganha contorno.
+ */
+export function logoBlends(colors: LogoColor[], background: string): boolean {
+  if (!colors.length) return false
+  const hidden = colors
+    .filter((item) => contrastRatio(item.color, background) < 1.6)
+    .reduce((sum, item) => sum + item.share, 0)
+  return hidden >= 0.6
+}

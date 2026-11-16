@@ -12,7 +12,7 @@ import {
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Site } from '@/payload-types'
 
-import { type MenuItem, siteBrand, SiteHeaderView } from './SiteChrome'
+import { headerShortcuts, type MenuItem, siteBrand, SiteHeaderView } from './SiteChrome'
 
 export type { MenuItem }
 
@@ -47,26 +47,40 @@ type Props = {
   site?: Partial<Site>
 }
 
-/** Topo publicado. */
-export async function SiteHeader({ currentPageId, campaign, site: draftSite }: Props) {
-  const [site, header, items, pageAnchors] = await Promise.all([
+/** O botão de destaque do topo, com o destino resolvido; sem texto ou sem destino, nenhum. */
+export async function getHeaderButton(
+  draftSite?: Partial<Site>,
+): Promise<{ label: string; href: string } | null> {
+  const [site, header, pageAnchors] = await Promise.all([
     draftSite ?? getSite(),
     getHeader(),
-    getMenuItems(currentPageId, draftSite),
     getMenuAnchors(),
   ])
-  const buttonHref = header.button?.label
-    ? resolveLink(header.button.link, { ...siteLinks(site), pageAnchors })
+  const label = header.button?.label?.trim()
+  const href = label
+    ? resolveLink(header.button?.link, { ...siteLinks(site), pageAnchors })
     : null
+  return label && href ? { label, href } : null
+}
+
+/** Topo publicado. */
+export async function SiteHeader({ currentPageId, campaign, site: draftSite }: Props) {
+  const [site, items, button] = await Promise.all([
+    draftSite ?? getSite(),
+    getMenuItems(currentPageId, draftSite),
+    getHeaderButton(draftSite),
+  ])
 
   return (
     <SiteHeaderView
       brand={siteBrand(site)}
-      button={buttonHref ? { label: header.button?.label ?? '', href: buttonHref } : null}
+      button={button}
       campaign={campaign}
       items={items}
       logo={populatedMedia(site.logo)}
+      logoRing={Boolean(site.logoRing?.header)}
       name={site.name || FALLBACK_SITE_NAME}
+      shortcuts={headerShortcuts(site)}
     />
   )
 }

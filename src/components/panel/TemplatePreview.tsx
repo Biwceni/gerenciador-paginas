@@ -157,6 +157,8 @@ export function TemplatePreview({
         contact={{
           whatsapp: null,
           whatsappHref: null,
+          phone: null,
+          phoneHref: null,
           email: null,
           address: page.address,
           hours: template.site?.hours ?? null,

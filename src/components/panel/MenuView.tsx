@@ -1,7 +1,12 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
-import { footerContact, footerSocial, siteBrand } from '@/components/site/SiteChrome'
+import {
+  footerContact,
+  footerSocial,
+  headerShortcuts,
+  siteBrand,
+} from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
 import { populatedMedia, privacyHref, siteLinks } from '@/lib/content'
 import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
@@ -9,6 +14,7 @@ import { FALLBACK_SITE_NAME } from '@/lib/site'
 import { previewFontFaces } from '@/lib/theme'
 import { pageSummary } from '@/puck/summary'
 
+import { toFooterData } from './footerData'
 import { MenuEditor } from './MenuEditor'
 import { PanelTemplate, requireUser } from './PanelTemplate'
 
@@ -56,12 +62,7 @@ export async function MenuView(props: AdminViewServerProps) {
         apiRoute={payload.config.routes.api}
         initial={{
           header: { items: header.items ?? [], button: header.button ?? {} },
-          footer: {
-            text: footer.text ?? '',
-            showMenu: footer.showMenu !== false,
-            showContact: footer.showContact !== false,
-            showSocial: footer.showSocial !== false,
-          },
+          footer: toFooterData(footer),
           pending: header._status === 'draft' || footer._status === 'draft',
           versions: { header: header.updatedAt ?? '', footer: footer.updatedAt ?? '' },
         }}
@@ -76,6 +77,8 @@ export async function MenuView(props: AdminViewServerProps) {
           theme: themeStyle(site) as Record<string, string>,
           fontFaces: previewFontFaces(site),
           brand: siteBrand(site),
+          shortcuts: headerShortcuts(site),
+          logoRing: { header: Boolean(site.logoRing?.header), footer: Boolean(site.logoRing?.footer) },
         }}
       />
     </PanelTemplate>

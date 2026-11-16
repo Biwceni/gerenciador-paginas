@@ -351,6 +351,10 @@ export interface Template {
      * Só entra se as Configurações estiverem sem horário.
      */
     hours?: string | null;
+    /**
+     * O que já vem escrito quando o visitante toca no WhatsApp.
+     */
+    whatsappMessage?: string | null;
   };
   header?: {
     items?:
@@ -377,6 +381,7 @@ export interface Template {
   };
   footer?: {
     text?: string | null;
+    ctaTitle?: string | null;
     showMenu?: boolean | null;
     showContact?: boolean | null;
     showSocial?: boolean | null;
@@ -806,6 +811,7 @@ export interface TemplatesSelect<T extends boolean = true> {
             };
         address?: T;
         hours?: T;
+        whatsappMessage?: T;
       };
   header?:
     | T
@@ -842,6 +848,7 @@ export interface TemplatesSelect<T extends boolean = true> {
     | T
     | {
         text?: T;
+        ctaTitle?: T;
         showMenu?: T;
         showContact?: T;
         showSocial?: T;
@@ -1039,6 +1046,10 @@ export interface Site {
    * Sem logo, o site usa as iniciais do nome.
    */
   logo?: (number | null) | Media;
+  logoRing?: {
+    header?: boolean | null;
+    footer?: boolean | null;
+  };
   /**
    * A página que abre quando alguém entra no endereço do site. Enquanto ela não estiver publicada, o site mostra o aviso "em construção".
    */
@@ -1095,6 +1106,14 @@ export interface Site {
      * Ex.: Seg a sáb, das 7h às 19h.
      */
     hours?: string | null;
+    /**
+     * Quem toca num botão de WhatsApp do site já encontra este texto, com a página de onde veio.
+     */
+    whatsappMessage?: string | null;
+    whatsappFloat?: {
+      phone?: boolean | null;
+      desktop?: boolean | null;
+    };
   };
   /**
    * Deixe em branco o que não usa.
@@ -1175,9 +1194,18 @@ export interface Header {
 export interface Footer {
   id: number;
   text?: string | null;
+  /**
+   * Uma faixa antes do rodapé, com o mesmo botão de destaque do topo.
+   */
+  cta?: {
+    show?: boolean | null;
+    title?: string | null;
+  };
   showMenu?: boolean | null;
   showContact?: boolean | null;
   showSocial?: boolean | null;
+  showHours?: boolean | null;
+  showBackToTop?: boolean | null;
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1190,6 +1218,12 @@ export interface SiteSelect<T extends boolean = true> {
   name?: T;
   tagline?: T;
   logo?: T;
+  logoRing?:
+    | T
+    | {
+        header?: T;
+        footer?: T;
+      };
   homepage?: T;
   privacyPage?: T;
   personality?: T;
@@ -1219,6 +1253,13 @@ export interface SiteSelect<T extends boolean = true> {
         email?: T;
         address?: T;
         hours?: T;
+        whatsappMessage?: T;
+        whatsappFloat?:
+          | T
+          | {
+              phone?: T;
+              desktop?: T;
+            };
       };
   social?:
     | T
@@ -1279,9 +1320,17 @@ export interface HeaderSelect<T extends boolean = true> {
  */
 export interface FooterSelect<T extends boolean = true> {
   text?: T;
+  cta?:
+    | T
+    | {
+        show?: T;
+        title?: T;
+      };
   showMenu?: T;
   showContact?: T;
   showSocial?: T;
+  showHours?: T;
+  showBackToTop?: T;
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

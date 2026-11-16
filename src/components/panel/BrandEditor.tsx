@@ -22,13 +22,14 @@ import {
   brandPalette,
   type BrandPalette,
   currentCombo,
+  logoBlends,
   type LogoColor,
   pickMainColor,
 } from '@/lib/brand'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
 import { type Business, businessLabel, FONT_PAIRS } from '@/lib/fontPairs'
 import type { FormDefinition } from '@/lib/forms'
-import { whatsAppURL } from '@/lib/links'
+import { telHref, whatsAppURL } from '@/lib/links'
 import { MOTION_LABELS, MOTIONS } from '@/lib/motion'
 import {
   COLOR_FIELDS,
@@ -195,6 +196,24 @@ export function BrandEditor({
     setPalette(paletteFromColors(colors))
   }
 
+  /**
+   * Logo que some no fundo do topo ou do rodapé ganha contorno no site (T6). A conta é refeita
+   * quando o logo ou as cores mudam aqui; sem as cores do logo, fica o que estava.
+   */
+  const ringFor = (colors: SiteColors, logoCols: LogoColor[] | null) =>
+    logoCols
+      ? {
+          header: logoBlends(logoCols, colors.background),
+          footer: logoBlends(logoCols, colors.footer),
+        }
+      : null
+  // Logo trocado nesta visita: quando as cores dele chegarem, o contorno é recalculado.
+  const logoChanged = useRef(false)
+  const updateRef = useRef(update)
+  useEffect(() => {
+    updateRef.current = update
+  })
+
   // As cores do logo são lidas aqui, no navegador, sempre que o logo muda.
   useEffect(() => {
     if (!logoURL) return
@@ -203,6 +222,15 @@ export function BrandEditor({
       if (!active) return
       const chosen = colors?.length ? pickMainColor(colors) : null
       setRead({ url: logoURL, colors: chosen ? colors : null })
+      if (logoChanged.current && colors?.length) {
+        logoChanged.current = false
+        updateRef.current({
+          logoRing: {
+            header: logoBlends(colors, colorsNow.current.background),
+            footer: logoBlends(colors, colorsNow.current.footer),
+          },
+        })
+      }
       if (colors && chosen) {
         setMain(chosen)
         setPalette(brandPalette(chosen, colors))
@@ -217,7 +245,7 @@ export function BrandEditor({
   }, [logoURL])
   const current = logoURL && read?.url === logoURL ? read : null
   const removeLogo = () => {
-    update({ logo: null })
+    update({ logo: null, logoRing: { header: false, footer: false } })
     forgetLogoColors(state.colors)
   }
   const logoColors = current?.colors ?? null
@@ -234,12 +262,13 @@ export function BrandEditor({
 
   const applyColors = (colors: SiteColors) => {
     setHexText(colors)
-    update({ colors })
+    update({ colors, logoRing: ringFor(colors, logoColors) ?? state.logoRing })
   }
   const setColor = (key: keyof SiteColors, value: string) => {
     setHexText((current) => ({ ...current, [key]: value }))
     if (HEX_COLOR_PATTERN.test(value)) {
-      update({ colors: { ...state.colors, [key]: value.toLowerCase() } })
+      const colors = { ...state.colors, [key]: value.toLowerCase() }
+      update({ colors, logoRing: ringFor(colors, logoColors) ?? state.logoRing })
     }
   }
 
@@ -889,6 +918,7 @@ export function BrandEditor({
         <PhotoChooser
           onClose={() => setChoosing(false)}
           onPick={(picked) => {
+            logoChanged.current = true
             update({ logo: picked.id })
             setChoosing(false)
           }}
@@ -946,6 +976,7 @@ function BrandPreview({
         campaign={home?.campaign}
         items={chrome.items}
         logo={logo}
+        logoRing={state.logoRing.header}
         name={name}
       />
       {home && metadata ? (
@@ -991,9 +1022,12 @@ function BrandPreview({
       <SiteFooterView
         brand={brand}
         campaign={home?.campaign}
+        logoRing={state.logoRing.footer}
         contact={{
           whatsapp: state.contact.whatsapp || null,
           whatsappHref: whatsAppURL(state.contact.whatsapp),
+          phone: state.contact.phone || null,
+          phoneHref: telHref(state.contact.phone),
           email: state.contact.email || null,
           address: state.contact.address || null,
           hours: state.contact.hours || null,

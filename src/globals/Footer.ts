@@ -32,6 +32,16 @@ export const Footer: GlobalConfig = {
       maxLength: 300,
     },
     {
+      name: 'cta',
+      type: 'group',
+      label: 'Chamada no fim do site',
+      admin: { description: 'Uma faixa antes do rodapé, com o mesmo botão de destaque do topo.' },
+      fields: [
+        { name: 'show', type: 'checkbox', label: 'Mostrar a chamada', defaultValue: true },
+        { name: 'title', type: 'text', label: 'Título da chamada', maxLength: 50 },
+      ],
+    },
+    {
       name: 'showMenu',
       type: 'checkbox',
       label: 'Repetir os links do menu',
@@ -47,6 +57,18 @@ export const Footer: GlobalConfig = {
       name: 'showSocial',
       type: 'checkbox',
       label: 'Mostrar as redes sociais',
+      defaultValue: true,
+    },
+    {
+      name: 'showHours',
+      type: 'checkbox',
+      label: 'Mostrar o horário de funcionamento',
+      defaultValue: true,
+    },
+    {
+      name: 'showBackToTop',
+      type: 'checkbox',
+      label: 'Mostrar "Voltar ao topo"',
       defaultValue: true,
     },
   ],
