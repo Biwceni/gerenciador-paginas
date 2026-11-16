@@ -146,7 +146,8 @@ test.describe('editor: rodada 2 da jornada', () => {
       )
       return {
         flag: document.documentElement.hasAttribute('data-ed-options'),
-        top: Math.round(section.getBoundingClientRect().top),
+        // `+ 0` tira o -0 (Math.round de -0,3), que o toEqual separa do 0.
+        top: Math.round(section.getBoundingClientRect().top) + 0,
         bar: bar ? getComputedStyle(bar).display : 'none',
       }
     })

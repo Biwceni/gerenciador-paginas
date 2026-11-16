@@ -808,7 +808,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       // Campo que não guarda nada: só o aviso de onde vêm os dados.
       ...({
         notice: notice(
-          'WhatsApp, telefone, e-mail, endereço e horário vêm das Configurações do site e mudam no site todo. O "Ver no mapa" abre o endereço no Google Maps.',
+          'WhatsApp, telefone, e-mail, endereço e horário vêm das Configurações do site e mudam no site todo. O "Ver no mapa" abre o endereço no Google Maps; com o mapa ligado, quem faz isso é o "Como chegar".',
         ),
       } as object),
       show: {

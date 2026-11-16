@@ -169,7 +169,7 @@ test.describe('editor: melhorias do Elementor, etapa 1', () => {
     await openEditor(page, id, 1)
 
     const list = page.locator('.ed-panel')
-    await expect(list).toContainText('WhatsApp, telefone, e-mail, endereço e horário')
+    await expect(list).toContainText('WhatsApp, telefone, e-mail, endereço, horário e mapa')
     await expect(list).toContainText('De duas a quatro colunas com título, texto, foto ou botão')
     await expect(list).not.toContainText('mapa do site')
 
