@@ -8,6 +8,7 @@ import { type Components, COLUMN_PIECES, PIECE_LABELS, SECTION_LABELS } from '@/
 import { insertIndex } from '@/puck/insertPosition'
 
 import { requestPiece } from './ColumnPicker'
+import { offerVariants } from './SectionVariants'
 import { copiedName, useCopiedSection, usePasteSection } from './copyPaste'
 import { useAddSection } from './insert'
 import { ROOT_ZONE, usePuck } from './puck'
@@ -107,7 +108,8 @@ function DrawerItem({ name }: { name: string; children?: React.ReactNode }) {
       // também precisa funcionar (8.2).
       requestPiece(name)
     } else {
-      addSection(name)
+      const id = addSection(name)
+      if (id) offerVariants(id, name)
     }
   }
 

@@ -4816,3 +4816,111 @@
 .site[data-personality='papel'] .contact__list > li + li {
   border-top: 2px dotted var(--papel-edge);
 }
+
+/*
+ * "Onde aparece" (E3): seção só no computador ou só no celular. A caixa não muda o desenho
+ * (`display: contents`); some na largura do outro aparelho, a mesma em que o site já troca para o
+ * desenho do celular (721 px; o tablet segue o computador).
+ */
+.site .only-desktop,
+.site .only-mobile {
+  display: contents;
+}
+
+@container site (max-width: 720px) {
+  .site .only-desktop {
+    display: none;
+  }
+}
+
+@container site (min-width: 721px) {
+  .site .only-mobile {
+    display: none;
+  }
+}
+
+/*
+ * Mapa do Contato (E9): quadro desenhado pela página, nas cores do site, que só troca pelo mapa do
+ * Google quando o visitante toca em "Ver no mapa". Ocupa a largura inteira, embaixo dos contatos.
+ */
+.site .contact-map {
+  position: relative;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: calc(var(--radius-media, 16px) + 4px);
+  background: var(--color-surface);
+}
+
+.site .contact-map__stage {
+  position: relative;
+}
+
+.site .contact-map__art {
+  display: block;
+  width: 100%;
+  height: clamp(160px, 28cqi, 240px);
+}
+
+.site .contact-map__pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 64px;
+  transform: translate(-50%, -70%);
+  filter: drop-shadow(0 4px 6px rgb(0 0 0 / 18%));
+}
+
+.site .contact-map__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 16px clamp(16px, 3cqi, 24px);
+  background: var(--color-background);
+}
+
+.site .contact-map__address {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.site .contact-map__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.site .contact-map__button {
+  min-height: 44px;
+}
+
+.site .contact-map__route {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.site .contact-map--open {
+  display: grid;
+}
+
+.site .contact-map__frame {
+  display: block;
+  width: 100%;
+  height: clamp(280px, 45cqi, 420px);
+  border: 0;
+}
+
+.site .contact-map--open .contact-map__route {
+  padding: 4px 16px 8px;
+}

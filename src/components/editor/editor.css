@@ -6,7 +6,9 @@
 
 .ed-root,
 .ed-overlay,
-.ed-visitor {
+.ed-visitor,
+.ed-brandpanel,
+.ed-brandstale {
   /*
    * Cores do tema do painel (claro ou escuro, como a pessoa escolheu em Minha conta): o panel.scss
    * troca os `--gp-*` junto com o `data-theme`.
@@ -139,36 +141,39 @@
   color: var(--gp-ok);
 }
 
-/* Personalidade do site, no topo (atalho para Sua marca). */
-.ed-personality {
-  display: flex;
-  align-items: center;
+/* Sua marca no topo (E8): bolinhas das cores de agora e a etiqueta "rascunho". */
+.ed-brandbtn {
   gap: 8px;
-  font-size: var(--gp-fs-help);
-  font-weight: 600;
-  color: var(--ed-muted);
   white-space: nowrap;
 }
 
-.ed-personality .ed-input {
-  width: auto;
-  min-width: 128px;
-  min-height: 38px;
+.ed-brandbtn__dots {
+  display: inline-flex;
+}
+
+.ed-brandbtn__dots i {
+  width: 14px;
+  height: 14px;
+  border: 1px solid color-mix(in srgb, var(--ed-text) 22%, transparent);
+  border-radius: 50%;
+}
+
+.ed-brandbtn__dots i + i {
+  margin-left: -4px;
+}
+
+.ed-brandbtn__draft {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ed-warn-soft);
   color: var(--ed-text);
+  font-size: var(--gp-fs-small);
   font-weight: 600;
 }
 
-/* No menu ⋯ do celular, rótulo em cima e a lista na largura toda. */
-.ed-more .ed-personality {
-  display: grid;
-  gap: 6px;
-  padding-top: 8px;
-  color: var(--ed-text);
-}
-
-.ed-more .ed-personality .ed-input {
-  width: 100%;
-  min-height: 44px;
+/* No menu ⋯ do celular, o botão na largura toda, como os outros. */
+.ed-more .ed-brandbtn__draft {
+  margin-left: auto;
 }
 
 .ed-top__status--warn {
@@ -2466,4 +2471,322 @@ textarea.ed-grow {
     border-radius: 0;
     box-shadow: none;
   }
+}
+
+/* "Onde aparece" (E3): na Ordem, a seção que aparece só num aparelho. */
+.ed-order__device {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ed-accent-soft);
+  color: var(--ed-accent);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ed-devices {
+  display: grid;
+  gap: 8px;
+}
+
+/* "Escolha o jeito" (E7): embaixo da prévia, logo depois de colocar uma seção pela lista. */
+.ed-variants {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--ed-line);
+  border-radius: 14px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+}
+
+.ed-variants__title {
+  display: grid;
+  gap: 2px;
+  font-size: var(--gp-fs-help);
+}
+
+.ed-variants__title span {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-small);
+}
+
+.ed-variants__list {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ed-variants__item {
+  flex: 0 0 96px;
+  width: 96px;
+  padding: 5px;
+  gap: 4px;
+}
+
+@media (max-width: 637px) {
+  .ed-variants {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    padding: 8px;
+  }
+
+  .ed-variants__title span {
+    display: none;
+  }
+}
+
+/* Sua marca dentro do editor (E8): painel ao lado da prévia, que muda na hora. */
+.ed-brandpanel {
+  position: fixed;
+  z-index: 30;
+  top: 60px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 100%);
+  border-left: 1px solid var(--ed-line);
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 12%);
+  outline: 0;
+}
+
+.ed-brandpanel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--ed-line);
+}
+
+.ed-brandpanel__head h2 {
+  margin: 0;
+  font-size: var(--gp-fs-card);
+}
+
+.ed-brandpanel__body {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  overflow: auto;
+  padding: 14px 16px 24px;
+  overscroll-behavior: contain;
+}
+
+.ed-brandpanel__same,
+.ed-brandpanel__state {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.ed-brandpanel__state {
+  margin-top: -10px;
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-help);
+}
+
+.ed-brandpanel__state--draft {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ed-warn-soft);
+  color: var(--ed-text);
+  font-weight: 600;
+}
+
+.ed-brandpanel__group {
+  display: grid;
+  gap: 8px;
+}
+
+.ed-brandpanel__group h3 {
+  margin: 0;
+  font-size: var(--gp-fs-text);
+}
+
+.ed-brandpanel__group .ed-hint {
+  margin: -4px 0 0;
+}
+
+.ed-brandpanel__list {
+  display: grid;
+  gap: 6px;
+}
+
+.ed-brandpanel__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 40px 9px 12px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 10px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-brandpanel__option:hover {
+  background: var(--ed-soft);
+}
+
+.ed-brandpanel__option:focus-visible {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+.ed-brandpanel__option[aria-pressed='true'] {
+  border-color: var(--ed-accent);
+  background: var(--ed-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--ed-accent);
+}
+
+.ed-brandpanel__option[aria-pressed='true']::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--ed-accent);
+  font-weight: 700;
+  transform: translateY(-50%);
+}
+
+.ed-brandpanel__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ed-brandpanel__text > span {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-help);
+  overflow-wrap: anywhere;
+}
+
+.ed-brandpanel__font {
+  overflow: hidden;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-brandpanel__swatch {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 4px;
+  width: 64px;
+  height: 40px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ed-text) 18%, transparent);
+  border-radius: 8px;
+}
+
+.ed-brandpanel__swatch b {
+  margin-right: auto;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ed-brandpanel__swatch i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.ed-brandpanel__more {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ed-line);
+}
+
+.ed-brandpanel__more .ed-btn {
+  gap: 8px;
+}
+
+.ed-brandpanel__more .ed-hint {
+  margin: 0;
+}
+
+/* No celular, em tela cheia; ao fechar, a página está ali. */
+@media (max-width: 900px) {
+  .ed-brandpanel {
+    top: 0;
+    width: 100%;
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  .ed-brandpanel__option {
+    min-height: 52px;
+  }
+}
+
+/* Sua marca mudou noutra aba: o aviso fica até atualizar a prévia. */
+.ed-brandstale {
+  position: fixed;
+  z-index: 31;
+  top: 112px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 12px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 520px) {
+  .ed-brandstale {
+    top: 70px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: calc(100% - 32px);
+    text-align: center;
+  }
+}
+
+/* Publicar: Sua marca não foi junto, com o "Tentar de novo" ali mesmo. */
+.ed-publish-brandfail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.ed-publish-brandfail span {
+  flex: 1 1 220px;
 }

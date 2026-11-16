@@ -3,7 +3,7 @@
 // Miniaturas prontas do Storage (400 px): o otimizador de imagens do Next não ajuda no painel.
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { isExamplePhoto } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
@@ -12,13 +12,14 @@ import type { Media } from '@/payload-types'
 import { collectReferences, heroWithoutPhoto, pagePhotoIds, usesWhatsApp } from '@/puck/references'
 import { sectionChecks } from '@/puck/checks'
 import { SECTION_LABELS } from '@/puck/config'
+import { deviceLimitedSections, linksToDeviceHidden, menuToDeviceHidden } from '@/puck/devices'
 import { hiddenSections } from '@/puck/hiddenSections'
 import type { PuckPageData } from '@/puck/schema'
 
-import { updatePhotoAlt } from './api'
+import { getHeader, updatePhotoAlt } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { Dialog } from './Dialog'
-import { addMenuItem, linksTo, type MenuState, readMenu } from './menu'
+import { addMenuItem, linksTo, type MenuItems, type MenuState, readMenu } from './menu'
 
 /** Descrição que não ajuda ninguém: nome de arquivo ou uma palavra só (como o "sdfsds" da POC). */
 export function weakAlt(alt: string | null | undefined): boolean {
@@ -50,8 +51,11 @@ type Props = {
   unnamedLinks: { id: string; label: string; section: string }[]
   /** Fecha a janela e mostra a seção na prévia. */
   onGoTo: (sectionId: string) => void
-  /** Personalidade escolhida no editor que ainda não foi publicada em Sua marca. */
-  personalityPending: string | null
+  /**
+   * Sua marca com mudança fora do ar (E8). `changedHere`: mudou neste editor, e a caixa "Publicar
+   * também Sua marca" já vem marcada. `personality`: o nome da personalidade nova, se ela mudou.
+   */
+  brand: { changedHere: boolean; personality: string | null; publish: () => Promise<void> } | null
   /** Outra página que já usa o endereço desta (o nome dela). */
   slugTakenBy: string | null
   onClose: () => void
@@ -72,7 +76,7 @@ export function PublishDialog({
   linkless,
   unnamedLinks,
   onGoTo,
-  personalityPending,
+  brand,
   slugTakenBy,
   onClose,
   onPublish,
@@ -88,6 +92,15 @@ export function PublishDialog({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<{ addedToMenu: boolean; menuError?: string } | null>(null)
+  const [withBrand, setWithBrand] = useState(Boolean(brand?.changedHere))
+  // Sua marca depois de publicar a página: foi junto, falhou (com o "Tentar de novo") ou nem foi.
+  const [brandResult, setBrandResult] = useState<
+    { state: 'published' } | { state: 'failed'; message: string } | { state: 'retrying' } | null
+  >(null)
+  const publishBrand = useRef(brand?.publish)
+  // Guarda o último pedido: depois de publicar, `brand` some (já não falta nada), e o "Tentar de
+  // novo" ainda precisa dele.
+  if (brand) publishBrand.current = brand.publish
 
   const { mediaIds, pageIds } = useMemo(() => collectReferences(data), [data])
   const weakPhotos = mediaIds.flatMap((id) => {
@@ -108,6 +121,24 @@ export function PublishDialog({
     id: section.id,
     label: `${(SECTION_LABELS as Record<string, string>)[section.type] ?? 'Seção'}: ${section.reason}`,
   }))
+  // "Onde aparece" (E3): seções que aparecem só num aparelho, e botões ou itens do menu que levam
+  // para uma seção escondida no aparelho em que eles aparecem.
+  const sectionName = (type: string) => (SECTION_LABELS as Record<string, string>)[type] ?? 'Seção'
+  const deviceOnly = deviceLimitedSections(data).map((section) => ({
+    id: section.id,
+    label: `${sectionName(section.type)}: só no ${section.devices === 'desktop' ? 'computador' : 'celular'}`,
+  }))
+  const [menuItems, setMenuItems] = useState<MenuItems>([])
+  const deviceLinks = [
+    ...linksToDeviceHidden(data, pageId).map((link) => ({
+      id: link.sectionId,
+      label: `“${link.label}”, em ${sectionName(link.sectionType)} (o destino some no ${link.device})`,
+    })),
+    ...menuToDeviceHidden(data, pageId, menuItems).map((item) => ({
+      id: '',
+      label: `Menu: “${item.label}” (o destino some no ${item.device})`,
+    })),
+  ]
   // Aviso leve: não muda o botão para "Publicar mesmo assim".
   const homeHeroWithoutPhoto =
     pageId === homepageId && heroWithoutPhoto(data, (id) => Boolean(photoById[id]))
@@ -118,6 +149,17 @@ export function PublishDialog({
       if (!target) return ['Página apagada']
       return target.published ? [] : [target.title]
     })
+
+  useEffect(() => {
+    if (!deviceOnly.length) return
+    let active = true
+    getHeader(apiRoute, false)
+      .then((header) => active && setMenuItems(header.items ?? []))
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [apiRoute, deviceOnly.length])
 
   useEffect(() => {
     if (pageId === homepageId) return
@@ -133,12 +175,13 @@ export function PublishDialog({
     data.content.length === 0 ||
     exampleSections.length > 0 ||
     hidden.length > 0 ||
+    deviceLinks.length > 0 ||
     examplePhotos.length > 0 ||
     weakPhotos.some((photo) => !alts[photo.id]?.trim()) ||
     draftLinks.length > 0 ||
     linkless.length > 0 ||
     unnamedLinks.length > 0 ||
-    personalityPending !== null ||
+    (brand !== null && !withBrand) ||
     slugTakenBy !== null ||
     whatsappWithoutNumber ||
     missing.length > 0 ||
@@ -159,7 +202,9 @@ export function PublishDialog({
       setBusy(false)
       return
     }
-    // A página já está no ar: se o menu falhar, é só um aviso na tela de "Pronto".
+    // A página já está no ar: Sua marca e o menu vêm depois. Se um falhar, a página continua no
+    // ar e a tela de "Pronto" avisa, com o jeito de resolver.
+    if (brand && withBrand) await sendBrand()
     try {
       if (menu.kind === 'can-add' && addToMenu) {
         await addMenuItem(apiRoute, menu.items, {
@@ -178,6 +223,20 @@ export function PublishDialog({
     }
   }
 
+  async function sendBrand() {
+    const send = publishBrand.current
+    if (!send) return
+    try {
+      await send()
+      setBrandResult({ state: 'published' })
+    } catch (caught) {
+      setBrandResult({
+        state: 'failed',
+        message: caught instanceof Error ? caught.message : 'erro desconhecido',
+      })
+    }
+  }
+
   const address = `${window.location.host}${page.path}`
 
   if (done) {
@@ -186,7 +245,29 @@ export function PublishDialog({
         <p>
           Quem acessar <b>{address}</b> já vê a versão nova.
           {done.addedToMenu && ' Ela também entrou no menu.'}
+          {brandResult?.state === 'published' &&
+            ' Sua marca também foi publicada: todas as páginas já mostram as cores e letras novas.'}
         </p>
+        {(brandResult?.state === 'failed' || brandResult?.state === 'retrying') && (
+          <div className="ed-hint ed-hint--warn ed-publish-brandfail" role="alert">
+            <span>
+              Sua marca não foi publicada
+              {brandResult.state === 'failed' ? ` (${brandResult.message})` : ''}. A página está no
+              ar com Sua marca de antes.
+            </span>
+            <button
+              className="ed-btn"
+              disabled={brandResult.state === 'retrying'}
+              onClick={async () => {
+                setBrandResult({ state: 'retrying' })
+                await sendBrand()
+              }}
+              type="button"
+            >
+              {brandResult.state === 'retrying' ? 'Tentando…' : 'Tentar de novo'}
+            </button>
+          </div>
+        )}
         {done.menuError && (
           <p className="ed-hint ed-hint--warn">
             Não deu para colocar a página no menu ({done.menuError}). Coloque em Menu e rodapé.
@@ -231,6 +312,16 @@ export function PublishDialog({
                 type="checkbox"
               />
               Colocar esta página no menu do topo e do rodapé
+            </label>
+          )}
+          {brand && (
+            <label className="ed-switch ed-publish-menu">
+              <input
+                checked={withBrand}
+                onChange={(event) => setWithBrand(event.target.checked)}
+                type="checkbox"
+              />
+              Publicar também Sua marca (muda todas as páginas)
             </label>
           )}
           <button className="ed-btn" onClick={onClose} type="button">
@@ -287,6 +378,32 @@ export function PublishDialog({
               ? 'No editor ela aparece, mas no site fica de fora (ou vazia) até ganhar conteúdo:'
               : 'No editor elas aparecem, mas no site ficam de fora (ou vazias) até ganharem conteúdo:'}
             <GoToList items={hidden} onGoTo={onGoTo} />
+          </Check>
+        )}
+        {deviceLinks.length > 0 && (
+          <Check
+            title={
+              deviceLinks.length === 1
+                ? 'Um link leva para uma seção escondida num aparelho'
+                : `${deviceLinks.length} links levam para seções escondidas num aparelho`
+            }
+          >
+            Nesse aparelho, o visitante toca e fica no topo da página. Mostre a seção nos dois ou
+            mude o destino:
+            <GoToList items={deviceLinks} onGoTo={onGoTo} />
+          </Check>
+        )}
+        {deviceOnly.length > 0 && (
+          <Check
+            ok
+            title={
+              deviceOnly.length === 1
+                ? 'Uma seção aparece só num aparelho'
+                : `${deviceOnly.length} seções aparecem só num aparelho`
+            }
+          >
+            Confira se é isso mesmo:
+            <GoToList items={deviceOnly} onGoTo={onGoTo} />
           </Check>
         )}
         {examplePhotos.length > 0 && (
@@ -397,13 +514,25 @@ export function PublishDialog({
         ) : (
           linkless.length === 0 && <Check ok title="Todos os botões levam para páginas no ar" />
         )}
-        {personalityPending !== null && (
-          <Check title={`A personalidade ${personalityPending} ainda não está no ar`}>
-            Publicar esta página não muda a personalidade do site.{' '}
-            <a href={panelHref(adminRoute, 'brand')}>Publique em Sua marca</a> para o site todo
-            mudar.
-          </Check>
-        )}
+        {brand &&
+          (withBrand ? (
+            <Check ok title="Sua marca vai junto">
+              {brand.personality ? `Personalidade ${brand.personality}, cores` : 'Cores'} e letras
+              mudam em todas as páginas. Vai junto também o que estiver guardado em Configurações.
+            </Check>
+          ) : (
+            <Check
+              title={
+                brand.personality
+                  ? `A personalidade ${brand.personality} ainda não está no ar`
+                  : 'Sua marca tem mudanças que ainda não estão no ar'
+              }
+            >
+              Sem a caixa “Publicar também Sua marca”, o site continua com as cores e letras de
+              antes. Marque a caixa ou{' '}
+              <a href={panelHref(adminRoute, 'brand')}>publique em Sua marca</a>.
+            </Check>
+          ))}
         {whatsappWithoutNumber && (
           <Check title="Botão de WhatsApp sem número">
             Ele fica escondido até você pôr o número em Configurações.
@@ -431,9 +560,11 @@ function GoToList({
       {items.map((item, index) => (
         <span className="ed-goto" key={`${item.id}-${index}`}>
           <span>{item.label}</span>
-          <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
-            Ir até
-          </button>
+          {item.id && (
+            <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
+              Ir até
+            </button>
+          )}
         </span>
       ))}
     </span>

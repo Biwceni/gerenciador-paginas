@@ -222,7 +222,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   Faq: 'Perguntas que abrem a resposta',
   Gallery: 'Várias fotos em grade',
   CallToAction: 'Faixa colorida com um botão',
-  Contact: 'WhatsApp, telefone, e-mail, endereço e horário',
+  Contact: 'WhatsApp, telefone, e-mail, endereço, horário e mapa',
   LinkList: 'Botões grandes, como no “link na bio”',
   Columns: 'De duas a quatro colunas com título, texto, foto ou botão',
   RichText: 'Um título e parágrafos, sem foto',

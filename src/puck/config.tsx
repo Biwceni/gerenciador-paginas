@@ -229,3 +229,19 @@ export const renderConfig: Config<Components> = {
     },
   },
 }
+
+/**
+ * "Onde aparece" (E3): no site, a seção que aparece só num aparelho ganha uma caixa com a classe
+ * que o CSS esconde no outro (`only-desktop`, `only-mobile`, com `display: contents`, sem mudar o
+ * desenho). No editor nada some: a prévia mostra uma faixa ou uma etiqueta (`EditorFrame`).
+ */
+for (const type of Object.keys(SECTION_LABELS) as (keyof typeof SECTION_LABELS)[]) {
+  const component = renderConfig.components[type] as { render: (props: never) => React.ReactNode }
+  const draw = component.render
+  component.render = ((props: { devices?: string; puck: { metadata: unknown } }) => {
+    const drawn = draw(props as never)
+    const devices = props.devices
+    if (!devices || devices === 'all' || meta(props.puck).editing) return drawn
+    return <div className={`only-${devices}`}>{drawn}</div>
+  }) as never
+}

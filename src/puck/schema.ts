@@ -50,6 +50,15 @@ export const buttonSchema = z.object({
   link: linkRefSchema,
 })
 
+/**
+ * Onde a seção aparece (Elementor, E3): no computador e no celular, só no computador ou só no
+ * celular. Opcional (sem o campo é nos dois): as páginas de antes continuam válidas e a versão
+ * continua a 2.
+ */
+export const SECTION_DEVICES = ['all', 'desktop', 'mobile'] as const
+export type SectionDevices = (typeof SECTION_DEVICES)[number]
+const devices = z.enum(SECTION_DEVICES).optional()
+
 /** Fundo da seção: claro (fundo do site), suave ou na cor principal. */
 const sectionStyle = z.enum(['light', 'soft', 'brand'])
 
@@ -78,6 +87,7 @@ const anim = <const T extends readonly Anim[]>(options: T) =>
 
 export const heroPropsSchema = z.object({
   id: componentId,
+  devices,
   title,
   text: z.string().max(300),
   image: photoRefSchema,
@@ -96,6 +106,7 @@ export const heroPropsSchema = z.object({
 
 export const textImagePropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(2000),
@@ -142,6 +153,7 @@ export const FEATURE_MARKERS = ['none', 'icon', 'number', 'photo'] as const
  */
 export const featuresPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   // `number`: passo a passo (lista numerada). `icon`: cada item com um ícone. `photo`: foto redonda.
@@ -167,6 +179,7 @@ export const featuresPropsSchema = z.object({
 /** Depoimentos. A foto é opcional e nova, com padrão "sem foto". */
 export const testimonialsPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   items: z
@@ -186,6 +199,7 @@ export const testimonialsPropsSchema = z.object({
 
 export const faqPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   items: z
@@ -205,6 +219,7 @@ export const GALLERY_LAYOUTS = ['grid', 'masonry'] as const
  */
 export const galleryPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   images: z
@@ -230,6 +245,7 @@ export const PRODUCT_LAYOUTS = ['three', 'two', 'list'] as const
 
 export const productsPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(300).default(''),
@@ -263,6 +279,7 @@ export const PRICE_LEADERS = ['dots', 'line'] as const
 
 export const priceListPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(300).default(''),
@@ -300,6 +317,7 @@ export const ANNOUNCEMENT_MODES = ['move', 'static'] as const
 
 export const announcementPropsSchema = z.object({
   id: componentId,
+  devices,
   items: z
     .array(z.object({ text: z.string().max(LIMITS.announcement) }))
     .min(1)
@@ -315,6 +333,7 @@ export const INSTAGRAM_MAX_PHOTOS = 8
 
 export const instagramStripPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   images: z.array(z.object({ mediaId: id })).max(INSTAGRAM_MAX_PHOTOS),
@@ -324,6 +343,7 @@ export const instagramStripPropsSchema = z.object({
 
 export const callToActionPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(300),
@@ -340,6 +360,7 @@ export const CONTACT_FEATURED = ['whatsapp', 'phone', 'email', 'none'] as const
 
 export const contactPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(300),
@@ -347,6 +368,8 @@ export const contactPropsSchema = z.object({
   // fica em destaque, num bloco na cor do site com botão.
   show: z.array(z.enum(CONTACT_CHANNELS)).default([...CONTACT_CHANNELS]),
   featured: z.enum(CONTACT_FEATURED).default('whatsapp'),
+  // Elementor, E9: mapa do endereço das Configurações (opcional; sem o campo, desligado).
+  map: z.boolean().optional(),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Contact),
 })
@@ -354,6 +377,7 @@ export const contactPropsSchema = z.object({
 /** O texto é montado na hora, com os dados das configurações (`lib/privacy.ts`). */
 export const privacyPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   style: sectionStyle,
@@ -362,6 +386,7 @@ export const privacyPropsSchema = z.object({
 
 export const linkListPropsSchema = z.object({
   id: componentId,
+  devices,
   // Componentes, C12 (com padrão: a versão continua a 2): a Lista de links também vira item do menu.
   menuLabel: menuLabel.default(''),
   title,
@@ -386,6 +411,7 @@ const richText = z
 
 export const richTextPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   body: richText,
@@ -395,6 +421,7 @@ export const richTextPropsSchema = z.object({
 
 export const videoPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   // Vazio enquanto o cliente não colou o endereço.
@@ -425,6 +452,7 @@ export const formRefSchema = z.object({ formId: id }).nullable()
 
 export const formPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   title,
   text: z.string().max(600),
@@ -481,6 +509,7 @@ export const COLUMN_ALIGNS = ['start', 'center', 'end'] as const
 
 export const columnsPropsSchema = z.object({
   id: componentId,
+  devices,
   menuLabel,
   layout: z.enum(COLUMN_LAYOUTS),
   column1: column,
@@ -520,7 +549,16 @@ export const componentSchema = z.discriminatedUnion('type', [
 
 export const puckDataSchema = z.object({
   root: z.object({ props: z.object({}).default({}) }).default({ props: {} }),
-  content: z.array(componentSchema).max(LIMITS.sections),
+  // A primeira seção aparece sempre, nos dois (E3): é o começo da página e o que o Google mede.
+  content: z
+    .array(componentSchema)
+    .max(LIMITS.sections)
+    .transform((content) => {
+      const first = content[0]
+      if (!first || !first.props.devices || first.props.devices === 'all') return content
+      const fixed = { ...first, props: { ...first.props, devices: 'all' } } as typeof first
+      return [fixed, ...content.slice(1)]
+    }),
   // Áreas soltas (DropZone) não são usadas: as Colunas guardam as peças nos próprios campos.
   zones: z.record(z.string(), z.array(z.never())).optional(),
 })

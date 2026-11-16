@@ -240,11 +240,16 @@ test.describe.serial('Painel e editor no visual do produto', () => {
     await page.screenshot({ path: test.info().outputPath('editor-secoes.png') })
   })
 
-  test('editor: trocar a personalidade muda a prévia e guarda no rascunho', async () => {
-    await page.getByLabel('Personalidade').selectOption('aconchego')
+  test('editor: trocar a personalidade em Sua marca muda a prévia e guarda no rascunho', async () => {
+    await page.getByRole('button', { name: /^Sua marca/ }).click()
+    await page
+      .getByRole('dialog', { name: 'Sua marca' })
+      .getByRole('button', { name: /^Aconchego/ })
+      .click()
     const preview = page.frameLocator('.ed-root iframe').first()
     await expect(preview.locator('body')).toHaveAttribute('data-personality', 'aconchego')
-    await expect(page.getByText(/Personalidade Aconchego guardada/)).toBeVisible()
+    await expect(page.getByText(/Sua marca guardada/)).toBeVisible()
+    await page.keyboard.press('Escape')
 
     const payload = await panel()
     const draft = await payload.findGlobal({

@@ -53,6 +53,17 @@ export function createDraftSaver<T>({
     },
     /** Manda já o que estiver esperando (ao sair do editor) e espera a fila terminar. */
     flush: send,
+    /**
+     * O valor guardado mudou por fora (outra tela): passa a ser a base, e a troca que esperava a
+     * pausa é esquecida.
+     */
+    reset(value: T) {
+      if (timer) clearTimeout(timer)
+      timer = null
+      waiting = null
+      latest += 1
+      saved = value
+    },
     /** Para de esperar (o editor saiu da tela). */
     dispose() {
       if (timer) clearTimeout(timer)

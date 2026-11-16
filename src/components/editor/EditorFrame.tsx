@@ -155,6 +155,28 @@ ${SELECTION_HALO}
 .ed-barmore__item:focus-visible { box-shadow: inset 0 0 0 2px #c9cff6; }
 .ed-barmore__item:disabled { opacity: 0.55; cursor: not-allowed; }
 @media (pointer: coarse) { .ed-barmore__item { min-height: 44px; } .ed-barmore__item kbd { display: none; } }
+/* "Onde aparece" (E3): a seção nunca some no editor. Na prévia do aparelho em que ela não
+   aparece, vira uma faixa fina; no outro, ganha a etiqueta. Mesma largura do site (721 px). */
+[data-ed-devices] { position: relative; }
+[data-ed-devices]::before {
+  position: absolute; top: 12px; right: 12px; z-index: 2; max-width: calc(100% - 24px);
+  padding: 0.35em 0.8em; border: 1px dashed #4338ca; border-radius: 8px;
+  background: #eef2ff; color: #312e81;
+  font: 600 clamp(13px, 1.6vw, 22px)/1.3 system-ui, sans-serif; pointer-events: none;
+}
+[data-ed-devices='mobile']::before { content: 'Só no celular'; }
+[data-ed-devices='desktop']::before { content: 'Só no computador'; }
+@container site (max-width: 720px) {
+  [data-ed-devices='desktop'] {
+    min-height: 56px; outline: 2px dashed #4338ca; outline-offset: -2px;
+    background: repeating-linear-gradient(135deg, #eef2ff 0 10px, #e0e7ff 10px 20px);
+  }
+  [data-ed-devices='desktop'] > * { display: none !important; }
+  [data-ed-devices='desktop']::before {
+    content: 'Escondida no celular'; top: 50%; right: auto; left: 12px; transform: translateY(-50%);
+    font-size: 14px;
+  }
+}
 /* Opções abertas no celular (rodada 2, F1): sem a barrinha e sem o espaço dela na faixa. */
 html[data-ed-options] [class*='DraggableComponent-actionsOverlay'] { display: none !important; }
 html[data-ed-options] [data-puck-component] { margin-top: 0 !important; scroll-margin-top: 0 !important; }
@@ -273,10 +295,18 @@ function useHiddenTags(frame: Document | undefined) {
     const sections = frame.querySelectorAll<HTMLElement>(
       '[data-puck-dropzone="root:default-zone"] > [data-puck-component]',
     )
+    const devices = new Map(
+      data.content.map((item) => [String(item.props.id), item.props.devices as string | undefined]),
+    )
     for (const section of sections) {
-      const reason = hidden.get(section.dataset.puckComponent ?? '')
+      const id = section.dataset.puckComponent ?? ''
+      const reason = hidden.get(id)
       if (reason) section.dataset.edHidden = reason
       else delete section.dataset.edHidden
+      // "Onde aparece" (E3): só no computador ou só no celular.
+      const only = devices.get(id)
+      if (only === 'desktop' || only === 'mobile') section.dataset.edDevices = only
+      else delete section.dataset.edDevices
     }
   })
 }

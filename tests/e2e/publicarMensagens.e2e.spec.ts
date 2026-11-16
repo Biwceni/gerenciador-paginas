@@ -169,25 +169,33 @@ test.describe('editor: publicar com confiança e mensagens que ajudam', () => {
     await expect(fields(page)).toContainText('Links')
   })
 
-  test('1.6 Publicar avisa que a personalidade escolhida ainda não está no ar', async ({
+  test('1.6 Publicar leva Sua marca junto; desmarcada, avisa que ela não vai ao ar', async ({
     page,
   }) => {
     const { id } = await createPage([hero])
     await openEditor(page, id, 1)
-    const select = page.getByLabel('Personalidade')
-    const before = await select.inputValue()
-    const other = await select.locator('option').evaluateAll((options, current) => {
-      const values = options.map((option) => (option as HTMLOptionElement).value)
-      return values.find((value) => value !== current) ?? current
-    }, before)
-    await select.selectOption(other)
-    await page.waitForTimeout(2500)
+    await page.getByRole('button', { name: /^Sua marca/ }).click()
+    const panel = page.getByRole('dialog', { name: 'Sua marca' })
+    const personalities = panel.getByRole('group', { name: 'Personalidade' }).getByRole('button')
+    const before = personalities.and(page.locator('[aria-pressed="true"]'))
+    const beforeName = ((await before.locator('b').textContent()) ?? '').trim()
+    await personalities.and(page.locator('[aria-pressed="false"]')).first().click()
+    await expect(page.getByText(/Sua marca guardada/)).toBeVisible()
+    await page.keyboard.press('Escape')
+
     const dialog = await openPublish(page)
+    const withBrand = dialog.getByRole('checkbox', { name: /Publicar também Sua marca/ })
+    await expect(withBrand).toBeChecked()
+    await expect(dialog.getByText('Sua marca vai junto')).toBeVisible()
+    await withBrand.uncheck()
     await expect(dialog.getByText(/A personalidade .* ainda não está no ar/)).toBeVisible()
-    await expect(dialog.getByRole('link', { name: 'Publique em Sua marca' })).toBeVisible()
+    await expect(dialog.getByRole('link', { name: /publique em Sua/ })).toBeVisible()
     await dialog.getByRole('button', { name: 'Agora não' }).click()
-    await select.selectOption(before)
-    await page.waitForTimeout(2500)
+
+    // Volta a personalidade de antes, para não deixar rascunho de Sua marca.
+    await page.getByRole('button', { name: /^Sua marca/ }).click()
+    await panel.getByRole('button', { name: new RegExp(`^${beforeName}`) }).click()
+    await expect(page.getByText(/Sua marca guardada/).last()).toBeVisible()
   })
 
   test('9.2 endereço de outra página é avisado na hora, com um endereço livre', async ({
