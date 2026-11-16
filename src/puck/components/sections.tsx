@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import React from 'react'
 
+import { ContactMap } from '@/components/site/ContactMap'
 import { Photo } from '@/components/site/Photo'
 import { SiteLink } from '@/components/site/SiteLink'
 import { mapsURL, telHref, whatsAppURL } from '@/lib/links'
@@ -696,6 +697,7 @@ export function Contact({
   text,
   show = [...CONTACT_CHANNELS],
   featured = 'whatsapp',
+  map = false,
   style,
   anim,
   metadata,
@@ -821,6 +823,7 @@ export function Contact({
             </EditorPlaceholder>
           )
         )}
+        {map && address && <ContactMap address={address} editing={metadata.editing} />}
       </div>
     </Section>
   )

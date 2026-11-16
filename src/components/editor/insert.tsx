@@ -75,6 +75,7 @@ export function useAddSection() {
       })
       const added = getPuck().getItemBySelector(selection)
       if (added) scrollToSection(added.props.id)
+      return added ? String(added.props.id) : null
     },
     [getPuck],
   )

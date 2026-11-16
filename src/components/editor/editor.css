@@ -2488,3 +2488,63 @@ textarea.ed-grow {
   display: grid;
   gap: 8px;
 }
+
+/* "Escolha o jeito" (E7): embaixo da prévia, logo depois de colocar uma seção pela lista. */
+.ed-variants {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--ed-line);
+  border-radius: 14px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+}
+
+.ed-variants__title {
+  display: grid;
+  gap: 2px;
+  font-size: var(--gp-fs-help);
+}
+
+.ed-variants__title span {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-small);
+}
+
+.ed-variants__list {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ed-variants__item {
+  flex: 0 0 96px;
+  width: 96px;
+  padding: 5px;
+  gap: 4px;
+}
+
+@media (max-width: 637px) {
+  .ed-variants {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    padding: 8px;
+  }
+
+  .ed-variants__title span {
+    display: none;
+  }
+}

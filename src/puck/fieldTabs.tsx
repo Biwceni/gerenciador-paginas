@@ -81,6 +81,7 @@ export const FIELD_TABS: { [K in keyof Components]: Record<string, FieldTabName>
     notice: C,
     show: C,
     featured: C,
+    map: C,
     menuLabel: C,
     style: A,
     anim: M,

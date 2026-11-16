@@ -368,6 +368,8 @@ export const contactPropsSchema = z.object({
   // fica em destaque, num bloco na cor do site com botão.
   show: z.array(z.enum(CONTACT_CHANNELS)).default([...CONTACT_CHANNELS]),
   featured: z.enum(CONTACT_FEATURED).default('whatsapp'),
+  // Elementor, E9: mapa do endereço das Configurações (opcional; sem o campo, desligado).
+  map: z.boolean().optional(),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Contact),
 })

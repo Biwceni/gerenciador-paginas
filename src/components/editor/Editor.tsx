@@ -81,6 +81,7 @@ import { PersonalitySwitch } from './PersonalitySwitch'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { VisitorPreview } from './VisitorPreview'
+import { SectionVariantsBar } from './SectionVariants'
 import { PublishDialog } from './PublishDialog'
 import { type GetPuck, MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErrors'
@@ -334,6 +335,7 @@ function EditorHeader() {
         </button>
       </div>
       <PreviewTools />
+      <SectionVariantsBar />
       <ColumnPicker />
       <ColumnsLayoutPicker />
       <AdjustedBar />

@@ -20,6 +20,7 @@ import {
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
 import { DevicesField } from '@/components/editor/DevicesField'
+import { MapField } from '@/components/editor/MapField'
 import { ColumnPiecesField, ColumnTag, EmptyColumn } from '@/components/editor/ColumnPieces'
 import {
   featureProblem,
@@ -807,7 +808,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       // Campo que não guarda nada: só o aviso de onde vêm os dados.
       ...({
         notice: notice(
-          'WhatsApp, telefone, e-mail, endereço e horário vêm das Configurações do site e mudam no site todo. O botão "Ver no mapa" abre o endereço no Google Maps.',
+          'WhatsApp, telefone, e-mail, endereço e horário vêm das Configurações do site e mudam no site todo. O "Ver no mapa" abre o endereço no Google Maps.',
         ),
       } as object),
       show: {
@@ -829,6 +830,15 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Nenhum', value: 'none' },
         ],
       },
+      map: {
+        type: 'custom',
+        label: 'Mapa',
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <MapField {...props} />
+          </FieldLabel>
+        ),
+      },
       style: sectionStyle,
       menuLabel,
       anim: animField('Contact'),
@@ -840,6 +850,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       text: 'Será um prazer receber você.',
       show: [...CONTACT_CHANNELS],
       featured: 'whatsapp',
+      map: false,
       style: 'soft',
     },
   },

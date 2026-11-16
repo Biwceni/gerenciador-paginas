@@ -49,6 +49,10 @@ export function privacyBlocks(site: PrivacySite): PrivacyBlock[] {
       text: 'Para responder ao seu contato, mandar o orçamento ou confirmar a inscrição que você pediu.',
     },
     {
+      heading: 'Vídeos e mapa',
+      text: 'Os vídeos (YouTube ou Vimeo) e o mapa do Google só carregam quando você toca neles. A partir daí, esses serviços podem guardar dados do seu acesso, conforme as políticas de privacidade deles.',
+    },
+    {
       heading: 'Como pedir para apagar',
       text: details.length
         ? 'Fale com a gente pedindo para apagar seus dados. Fazemos em até 15 dias.'
