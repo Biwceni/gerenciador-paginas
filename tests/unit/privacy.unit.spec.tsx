@@ -104,7 +104,15 @@ describe('link Privacidade', () => {
     renderToStaticMarkup(
       <SiteFooterView
         campaign={campaign}
-        contact={{ whatsapp: null, whatsappHref: null, email: null, address: null, hours: null }}
+        contact={{
+          whatsapp: null,
+          whatsappHref: null,
+          phone: null,
+          phoneHref: null,
+          email: null,
+          address: null,
+          hours: null,
+        }}
         menu={[]}
         name="Café"
         privacyHref={privacyHref}

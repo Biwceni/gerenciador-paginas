@@ -324,6 +324,13 @@ export const Templates: CollectionConfig = {
           label: 'Horário de exemplo',
           admin: { description: 'Só entra se as Configurações estiverem sem horário.' },
         },
+        {
+          name: 'whatsappMessage',
+          type: 'text',
+          label: 'Mensagem do WhatsApp',
+          maxLength: 200,
+          admin: { description: 'O que já vem escrito quando o visitante toca no WhatsApp.' },
+        },
       ],
     },
     {
@@ -360,6 +367,7 @@ export const Templates: CollectionConfig = {
       admin: { condition: isSite },
       fields: [
         { name: 'text', type: 'textarea', label: 'Frase do rodapé', maxLength: 300 },
+        { name: 'ctaTitle', type: 'text', label: 'Título da chamada no fim', maxLength: 50 },
         {
           name: 'showMenu',
           type: 'checkbox',

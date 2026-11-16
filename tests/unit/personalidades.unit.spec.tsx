@@ -201,12 +201,20 @@ describe('topo e rodapé com mais marca', () => {
     expect(html).toContain('site-header__logo--round')
   })
 
-  it('logo no rodapé só nas novas', () => {
+  it('logo na coluna da marca do rodapé em todas as personalidades (R1)', () => {
     const footer = (personality: 'classico' | 'editorial') =>
       renderToStaticMarkup(
         <SiteFooterView
           brand={siteBrand({ personality })}
-          contact={{ whatsapp: null, whatsappHref: null, email: null, address: null, hours: null }}
+          contact={{
+            whatsapp: null,
+            whatsappHref: null,
+            phone: null,
+            phoneHref: null,
+            email: null,
+            address: null,
+            hours: null,
+          }}
           logo={logo(400, 400)}
           menu={[]}
           name="Café"
@@ -215,7 +223,7 @@ describe('topo e rodapé com mais marca', () => {
           text={null}
         />,
       )
-    expect(footer('classico')).not.toContain('site-footer__logo')
+    expect(footer('classico')).toContain('site-footer__logo site-footer__logo--round')
     expect(footer('editorial')).toContain('site-footer__logo site-footer__logo--round')
   })
 })

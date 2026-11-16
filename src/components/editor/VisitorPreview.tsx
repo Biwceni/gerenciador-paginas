@@ -248,7 +248,13 @@ export function VisitorPreview({
               <Render config={renderConfig} data={data} metadata={siteMetadata} />
             </main>
             {campaign ? chrome.footerCampaign : chrome.footer}
-            {siteMetadata.whatsappHref && <WhatsAppFloat href={siteMetadata.whatsappHref} />}
+            {siteMetadata.whatsappHref && (
+              <WhatsAppFloat
+                desktop={siteMetadata.site.contact.whatsappFloat?.desktop === true}
+                href={siteMetadata.whatsappHref}
+                phone={siteMetadata.site.contact.whatsappFloat?.phone !== false}
+              />
+            )}
           </>,
           body,
         )}

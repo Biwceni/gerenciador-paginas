@@ -257,6 +257,8 @@ export function templateSiteData(
       whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
       address: site.contact?.address || null,
       hours: site.contact?.hours || null,
+      // A mensagem pronta do WhatsApp é a do ramo novo (W2); sem ela no modelo, fica a de antes.
+      whatsappMessage: sample?.whatsappMessage || site.contact?.whatsappMessage || null,
     },
     _status: 'published' as const,
   }
@@ -383,6 +385,9 @@ export async function applySiteTemplate(
         showMenu: footer?.showMenu !== false,
         showContact: footer?.showContact !== false,
         showSocial: footer?.showSocial !== false,
+        cta: { show: true, title: footer?.ctaTitle || null },
+        showHours: true,
+        showBackToTop: true,
         _status: 'published',
       },
       ...access,

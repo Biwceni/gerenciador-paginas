@@ -4590,3 +4590,49 @@ textarea.gp-input {
     overflow-wrap: anywhere;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * Menu, rodapé e WhatsApp do site (avaliação de 2026-11-16: R6, T4, W1, W2)
+ * ------------------------------------------------------------------------------------------- */
+
+.gp-fieldset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 4px 0 0;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--gp-line);
+
+  > legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 2px;
+    padding: 0;
+    font-weight: 700;
+  }
+}
+
+/* W2: como a conversa vai começar, num balão de mensagem. */
+.gp-wa__chat {
+  display: grid;
+  gap: 6px;
+}
+
+.gp-wa__bubble {
+  justify-self: start;
+  max-width: 100%;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--gp-ok-soft);
+  color: var(--gp-ink);
+  font-size: var(--gp-fs-help);
+  overflow-wrap: anywhere;
+}
+
+/* T4: aviso do menu comprido. */
+.gp-menufit {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
