@@ -183,8 +183,13 @@ test.describe('site: menu, rodapé e WhatsApp', () => {
     await expect(menu.getByRole('link', { name: 'WhatsApp' })).toBeVisible()
     await expect(menu.getByRole('link', { name: '@lojadeteste' })).toBeVisible()
     await expect(menu).toContainText('Seg a sáb, 8h às 18h')
-    const box = await menu.boundingBox()
-    expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(844)
+    // Vai até o fim da tela (depois da entrada curta do menu).
+    await expect
+      .poll(async () => {
+        const box = await menu.boundingBox()
+        return Math.round((box?.y ?? 0) + (box?.height ?? 0))
+      })
+      .toBe(844)
     await page.mouse.wheel(0, 800)
     expect(await page.evaluate(() => scrollY)).toBe(0)
     await page.keyboard.press('Escape')
