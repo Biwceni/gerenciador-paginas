@@ -153,10 +153,13 @@ test.describe.serial('painel: avaliação Impeccable', () => {
     await expect(card).toBeVisible()
     await expect(card.getByRole('heading')).toHaveText('Mudanças que ainda não estão no ar')
     await expect(card).toHaveAttribute('role', 'status')
-    await expect(card.locator('li').first()).toContainText('página')
+    await expect(card.locator('li').first()).toContainText(/mudanças guardadas|nunca foi ao ar/)
     // Os avisos bege antigos, um por item, sumiram.
     await expect(page.locator('.gp-notice--warn', { hasText: 'fora do ar' })).toHaveCount(0)
-    for (const link of await card.getByRole('link').all()) await expect(link).toHaveText('Abrir')
+    // Página no ar com mudanças: "Ver o que mudou"; rascunho que nunca foi ao ar: "Abrir" (L1).
+    for (const link of await card.getByRole('link').all()) {
+      await expect(link).toHaveText(/^(Abrir|Ver o que mudou)$/)
+    }
     await expect(page).toHaveTitle(/^Painel \|/)
   })
 

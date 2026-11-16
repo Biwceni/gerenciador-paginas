@@ -4008,9 +4008,10 @@ textarea.gp-input {
 
 // L4: no computador largo, texto, página e botões na mesma linha. O nome das colunas fica só no
 // primeiro link.
-@media (min-width: 1180px) {
+// A partir de 1400 px: em 1280 o texto do link ficava estreito para 20 letras.
+@media (min-width: 1400px) {
   .gp-menuitem {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) auto;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) auto;
 
     > .gp-menuitem__field:first-child {
       grid-column: auto;

@@ -129,9 +129,11 @@ test.describe.serial('site novo', () => {
     // A Página de links não usa foto: esse passo já nasce feito.
     await expect(page.getByText('1 de 5 feitos')).toBeVisible()
 
-    const steps = page.locator('.gp-todo li')
-    await expect(steps).toHaveCount(5)
-    editorHref = (await steps.nth(4).getByRole('link').getAttribute('href')) ?? ''
+    // Só os passos que faltam ficam à vista; o feito vai para "✓ 1 feito" (L1).
+    const steps = page.locator('.gp-card > .gp-todo li')
+    await expect(steps).toHaveCount(4)
+    await expect(page.locator('.gp-donelist .gp-todo li')).toHaveCount(1)
+    editorHref = (await steps.nth(3).getByRole('link').getAttribute('href')) ?? ''
     expect(editorHref).toMatch(/\/admin\/editor\/\d+$/)
     await expect(steps.nth(2).getByRole('link')).toHaveAttribute('href', editorHref)
     await expect(steps.nth(0).getByRole('link')).toHaveAttribute('href', '/admin/configuracoes')
