@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
-import { request } from '@/components/editor/api'
+import { request } from './session'
 import { normalizeWhatsApp } from '@/lib/links'
 import { panelHref } from '@/lib/panel'
 import {

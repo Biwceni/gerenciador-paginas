@@ -10,6 +10,8 @@ import {
   protectPageDelete,
   rejectStaleSave,
 } from '../hooks/protectPage'
+import { deleteOrphanDraft, listOrphanDrafts, recoverOrphanDraft } from '../endpoints/orphanDrafts'
+import { deleteLeftoverVersions, hideOrphanVersions } from '../hooks/orphanVersions'
 import { revalidateOnDelete, revalidateOnPublish } from '../hooks/revalidate'
 import { describeContentError, emptyPageContent, parsePageContent } from '../puck/schema'
 
@@ -60,9 +62,12 @@ export const Pages: CollectionConfig = {
     drafts: { autosave: { interval: 2000 } },
     maxPerDoc: 50,
   },
+  endpoints: [listOrphanDrafts, recoverOrphanDraft, deleteOrphanDraft],
   hooks: {
     afterChange: [revalidateOnPublish],
-    afterDelete: [revalidateOnDelete],
+    afterDelete: [revalidateOnDelete, deleteLeftoverVersions],
+    // B9 v2: rascunho sem página nunca entra nas listas (ele não é uma página).
+    afterOperation: [hideOrphanVersions],
     beforeChange: [rejectStaleSave, archiveRules, protectHomepageUnpublish],
     beforeDelete: [protectPageDelete],
   },

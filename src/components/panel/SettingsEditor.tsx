@@ -7,10 +7,15 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
+import { socialURL } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
 
+import { type Block, BlockNav } from './BlockNav'
+import { ConflictNotice } from './ConflictNotice'
+import { DiscardButton } from './DiscardButton'
+import { ErrorSummary } from './ErrorSummary'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
 import { SaveStatus } from './SaveStatus'
@@ -24,6 +29,8 @@ type Props = {
   apiRoute: string
   domain: string
   initial: SettingsState
+  /** Data da versão das configurações que a tela abriu (A3). */
+  version: string
   livePages: { id: number; title: string; slug?: string | null }[]
   /** Página inicial escolhida que ainda não está no ar (o site novo nasce assim). */
   draftHome: { id: number; title: string } | null
@@ -41,19 +48,6 @@ type Props = {
 
 export type { SettingsState }
 
-// Blocos da tela, na ordem, para os atalhos do topo.
-const SECTIONS: [string, string][] = [
-  ['st-identidade', 'Identidade'],
-  ['st-inicial', 'Página inicial'],
-  ['st-privacidade', 'Privacidade'],
-  ['st-contato', 'Contato'],
-  ['st-redes', 'Redes sociais'],
-  ['st-google', 'Google'],
-  // Nome curto no atalho: com o nome inteiro, os atalhos quebravam em 2 linhas perto de 1050 px.
-  ['st-pessoas', 'Pessoas'],
-  ['st-modelo', 'Começar de novo'],
-]
-
 /**
  * Configurações: identidade, página inicial, contato, redes e Google. O logo, as cores, as letras,
  * o jeito e a animação do site ficam em Sua marca (`BrandEditor`), no mesmo rascunho.
@@ -63,6 +57,7 @@ export function SettingsEditor({
   apiRoute,
   domain,
   initial,
+  version,
   livePages,
   draftHome,
   draftPrivacy,
@@ -75,6 +70,7 @@ export function SettingsEditor({
   const draft = useSettingsDraft({
     apiRoute,
     initial,
+    version,
     initialPending,
     publishedText: 'Configurações publicadas em todo o site.',
   })
@@ -125,6 +121,12 @@ export function SettingsEditor({
         className="gp-input"
         id={`st-${key}`}
         maxLength={200}
+        onBlur={(event) => {
+          // Redes: "facebook.com/loja" ganha o https:// ao sair do campo, como no Menu e rodapé.
+          if (groupKey !== 'social') return
+          const next = socialURL(key as keyof SettingsState['social'], event.target.value)
+          if (next !== event.target.value) update({ social: { ...state.social, [key]: next } })
+        }}
         onChange={(event) =>
           update({ [groupKey]: { ...state[groupKey], [key]: event.target.value } })
         }
@@ -132,17 +134,115 @@ export function SettingsEditor({
       />
       {errors[key] ? (
         <span className="gp-hint gp-hint--error">{errors[key]}</span>
+      ) : groupKey === 'social' && willBecome(key as keyof SettingsState['social']) ? (
+        <span className="gp-hint">
+          Vai ficar: {willBecome(key as keyof SettingsState['social'])}
+        </span>
       ) : (
         hint && <span className="gp-hint">{hint}</span>
       )}
     </div>
   )
 
+  /** O endereço completo que a rede vai ter, quando é diferente do que foi digitado. */
+  const willBecome = (key: keyof SettingsState['social']) => {
+    const typed = state.social[key].trim()
+    const next = socialURL(key, typed)
+    return typed && next !== typed ? next : null
+  }
+
   const homeLive = livePages.some((page) => page.id === state.homepage)
   // Duas páginas com o mesmo nome ("Início" e "Início") aparecem com o endereço junto.
   const liveTitles = distinctPageTitles(livePages)
   const homeInList = homeLive || draftHome?.id === state.homepage
   const shareImage = photos.find((item) => item.id === state.shareImage) ?? null
+
+  // B8 v2: o resumo de cada bloco sai do rascunho e muda na hora.
+  const pageName = (id: number | null, draftPage: { id: number; title: string } | null) =>
+    livePages.find((page) => page.id === id)?.title ??
+    (draftPage?.id === id ? `${draftPage.title} (rascunho)` : null)
+  const homeName = pageName(state.homepage, draftHome)
+  const privacyName = pageName(state.privacyPage, draftPrivacy)
+  const filled = (entries: [string, string][]) =>
+    entries.filter(([, value]) => value.trim()).map(([label]) => label)
+  const contactParts = filled([
+    ['WhatsApp', state.contact.whatsapp],
+    ['telefone', state.contact.phone],
+    ['e-mail', state.contact.email],
+    ['endereço', state.contact.address],
+    ['horário', state.contact.hours],
+  ])
+  const socialParts = filled([
+    ['Instagram', state.social.instagram],
+    ['Facebook', state.social.facebook],
+    ['YouTube', state.social.youtube],
+    ['TikTok', state.social.tiktok],
+    ['LinkedIn', state.social.linkedin],
+  ])
+  const fix = (keys: string[]) =>
+    keys.some((key) => errors[key]) ? 'Campo para corrigir' : undefined
+  const join = (parts: string[]) =>
+    parts.length > 1 ? `${parts.slice(0, -1).join(', ')} e ${parts.at(-1)}` : (parts[0] ?? '')
+  const blocks: Block[] = [
+    {
+      id: 'st-identidade',
+      label: 'Identidade',
+      summary: state.name.trim(),
+      missing:
+        fix(['name']) ??
+        (!state.name.trim()
+          ? 'Falta o nome do negócio'
+          : !state.tagline.trim()
+            ? 'Falta a frase de apresentação'
+            : undefined),
+    },
+    {
+      id: 'st-inicial',
+      label: 'Página inicial',
+      summary: homeName ?? undefined,
+      missing: homeName ? undefined : 'Falta escolher a página',
+    },
+    {
+      id: 'st-privacidade',
+      label: 'Privacidade',
+      summary: privacyName ?? undefined,
+      missing: privacyName ? undefined : 'Falta escolher a página',
+    },
+    {
+      id: 'st-contato',
+      label: 'Contato',
+      summary: contactParts.length ? join(contactParts).replace(/^./, (c) => c.toUpperCase()) : '',
+      missing:
+        fix(['whatsapp', 'email']) ??
+        (state.contact.whatsapp.trim() || state.contact.email.trim()
+          ? undefined
+          : 'Falta o WhatsApp ou o e-mail'),
+    },
+    {
+      id: 'st-redes',
+      label: 'Redes sociais',
+      summary: socialParts.length ? join(socialParts) : 'Nenhuma rede',
+      missing: fix(['instagram', 'facebook', 'youtube', 'tiktok', 'linkedin']),
+    },
+    {
+      id: 'st-google',
+      label: 'Google',
+      summary: state.seoDescription.trim() ? 'Descrição escrita' : 'Sem descrição própria',
+    },
+    // Nome curto no atalho: com o nome inteiro, os atalhos quebravam em 2 linhas perto de 1050 px.
+    { id: 'st-pessoas', label: 'Pessoas', summary: 'Quem pode mexer no painel' },
+    ...(canStartOver
+      ? [
+          {
+            id: 'st-modelo',
+            label: 'Começar de novo',
+            summary: 'Troca o site inteiro por um modelo',
+            danger: true,
+            phoneOnly: true,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className="gp-page" role="main">
@@ -155,7 +255,15 @@ export function SettingsEditor({
           </p>
         </div>
         <SaveStatus
-          blocked={save === 'invalid' ? 'Corrija o campo marcado para salvar' : null}
+          blocked={
+            draft.conflict
+              ? 'Não salvo: escolha a versão'
+              : save === 'invalid'
+                ? Object.keys(errors).length > 1
+                  ? `Corrija os ${Object.keys(errors).length} campos marcados para salvar`
+                  : 'Corrija o campo marcado para salvar'
+                : null
+          }
           error={draft.saveError}
           mode="publish"
           onRetry={draft.retry}
@@ -167,25 +275,17 @@ export function SettingsEditor({
       </header>
 
       <div className="gp-pubbar">
-        {/* Atalhos para cada bloco: a tela é longa. "Começar de novo" fica de fora: é o último bloco,
-            de perigo, e sem ele os atalhos cabem numa linha no computador. */}
-        <nav aria-label="Blocos desta tela" className="gp-toc gp-toc--row">
-          {SECTIONS.filter(([id]) => id !== 'st-modelo').map(([id, label]) => (
-            <a href={`#${id}`} key={id}>
-              {label}
-            </a>
-          ))}
-        </nav>
+        {/* Atalhos para cada bloco: a tela é longa. "Começar de novo" fica fora da linha do
+            computador (é o último bloco, de perigo) e separado no fim da lista do celular. */}
+        <BlockNav blocks={blocks} label="Blocos desta tela" />
         <div className="gp-actions">
           {pending && (
-            <button
-              className="gp-btn"
+            <DiscardButton
+              detail="Os nomes, contatos, redes e páginas escolhidas voltam a ser os que estão no ar."
               disabled={busy || save === 'saving'}
-              onClick={draft.discard}
-              type="button"
-            >
-              Descartar mudanças
-            </button>
+              onDiscard={draft.discard}
+              what="Configurações"
+            />
           )}
           <div className="gp-btnwrap">
             <button
@@ -202,6 +302,15 @@ export function SettingsEditor({
         </div>
       </div>
 
+      {draft.conflict && (
+        <ConflictNotice
+          onKeepMine={draft.keepMine}
+          onSeeLatest={draft.seeLatest}
+          what="As Configurações"
+        />
+      )}
+      <ErrorSummary count={Object.keys(errors).length} />
+
       {message && (
         <p className={message.tone === 'ok' ? 'gp-notice' : 'gp-error'} role="status">
           {message.text}
@@ -210,25 +319,52 @@ export function SettingsEditor({
 
       {/* Travada enquanto publica ou descarta: o que fosse digitado no meio seria desfeito. */}
       <div className="gp-grid2" inert={busy}>
-        <section className="gp-card" id="st-identidade">
-          <h2>Identidade</h2>
-          {text('name', 'Nome do negócio', { max: 80 })}
-          {text('tagline', 'Frase de apresentação', {
-            multiline: true,
-            max: 200,
-            hint: 'Uma frase curta sobre o negócio. Também vai no título da página inicial no Google.',
-            placeholder: `Ex.: ${taglineHint}`,
-          })}
-          <p className="gp-small gp-muted">
-            O logo, as cores e as letras ficam em{' '}
-            <Link className="gp-link" href={panelHref(adminRoute, 'brand')}>
-              Sua marca
-            </Link>
-            .
-          </p>
-        </section>
+        {/* L2: duas colunas que se encaixam como um mural, sem vão embaixo de Identidade. No
+            celular, uma coluna na ordem dos atalhos. */}
+        <div className="gp-col gp-col--left">
+          <section className="gp-card" id="st-identidade">
+            <h2>Identidade</h2>
+            {text('name', 'Nome do negócio', { max: 80 })}
+            {text('tagline', 'Frase de apresentação', {
+              multiline: true,
+              max: 200,
+              hint: 'Uma frase curta sobre o negócio. Também vai no título da página inicial no Google.',
+              placeholder: `Ex.: ${taglineHint}`,
+            })}
+            <p className="gp-small gp-muted">
+              O logo, as cores e as letras ficam em{' '}
+              <Link className="gp-link" href={panelHref(adminRoute, 'brand')}>
+                Sua marca
+              </Link>
+              .
+            </p>
+          </section>
+          <section className="gp-card" id="st-contato">
+            <div>
+              <h2>Contato</h2>
+              <p className="gp-small gp-muted">
+                Aparece no rodapé e na seção “Contato e endereço” de todas as páginas.
+              </p>
+            </div>
+            {group(
+              'contact',
+              'whatsapp',
+              'WhatsApp',
+              'Com DDD. Os botões de WhatsApp usam este número.',
+            )}
+            {group('contact', 'phone', 'Telefone')}
+            {group('contact', 'email', 'E-mail')}
+            {group('contact', 'address', 'Endereço')}
+            {group(
+              'contact',
+              'hours',
+              'Horário de funcionamento',
+              'Ex.: Seg a sáb, das 7h às 19h.',
+            )}
+          </section>
+        </div>
 
-        <div className="gp-col">
+        <div className="gp-col gp-col--right">
           <section className="gp-card" id="st-inicial">
             <h2>Página inicial</h2>
             <div className="gp-field">
@@ -289,38 +425,16 @@ export function SettingsEditor({
               Com cadeado de segurança (https). Para trocar o domínio, fale com o suporte.
             </span>
           </section>
-        </div>
-
-        <section className="gp-card" id="st-contato">
-          <div>
-            <h2>Contato</h2>
-            <p className="gp-small gp-muted">
-              Aparece no rodapé e na seção “Contato e endereço” de todas as páginas.
-            </p>
-          </div>
-          {group(
-            'contact',
-            'whatsapp',
-            'WhatsApp',
-            'Com DDD. Os botões de WhatsApp usam este número.',
-          )}
-          {group('contact', 'phone', 'Telefone')}
-          {group('contact', 'email', 'E-mail')}
-          {group('contact', 'address', 'Endereço')}
-          {group('contact', 'hours', 'Horário de funcionamento', 'Ex.: Seg a sáb, das 7h às 19h.')}
-        </section>
-
-        <div>
           <section className="gp-card" id="st-redes">
             <div>
               <h2>Redes sociais</h2>
               <p className="gp-small gp-muted">Deixe em branco o que não usa.</p>
             </div>
             {group('social', 'instagram', 'Instagram', 'O perfil, como @seunegocio.')}
-            {group('social', 'facebook', 'Facebook', 'Endereço completo, começando com https://')}
-            {group('social', 'youtube', 'YouTube')}
-            {group('social', 'tiktok', 'TikTok')}
-            {group('social', 'linkedin', 'LinkedIn')}
+            {group('social', 'facebook', 'Facebook', 'Ex.: facebook.com/seunegocio')}
+            {group('social', 'youtube', 'YouTube', 'Ex.: youtube.com/@seunegocio')}
+            {group('social', 'tiktok', 'TikTok', 'Ex.: tiktok.com/@seunegocio')}
+            {group('social', 'linkedin', 'LinkedIn', 'Ex.: linkedin.com/company/seunegocio')}
           </section>
         </div>
 

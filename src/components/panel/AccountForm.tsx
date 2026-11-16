@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
 import { PasswordFields, passwordMissing, passwordReady } from '@/components/auth/PasswordFields'
-import { request } from '@/components/editor/api'
+import { request } from './session'
 import type { User } from '@/payload-types'
 
 import { PanelIcon } from './PanelIcon'

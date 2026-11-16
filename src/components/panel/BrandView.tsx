@@ -122,6 +122,7 @@ export async function BrandView(props: AdminViewServerProps) {
         fontFaces={site.fontFaces ?? null}
         home={home}
         initial={toSettingsState(site)}
+        version={site.updatedAt ?? ''}
         pending={site._status === 'draft'}
         photos={photos.docs}
       />

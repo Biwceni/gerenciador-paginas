@@ -40,7 +40,7 @@ import {
   normalizeFontName,
   type SiteColors,
 } from '@/lib/style-presets'
-import { FONT_NAME_PATTERN } from '@/lib/theme'
+import { FONT_NAME_PATTERN, PERSONALITY_LABELS } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 import { renderConfig } from '@/puck/config'
 import {
@@ -57,6 +57,9 @@ import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { PersonalityPicker } from './PersonalityPicker'
 import { PhotoChooser } from './PhotoChooser'
+import { BlockNav } from './BlockNav'
+import { ConflictNotice } from './ConflictNotice'
+import { DiscardButton } from './DiscardButton'
 import { SaveStatus } from './SaveStatus'
 import type { SettingsState } from './settings'
 import { SiteFrame } from './SiteFrame'
@@ -93,6 +96,8 @@ type Props = {
   initial: SettingsState
   pending: boolean
   photos: Media[]
+  /** Data da versão das configurações que a tela abriu (A3). */
+  version: string
 }
 
 type FontRole = 'headings' | 'body'
@@ -127,6 +132,7 @@ export function BrandEditor({
   fontFaces,
   home,
   initial,
+  version,
   pending: initialPending,
   photos: initialPhotos,
 }: Props) {
@@ -137,6 +143,7 @@ export function BrandEditor({
   const draft = useSettingsDraft({
     apiRoute,
     initial,
+    version,
     initialPending,
     publishedText: 'Sua marca foi publicada em todo o site.',
     // Fonte que o Google não tem: volta para a anterior e mostra o erro no campo.
@@ -285,6 +292,9 @@ export function BrandEditor({
   } as Partial<Site>) as Record<string, string>
   const checks = contrastChecks(state.colors)
   const failing = checks.filter((check) => check.ratio < 4.5)
+  // Publicar com cor difícil de ler pede confirmação, com a lista (M7). A liberdade continua.
+  const [askContrast, setAskContrast] = useState(false)
+  const publish = () => (failing.length ? setAskContrast(true) : void draft.publish())
 
   const preview = (
     <BrandPreview chrome={chrome} home={home} logo={logo} photos={photos} state={state} />
@@ -301,7 +311,13 @@ export function BrandEditor({
           </p>
         </div>
         <SaveStatus
-          blocked={save === 'invalid' ? 'Corrija o nome do negócio em Configurações' : null}
+          blocked={
+            draft.conflict
+              ? 'Não salvo: escolha a versão'
+              : save === 'invalid'
+                ? 'Corrija o nome do negócio em Configurações'
+                : null
+          }
           error={draft.saveError}
           mode="publish"
           onRetry={draft.retry}
@@ -313,29 +329,48 @@ export function BrandEditor({
       </header>
 
       <div className="gp-pubbar">
-        <nav aria-label="Blocos desta tela" className="gp-toc">
-          <a href="#mc-cores">Logo e cores</a>
-          <a href="#mc-letras">Letras</a>
-          <a href="#mc-jeito">Jeito do site</a>
-          <a href="#mc-animacao">Animação</a>
-        </nav>
+        {/* B8 v2: os mesmos atalhos das Configurações, com o resumo de cada bloco. */}
+        <BlockNav
+          blocks={[
+            {
+              id: 'mc-cores',
+              label: 'Logo e cores',
+              summary: state.logo ? 'Com logo' : 'Sem logo',
+              missing: failing.length
+                ? `${failing.length === 1 ? '1 cor difícil' : `${failing.length} cores difíceis`} de ler`
+                : undefined,
+            },
+            {
+              id: 'mc-letras',
+              label: 'Letras',
+              summary:
+                [state.fonts.headings, state.fonts.body].filter(Boolean).join(' e ') ||
+                'As do jeito do site',
+            },
+            {
+              id: 'mc-jeito',
+              label: 'Jeito do site',
+              summary: PERSONALITY_LABELS[state.personality].name,
+            },
+            { id: 'mc-animacao', label: 'Animação', summary: MOTION_LABELS[state.motion].name },
+          ]}
+          label="Blocos desta tela"
+        />
         <div className="gp-actions">
           {pending && (
-            <button
-              className="gp-btn"
+            <DiscardButton
+              detail="O logo, as cores, as letras, o jeito e a animação voltam a ser os que estão no ar."
               disabled={busy || save === 'saving'}
-              onClick={draft.discard}
-              type="button"
-            >
-              Descartar mudanças
-            </button>
+              onDiscard={draft.discard}
+              what="Sua marca"
+            />
           )}
           <div className="gp-btnwrap">
             <button
               aria-describedby={draft.cantPublish ? 'mc-why' : undefined}
               className="gp-btn gp-btn--primary"
               disabled={busy || Boolean(draft.cantPublish)}
-              onClick={draft.publish}
+              onClick={publish}
               type="button"
             >
               {busy ? 'Aguarde…' : 'Publicar'}
@@ -344,6 +379,55 @@ export function BrandEditor({
           </div>
         </div>
       </div>
+
+      {draft.conflict && (
+        <ConflictNotice
+          onKeepMine={draft.keepMine}
+          onSeeLatest={draft.seeLatest}
+          what="Sua marca"
+        />
+      )}
+      {askContrast && (
+        <PanelDialog
+          onClose={() => setAskContrast(false)}
+          title="Publicar com partes difíceis de ler?"
+        >
+          <div className="gp-stack">
+            <p>
+              Com estas cores, parte do site fica difícil de ler (o mínimo recomendado é 4,5:1):
+            </p>
+            <ul className="gp-contrastlist">
+              {failing.map((warning) => (
+                <li key={warning.label}>
+                  <b>{warning.label}</b> · contraste {formatRatio(warning.ratio)}
+                </li>
+              ))}
+            </ul>
+            <div className="gp-actions gp-actions--end">
+              <button
+                className="gp-btn"
+                onClick={() => {
+                  setAskContrast(false)
+                  void draft.publish()
+                }}
+                type="button"
+              >
+                Publicar mesmo assim
+              </button>
+              <button
+                className="gp-btn gp-btn--primary"
+                onClick={() => {
+                  setAskContrast(false)
+                  document.getElementById('mc-cores')?.scrollIntoView({ block: 'start' })
+                }}
+                type="button"
+              >
+                Voltar e ajustar
+              </button>
+            </div>
+          </div>
+        </PanelDialog>
+      )}
 
       {message && (
         <p className={message.tone === 'ok' ? 'gp-notice' : 'gp-error'} role="status">
@@ -496,8 +580,9 @@ export function BrandEditor({
                 <div className="gp-field">
                   <span className="gp-label">Suas cores</span>
                   <span className="gp-hint">
-                    Clique no quadrado para escolher qualquer cor, ou digite o código (ex.:
-                    #6b3f24).
+                    <span className="gp-mouse">Clique</span>
+                    <span className="gp-touch">Toque</span> no quadrado para escolher qualquer cor,
+                    ou digite o código (ex.: #6b3f24).
                   </span>
                   <div className="gp-colors">
                     {COLOR_FIELDS.map(({ key, label, hint }) => (
@@ -766,11 +851,25 @@ export function BrandEditor({
         </div>
       </div>
 
+      {/* M8: no celular a prévia fica no fim da tela; este botão a abre em tela cheia, já em
+          Celular. Fechou, a pessoa continua onde estava. */}
+      <button
+        className="gp-btn gp-btn--primary gp-fab"
+        onClick={() => {
+          setDevice('phone')
+          setFullPreview(true)
+        }}
+        type="button"
+      >
+        <PanelIcon name="eye" size={16} />
+        Ver prévia
+      </button>
+
       {fullPreview && (
         <PanelDialog
           onClose={() => setFullPreview(false)}
           size="full"
-          title="Prévia em tamanho real"
+          title={device === 'phone' ? 'Prévia no celular' : 'Prévia em tamanho real'}
         >
           <div className="gp-previewbox__frame">
             <SiteFrame
@@ -778,7 +877,7 @@ export function BrandEditor({
               stylesheets={previewFonts.map(googleFontCSS)}
               theme={theme}
               title="Prévia da sua marca em tamanho real"
-              width={1280}
+              width={device === 'phone' ? 390 : 1280}
             >
               {preview}
             </SiteFrame>

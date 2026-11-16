@@ -1,6 +1,6 @@
 'use client'
 
-import { request } from '@/components/editor/api'
+import { request } from './session'
 import type { Media } from '@/payload-types'
 
 /** Endereço do plugin de Storage que assina o envio (`serverHandlerPath` do `s3Storage`). */

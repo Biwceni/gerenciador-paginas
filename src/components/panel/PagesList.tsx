@@ -1,5 +1,6 @@
 'use client'
 
+import type { OrphanDraft } from '@/hooks/orphanVersions'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -11,6 +12,7 @@ import { uniqueSlug } from '@/lib/slug'
 import { archivePage, copyPage, deletePage, restorePage, setHomepage, unpublishPage } from './api'
 import type { PageRow } from './data'
 import { PageRowItem } from './PageRowItem'
+import { OrphanNotice } from './OrphanNotice'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon, type PanelIconName } from './PanelIcon'
 import { Tip } from './Tip'
@@ -24,11 +26,21 @@ type Props = {
   inMenu: number[]
   /** Páginas da lista, já na ordem do menu (`sortPagesForList`). */
   pages: PageRow[]
+  /** Rascunhos que ficaram sem página (B9 v2). */
+  orphans?: OrphanDraft[]
 }
 
 type Notice = { text: string; editId?: number }
 
-export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, pages }: Props) {
+export function PagesList({
+  adminRoute,
+  apiRoute,
+  archived,
+  domain,
+  inMenu,
+  orphans = [],
+  pages,
+}: Props) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [confirm, setConfirm] = useState<{ page: PageRow; kind: Confirm } | null>(null)
@@ -38,12 +50,18 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
   const [restoring, setRestoring] = useState<number | null>(null)
   const [restoreError, setRestoreError] = useState<string | null>(null)
 
+  // B10: página que acabou de ser arquivada ou excluída sai da lista na hora do aviso; se o servidor
+  // recusar, ela volta. Depois da nova leitura do servidor, a lista já vem sem ela; ao restaurar,
+  // o número sai daqui para ela voltar a aparecer.
+  const [leaving, setLeaving] = useState<number[]>([])
+
   const search = query.trim().toLowerCase()
   const matches = (page: PageRow) =>
     !search || page.title.toLowerCase().includes(search) || page.path.includes(search)
-  const list = pages.filter(matches)
+  const current = pages.filter((page) => !leaving.includes(page.id))
+  const list = current.filter(matches)
   const archivedList = archived.filter(matches)
-  const live = pages.filter((page) => page.status !== 'draft').length
+  const live = current.filter((page) => page.status !== 'draft').length
   const takenSlugs = [...pages, ...archived].map((page) => page.slug)
   const closeConfirm = useCallback(() => setConfirm(null), [])
 
@@ -65,28 +83,47 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
     }
   }
 
-  const perform = (page: PageRow, kind: Action) =>
-    run(async () => {
-      if (kind === 'copy') {
-        const title = `${page.title.slice(0, 72)} (cópia)`
-        const { doc } = await copyPage(apiRoute, page.id, title, uniqueSlug(title, takenSlugs))
-        return { text: 'Cópia criada como rascunho.', editId: doc.id }
-      }
-      if (kind === 'home') {
-        await setHomepage(apiRoute, page.id)
-        return { text: `“${page.title}” agora é a página inicial.` }
-      }
-      if (kind === 'unpublish') {
-        await unpublishPage(apiRoute, page.id)
-        return { text: `“${page.title}” saiu do ar e voltou a ser rascunho.` }
-      }
-      if (kind === 'archive') {
-        await archivePage(apiRoute, page.id)
-        return { text: `“${page.title}” foi para Arquivadas.` }
-      }
-      await deletePage(apiRoute, page.id)
-      return { text: `“${page.title}” foi excluída.` }
+  /** Arquivar e excluir: some da lista já, com o aviso; volta se não der certo. */
+  const performNow = async (page: PageRow, kind: 'archive' | 'delete') => {
+    setConfirm(null)
+    setActionError(null)
+    setLeaving((ids) => [...ids, page.id])
+    setNotice({
+      text:
+        kind === 'archive'
+          ? `“${page.title}” foi para Arquivadas.`
+          : `“${page.title}” foi excluída.`,
     })
+    try {
+      await (kind === 'archive' ? archivePage(apiRoute, page.id) : deletePage(apiRoute, page.id))
+      router.refresh()
+    } catch (err) {
+      setLeaving((ids) => ids.filter((id) => id !== page.id))
+      setNotice(null)
+      setActionError(
+        `“${page.title}” ${kind === 'archive' ? 'não foi arquivada' : 'não foi excluída'} e voltou para a lista: ${
+          err instanceof Error ? err.message : 'tente de novo.'
+        }`,
+      )
+    }
+  }
+
+  const perform = (page: PageRow, kind: Action) =>
+    kind === 'archive' || kind === 'delete'
+      ? performNow(page, kind)
+      : run(async () => {
+          if (kind === 'copy') {
+            const title = `${page.title.slice(0, 72)} (cópia)`
+            const { doc } = await copyPage(apiRoute, page.id, title, uniqueSlug(title, takenSlugs))
+            return { text: 'Cópia criada como rascunho.', editId: doc.id }
+          }
+          if (kind === 'home') {
+            await setHomepage(apiRoute, page.id)
+            return { text: `“${page.title}” agora é a página inicial.` }
+          }
+          await unpublishPage(apiRoute, page.id)
+          return { text: `“${page.title}” saiu do ar e voltou a ser rascunho.` }
+        })
 
   // Cópia e página inicial vão direto; o que tira do site ou apaga pede confirmação.
   const pick = (page: PageRow, kind: Action) => {
@@ -100,6 +137,7 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
     setRestoreError(null)
     try {
       await restorePage(apiRoute, page.id)
+      setLeaving((ids) => ids.filter((id) => id !== page.id))
       done({ text: `“${page.title}” voltou para a lista, como rascunho.` })
     } catch (err) {
       setRestoreError(err instanceof Error ? err.message : 'Tente de novo.')
@@ -114,7 +152,7 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
         <div>
           <h1>Páginas</h1>
           <p>
-            {pages.length} {pages.length === 1 ? 'página' : 'páginas'} · {live} no ar
+            {current.length} {current.length === 1 ? 'página' : 'páginas'} · {live} no ar
           </p>
         </div>
         <Link className="gp-btn gp-btn--primary gp-btn--lg" href={panelHref(adminRoute, 'newPage')}>
@@ -122,6 +160,8 @@ export function PagesList({ adminRoute, apiRoute, archived, domain, inMenu, page
           Nova página
         </Link>
       </header>
+
+      <OrphanNotice adminRoute={adminRoute} apiRoute={apiRoute} orphans={orphans} />
 
       <div aria-live="polite">
         {actionError && !confirm && (

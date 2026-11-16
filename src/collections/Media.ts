@@ -26,7 +26,8 @@ export const Media: CollectionConfig = {
   },
   admin: {
     group: 'Site',
-    useAsTitle: 'alt',
+    // B11: nas telas técnicas a foto tem o nome do arquivo como título (sem descrição, aparecia o número).
+    useAsTitle: 'filename',
     // Avançado: o nome do arquivo e a data, sem o "Source Url".
     defaultColumns: ['alt', 'filename', 'updatedAt'],
     // Sem a aba "API" (o JSON cru da foto): nada ali serve para quem cuida do site.

@@ -118,6 +118,16 @@ function toBlock(question: Question) {
   }
 }
 
+/** Máximo de perguntas num formulário (B3): os prontos têm até 8. */
+const QUESTION_LIMIT = 15
+
+/** "fabio.ormeni@hotmail.com" vira "fabio…@hotmail.com": exemplo que não parece preenchido (B13). */
+function maskEmail(email: string) {
+  const [user, domain] = email.split('@')
+  if (!domain) return email
+  return `${user.length > 5 ? `${user.slice(0, 5)}…` : user}@${domain}`
+}
+
 export function FormEditor({
   adminRoute,
   apiRoute,
@@ -163,11 +173,37 @@ export function FormEditor({
     })
     changed()
   }
+  // Pergunta que acabou de sair, com "Desfazer" (B4).
+  const [removed, setRemoved] = useState<{ question: Question; index: number } | null>(null)
+  useEffect(() => {
+    if (!removed) return
+    const timer = setTimeout(() => setRemoved(null), 8000)
+    return () => clearTimeout(timer)
+  }, [removed])
   const removeQuestion = (id: string) => {
+    const index = questions.findIndex((question) => question.id === id)
+    if (index < 0) return
+    setRemoved({ question: questions[index], index })
     setQuestions((list) => list.filter((question) => question.id !== id))
+    changed()
+    // O foco vai para a pergunta seguinte (ou a última), não para o começo da página.
+    requestAnimationFrame(() => {
+      const fields = document.querySelectorAll<HTMLInputElement>('.gp-question input.gp-input')
+      fields[Math.min(index, fields.length - 1)]?.focus()
+    })
+  }
+  const undoRemove = () => {
+    if (!removed) return
+    setQuestions((list) => {
+      const next = [...list]
+      next.splice(Math.min(removed.index, next.length), 0, removed.question)
+      return next.slice(0, QUESTION_LIMIT)
+    })
+    setRemoved(null)
     changed()
   }
   const addQuestion = () => {
+    if (questions.length >= QUESTION_LIMIT) return
     setQuestions((list) => [
       ...list,
       {
@@ -425,11 +461,33 @@ export function FormEditor({
             )
           })}
         </ul>
-        <div>
-          <button className="gp-btn gp-btn--sm" onClick={addQuestion} type="button">
+        {removed && (
+          <p className="gp-notice gp-undo" role="status">
+            <span>
+              “{removed.question.label.trim() || 'Pergunta sem texto'}” saiu do formulário.
+            </span>
+            <button className="gp-btn gp-btn--sm" onClick={undoRemove} type="button">
+              Desfazer
+            </button>
+          </p>
+        )}
+        <div className="gp-addrow">
+          <button
+            aria-describedby={questions.length >= QUESTION_LIMIT ? 'fm-add-why' : undefined}
+            className="gp-btn gp-btn--sm"
+            disabled={questions.length >= QUESTION_LIMIT}
+            onClick={addQuestion}
+            type="button"
+          >
             <PanelIcon name="plus" size={14} />
             Adicionar pergunta
           </button>
+          {questions.length >= QUESTION_LIMIT && (
+            <span className="gp-hint" id="fm-add-why">
+              O formulário já tem {QUESTION_LIMIT} perguntas, o máximo. Formulário comprido faz o
+              visitante desistir: tire uma para colocar outra.
+            </span>
+          )}
         </div>
       </section>
 
@@ -462,7 +520,7 @@ export function FormEditor({
                 setNotifyEmail(event.target.value)
                 changed()
               }}
-              placeholder={siteEmail || 'seu e-mail'}
+              placeholder={siteEmail ? `Vazio: avisamos em ${maskEmail(siteEmail)}` : 'seu e-mail'}
               type="email"
               value={notifyEmail}
             />
