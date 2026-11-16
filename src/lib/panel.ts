@@ -70,11 +70,6 @@ export function timeAgo(date: Date | string, now: number = Date.now()): string {
   return days === 1 ? 'há 1 dia' : `há ${days} dias`
 }
 
-/** Linha do cartão "Mudanças que ainda não estão no ar" do Início: "1 página", "3 páginas". */
-export function pendingPagesText(count: number): string {
-  return `${count} ${count === 1 ? 'página' : 'páginas'}`
-}
-
 /** "Bom dia", "Boa tarde" ou "Boa noite", no horário de Brasília. */
 export function greeting(date: Date = new Date()): string {
   const hour = Number(
@@ -170,6 +165,21 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
  * Os passos do cartão "Para o site ficar pronto" (segue o `vDashboard` do protótipo): 5 sempre e, com
  * fotos pequenas nas páginas, mais um para trocá-las (redesign v3, entrega 3).
  */
+/**
+ * Nomes numa frase curta (L1): "Início", "Início e Sobre", "Início, Sobre e Contato", "Início,
+ * Sobre e mais 5". Com muitos
+ * nomes, o parágrafo inteiro com todos eles cansava a leitura.
+ */
+export function nameList(names: string[], max = 2): string {
+  // "e mais 1" ocupa o mesmo espaço que o nome: com um a mais, vai o nome.
+  if (names.length <= max + 1) {
+    return names.length > 1
+      ? `${names.slice(0, -1).join(', ')} e ${names.at(-1)}`
+      : (names[0] ?? '')
+  }
+  return `${names.slice(0, max).join(', ')} e mais ${names.length - max}`
+}
+
 export function finishSteps(input: FinishInput): FinishStep[] {
   const { examplePages, examplePhotoPages, home } = input
   const smallPages = input.smallPhotoPages ?? []
@@ -199,7 +209,7 @@ export function finishSteps(input: FinishInput): FinishStep[] {
         ? `Troque os textos de exemplo (${plural(examplePages.length, 'página', 'páginas')})`
         : 'Textos de exemplo trocados',
       detail: examplePages.length
-        ? `Ainda há texto de exemplo em: ${examplePages.map((page) => page.title).join(', ')}.`
+        ? `Ainda com texto de exemplo: ${nameList(examplePages.map((page) => page.title))}.`
         : undefined,
       action: 'Editar',
       target: examplePages[0] ? { page: examplePages[0].id } : { screen: 'pages' },
@@ -220,7 +230,7 @@ export function finishSteps(input: FinishInput): FinishStep[] {
             key: 'sharp',
             done: false,
             title: `Troque as fotos pequenas (${plural(smallPages.length, 'página', 'páginas')})`,
-            detail: `Ficam borradas no computador em: ${smallPages.map((page) => page.title).join(', ')}. Use uma foto do celular, não um print, com pelo menos 1.600 px.`,
+            detail: `Ficam borradas no computador em: ${nameList(smallPages.map((page) => page.title))}. Use fotos com pelo menos 1.600 px.`,
             action: 'Trocar',
             target: { page: smallPages[0].id },
           } satisfies FinishStep,

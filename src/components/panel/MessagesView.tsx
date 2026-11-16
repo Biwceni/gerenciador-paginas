@@ -23,6 +23,8 @@ export async function MessagesView(props: AdminViewServerProps) {
   const inbox = await loadInbox(payload, user, {
     formId,
     openId: positiveId(searchParams?.mensagem),
+    pages: positiveId(searchParams?.mais) ?? 1,
+    search: typeof searchParams?.busca === 'string' ? searchParams.busca : '',
   })
 
   return (

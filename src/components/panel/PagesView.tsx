@@ -1,6 +1,8 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
+import { canFixOrphans } from '@/endpoints/orphanDrafts'
+import { findOrphanDrafts } from '@/hooks/orphanVersions'
 import { menuPageOrder } from '@/hooks/protectPage'
 import { PANEL_PATHS, sortPagesForList } from '@/lib/panel'
 import { getServerURL } from '@/lib/site'
@@ -16,7 +18,12 @@ import { PanelTemplate, requireUser } from './PanelTemplate'
 export async function PagesView(props: AdminViewServerProps) {
   const { payload, user, adminRoute } = requireUser(props, PANEL_PATHS.pages)
   const { req } = props.initPageResult
-  const [pages, menuOrder] = await Promise.all([loadPageRows(payload, user), menuPageOrder(req)])
+  const [pages, menuOrder, orphans] = await Promise.all([
+    loadPageRows(payload, user),
+    menuPageOrder(req),
+    // B9 v2: rascunho que ficou sem página, com Recuperar e Apagar (só para quem pode).
+    canFixOrphans(req).then((can) => (can ? findOrphanDrafts(req) : [])),
+  ])
   const sorted = sortPagesForList(pages, menuOrder)
 
   return (
@@ -27,6 +34,7 @@ export async function PagesView(props: AdminViewServerProps) {
         archived={sorted.filter((page) => page.archived)}
         domain={new URL(getServerURL()).host}
         inMenu={menuOrder}
+        orphans={orphans}
         pages={sorted.filter((page) => !page.archived)}
       />
     </PanelTemplate>

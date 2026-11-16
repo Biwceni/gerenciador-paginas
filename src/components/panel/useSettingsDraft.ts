@@ -3,7 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
-import { discardSettings, publishSettings, saveGlobalDraft } from './api'
+import {
+  ConflictError,
+  discardSettings,
+  type GlobalBase,
+  publishSettings,
+  saveGlobalDraft,
+} from './api'
+import { leaving, reloadWithoutWarning } from './ConflictNotice'
 import { type SettingsState, toSiteData, validateSettings } from './settings'
 
 export type SaveState = 'idle' | 'waiting' | 'saving' | 'invalid' | 'error'
@@ -11,6 +18,8 @@ export type SaveState = 'idle' | 'waiting' | 'saving' | 'invalid' | 'error'
 type Options = {
   apiRoute: string
   initial: SettingsState
+  /** Data da versão que a tela abriu, para conferir antes de salvar (A3). */
+  version: string
   /** As configurações já têm mudanças guardadas fora do ar. */
   initialPending: boolean
   /** Aviso depois de publicar ("Configurações publicadas em todo o site."). */
@@ -39,6 +48,7 @@ type Options = {
 export function useSettingsDraft({
   apiRoute,
   initial,
+  version,
   initialPending,
   publishedText,
   recover,
@@ -56,6 +66,9 @@ export function useSettingsDraft({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
+  // Outra aba (ou outra pessoa) salvou depois que esta tela abriu: a versão nova, para "Manter a minha".
+  const [conflict, setConflict] = useState<string | null>(null)
+  const base = useRef<GlobalBase>({ current: version })
 
   // Os avisos de fora mudam a cada desenho; o efeito de guardar não precisa recomeçar por isso.
   const callbacks = useRef({ recover, onReset, onSaved })
@@ -83,7 +96,7 @@ export function useSettingsDraft({
   useEffect(() => {
     // Já guardado: depois de salvar, `saved` passa a ser este mesmo estado. Enquanto publica ou
     // descarta, espera: um rascunho gravado no meio criaria de novo as mudanças fora do ar.
-    if (!touched || state === saved || busy) return
+    if (!touched || state === saved || busy || conflict) return
     const timer = setTimeout(async () => {
       if (Object.keys(validateSettings(state)).length) {
         setSave('invalid')
@@ -91,13 +104,18 @@ export function useSettingsDraft({
       }
       setSave('saving')
       try {
-        await saveGlobalDraft(apiRoute, 'site', toSiteData(state))
+        await saveGlobalDraft(apiRoute, 'site', toSiteData(state), base.current)
         setSaved(state)
         setPending(true)
         setSaveError(null)
         setSave('idle')
         callbacks.current.onSaved?.()
       } catch (error) {
+        if (error instanceof ConflictError) {
+          setConflict(error.latest)
+          setSave('waiting')
+          return
+        }
         const text = error instanceof Error ? error.message : 'Tente de novo.'
         // O que foi recusado volta ao que era e o resto é guardado de novo.
         if (undoRejected(text, state, saved)) {
@@ -109,12 +127,14 @@ export function useSettingsDraft({
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [apiRoute, attempt, busy, saved, state, touched])
+  }, [apiRoute, attempt, busy, conflict, saved, state, touched])
 
   // Aviso ao fechar a aba só enquanto algo ainda não foi guardado (o rascunho guardado fica).
   useEffect(() => {
     if (save === 'idle') return
-    const onLeave = (event: BeforeUnloadEvent) => event.preventDefault()
+    const onLeave = (event: BeforeUnloadEvent) => {
+      if (!leaving.on) event.preventDefault()
+    }
     window.addEventListener('beforeunload', onLeave)
     return () => window.removeEventListener('beforeunload', onLeave)
   }, [save])
@@ -133,11 +153,15 @@ export function useSettingsDraft({
     setBusy(true)
     setMessage(null)
     try {
-      await publishSettings(apiRoute, toSiteData(state))
+      await publishSettings(apiRoute, toSiteData(state), base.current)
       reset(state)
       setMessage({ tone: 'ok', text: publishedText })
       router.refresh()
     } catch (error) {
+      if (error instanceof ConflictError) {
+        setConflict(error.latest)
+        return
+      }
       const text = error instanceof Error ? error.message : 'tente de novo.'
       if (undoRejected(text, state, saved)) setSave('waiting')
       setMessage({ tone: 'error', text: `Não deu para publicar: ${text}` })
@@ -150,7 +174,8 @@ export function useSettingsDraft({
     setBusy(true)
     setMessage(null)
     try {
-      reset(await discardSettings(apiRoute))
+      reset(await discardSettings(apiRoute, base.current))
+      setConflict(null)
       setMessage({ tone: 'ok', text: 'Mudanças descartadas. Voltou a ser igual ao site no ar.' })
       router.refresh()
     } catch (error) {
@@ -163,6 +188,15 @@ export function useSettingsDraft({
     }
   }
 
+  /** "Manter a minha": a versão da outra aba passa a ser a base, e a desta tela vai por cima. */
+  const keepMine = () => {
+    if (conflict) base.current.current = conflict
+    setConflict(null)
+    setTouched(true)
+    setSave('waiting')
+    setAttempt((value) => value + 1)
+  }
+
   const retry = () => {
     setSave('waiting')
     setAttempt((value) => value + 1)
@@ -172,13 +206,15 @@ export function useSettingsDraft({
   const hasErrors = Object.keys(errors).length > 0
   const cantPublish = busy
     ? null
-    : hasErrors
-      ? 'Corrija o campo marcado para publicar'
-      : save === 'saving'
-        ? 'Espere terminar de salvar'
-        : !changed
-          ? 'Nada para publicar'
-          : null
+    : conflict
+      ? 'Escolha antes qual versão fica'
+      : hasErrors
+        ? 'Corrija o campo marcado para publicar'
+        : save === 'saving'
+          ? 'Espere terminar de salvar'
+          : !changed
+            ? 'Nada para publicar'
+            : null
 
   return {
     state,
@@ -193,5 +229,8 @@ export function useSettingsDraft({
     discard,
     retry,
     cantPublish,
+    conflict: Boolean(conflict),
+    keepMine,
+    seeLatest: reloadWithoutWarning,
   }
 }

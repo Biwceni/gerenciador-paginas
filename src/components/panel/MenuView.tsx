@@ -63,6 +63,7 @@ export async function MenuView(props: AdminViewServerProps) {
             showSocial: footer.showSocial !== false,
           },
           pending: header._status === 'draft' || footer._status === 'draft',
+          versions: { header: header.updatedAt ?? '', footer: footer.updatedAt ?? '' },
         }}
         pages={latest.docs.map((doc) => pageSummary(doc, liveIds.has(doc.id)))}
         site={{

@@ -1,4 +1,4 @@
-import type { Payload, TypedUser } from 'payload'
+import type { Payload, TypedUser, Where } from 'payload'
 import { cache } from 'react'
 
 import { exampleTexts, findExampleSections, isExamplePhoto } from '@/lib/examples'
@@ -334,7 +334,9 @@ async function loadFormDefinitions(payload: Payload, user: TypedUser) {
   return new Map(docs.map((form) => [form.id, toFormDefinition(form)]))
 }
 
-const INBOX_LIMIT = 200
+export const INBOX_LIMIT = 200
+/** Até quantas vezes "Mostrar mais 200" (B12): 2.000 mensagens na tela; a planilha traz todas. */
+export const INBOX_MAX_PAGES = 10
 
 export type InboxData = {
   messages: InboxMessage[]
@@ -344,6 +346,10 @@ export type InboxData = {
   total: number
   /** Só os formulários que já receberam mensagem. */
   filters: { id: number; title: string; count: number }[]
+  /** Quantas vezes 200 a lista mostra. */
+  pages: number
+  /** Busca por nome, e-mail, telefone ou qualquer resposta. */
+  search: string
 }
 
 /**
@@ -353,16 +359,29 @@ export type InboxData = {
 export async function loadInbox(
   payload: Payload,
   user: TypedUser,
-  { formId, openId }: { formId: number | null; openId: number | null },
+  {
+    formId,
+    openId,
+    pages: askedPages = 1,
+    search: askedSearch = '',
+  }: { formId: number | null; openId: number | null; pages?: number; search?: string },
 ): Promise<InboxData> {
   const access = { overrideAccess: false, user } as const
+  const pages = Math.min(Math.max(1, Math.floor(askedPages) || 1), INBOX_MAX_PAGES)
+  const search = askedSearch.trim().slice(0, 100)
   const forms = await loadFormDefinitions(payload, user)
+  const where: Where = {
+    and: [
+      ...(formId ? [{ form: { equals: formId } }] : []),
+      ...(search ? [{ 'submissionData.value': { like: search } }] : []),
+    ],
+  }
   const [list, counts, opened] = await Promise.all([
     payload.find({
       collection: 'form-submissions',
-      where: formId ? { form: { equals: formId } } : {},
+      where,
       depth: 0,
-      limit: INBOX_LIMIT,
+      limit: INBOX_LIMIT * pages,
       sort: '-createdAt',
       ...access,
     }),
@@ -387,6 +406,8 @@ export async function loadInbox(
       const count = counts.get(form.id) ?? 0
       return count ? [{ id: form.id, title: form.title || 'Formulário', count }] : []
     }),
+    pages,
+    search,
   }
 }
 

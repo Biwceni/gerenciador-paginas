@@ -85,7 +85,11 @@ export default buildConfig({
       Nav: '/components/panel/PanelNav#PanelNav',
       // Barra de topo do celular e do tablet (v2): ☰, nome do produto, Mensagens e Ver meu site.
       header: ['/components/panel/PanelTopBar#PanelTopBar'],
-      providers: ['/components/panel/PanelFonts#PanelFonts'],
+      providers: [
+        '/components/panel/PanelFonts#PanelFonts',
+        // Sessão vencida no meio do trabalho: entrar de novo por cima da tela (A2).
+        '/components/panel/SessionGuard#SessionGuard',
+      ],
       views: {
         // Entrar e senha (v2): telas nossas no lugar das do Payload.
         login: {

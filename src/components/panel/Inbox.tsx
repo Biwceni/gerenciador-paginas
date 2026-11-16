@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { panelHref } from '@/lib/panel'
 
 import { deleteMessage, setMessageRead } from './api'
-import type { InboxData, InboxMessage } from './data'
+import { INBOX_LIMIT, INBOX_MAX_PAGES, type InboxData, type InboxMessage } from './data'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 
@@ -21,7 +21,17 @@ type Props = InboxData & {
  * Caixa de entrada. A mensagem aberta fica no endereço (`?mensagem=<id>`), sem nova conta no
  * servidor: o voltar do navegador funciona e, no celular, lista e mensagem são telas separadas.
  */
-export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, total }: Props) {
+export function Inbox({
+  adminRoute,
+  apiRoute,
+  filters,
+  formId,
+  messages,
+  more,
+  pages,
+  search,
+  total,
+}: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   // O que já mudou nesta tela, até a próxima leitura do servidor.
@@ -102,6 +112,19 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
   }
 
   const messagesHref = panelHref(adminRoute, 'messages')
+  /** O endereço da lista com o filtro, a busca e "mais" de agora, trocando o que vier em `change`. */
+  const listHref = (change: Record<string, string | number | null>) => {
+    const params = new URLSearchParams()
+    const values = {
+      formulario: formId,
+      busca: search || null,
+      mais: pages > 1 ? pages : null,
+      ...change,
+    }
+    for (const [key, value] of Object.entries(values)) if (value) params.set(key, String(value))
+    const query = params.toString()
+    return `${messagesHref}${query ? `?${query}` : ''}`
+  }
   const download = `${apiRoute}/form-submissions/planilha${formId ? `?formulario=${formId}` : ''}`
 
   return (
@@ -133,19 +156,47 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
 
       {filters.length > 0 && (
         <nav aria-label="Filtrar por formulário" className="gp-seg gp-inbox__filters">
-          <Link aria-current={formId ? undefined : 'page'} href={messagesHref}>
+          <Link
+            aria-current={formId ? undefined : 'page'}
+            href={listHref({ formulario: null, mais: null })}
+          >
             Todas ({total})
           </Link>
           {filters.map((filter) => (
             <Link
               aria-current={formId === filter.id ? 'page' : undefined}
-              href={`${messagesHref}?formulario=${filter.id}`}
+              href={listHref({ formulario: filter.id, mais: null })}
               key={filter.id}
+              title={filter.title}
             >
-              {filter.title} ({filter.count})
+              <span className="gp-inbox__filtername">{filter.title}</span> ({filter.count})
             </Link>
           ))}
         </nav>
+      )}
+
+      {(total > 0 || search) && (
+        <form action={messagesHref} className="gp-searchbox gp-inbox__search" role="search">
+          {formId && <input name="formulario" type="hidden" value={formId} />}
+          <PanelIcon name="search" size={18} />
+          <input
+            aria-label="Procurar nas mensagens"
+            defaultValue={search}
+            key={search}
+            maxLength={100}
+            name="busca"
+            placeholder="Procurar nas mensagens"
+            type="search"
+          />
+          {search && (
+            <Link
+              className="gp-btn gp-btn--sm gp-btn--ghost"
+              href={listHref({ busca: null, mais: null })}
+            >
+              Limpar
+            </Link>
+          )}
+        </form>
       )}
 
       <div className="gp-inbox">
@@ -179,17 +230,31 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
                 </li>
               ))}
             </ul>
+          ) : search ? (
+            <p className="gp-empty gp-wrapword">Nenhuma mensagem com “{search}”.</p>
           ) : (
             <p className="gp-empty">
               Nenhuma mensagem ainda. Quando alguém preencher um formulário do site, ela aparece
               aqui.
             </p>
           )}
-          {more && (
-            <p className="gp-hint gp-inbox__more">
-              Mostrando as {list.length} mais novas. A planilha traz todas.
-            </p>
-          )}
+          {more &&
+            (pages < INBOX_MAX_PAGES ? (
+              <div className="gp-inbox__more">
+                <Link
+                  className="gp-btn gp-btn--sm"
+                  href={listHref({ mais: pages + 1 })}
+                  scroll={false}
+                >
+                  Mostrar mais {INBOX_LIMIT}
+                </Link>
+                <span className="gp-hint">Mostrando as {list.length} mais novas.</span>
+              </div>
+            ) : (
+              <p className="gp-hint gp-inbox__more">
+                Mostrando as {list.length} mais novas. A planilha traz todas.
+              </p>
+            ))}
         </section>
 
         <section aria-label="Mensagem aberta" className="gp-card gp-inbox__detail">
@@ -203,12 +268,50 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
                 <PanelIcon name="back" size={14} />
                 Todas as mensagens
               </button>
-              <div>
-                <h2>{open.sender}</h2>
-                <p className="gp-small gp-muted">
-                  {open.formTitle}
-                  {open.pageTitle && ` · enviada na página “${open.pageTitle}”`} · {open.date}
-                </p>
+              {/* Nome, data e as respostas numa faixa que acompanha a rolagem (M3): numa mensagem
+                  comprida, Responder e Excluir não ficam lá no fim. */}
+              <div className="gp-inbox__head">
+                <div>
+                  <h2>{open.sender}</h2>
+                  <p className="gp-small gp-muted">
+                    {open.formTitle}
+                    {open.pageTitle && ` · enviada na página “${open.pageTitle}”`} · {open.date}
+                  </p>
+                </div>
+                <div className="gp-actions">
+                  {open.whatsappHref && (
+                    <a
+                      className="gp-btn gp-btn--sm gp-btn--primary"
+                      href={open.whatsappHref}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <PanelIcon name="phone" size={16} />
+                      Responder no WhatsApp
+                    </a>
+                  )}
+                  {open.emailHref && (
+                    <a className="gp-btn gp-btn--sm" href={open.emailHref}>
+                      <PanelIcon name="mail" size={16} />
+                      Responder por e-mail
+                    </a>
+                  )}
+                  <button
+                    className="gp-btn gp-btn--sm gp-btn--ghost"
+                    onClick={() => markUnread(open)}
+                    type="button"
+                  >
+                    Marcar como não lida
+                  </button>
+                  <button
+                    className="gp-btn gp-btn--sm gp-btn--danger"
+                    onClick={() => setConfirmDelete(true)}
+                    type="button"
+                  >
+                    <PanelIcon name="trash" size={14} />
+                    Excluir
+                  </button>
+                </div>
               </div>
               <dl className="gp-mfields">
                 {open.fields.map((field) => (
@@ -221,49 +324,14 @@ export function Inbox({ adminRoute, apiRoute, filters, formId, messages, more, t
               {open.consentText && (
                 <p className="gp-small gp-muted">Aceitou: “{open.consentText}”</p>
               )}
-              {(open.whatsappHref || open.emailHref) && (
-                <div className="gp-actions">
-                  {open.whatsappHref && (
-                    <a
-                      className="gp-btn gp-btn--primary"
-                      href={open.whatsappHref}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      <PanelIcon name="phone" size={16} />
-                      Responder no WhatsApp
-                    </a>
-                  )}
-                  {open.emailHref && (
-                    <a className="gp-btn" href={open.emailHref}>
-                      <PanelIcon name="mail" size={16} />
-                      Responder por e-mail
-                    </a>
-                  )}
-                </div>
-              )}
-              <div className="gp-actions gp-inbox__manage">
-                <button
-                  className="gp-btn gp-btn--sm gp-btn--ghost"
-                  onClick={() => markUnread(open)}
-                  type="button"
-                >
-                  Marcar como não lida
-                </button>
-                <button
-                  className="gp-btn gp-btn--sm gp-btn--danger"
-                  onClick={() => setConfirmDelete(true)}
-                  type="button"
-                >
-                  <PanelIcon name="trash" size={14} />
-                  Excluir
-                </button>
-              </div>
             </>
           ) : (
             <div className="gp-empty">
               <PanelIcon name="mail" size={28} />
-              <p>Clique numa mensagem para ler e responder.</p>
+              <p>
+                <span className="gp-mouse">Clique</span>
+                <span className="gp-touch">Toque</span> numa mensagem para ler e responder.
+              </p>
             </div>
           )}
         </section>

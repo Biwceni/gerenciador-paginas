@@ -1,4 +1,4 @@
-import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '@/lib/links'
+import { normalizeWhatsApp, socialURL, validateSocial } from '@/lib/links'
 import { type Motion, safeMotion } from '@/lib/motion'
 import { relationID } from '@/lib/relations'
 import type { SiteColors } from '@/lib/style-presets'
@@ -76,11 +76,11 @@ export function toSiteData(state: SettingsState) {
       hours: orNull(state.contact.hours),
     },
     social: {
-      instagram: orNull(state.social.instagram),
-      facebook: orNull(state.social.facebook),
-      youtube: orNull(state.social.youtube),
-      tiktok: orNull(state.social.tiktok),
-      linkedin: orNull(state.social.linkedin),
+      instagram: orNull(socialURL('instagram', state.social.instagram)),
+      facebook: orNull(socialURL('facebook', state.social.facebook)),
+      youtube: orNull(socialURL('youtube', state.social.youtube)),
+      tiktok: orNull(socialURL('tiktok', state.social.tiktok)),
+      linkedin: orNull(socialURL('linkedin', state.social.linkedin)),
     },
     seoDescription: orNull(state.seoDescription),
     shareImage: state.shareImage,
@@ -101,11 +101,8 @@ export function validateSettings(state: SettingsState): Record<string, string> {
   if (state.contact.email && !EMAIL.test(state.contact.email.trim())) {
     errors.email = 'Confira o e-mail. Ex.: contato@seunegocio.com.br'
   }
-  const instagram = validateInstagram(state.social.instagram)
-  if (instagram !== true) errors.instagram = instagram
-  for (const key of ['facebook', 'youtube', 'tiktok', 'linkedin'] as const) {
-    const value = state.social[key].trim()
-    const result = value ? validateExternalURL(value) : true
+  for (const key of ['instagram', 'facebook', 'youtube', 'tiktok', 'linkedin'] as const) {
+    const result = validateSocial(key, state.social[key])
     if (result !== true) errors[key] = result
   }
   return errors

@@ -1,6 +1,8 @@
 'use client'
 
-import { request } from '@/components/editor/api'
+import { RequestError, stillLoggedIn } from '@/components/editor/api'
+
+import { askToLogin, request, SessionEndedError } from './session'
 import { FORM_STARTERS } from '@/lib/forms'
 import type { Footer, Form, Header, Page, Site } from '@/payload-types'
 import { emptyPageContent, type PageContent } from '@/puck/schema'
@@ -166,16 +168,64 @@ export function deleteForm(apiRoute: string, id: number) {
 export type HeaderData = Pick<Header, 'items' | 'button'>
 export type FooterData = Pick<Footer, 'text' | 'showMenu' | 'showContact' | 'showSocial'>
 
+type GlobalSlug = 'header' | 'footer' | 'site'
+
+/**
+ * Versão do global que a tela tem (a data `updatedAt` do rascunho mais recente quando ela abriu ou
+ * salvou por último). Antes de salvar, o painel confere se ninguém mexeu depois (A3).
+ */
+export type GlobalBase = { current: string }
+
+/** O global mudou em outra aba ou outra pessoa mexeu: a tela pergunta o que fazer. */
+export class ConflictError extends RequestError {
+  constructor(readonly latest: string) {
+    super('mudou em outra aba ou outra pessoa mexeu', 409)
+  }
+}
+
+async function globalVersion(apiRoute: string, slug: GlobalSlug) {
+  const doc = await request<{ updatedAt?: string }>(
+    apiRoute,
+    `/globals/${slug}?draft=true&depth=0&select[updatedAt]=true`,
+  )
+  return doc.updatedAt ?? ''
+}
+
+/** Recusa salvar por cima de uma versão mais nova que a da tela. */
+export async function checkGlobal(apiRoute: string, slug: GlobalSlug, base?: GlobalBase) {
+  if (!base?.current) return
+  const latest = await globalVersion(apiRoute, slug)
+  if (latest && latest !== base.current) {
+    // Sem sessão, o servidor devolve a versão publicada no lugar do rascunho (ler o site é aberto),
+    // e a data seria outra: antes de falar em conflito, confere se a sessão ainda vale.
+    if (!(await stillLoggedIn(apiRoute).catch(() => true))) {
+      askToLogin()
+      throw new SessionEndedError()
+    }
+    throw new ConflictError(latest)
+  }
+}
+
+type GlobalResponse = { result?: { updatedAt?: string | null } }
+
+const advance = (base: GlobalBase | undefined, response: GlobalResponse) => {
+  if (base && response.result?.updatedAt) base.current = response.result.updatedAt
+}
+
 /** Guarda o menu, o rodapé ou as configurações como rascunho: o site só muda ao publicar. */
-export function saveGlobalDraft(
+export async function saveGlobalDraft(
   apiRoute: string,
-  slug: 'header' | 'footer' | 'site',
+  slug: GlobalSlug,
   data: HeaderData | FooterData | SiteData,
+  base?: GlobalBase,
 ) {
-  return request(apiRoute, `/globals/${slug}?draft=true`, {
+  await checkGlobal(apiRoute, slug, base)
+  const response = await request<GlobalResponse>(apiRoute, `/globals/${slug}?draft=true`, {
     method: 'POST',
     body: JSON.stringify({ ...data, _status: 'draft' }),
   })
+  advance(base, response)
+  return response
 }
 
 /** Publica o menu e o rodapé juntos, com tudo o que está na tela. */
@@ -183,22 +233,34 @@ export async function publishMenuAndFooter(
   apiRoute: string,
   header: HeaderData,
   footer: FooterData,
+  bases?: { header: GlobalBase; footer: GlobalBase },
 ) {
-  await request(apiRoute, '/globals/header', {
-    method: 'POST',
-    body: JSON.stringify({ ...header, _status: 'published' }),
-  })
-  await request(apiRoute, '/globals/footer', {
-    method: 'POST',
-    body: JSON.stringify({ ...footer, _status: 'published' }),
-  })
+  await checkGlobal(apiRoute, 'header', bases?.header)
+  await checkGlobal(apiRoute, 'footer', bases?.footer)
+  advance(
+    bases?.header,
+    await request<GlobalResponse>(apiRoute, '/globals/header', {
+      method: 'POST',
+      body: JSON.stringify({ ...header, _status: 'published' }),
+    }),
+  )
+  advance(
+    bases?.footer,
+    await request<GlobalResponse>(apiRoute, '/globals/footer', {
+      method: 'POST',
+      body: JSON.stringify({ ...footer, _status: 'published' }),
+    }),
+  )
 }
 
 /**
  * Descarta o rascunho: lê o que está no ar e publica de novo, igual. Assim a versão mais recente
  * volta a ser a publicada e o painel deixa de mostrar "Alterações não publicadas".
  */
-export async function discardMenuAndFooter(apiRoute: string) {
+export async function discardMenuAndFooter(
+  apiRoute: string,
+  bases?: { header: GlobalBase; footer: GlobalBase },
+) {
   const [header, footer] = await Promise.all([
     request<Header>(apiRoute, '/globals/header?depth=0&draft=false'),
     request<Footer>(apiRoute, '/globals/footer?depth=0&draft=false'),
@@ -213,25 +275,34 @@ export async function discardMenuAndFooter(apiRoute: string) {
     },
   }
   await publishMenuAndFooter(apiRoute, published.header, published.footer)
+  // Descartar vale para qualquer versão: a tela passa a ter a que acabou de ir ao ar.
+  if (bases) {
+    bases.header.current = await globalVersion(apiRoute, 'header')
+    bases.footer.current = await globalVersion(apiRoute, 'footer')
+  }
   return published
 }
 
 /** Publica as configurações com tudo o que está na tela. */
-export function publishSettings(apiRoute: string, data: SiteData) {
-  return request<{ result: Site }>(apiRoute, '/globals/site', {
+export async function publishSettings(apiRoute: string, data: SiteData, base?: GlobalBase) {
+  await checkGlobal(apiRoute, 'site', base)
+  const response = await request<{ result: Site }>(apiRoute, '/globals/site', {
     method: 'POST',
     body: JSON.stringify({ ...data, _status: 'published' }),
   })
+  advance(base, response)
+  return response
 }
 
 /**
  * Descarta o rascunho das configurações: lê o que está no ar e publica de novo, igual (como
  * `discardMenuAndFooter`).
  */
-export async function discardSettings(apiRoute: string) {
+export async function discardSettings(apiRoute: string, base?: GlobalBase) {
   const site = await request<Site>(apiRoute, '/globals/site?depth=0&draft=false')
   const published = toSettingsState(site)
-  await publishSettings(apiRoute, toSiteData(published))
+  const response = await publishSettings(apiRoute, toSiteData(published))
+  advance(base, response)
   return published
 }
 

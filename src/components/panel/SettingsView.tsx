@@ -90,6 +90,7 @@ export async function SettingsView(props: AdminViewServerProps) {
         canStartOver={user.role === 'admin'}
         domain={new URL(getServerURL()).host}
         initial={initial}
+        version={site.updatedAt ?? ''}
         draftHome={draftHome ? { id: draftHome.id, title: pageTitle(draftHome.title) } : null}
         draftPrivacy={
           draftPrivacy ? { id: draftPrivacy.id, title: pageTitle(draftPrivacy.title) } : null

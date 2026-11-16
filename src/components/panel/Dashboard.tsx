@@ -23,9 +23,9 @@ import {
   type FinishStep,
   finishSteps,
   greeting,
+  nameList,
   panelHref,
   type PanelPath,
-  pendingPagesText,
   sortPagesForList,
 } from '@/lib/panel'
 import { getServerURL } from '@/lib/site'
@@ -171,6 +171,11 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
   // Fotos de exemplo que não deu para copiar ao aplicar o modelo (`?fotos=3`, vindo do início guiado).
   const missingPhotos = searchParams?.pronto ? Math.max(0, Number(searchParams.fotos) || 0) : 0
   const pending = pages.filter((page) => page.status !== 'live')
+  // L1: o aviso do alto diz quais páginas mudaram; rascunhos nunca publicados ficam à parte.
+  const changedPages = pending.filter((page) => page.status === 'changed')
+  const draftPages = pending.filter((page) => page.status === 'draft')
+  const onePageHref = (list: typeof pending) =>
+    list.length === 1 ? editorPath(adminRoute, list[0].id) : panelHref(adminRoute, 'pages')
   const recent = pages.slice(0, 4)
   const livePages = pages.filter((page) => page.status !== 'draft').length
   const editHomeLabel = home?.title === 'Início' ? 'Editar o Início' : 'Editar a página inicial'
@@ -216,24 +221,33 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             Mudanças que ainda não estão no ar
           </h2>
           <ul className="gp-pending__list">
-            {pending.length > 0 && (
+            {changedPages.length > 0 && (
               <li>
-                <span>{pendingPagesText(pending.length)}</span>
-                <Link
-                  className="gp-btn gp-btn--sm"
-                  href={
-                    pending.length === 1
-                      ? editorPath(adminRoute, pending[0].id)
-                      : panelHref(adminRoute, 'pages')
-                  }
-                >
+                <span>
+                  <b>{nameList(changedPages.map((page) => page.title))}</b>{' '}
+                  {changedPages.length === 1 ? 'tem' : 'têm'} mudanças guardadas
+                </span>
+                <Link className="gp-btn gp-btn--sm" href={onePageHref(changedPages)}>
+                  Ver o que mudou
+                </Link>
+              </li>
+            )}
+            {draftPages.length > 0 && (
+              <li>
+                <span>
+                  {draftPages.length === 1 ? 'Rascunho que nunca foi' : 'Rascunhos que nunca foram'}{' '}
+                  ao ar: <b>{nameList(draftPages.map((page) => page.title))}</b>
+                </span>
+                <Link className="gp-btn gp-btn--sm" href={onePageHref(draftPages)}>
                   Abrir
                 </Link>
               </li>
             )}
             {pendingGlobalLines(pendingGlobals).map((global) => (
               <li key={global.slug}>
-                <span>{global.label}</span>
+                <span>
+                  <b>{global.label}</b> com mudanças guardadas
+                </span>
                 <Link
                   className="gp-btn gp-btn--sm"
                   href={panelHref(adminRoute, GLOBAL_SCREEN[global.slug])}
@@ -355,7 +369,23 @@ export async function Dashboard({ initPageResult, searchParams }: AdminViewServe
             <div aria-hidden="true" className="gp-progress">
               <i style={{ width: `${Math.round((finishDone / finish.length) * 100)}%` }} />
             </div>
-            <FinishList finish={finish} href={stepHref} next={nextStep} />
+            <FinishList
+              finish={finish.filter((step) => !step.done)}
+              href={stepHref}
+              next={nextStep}
+              start={finishDone}
+            />
+            {finishDone > 0 && (
+              <details className="gp-donelist">
+                <summary>
+                  <span aria-hidden="true" className="gp-todo__mark">
+                    <PanelIcon name="check" size={14} />
+                  </span>
+                  {finishDone === 1 ? '1 feito' : `${finishDone} feitos`}
+                </summary>
+                <FinishList finish={finish.filter((step) => step.done)} />
+              </details>
+            )}
           </section>
         )}
       </div>
@@ -431,17 +461,20 @@ function FinishList({
   finish,
   href,
   next,
+  start = 0,
 }: {
   finish: FinishStep[]
   href?: (step: FinishStep) => string
   next?: FinishStep
+  /** Quantos passos vêm antes (os feitos), para a numeração continuar. */
+  start?: number
 }) {
   return (
     <ol className="gp-todo">
       {finish.map((step, index) => (
         <li className={step.done ? 'is-done' : undefined} key={step.key}>
           <span aria-hidden="true" className="gp-todo__mark">
-            {step.done ? <PanelIcon name="check" size={14} /> : index + 1}
+            {step.done ? <PanelIcon name="check" size={14} /> : start + index + 1}
           </span>
           <div className="gp-todo__text">
             <b>{step.title}</b>

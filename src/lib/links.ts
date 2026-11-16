@@ -125,3 +125,63 @@ export function mapsURL(address: string): string {
   const query = address.replace(/\s+/g, ' ').trim()
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
+
+/** Redes sociais das Configurações e os sites de cada uma (M10). */
+export type SocialNetwork = 'instagram' | 'facebook' | 'youtube' | 'tiktok' | 'linkedin'
+
+const SOCIAL_HOSTS: Record<SocialNetwork, { name: string; hosts: string[]; example: string }> = {
+  instagram: {
+    name: 'Instagram',
+    hosts: ['instagram.com', 'instagr.am'],
+    example: 'instagram.com/seunegocio',
+  },
+  facebook: {
+    name: 'Facebook',
+    hosts: ['facebook.com', 'fb.com', 'fb.me'],
+    example: 'facebook.com/seunegocio',
+  },
+  youtube: {
+    name: 'YouTube',
+    hosts: ['youtube.com', 'youtu.be'],
+    example: 'youtube.com/@seunegocio',
+  },
+  tiktok: { name: 'TikTok', hosts: ['tiktok.com'], example: 'tiktok.com/@seunegocio' },
+  linkedin: {
+    name: 'LinkedIn',
+    hosts: ['linkedin.com'],
+    example: 'linkedin.com/company/seunegocio',
+  },
+}
+
+/**
+ * Endereço de uma rede como vai para o site: "facebook.com/loja" e "www.facebook.com/loja" ganham
+ * o https:// sozinhos, como no Menu e rodapé. O Instagram também aceita só o perfil (@loja), que
+ * fica como está. Devolve o texto como veio quando não dá para entender (a validação explica).
+ */
+export function socialURL(network: SocialNetwork, value: string | null | undefined): string {
+  const text = (value ?? '').trim()
+  if (!text || isSafeURL(text)) return text
+  if (network === 'instagram' && INSTAGRAM_HANDLE.test(text)) return text
+  return DOMAIN.test(text) ? `https://${text}` : text
+}
+
+/** O endereço é da rede certa? "Vazio" também serve. Mensagem para o campo, ou `true`. */
+export function validateSocial(
+  network: SocialNetwork,
+  value: string | null | undefined,
+): string | true {
+  const text = socialURL(network, value)
+  if (!text) return true
+  const { name, hosts, example } = SOCIAL_HOSTS[network]
+  if (network === 'instagram' && INSTAGRAM_HANDLE.test(text)) return true
+  if (!isSafeURL(text) || !/^https?:$/.test(new URL(text).protocol)) {
+    return network === 'instagram'
+      ? 'Digite o perfil, como @seunegocio, ou o endereço do perfil.'
+      : `Digite o endereço do ${name}. Ex.: ${example}`
+  }
+  const host = new URL(text).hostname.toLowerCase().replace(/^(www|m|mobile)\./, '')
+  if (!hosts.some((item) => host === item || host.endsWith(`.${item}`))) {
+    return `Este endereço não é do ${name}. Ex.: ${example}`
+  }
+  return true
+}

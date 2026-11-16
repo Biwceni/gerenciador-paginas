@@ -20,7 +20,16 @@ import { panelHref } from '@/lib/panel'
 import type { Header, Media } from '@/payload-types'
 import type { PageSummary } from '@/puck/summary'
 
-import { discardMenuAndFooter, type HeaderData, publishMenuAndFooter, saveGlobalDraft } from './api'
+import {
+  ConflictError,
+  discardMenuAndFooter,
+  type GlobalBase,
+  type HeaderData,
+  publishMenuAndFooter,
+  saveGlobalDraft,
+} from './api'
+import { ConflictNotice, leaving, reloadWithoutWarning } from './ConflictNotice'
+import { DiscardButton } from './DiscardButton'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
 import { SaveStatus } from './SaveStatus'
@@ -42,6 +51,8 @@ type Props = {
     header: Omit<HeaderState, 'showButton'>
     footer: Footer
     pending: boolean
+    /** Datas das versões que a tela abriu, para conferir antes de salvar (A3). */
+    versions: { header: string; footer: string }
   }
   pages: PageSummary[]
   site: {
@@ -74,6 +85,15 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const [footer, setFooter] = useState<Footer>(initial.footer)
   const [pending, setPending] = useState(initial.pending)
   const [save, setSave] = useState<SaveState>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
+  // Outra aba salvou o menu ou o rodapé depois que esta tela abriu (A3).
+  const [conflict, setConflict] = useState<{ header?: string; footer?: string } | null>(null)
+  const bases = useRef<{ header: GlobalBase; footer: GlobalBase }>({
+    header: { current: initial.versions.header },
+    footer: { current: initial.versions.footer },
+  })
+  // Link que acabou de sair do menu, com "Desfazer" (B4).
+  const [removed, setRemoved] = useState<{ item: Item; index: number } | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
@@ -100,33 +120,63 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
 
   // Rascunho salvo sozinho, um pouco depois da última mudança.
   useEffect(() => {
-    if (!version) return
+    if (!version || conflict) return
     const timer = setTimeout(async () => {
       const { header: headerDirty, footer: footerDirty } = dirty.current
       dirty.current = { header: false, footer: false }
       setSave('saving')
       try {
-        if (headerDirty) await saveGlobalDraft(apiRoute, 'header', toHeaderData(header))
-        if (footerDirty) await saveGlobalDraft(apiRoute, 'footer', footer)
+        if (headerDirty) {
+          await saveGlobalDraft(apiRoute, 'header', toHeaderData(header), bases.current.header)
+        }
+        if (footerDirty) {
+          await saveGlobalDraft(apiRoute, 'footer', footer, bases.current.footer)
+        }
         setPending(true)
+        setSaveError(null)
         setSave('idle')
-      } catch {
+      } catch (error) {
         dirty.current = {
           header: dirty.current.header || headerDirty,
           footer: dirty.current.footer || footerDirty,
         }
+        if (error instanceof ConflictError) {
+          setConflict({ [headerDirty ? 'header' : 'footer']: error.latest })
+          setSave('waiting')
+          return
+        }
+        setSaveError(errorText(error))
         setSave('error')
       }
     }, 1200)
     return () => clearTimeout(timer)
     // Só a contagem de mudanças dispara: o estado lido é o desta mudança.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version])
+  }, [version, conflict])
+
+  /** "Manter a minha": a versão da outra aba vira a base e a desta tela vai por cima. */
+  const keepMine = () => {
+    if (conflict?.header) bases.current.header.current = conflict.header
+    if (conflict?.footer) bases.current.footer.current = conflict.footer
+    // A outra parte também pode ter mudado: confere de novo ao salvar.
+    setConflict(null)
+    setSave('waiting')
+    setVersion((value) => value + 1)
+  }
+
+  // O "Desfazer" some depois de alguns segundos.
+  useEffect(() => {
+    if (!removed) return
+    const timer = setTimeout(() => setRemoved(null), 8000)
+    return () => clearTimeout(timer)
+  }, [removed])
 
   // Aviso ao fechar a aba com mudança ainda não guardada.
   useEffect(() => {
     if (save !== 'waiting' && save !== 'saving' && save !== 'error') return
-    const onLeave = (event: BeforeUnloadEvent) => event.preventDefault()
+    const onLeave = (event: BeforeUnloadEvent) => {
+      if (!leaving.on) event.preventDefault()
+    }
     window.addEventListener('beforeunload', onLeave)
     return () => window.removeEventListener('beforeunload', onLeave)
   }, [save])
@@ -142,16 +192,17 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     setMessage(null)
     try {
       dirty.current = { header: false, footer: false }
-      await publishMenuAndFooter(apiRoute, toHeaderData(header), footer)
+      await publishMenuAndFooter(apiRoute, toHeaderData(header), footer, bases.current)
       setPending(false)
       setSave('idle')
       setMessage({ tone: 'ok', text: 'Menu e rodapé publicados em todas as páginas.' })
       router.refresh()
     } catch (error) {
-      setMessage({
-        tone: 'error',
-        text: `Não deu para publicar: ${error instanceof Error ? error.message : 'tente de novo.'}`,
-      })
+      if (error instanceof ConflictError) {
+        setConflict({ header: error.latest })
+        return
+      }
+      setMessage({ tone: 'error', text: `Não deu para publicar: ${errorText(error)}` })
     } finally {
       setBusy(false)
     }
@@ -162,7 +213,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     setMessage(null)
     try {
       dirty.current = { header: false, footer: false }
-      const published = await discardMenuAndFooter(apiRoute)
+      const published = await discardMenuAndFooter(apiRoute, bases.current)
+      setConflict(null)
       setHeader({ ...published.header, showButton: Boolean(published.header.button.label) })
       setFooter(published.footer)
       setPending(false)
@@ -199,11 +251,13 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const changed = pending || save !== 'idle'
   const cantPublish = busy
     ? null
-    : save === 'saving'
-      ? 'Espere terminar de salvar'
-      : !changed
-        ? 'Nada para publicar'
-        : null
+    : conflict
+      ? 'Escolha antes qual versão fica'
+      : save === 'saving'
+        ? 'Espere terminar de salvar'
+        : !changed
+          ? 'Nada para publicar'
+          : null
 
   const setItem = (index: number, next: Partial<Item>) =>
     changeHeader({
@@ -216,6 +270,25 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     items.splice(index + by, 0, item)
     changeHeader({ ...header, items })
   }
+  /** Tira o link, mostra "Desfazer" e leva o foco ao link seguinte (B4). */
+  const removeItem = (index: number) => {
+    const item = header.items[index]
+    changeHeader({ ...header, items: header.items.filter((_, i) => i !== index) })
+    setRemoved({ item, index })
+    requestAnimationFrame(() => {
+      const rows = document.querySelectorAll<HTMLInputElement>('.gp-menuitem input.gp-input')
+      const next = rows[Math.min(index, rows.length - 1)]
+      ;(next ?? document.getElementById('hf-add'))?.focus()
+    })
+  }
+  const undoRemove = () => {
+    if (!removed) return
+    const items = [...header.items]
+    items.splice(Math.min(removed.index, items.length), 0, removed.item)
+    changeHeader({ ...header, items: items.slice(0, MENU_LIMIT) })
+    setRemoved(null)
+  }
+
   const addItem = () => {
     const inMenu = new Set(header.items.map((item) => pageID(item.link)))
     const page =
@@ -281,7 +354,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           <p>O topo e o rodapé aparecem iguais em todas as páginas. Você muda aqui uma vez só.</p>
         </div>
         <SaveStatus
-          error={save === 'error' ? 'Confira a internet.' : null}
+          blocked={conflict ? 'Não salvo: escolha a versão' : null}
+          error={save === 'error' ? saveError : null}
           mode="publish"
           onRetry={() => {
             setSave('waiting')
@@ -295,9 +369,12 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
       <div className="gp-pubbar">
         <div className="gp-actions">
           {pending && (
-            <button className="gp-btn" disabled={busy} onClick={discard} type="button">
-              Descartar mudanças
-            </button>
+            <DiscardButton
+              detail="Os links, o botão de destaque e o rodapé voltam a ser os que estão no ar."
+              disabled={busy}
+              onDiscard={discard}
+              what="Menu e rodapé"
+            />
           )}
           <div className="gp-btnwrap">
             <button
@@ -313,6 +390,14 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           </div>
         </div>
       </div>
+
+      {conflict && (
+        <ConflictNotice
+          onKeepMine={keepMine}
+          onSeeLatest={reloadWithoutWarning}
+          what={conflict.footer && !conflict.header ? 'O rodapé' : 'O menu'}
+        />
+      )}
 
       {message && (
         <p className={message.tone === 'ok' ? 'gp-notice' : 'gp-error'} role="status">
@@ -366,6 +451,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                       type="button"
                     >
                       <PanelIcon name="up" size={18} />
+                      <span className="gp-menuitem__btntext">Subir</span>
                     </button>
                     <button
                       aria-label={`Descer ${item.label.trim() || `o link ${index + 1}`}`}
@@ -375,19 +461,16 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                       type="button"
                     >
                       <PanelIcon name="down" size={18} />
+                      <span className="gp-menuitem__btntext">Descer</span>
                     </button>
                     <button
                       aria-label={`Tirar ${item.label.trim() || `o link ${index + 1}`} do menu`}
                       className="gp-iconbtn gp-iconbtn--move"
-                      onClick={() =>
-                        changeHeader({
-                          ...header,
-                          items: header.items.filter((_, i) => i !== index),
-                        })
-                      }
+                      onClick={() => removeItem(index)}
                       type="button"
                     >
                       <PanelIcon name="x" size={18} />
+                      <span className="gp-menuitem__btntext">Tirar</span>
                     </button>
                   </div>
                   <LinkWarning link={item.link} pageById={pageById} whatsapp={site.whatsappHref} />
@@ -397,16 +480,32 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             {header.items.length === 0 && (
               <p className="gp-small gp-muted">O menu está vazio. Só a marca aparece no topo.</p>
             )}
-            <div>
+            {removed && (
+              <p className="gp-notice gp-undo" role="status">
+                <span>“{removed.item.label.trim() || 'Link sem texto'}” saiu do menu.</span>
+                <button className="gp-btn gp-btn--sm" onClick={undoRemove} type="button">
+                  Desfazer
+                </button>
+              </p>
+            )}
+            <div className="gp-addrow">
               <button
+                aria-describedby={header.items.length >= MENU_LIMIT ? 'hf-add-why' : undefined}
                 className="gp-btn gp-btn--sm"
                 disabled={header.items.length >= MENU_LIMIT}
+                id="hf-add"
                 onClick={addItem}
                 type="button"
               >
                 <PanelIcon name="plus" size={14} />
                 Adicionar link
               </button>
+              {header.items.length >= MENU_LIMIT && (
+                <span className="gp-hint" id="hf-add-why">
+                  O menu já tem {MENU_LIMIT} links, o máximo que cabe no topo do site. Tire um para
+                  colocar outro.
+                </span>
+              )}
             </div>
           </section>
 
@@ -570,11 +669,24 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
         </section>
       </div>
 
+      {/* M8: no celular, a prévia em tela cheia, já em Celular. */}
+      <button
+        className="gp-btn gp-btn--primary gp-fab"
+        onClick={() => {
+          setDevice('mobile')
+          setFullPreview(true)
+        }}
+        type="button"
+      >
+        <PanelIcon name="eye" size={16} />
+        Ver prévia
+      </button>
+
       {fullPreview && (
         <PanelDialog
           onClose={() => setFullPreview(false)}
           size="full"
-          title="Prévia em tamanho real"
+          title={device === 'mobile' ? 'Prévia no celular' : 'Prévia em tamanho real'}
         >
           <div className="gp-previewbox__frame">
             <SiteFrame
@@ -591,6 +703,9 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     </div>
   )
 }
+
+const errorText = (error: unknown) =>
+  error instanceof Error ? error.message.replace(/^./, (c) => c.toUpperCase()) : 'Tente de novo.'
 
 /** O cabeçalho como o Payload guarda: botão desligado vai sem texto (e some do site). */
 function toHeaderData(header: HeaderState): HeaderData {

@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 
-import { request, updatePhotoAlt } from '@/components/editor/api'
+import { request } from './session'
 import { thumbnailURL } from '@/components/editor/context'
 import { FocusPicker } from '@/components/editor/FocusPicker'
 import type { PhotoUse } from '@/hooks/protectPhoto'
@@ -44,30 +44,46 @@ function usageLabel(uses: PhotoUse[] | undefined): string {
   return settings ? 'Usada nas Configurações' : 'Não usada'
 }
 
-// Até esta largura o detalhe da foto fica embaixo da grade. Igual ao `$media-stacked` do panel.scss.
+// Até esta largura o detalhe da foto abre numa folha que sobe do pé da tela (M2), por cima da lista.
+// Igual ao `$media-stacked` do panel.scss.
 const STACKED = '(max-width: 1279px)'
 
 export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Props) {
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const detail = useRef<HTMLElement>(null)
-  // Clique numa foto com o detalhe embaixo da grade: rola até ele, para a pessoa ver que abriu.
-  const scrollPending = useRef(false)
-  const showDetail = () => {
-    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    detail.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
+  const choose = (id: number) => setSelectedId(id)
+  // Fechou: a pessoa continua no mesmo ponto da lista, com o foco na foto que abriu.
+  const close = () => {
+    const id = selectedId
+    setSelectedId(null)
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>(`[data-photo="${id}"]`)?.focus({ preventScroll: true }),
+    )
   }
+  const closeRef = useRef(close)
   useEffect(() => {
-    if (!scrollPending.current) return
-    scrollPending.current = false
-    showDetail()
+    closeRef.current = close
+  })
+  // Folha aberta (celular e tablet): a lista de trás não rola, o foco vai para a folha e o Esc fecha.
+  useEffect(() => {
+    if (selectedId === null || !window.matchMedia(STACKED).matches) return
+    const root = document.documentElement
+    const previous = root.style.overflow
+    root.style.overflow = 'hidden'
+    detail.current?.focus({ preventScroll: true })
+    const onKey = (event: KeyboardEvent) => {
+      // Uma janela por cima da folha (trocar a foto, excluir) fecha antes.
+      if (event.key === 'Escape' && !document.querySelector('.gp-overlay, .drawer--is-open')) {
+        closeRef.current()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      root.style.overflow = previous
+      document.removeEventListener('keydown', onKey)
+    }
   }, [selectedId])
-  const choose = (id: number) => {
-    if (!window.matchMedia(STACKED).matches) return setSelectedId(id)
-    if (id === selectedId) return showDetail()
-    scrollPending.current = true
-    setSelectedId(id)
-  }
   const [notice, setNotice] = useState<string | null>(null)
   // Fotos que acabaram de chegar: aparecem na hora, antes de a tela ser relida do servidor.
   const [arrived, setArrived] = useState<Media[]>([])
@@ -79,8 +95,10 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
       if (uploaded.length === 1) setSelectedId(uploaded[0].id)
       setNotice(
         uploaded.length === 1
-          ? 'Foto enviada. Escreva ao lado o que aparece nela.'
-          : `${uploaded.length} fotos enviadas. Clique em cada uma para escrever a descrição.`,
+          ? 'Foto enviada. Escreva nos detalhes o que aparece nela.'
+          : `${uploaded.length} fotos enviadas. ${
+              window.matchMedia('(hover: none)').matches ? 'Toque' : 'Clique'
+            } em cada uma para escrever a descrição.`,
       )
       router.refresh()
     },
@@ -167,7 +185,8 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
         </div>
       )}
 
-      <div className="gp-media">
+      {/* L5: sem foto escolhida, a grade usa a largura toda; o detalhe abre ao lado ao clicar. */}
+      <div className={`gp-media${selected ? ' gp-media--open' : ''}`}>
         {library.length || uploads.items.length ? (
           <ul className="gp-media__grid">
             <UploadTiles uploads={uploads} />
@@ -181,6 +200,7 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
                 <button
                   aria-pressed={photo.id === selectedId}
                   className="gp-media__item"
+                  data-photo={photo.id}
                   onClick={() => choose(photo.id)}
                   type="button"
                 >
@@ -206,33 +226,44 @@ export function PhotosLibrary({ adminRoute, apiRoute, photos, usage, small }: Pr
           <p className="gp-card gp-empty">Ainda não há fotos. Envie a primeira.</p>
         )}
 
-        <aside className="gp-card gp-media__detail" ref={detail}>
-          {selected ? (
-            <PhotoDetail
-              adminRoute={adminRoute}
-              apiRoute={apiRoute}
-              key={selected.id}
-              onAltSaved={router.refresh}
-              onDeleted={() => {
-                setSelectedId(null)
-                setNotice('Foto excluída.')
-                router.refresh()
-              }}
-              onReplaced={() => {
-                setNotice('Foto trocada. Ela já mudou em todas as páginas que a usam.')
-                router.refresh()
-              }}
-              photo={selected}
-              small={Boolean(small[selected.id])}
-              uses={usage[selected.id] ?? []}
-            />
-          ) : (
-            <div className="gp-empty">
-              <PanelIcon name="image" size={28} />
-              <p>Clique em uma foto para ver os detalhes, escrever a descrição ou trocar.</p>
-            </div>
-          )}
-        </aside>
+        {selected && (
+          <>
+            {/* Fundo escuro da folha no celular: tocar fora fecha. No computador não aparece. */}
+            <div aria-hidden="true" className="gp-media__scrim" onClick={close} />
+            <aside
+              aria-label={`Detalhes de ${photoLabel(selected)}`}
+              className="gp-card gp-media__detail"
+              ref={detail}
+              tabIndex={-1}
+            >
+              <div className="gp-media__detailhead">
+                <span className="gp-label">Detalhes da foto</span>
+                <button className="gp-btn gp-btn--sm gp-btn--ghost" onClick={close} type="button">
+                  <PanelIcon name="x" size={14} />
+                  Fechar
+                </button>
+              </div>
+              <PhotoDetail
+                adminRoute={adminRoute}
+                apiRoute={apiRoute}
+                key={selected.id}
+                onAltSaved={router.refresh}
+                onDeleted={() => {
+                  setSelectedId(null)
+                  setNotice('Foto excluída.')
+                  router.refresh()
+                }}
+                onReplaced={() => {
+                  setNotice('Foto trocada. Ela já mudou em todas as páginas que a usam.')
+                  router.refresh()
+                }}
+                photo={selected}
+                small={Boolean(small[selected.id])}
+                uses={usage[selected.id] ?? []}
+              />
+            </aside>
+          </>
+        )}
       </div>
     </div>
   )
@@ -280,7 +311,10 @@ function PhotoDetail({
     const timer = setTimeout(async () => {
       setSave('saving')
       try {
-        await updatePhotoAlt(apiRoute, photo.id, text)
+        await request(apiRoute, `/media/${photo.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ alt: text }),
+        })
         saved.current = text
         setSave('saved')
         onAltSaved()

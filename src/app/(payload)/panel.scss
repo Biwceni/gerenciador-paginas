@@ -3848,3 +3848,745 @@ textarea.gp-input {
 .gp-page p {
   text-wrap: pretty;
 }
+
+// ---------- avaliação do painel (2026-11-16) ----------
+
+// A1: no computador, a mensagem aberta acompanha a rolagem da lista, com rolagem própria. Clicou
+// numa mensagem lá embaixo, ela aparece ao lado, na altura em que a pessoa está.
+@media (min-width: 961px) {
+  .gp-inbox__detail {
+    position: sticky;
+    top: calc(var(--app-header-height, 60px) + 4px);
+    max-height: calc(100vh - var(--app-header-height, 60px) - 20px);
+    max-height: calc(100dvh - var(--app-header-height, 60px) - 20px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-top: 0;
+  }
+}
+
+// M3: nome, data e os botões de responder numa faixa presa no alto da mensagem.
+.gp-inbox__head {
+  display: grid;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--gp-surface);
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--gp-line);
+
+  > div:first-child {
+    min-width: 0;
+  }
+
+  .gp-small {
+    overflow-wrap: anywhere;
+  }
+}
+
+// No celular a mensagem é a própria tela: a faixa fica logo abaixo da barra do topo.
+@media (max-width: 960px) {
+  .gp-inbox__head {
+    top: calc(var(--app-header-height, 60px) + 4px);
+  }
+}
+
+// L6: respostas em peso normal, maiores e com mais espaço; rótulos menores em cima.
+.gp-mfields {
+  gap: 16px;
+
+  dt {
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  dd {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+}
+
+// B12: busca e "Mostrar mais".
+.gp-inbox__search {
+  max-width: 560px;
+
+  .gp-btn {
+    flex: none;
+  }
+}
+
+.gp-inbox__more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.gp-wrapword {
+  overflow-wrap: anywhere;
+}
+
+// M1: filtros das Mensagens numa linha que rola para o lado, cada um com até 240 px.
+.gp-inbox__filters {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 4px;
+  max-width: 100%;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    max-width: 240px;
+    white-space: nowrap;
+  }
+}
+
+.gp-inbox__filtername {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 0.3em;
+}
+
+// M1: títulos e nomes das listas quebram a palavra comprida no fim da linha.
+.gp-pagehead h1,
+.gp-pagehead p,
+.gp-row__title,
+.gp-row b,
+.gp-formcard h2,
+.gp-formcard h3,
+.gp-empty,
+.gp-card h2 {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+// B2, B3 e B4: motivo do botão desativado e o "Desfazer".
+.gp-undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+// A3: conflito entre abas.
+.gp-conflict p {
+  margin: 0;
+}
+
+// B5: quantos campos faltam corrigir e o atalho para o primeiro.
+.gp-errorsummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+// M7: lista do que fica difícil de ler.
+.gp-contrastlist {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+// M9 e L4: os botões de cada link do menu dizem o nome só no celular.
+.gp-menuitem__btntext {
+  display: none;
+}
+
+// L4: no computador largo, texto, página e botões na mesma linha. O nome das colunas fica só no
+// primeiro link.
+@media (min-width: 1180px) {
+  .gp-menuitem {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) auto;
+
+    > .gp-menuitem__field:first-child {
+      grid-column: auto;
+    }
+
+    &:not(:first-child) .gp-menuitem__label {
+      display: none;
+    }
+  }
+}
+
+// M9: no celular, o seletor e o endereço usam a largura toda; os botões descem para uma linha
+// própria, com o nome escrito.
+@media (max-width: 760px) {
+  .gp-menuitem {
+    grid-template-columns: minmax(0, 1fr);
+
+    &__moves {
+      flex-wrap: wrap;
+
+      .gp-iconbtn.gp-iconbtn--move {
+        width: auto;
+        padding: 0 12px;
+        display: inline-flex;
+        gap: 6px;
+        font: inherit;
+        font-size: var(--gp-fs-help);
+        font-weight: 600;
+      }
+    }
+
+    &__btntext {
+      display: inline;
+    }
+  }
+}
+
+// B6: no celular, os botões do topo com 44 px.
+.gp-topbar .gp-iconbtn {
+  width: 44px;
+  height: 44px;
+}
+
+.gp-addrow {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+@media (min-width: 1180px) {
+  .gp-hfl {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+}
+
+// M8: "Ver prévia" preso no canto de baixo, só no celular e no tablet.
+.gp-fab {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .gp-fab {
+    display: inline-flex;
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    z-index: 6;
+    box-shadow: 0 6px 20px var(--gp-shadow);
+    border-radius: 999px;
+  }
+
+  // O menu do painel aberto fica na frente.
+  .template-default--nav-open .gp-fab {
+    visibility: hidden;
+  }
+
+  // Espaço no fim da tela para o botão não cobrir o último campo.
+  .gp-page:has(> .gp-fab) {
+    padding-bottom: 88px;
+  }
+}
+
+// M5: no celular e no tablet o menu do painel começa abaixo da barra do topo (44 px de botão +
+// 16 px de espaço + 1 px de linha). Com a altura da tela inteira, o pé ficava fora da vista.
+@media (max-width: #{$desktop - 1px}) {
+  .nav:has(.gp-nav) {
+    height: calc(100vh - 61px);
+    height: calc(100dvh - 61px);
+    // M6: na frente de tudo da tela, com fundo próprio (o ✕ de tirar o arquivo, nas telas técnicas,
+    // continuava aparecendo através do menu).
+    z-index: 40;
+    background: var(--gp-bg);
+  }
+}
+
+// B11: telas técnicas (Avançado → Usuários e Fotos, as do Payload) com toque de 44 px no celular:
+// Salvar, ⋮, criar novo, filtros, ordenar e os botões da foto.
+@media (max-width: #{$desktop - 1px}) {
+  .template-default__wrap:not(:has(> .gp-page)) {
+    .btn,
+    .popup-button,
+    .file-field__previewSizes,
+    .doc-tab,
+    .pill {
+      min-height: 44px;
+    }
+
+    .sort-column__button,
+    .file-details__remove,
+    .copy-to-clipboard,
+    .doc-controls .popup-button {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+// B7: "Clique" no computador, "Toque" nas telas de toque.
+.gp-touch {
+  display: none;
+}
+
+@media (hover: none) {
+  .gp-mouse {
+    display: none;
+  }
+
+  .gp-touch {
+    display: inline;
+  }
+}
+
+// M2 e L5: Fotos. No computador, sem foto escolhida, a grade usa a largura toda; escolhida uma,
+// os detalhes abrem ao lado. No celular e no tablet, os detalhes abrem numa folha que sobe do pé
+// da tela, por cima da lista.
+.gp-media {
+  grid-template-columns: minmax(0, 1fr);
+
+  &--open {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+
+  &__grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  &__detailhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__scrim {
+    display: none;
+  }
+
+  &__detail:focus {
+    outline: none;
+  }
+}
+
+@media (max-width: $media-stacked) {
+  .gp-media--open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gp-media__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    background: var(--gp-scrim);
+  }
+
+  .gp-media__detail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 45;
+    max-height: 88vh;
+    max-height: 88dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 30px var(--gp-shadow);
+    animation: gp-sheet-up 0.22s ease-out;
+  }
+
+  .gp-media__detailhead {
+    position: sticky;
+    top: -20px;
+    z-index: 1;
+    margin: -20px -20px 0;
+    padding: 12px 20px;
+    background: var(--gp-surface);
+    border-bottom: 1px solid var(--gp-line);
+  }
+}
+
+@media (min-width: 761px) and (max-width: $media-stacked) {
+  .gp-media__detail {
+    left: 50%;
+    right: auto;
+    width: min(560px, 100%);
+    transform: translateX(-50%);
+    animation: none;
+  }
+}
+
+@keyframes gp-sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-media__detail {
+    animation: none;
+  }
+}
+
+// B13: texto de exemplo dos campos no tom "apagado" do painel, que passa de 4,5:1 nos dois temas
+// (o padrão do navegador ficava em 3,8:1 no escuro).
+.gp-input::placeholder,
+.gp-searchbox input::placeholder,
+.gp-page textarea::placeholder,
+.gp-page input::placeholder {
+  color: var(--gp-muted);
+  opacity: 1;
+}
+
+// L1: no aviso do alto, os nomes em destaque e o texto em peso normal; no cartão de tarefas, os
+// feitos numa linha só, que abre a lista.
+.gp-pending__list li {
+  font-weight: 500;
+
+  > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  b {
+    font-weight: 700;
+  }
+
+  .gp-btn {
+    flex: none;
+  }
+}
+
+.gp-donelist {
+  border-top: 1px solid var(--gp-line);
+  padding-top: 10px;
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--gp-muted);
+    min-height: 32px;
+  }
+
+  .gp-todo {
+    margin-top: 8px;
+  }
+}
+
+// L2: no celular, as duas colunas das Configurações viram uma só, na ordem dos atalhos.
+@media (max-width: 960px) {
+  .gp-col--left,
+  .gp-col--right {
+    display: contents;
+  }
+
+  #st-identidade {
+    order: 1;
+  }
+
+  #st-inicial {
+    order: 2;
+  }
+
+  #st-privacidade {
+    order: 3;
+  }
+
+  .gp-col--right > section:not([id]) {
+    order: 4;
+  }
+
+  #st-contato {
+    order: 5;
+  }
+
+  #st-redes {
+    order: 6;
+  }
+
+  #st-google,
+  #st-pessoas,
+  #st-modelo {
+    order: 7;
+  }
+}
+
+// L3: "Jeito do site" como lista: desenho à esquerda, nome e descrição à direita, um por linha.
+.gp-personality {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+
+  &__option {
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px 8px 8px;
+  }
+
+  &__text {
+    padding-inline: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .gp-personality__option {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
+// B8 v2: atalhos dos blocos. No computador, a linha com o bloco atual sublinhado e um ponto
+// amarelo no que falta. No celular, um botão só que diz onde a pessoa está e abre a folha "Ir para".
+.gp-blocknav__row a {
+  gap: 6px;
+
+  &[aria-current='location'] {
+    color: var(--gp-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 7px;
+  }
+}
+
+.gp-blocknav__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gp-warn);
+  flex: none;
+}
+
+.gp-blocknav__button {
+  display: none;
+}
+
+.gp-page section[id^='mc-'] {
+  scroll-margin-top: calc(var(--app-header-height, 60px) + 120px);
+}
+
+@media (max-width: 720px) {
+  .gp-blocknav__row {
+    display: none;
+  }
+
+  .gp-blocknav__button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-basis: 100%;
+    min-height: 52px;
+    padding: 6px 12px;
+    border: 1px solid var(--gp-line-strong);
+    border-radius: 12px;
+    background: var(--gp-surface);
+    color: var(--gp-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--gp-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  .gp-blocknav__where {
+    display: grid;
+    min-width: 0;
+
+    b {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .gp-blocknav__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+    color: var(--gp-accent);
+    font-weight: 700;
+  }
+}
+
+.gp-sheetwrap {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--gp-scrim);
+  display: flex;
+  align-items: flex-end;
+}
+
+.gp-sheet {
+  width: 100%;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--gp-surface);
+  color: var(--gp-ink);
+  border-radius: 18px 18px 0 0;
+  padding: 0 16px max(16px, env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 30px var(--gp-shadow);
+  animation: gp-sheet-up 0.22s ease-out;
+
+  &:focus {
+    outline: none;
+  }
+
+  &__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0 10px;
+    background: var(--gp-surface);
+    touch-action: none;
+
+    h2 {
+      font-family: var(--gp-font-display);
+      font-size: var(--gp-fs-card);
+      margin: 0;
+    }
+  }
+
+  &__handle {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 999px;
+    background: var(--gp-line-strong);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+
+    &--danger {
+      margin-top: 10px;
+      border-top: 1px solid var(--gp-line);
+      padding-top: 10px;
+    }
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--gp-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &[aria-current='location'] {
+      background: var(--gp-accent-soft);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--gp-accent);
+      outline-offset: -2px;
+    }
+
+    &--danger b {
+      color: var(--gp-danger);
+    }
+  }
+
+  &__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+
+    > * {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__missing {
+    color: var(--gp-warn);
+    font-size: var(--gp-fs-small);
+    font-weight: 700;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-sheet {
+    animation: none;
+  }
+}
+
+// B9 v2: aviso de rascunho sem página, no topo de Páginas.
+.gp-orphans {
+  &__title {
+    margin: 0 0 2px;
+    font-size: var(--gp-fs-text);
+    font-weight: 700;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--gp-warn) 25%, transparent);
+    }
+  }
+
+  &__name {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+
+    b {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__sections {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 6px;
+    overflow-wrap: anywhere;
+  }
+}
