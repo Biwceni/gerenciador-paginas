@@ -220,6 +220,8 @@ export function EditorFrame({
     frame.defaultView?.frameElement?.setAttribute('title', 'Prévia da página')
     frame.documentElement.setAttribute('lang', 'pt-BR')
     frame.body.classList.add('site')
+    // Na edição o topo fica no lugar: preso no alto, cobriria a seção que a pessoa vai tocar.
+    frame.body.setAttribute('data-editor', '')
     applySiteTheme(frame.body, theme)
 
     const added: Element[] = []

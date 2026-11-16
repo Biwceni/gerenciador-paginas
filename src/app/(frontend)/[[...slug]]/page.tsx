@@ -10,6 +10,7 @@ import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteLink } from '@/components/site/SiteLink'
 import { WhatsAppFloat } from '@/components/site/WhatsAppFloat'
+import { WhatsAppPrefill } from '@/components/site/WhatsAppPrefill'
 import {
   getHomepage,
   getPageBySlug,
@@ -21,6 +22,7 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
+import { whatsAppGreeting } from '@/lib/links'
 import { pageTitle } from '@/lib/pageTitle'
 import { SHARE_IMAGE_SIZE, shareImagePath } from '@/lib/shareImage'
 import { FALLBACK_SITE_NAME, getServerURL } from '@/lib/site'
@@ -137,6 +139,9 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
             </SiteLink>
           )}
         </main>
+        {whatsappHref && (
+          <WhatsAppPrefill text={whatsAppGreeting(site.contact?.whatsappMessage)} />
+        )}
       </>
     )
   }
@@ -184,7 +189,18 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
         <Render config={renderConfig} data={data} metadata={metadata} />
       </main>
       <SiteFooter campaign={campaign} />
-      {metadata.whatsappHref && <WhatsAppFloat href={metadata.whatsappHref} />}
+      {metadata.whatsappHref && (
+        <>
+          <WhatsAppFloat
+            desktop={site.contact?.whatsappFloat?.desktop === true}
+            href={metadata.whatsappHref}
+            phone={site.contact?.whatsappFloat?.phone !== false}
+          />
+          <WhatsAppPrefill
+            text={whatsAppGreeting(site.contact?.whatsappMessage, isHome ? 'inicial' : page.title)}
+          />
+        </>
+      )}
     </>
   )
 }

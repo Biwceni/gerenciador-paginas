@@ -18,7 +18,19 @@ export type SettingsState = {
   personality: Personality
   motion: Motion
   fonts: { headings: string; body: string }
-  contact: { whatsapp: string; phone: string; email: string; address: string; hours: string }
+  contact: {
+    whatsapp: string
+    phone: string
+    email: string
+    address: string
+    hours: string
+    /** Mensagem que já vem escrita no WhatsApp (W2). */
+    whatsappMessage: string
+  }
+  /** Botão do WhatsApp no canto da tela, no celular e no computador (W1). */
+  whatsappFloat: { phone: boolean; desktop: boolean }
+  /** Logo que some no fundo do topo ou do rodapé: ganha contorno (T6, calculado em Sua marca). */
+  logoRing: { header: boolean; footer: boolean }
   social: { instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
   seoDescription: string
   shareImage: number | null
@@ -42,6 +54,15 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
       email: site.contact?.email ?? '',
       address: site.contact?.address ?? '',
       hours: site.contact?.hours ?? '',
+      whatsappMessage: site.contact?.whatsappMessage ?? '',
+    },
+    whatsappFloat: {
+      phone: site.contact?.whatsappFloat?.phone !== false,
+      desktop: site.contact?.whatsappFloat?.desktop === true,
+    },
+    logoRing: {
+      header: site.logoRing?.header === true,
+      footer: site.logoRing?.footer === true,
     },
     social: {
       instagram: site.social?.instagram ?? '',
@@ -74,7 +95,10 @@ export function toSiteData(state: SettingsState) {
       email: orNull(state.contact.email),
       address: orNull(state.contact.address),
       hours: orNull(state.contact.hours),
+      whatsappMessage: orNull(state.contact.whatsappMessage),
+      whatsappFloat: state.whatsappFloat,
     },
+    logoRing: state.logoRing,
     social: {
       instagram: orNull(socialURL('instagram', state.social.instagram)),
       facebook: orNull(socialURL('facebook', state.social.facebook)),

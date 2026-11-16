@@ -161,6 +161,17 @@ export const Site: GlobalConfig = {
               label: 'Logo',
               admin: { description: 'Sem logo, o site usa as iniciais do nome.' },
             },
+            // Calculado em Sua marca a partir das cores do logo (T6): logo que some no fundo do topo
+            // ou do rodapé ganha um contorno.
+            {
+              name: 'logoRing',
+              type: 'group',
+              admin: { hidden: true },
+              fields: [
+                { name: 'header', type: 'checkbox', defaultValue: false },
+                { name: 'footer', type: 'checkbox', defaultValue: false },
+              ],
+            },
             {
               name: 'homepage',
               type: 'relationship',
@@ -278,6 +289,35 @@ export const Site: GlobalConfig = {
                   label: 'Horário de funcionamento',
                   maxLength: 120,
                   admin: { description: 'Ex.: Seg a sáb, das 7h às 19h.' },
+                },
+                {
+                  name: 'whatsappMessage',
+                  type: 'text',
+                  label: 'Mensagem que já vem escrita no WhatsApp',
+                  maxLength: 200,
+                  admin: {
+                    description:
+                      'Quem toca num botão de WhatsApp do site já encontra este texto, com a página de onde veio.',
+                  },
+                },
+                {
+                  name: 'whatsappFloat',
+                  type: 'group',
+                  label: 'Botão do WhatsApp no canto da tela',
+                  fields: [
+                    {
+                      name: 'phone',
+                      type: 'checkbox',
+                      label: 'Mostrar no celular',
+                      defaultValue: true,
+                    },
+                    {
+                      name: 'desktop',
+                      type: 'checkbox',
+                      label: 'Mostrar também no computador',
+                      defaultValue: false,
+                    },
+                  ],
                 },
               ],
             },

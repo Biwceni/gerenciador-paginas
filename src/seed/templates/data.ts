@@ -58,6 +58,59 @@ type Pack = {
 }
 
 /**
+ * Textos do ramo para o fim do site e para o WhatsApp (menu e rodapé, R6 e W2): o título da chamada
+ * antes do rodapé (com o botão de destaque do topo) e a mensagem que já vem escrita na conversa. As
+ * páginas de campanha não têm a chamada.
+ */
+const NICHE_TEXTS: Record<Business, { cta: string | null; whatsapp: string }> = {
+  confeitaria: {
+    cta: 'Vai ter festa? Encomende o seu bolo',
+    whatsapp: 'Olá! Vim pelo site e quero fazer uma encomenda.',
+  },
+  restaurante: {
+    cta: 'Bateu a fome? Faça o seu pedido',
+    whatsapp: 'Olá! Vim pelo site e quero fazer um pedido.',
+  },
+  beleza: {
+    cta: 'Que tal reservar o seu horário?',
+    whatsapp: 'Olá! Vim pelo site e quero agendar um horário.',
+  },
+  saude: {
+    cta: 'Cuide da sua saúde: agende sua consulta',
+    whatsapp: 'Olá! Vim pelo site e quero agendar uma consulta.',
+  },
+  escritorio: {
+    cta: 'Precisa de ajuda? Fale com o escritório',
+    whatsapp: 'Olá! Vim pelo site e gostaria de falar com o escritório.',
+  },
+  loja: {
+    cta: 'Gostou de alguma peça? Fale com a gente',
+    whatsapp: 'Olá! Vim pelo site e quero saber mais sobre os produtos.',
+  },
+  casa: {
+    cta: 'Tem um reparo para fazer? Peça um orçamento',
+    whatsapp: 'Olá! Vim pelo site e quero pedir um orçamento.',
+  },
+  outro: { cta: 'Vamos conversar?', whatsapp: 'Olá! Vim pelo site e quero mais informações.' },
+  onepage: {
+    cta: 'Gostou? Peça o seu orçamento',
+    whatsapp: 'Olá! Vim pelo site e quero pedir um orçamento.',
+  },
+  landing: { cta: null, whatsapp: 'Olá! Vim pelo site e quero aproveitar a oferta.' },
+  evento: {
+    cta: 'Garanta a sua vaga',
+    whatsapp: 'Olá! Vim pelo site e quero saber mais sobre o evento.',
+  },
+  pessoal: {
+    cta: 'Vamos trabalhar juntos?',
+    whatsapp: 'Olá! Vim pelo site e quero conversar sobre um trabalho.',
+  },
+  links: { cta: null, whatsapp: 'Olá! Vim pelo seu link e quero mais informações.' },
+  embreve: { cta: null, whatsapp: 'Olá! Vim pelo site e quero saber quando abre.' },
+  geral: { cta: 'Vamos conversar?', whatsapp: 'Olá! Vim pelo site e quero mais informações.' },
+}
+
+/**
  * O visual Papel em todos os ramos e tipos de site, sempre como terceiro modelo: as cores saem da
  * cor do ramo (como sairiam do logo) e as letras são o primeiro par do ramo. Nada nele é de um ramo.
  */
@@ -2043,10 +2096,12 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
         fonts: { headings: fonts.headings, body: fonts.body },
         address: pack.site.address,
         hours: pack.site.hours,
+        whatsappMessage: NICHE_TEXTS[pack.prefix].whatsapp,
       },
       header: { items, button },
       footer: {
         text: pack.campaign ? null : (pack.footer ?? '{nome}, em {cidade}.'),
+        ctaTitle: pack.campaign ? null : NICHE_TEXTS[pack.prefix].cta,
         showMenu: true,
         showContact: true,
         showSocial: true,

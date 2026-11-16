@@ -362,8 +362,11 @@ test.describe.serial('QA visual e revisão de design', () => {
     const burger = page.getByRole('button', { name: 'Abrir menu' })
     if (await burger.isVisible()) await burger.click()
     // O de texto inteiro: no menu aberto ou no topo (o compacto, ao lado do ☰, é outro teste).
+    // O menu do ☰ fica fora do topo (T3), por isso procura nos dois.
     const button = page
-      .locator('.site-header a.button:not(.site-header__cta)', { hasText: LONG_BUTTON })
+      .locator('.site-header a.button:not(.site-header__cta), #menu-celular a.button', {
+        hasText: LONG_BUTTON,
+      })
       .locator('visible=true')
     await expect(button).toHaveCount(1)
     const lines = await button.evaluate((element) => {
@@ -412,7 +415,7 @@ test.describe.serial('QA visual e revisão de design', () => {
   test('telefone com o código do país e galeria ímpar no celular', async () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await open(page, `/fotos-qa-${SUFFIX}`)
-    await expect(page.locator('a[href^="tel:"]')).toHaveAttribute('href', 'tel:+553533334521')
+    await expect(page.locator('main a[href^="tel:"]')).toHaveAttribute('href', 'tel:+553533334521')
     const last = await page.locator('.gallery li').last().boundingBox()
     const gallery = await page.locator('.gallery').boundingBox()
     expect(Math.round(last!.width)).toBe(Math.round(gallery!.width))

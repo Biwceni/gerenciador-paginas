@@ -2,13 +2,15 @@ import Link from 'next/link'
 import React from 'react'
 
 import { shortTagline } from '@/lib/highlight'
-import { instagramLink, mapsURL, whatsAppURL } from '@/lib/links'
+import { instagramLink, mapsURL, telHref, whatsAppURL } from '@/lib/links'
+import { ContactIcon } from '@/puck/components/FeatureIcon'
 import type { Personality } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
 import { Photo } from './Photo'
 import { SiteLink } from './SiteLink'
+import { SOCIAL_NAMES, SocialIcon } from './SocialIcon'
 import { sitePersonality } from './theme'
 
 // Desenho do topo e do rodapé, só a partir dos dados. O site passa o que está publicado
@@ -35,6 +37,26 @@ export function isRoundLogo(logo: Media): boolean {
 const isBranded = (brand: SiteBrand | undefined): brand is SiteBrand =>
   Boolean(brand && brand.personality !== 'classico')
 
+/**
+ * Atalhos do menu do celular (T3), embaixo dos links: WhatsApp e Instagram, endereço e horário. Vêm
+ * das Configurações; o que estiver vazio não aparece.
+ */
+export type HeaderShortcuts = {
+  whatsappHref: string | null
+  instagram: { url: string; label: string } | null
+  address: string | null
+  hours: string | null
+}
+
+export function headerShortcuts(site: Partial<Site>): HeaderShortcuts {
+  return {
+    whatsappHref: whatsAppURL(site.contact?.whatsapp),
+    instagram: instagramLink(site.social?.instagram),
+    address: site.contact?.address?.trim() || null,
+    hours: site.contact?.hours?.trim() || null,
+  }
+}
+
 type HeaderProps = {
   name: string
   logo: Media | null
@@ -43,6 +65,9 @@ type HeaderProps = {
   /** Página de campanha: só a marca, sem menu, para o visitante não sair da página. */
   campaign?: boolean
   brand?: SiteBrand
+  shortcuts?: HeaderShortcuts
+  /** Logo que some no fundo do topo ganha um contorno (T6, calculado em Sua marca). */
+  logoRing?: boolean
 }
 
 /** O destino do botão tem um ícone que diz o que ele faz (WhatsApp, telefone, e-mail). */
@@ -100,7 +125,16 @@ function CtaIcon({ href }: { href: string }) {
   )
 }
 
-export function SiteHeaderView({ name, logo, items, button, campaign, brand }: HeaderProps) {
+export function SiteHeaderView({
+  name,
+  logo,
+  items,
+  button,
+  campaign,
+  brand,
+  shortcuts,
+  logoRing,
+}: HeaderProps) {
   const hasNav = !campaign && (items.length > 0 || button)
   const branded = isBranded(brand)
   const tagline = branded ? brand.tagline : null
@@ -111,22 +145,62 @@ export function SiteHeaderView({ name, logo, items, button, campaign, brand }: H
   ]
   const round = branded && logo && isRoundLogo(logo)
 
-  const navContent = (
+  const links = (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>
+          <SiteLink aria-current={item.current ? 'page' : undefined} href={item.href}>
+            {item.label}
+          </SiteLink>
+        </li>
+      ))}
+    </ul>
+  )
+  const mainButton = button && (
+    <SiteLink className="button" href={button.href}>
+      {button.label}
+    </SiteLink>
+  )
+  const quick = shortcuts && (shortcuts.whatsappHref || shortcuts.instagram)
+  const info = shortcuts && (shortcuts.address || shortcuts.hours)
+  // Menu do celular em tela cheia (T3): os links, os atalhos de contato e, no fim, ao alcance do
+  // polegar, o botão de destaque.
+  const mobileContent = (
     <>
-      <ul>
-        {items.map((item) => (
-          <li key={item.id}>
-            <SiteLink aria-current={item.current ? 'page' : undefined} href={item.href}>
-              {item.label}
+      {links}
+      {quick && (
+        <div className="site-header__quick">
+          {shortcuts.whatsappHref && (
+            <SiteLink href={shortcuts.whatsappHref}>
+              <ContactIcon name="whatsapp" />
+              <span>WhatsApp</span>
             </SiteLink>
-          </li>
-        ))}
-      </ul>
-      {button && (
-        <SiteLink className="button" href={button.href}>
-          {button.label}
-        </SiteLink>
+          )}
+          {shortcuts.instagram && (
+            <SiteLink href={shortcuts.instagram.url}>
+              <SocialIcon name="instagram" />
+              <span>{shortcuts.instagram.label}</span>
+            </SiteLink>
+          )}
+        </div>
       )}
+      {info && (
+        <div className="site-header__info">
+          {shortcuts.address && (
+            <SiteLink href={mapsURL(shortcuts.address)}>
+              <ContactIcon name="map" />
+              <span>{shortcuts.address}</span>
+            </SiteLink>
+          )}
+          {shortcuts.hours && (
+            <p>
+              <ContactIcon name="clock" />
+              <span>{shortcuts.hours}</span>
+            </p>
+          )}
+        </div>
+      )}
+      {mainButton}
     </>
   )
 
@@ -139,7 +213,13 @@ export function SiteHeaderView({ name, logo, items, button, campaign, brand }: H
         <Link className={brandClass.filter(Boolean).join(' ')} href="/">
           {logo && (
             <Photo
-              className={round ? 'site-header__logo site-header__logo--round' : 'site-header__logo'}
+              className={[
+                'site-header__logo',
+                round && 'site-header__logo--round',
+                logoRing && 'site-header__logo--ring',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               media={logo}
               sizes="160px"
             />
@@ -150,9 +230,13 @@ export function SiteHeaderView({ name, logo, items, button, campaign, brand }: H
         {hasNav && (
           <>
             <nav aria-label="Menu principal" className="site-header__nav">
-              {navContent}
+              {links}
+              {mainButton}
             </nav>
-            {/* Com o ☰: o botão de destaque continua à vista, compacto, ao lado dele. */}
+            {/*
+             * Com o ☰ (ou com os links numa segunda linha, no computador): o botão de destaque
+             * continua à vista, ao lado do nome.
+             */}
             {button && (
               <SiteLink
                 aria-label={button.label}
@@ -163,7 +247,7 @@ export function SiteHeaderView({ name, logo, items, button, campaign, brand }: H
                 <span className="site-header__cta-text">{button.label}</span>
               </SiteLink>
             )}
-            <HeaderMenu>{navContent}</HeaderMenu>
+            <HeaderMenu>{mobileContent}</HeaderMenu>
           </>
         )}
       </div>
@@ -174,6 +258,8 @@ export function SiteHeaderView({ name, logo, items, button, campaign, brand }: H
 export type FooterContact = {
   whatsapp: string | null
   whatsappHref: string | null
+  phone: string | null
+  phoneHref: string | null
   email: string | null
   address: string | null
   hours: string | null
@@ -186,6 +272,8 @@ export function footerContact(site: Partial<Site>): FooterContact {
   return {
     whatsapp: contact?.whatsapp ?? null,
     whatsappHref: whatsAppURL(contact?.whatsapp),
+    phone: contact?.phone ?? null,
+    phoneHref: telHref(contact?.phone),
     email: contact?.email ?? null,
     address: contact?.address ?? null,
     hours: contact?.hours ?? null,
@@ -214,6 +302,12 @@ export function footerSocial(site: Partial<Site>): FooterSocial[] {
   ]
 }
 
+/** Título da chamada antes do rodapé quando o rodapé ainda não tem um (sites de antes do R6). */
+export const DEFAULT_CTA_TITLE = 'Vamos conversar?'
+
+/** Páginas no rodapé em duas colunas a partir deste número (R1). */
+const TWO_COLUMN_PAGES = 6
+
 type FooterProps = {
   name: string
   text: string | null
@@ -225,9 +319,43 @@ type FooterProps = {
   campaign?: boolean
   /** Página de privacidade, só quando está no ar. */
   privacyHref?: string | null
-  /** Logo do site: aparece no rodapé nas personalidades novas. */
+  /** Logo do site, na coluna da marca. */
   logo?: Media | null
   brand?: SiteBrand
+  /** Chamada no fim do site (R1, R6): o título e o botão de destaque do topo. */
+  cta?: { title: string; button: { label: string; href: string } } | null
+  /** Coluna "Horário" (R3). */
+  showHours?: boolean
+  /** "Voltar ao topo" na barra de baixo. */
+  backToTop?: boolean
+  /** Logo que some no fundo do rodapé ganha um contorno (T6). */
+  logoRing?: boolean
+}
+
+function FooterItem({
+  href,
+  icon,
+  label,
+  children,
+  className,
+}: {
+  href: string
+  icon: React.ComponentProps<typeof ContactIcon>['name']
+  label: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <li>
+      <SiteLink className={['site-footer__item', className].filter(Boolean).join(' ')} href={href}>
+        <ContactIcon name={icon} />
+        <span>
+          <small>{label}</small>
+          <span className="site-footer__value">{children}</span>
+        </span>
+      </SiteLink>
+    </li>
+  )
 }
 
 export function SiteFooterView({
@@ -240,7 +368,10 @@ export function SiteFooterView({
   campaign,
   privacyHref,
   logo,
-  brand,
+  cta,
+  showHours = true,
+  backToTop = true,
+  logoRing,
 }: FooterProps) {
   const year = new Date().getFullYear()
   const privacy = privacyHref && (
@@ -269,85 +400,178 @@ export function SiteFooterView({
     )
   }
 
-  const contactItems = showContact && (contact.whatsappHref || contact.email || contact.address)
+  const contactItems =
+    showContact &&
+    (contact.whatsappHref || contact.phoneHref || contact.email || contact.address)
+  const hours = showHours ? contact.hours?.trim() || null : null
+  const logoImage = logo && (
+    <Photo
+      className={[
+        'site-footer__logo',
+        isRoundLogo(logo) && 'site-footer__logo--round',
+        logoRing && 'site-footer__logo--ring',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      media={logo}
+      sizes="200px"
+    />
+  )
+  const copy = (
+    <span>
+      © {year} {name}
+      {privacy}
+    </span>
+  )
+  const band = cta && (
+    <section aria-label="Chamada" className="site-cta section--brand">
+      <div className="container site-cta__inner">
+        <p className="site-cta__title">{cta.title}</p>
+        <SiteLink className="button" href={cta.button.href}>
+          {cta.button.label}
+        </SiteLink>
+      </div>
+    </section>
+  )
+
+  // Tudo desligado (R5): uma linha só, com a marca e o ©, em vez de um nome solto e um vazio.
+  if (!text && !menu.length && !contactItems && !hours && !social.length) {
+    return (
+      <>
+        {band}
+        <footer className="site-footer site-footer--line">
+          <div className="container site-footer__line">
+            <span className="site-footer__brandline">
+              {logoImage}
+              <b>{name}</b>
+            </span>
+            <span>
+              © {year}
+              {privacy}
+            </span>
+          </div>
+        </footer>
+      </>
+    )
+  }
 
   return (
-    <footer className="site-footer">
-      <div className="container">
-        <div className="site-footer__cols">
-          <div>
-            {isBranded(brand) && logo && (
-              <Photo
-                className={
-                  isRoundLogo(logo)
-                    ? 'site-footer__logo site-footer__logo--round'
-                    : 'site-footer__logo'
-                }
-                media={logo}
-                sizes="200px"
-              />
-            )}
-            <h2 className="site-footer__title">{name}</h2>
-            {text && <p>{text}</p>}
-          </div>
-
-          {menu.length > 0 && (
-            <nav aria-labelledby="rodape-paginas">
-              <h2 className="site-footer__title" id="rodape-paginas">
-                Páginas
-              </h2>
-              <ul>
-                {menu.map((item) => (
-                  <li key={item.id}>
-                    <SiteLink href={item.href}>{item.label}</SiteLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
-
-          {(contactItems || social.length > 0) && (
-            <div>
-              <h2 className="site-footer__title">Contato</h2>
-              <address>
-                <ul>
-                  {showContact && contact.whatsappHref && (
-                    <li>
-                      <SiteLink href={contact.whatsappHref}>{contact.whatsapp} (WhatsApp)</SiteLink>
-                    </li>
-                  )}
-                  {showContact && contact.email && (
-                    <li>
-                      <SiteLink href={`mailto:${contact.email}`}>{contact.email}</SiteLink>
-                    </li>
-                  )}
-                  {/* O endereço abre o mapa, como na seção Contato e endereço. */}
-                  {showContact && contact.address && (
-                    <li>
-                      <SiteLink className="site-footer__address" href={mapsURL(contact.address)}>
-                        {contact.address}
-                      </SiteLink>
-                    </li>
-                  )}
+    <>
+      {band}
+      <footer className="site-footer">
+        <div className="container">
+          <div className="site-footer__cols">
+            <div className="site-footer__brand">
+              {logoImage}
+              <h2 className="site-footer__name">{name}</h2>
+              {text && <p>{text}</p>}
+              {social.length > 0 && (
+                <ul aria-label="Redes sociais" className="site-footer__social">
                   {social.map((item) => (
                     <li key={item.key}>
-                      <SiteLink href={item.url}>{item.label}</SiteLink>
+                      <SiteLink
+                        aria-label={`${SOCIAL_NAMES[item.key] ?? item.label} de ${name}`}
+                        href={item.url}
+                      >
+                        <SocialIcon name={item.key} />
+                      </SiteLink>
                     </li>
                   ))}
                 </ul>
-              </address>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="site-footer__copy">
-          <span>
-            © {year} {name}
-            {privacy}
-          </span>
-          {contact.hours && <span>{contact.hours}</span>}
+            {menu.length > 0 && (
+              <nav aria-labelledby="rodape-paginas">
+                <h2 className="site-footer__title" id="rodape-paginas">
+                  Páginas
+                </h2>
+                <ul
+                  className={
+                    menu.length >= TWO_COLUMN_PAGES
+                      ? 'site-footer__pages site-footer__pages--two'
+                      : 'site-footer__pages'
+                  }
+                >
+                  {menu.map((item) => (
+                    <li key={item.id}>
+                      <SiteLink href={item.href}>{item.label}</SiteLink>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+
+            {contactItems && (
+              <div className="site-footer__contactcol">
+                <h2 className="site-footer__title">Contato</h2>
+                <address>
+                  <ul className="site-footer__contact">
+                    {contact.whatsappHref && (
+                      <FooterItem href={contact.whatsappHref} icon="whatsapp" label="WhatsApp">
+                        {contact.whatsapp}
+                      </FooterItem>
+                    )}
+                    {contact.phoneHref && (
+                      <FooterItem href={contact.phoneHref} icon="phone" label="Telefone">
+                        {contact.phone}
+                      </FooterItem>
+                    )}
+                    {contact.email && (
+                      <FooterItem href={`mailto:${contact.email}`} icon="mail" label="E-mail">
+                        {contact.email}
+                      </FooterItem>
+                    )}
+                    {/* O endereço abre o mapa, como na seção Contato e endereço. */}
+                    {contact.address && (
+                      <FooterItem
+                        className="site-footer__address"
+                        href={mapsURL(contact.address)}
+                        icon="map"
+                        label="Endereço · ver no mapa"
+                      >
+                        {contact.address}
+                      </FooterItem>
+                    )}
+                  </ul>
+                </address>
+              </div>
+            )}
+
+            {hours && (
+              <div>
+                <h2 className="site-footer__title">Horário</h2>
+                <p className="site-footer__hours">
+                  <ContactIcon name="clock" />
+                  <span>{hours}</span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="site-footer__copy">
+            {copy}
+            {backToTop && (
+              <a className="site-footer__top" href="#">
+                Voltar ao topo
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="16"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                >
+                  <path d="M12 19V5M6 11l6-6 6 6" />
+                </svg>
+              </a>
+            )}
+          </div>
         </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   )
 }

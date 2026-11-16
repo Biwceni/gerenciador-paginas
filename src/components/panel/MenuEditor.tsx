@@ -7,8 +7,10 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 
 import {
+  DEFAULT_CTA_TITLE,
   type FooterContact,
   type FooterSocial,
+  type HeaderShortcuts,
   type MenuItem,
   type SiteBrand,
   SiteFooterView,
@@ -23,6 +25,7 @@ import type { PageSummary } from '@/puck/summary'
 import {
   ConflictError,
   discardMenuAndFooter,
+  type FooterData,
   type GlobalBase,
   type HeaderData,
   publishMenuAndFooter,
@@ -38,10 +41,11 @@ import { WhyDisabled } from './WhyDisabled'
 
 const MENU_LIMIT = 8
 const LABEL_LIMIT = 30
+const CTA_TITLE_LIMIT = 50
 
 type Item = NonNullable<Header['items']>[number]
 type LinkValue = NonNullable<Item['link']>
-type Footer = { text: string; showMenu: boolean; showContact: boolean; showSocial: boolean }
+type Footer = FooterData
 type HeaderState = { items: Item[]; button: NonNullable<Header['button']>; showButton: boolean }
 
 type Props = {
@@ -65,7 +69,30 @@ type Props = {
     theme: Record<string, string>
     fontFaces: string | null
     brand: SiteBrand
+    shortcuts: HeaderShortcuts
+    logoRing: { header: boolean; footer: boolean }
   }
+}
+
+/**
+ * Se o menu cabe ao lado do nome numa tela de computador comum (1280 px), conta feita pelas letras
+ * (T4): `one` cabe numa linha; `rows` vai para a segunda linha; `wrap` nem a segunda linha comporta.
+ * Média de largura das letras do topo (15 px, peso 500) e do nome (21 px, negrito).
+ */
+export function estimateMenuFit(
+  name: string,
+  hasLogo: boolean,
+  labels: string[],
+  button: string,
+): 'one' | 'rows' | 'wrap' {
+  const LINE = 1184
+  const texts = labels.map((label) => label.trim()).filter(Boolean)
+  const menu =
+    texts.reduce((sum, label) => sum + label.length * 7.8, 0) + Math.max(0, texts.length - 1) * 22
+  const brand = name.trim().length * 11 + (hasLogo ? 56 : 0)
+  const cta = button ? button.length * 8 + 66 : 0
+  if (brand + 18 + menu + cta <= LINE) return 'one'
+  return menu <= LINE ? 'rows' : 'wrap'
 }
 
 type SaveState = 'idle' | 'waiting' | 'saving' | 'error'
@@ -247,6 +274,12 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   })
   const buttonLabel = header.showButton ? (header.button.label ?? '').trim() : ''
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
+  const menuFit = estimateMenuFit(
+    site.name,
+    Boolean(site.logo),
+    header.items.map((item) => item.label),
+    buttonLabel,
+  )
 
   const changed = pending || save !== 'idle'
   const cantPublish = busy
@@ -314,7 +347,9 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           button={buttonHref ? { label: buttonLabel, href: buttonHref } : null}
           items={previewItems}
           logo={site.logo}
+          logoRing={site.logoRing.header}
           name={site.name}
+          shortcuts={site.shortcuts}
         />
       )}
       {part === 'all' && (
@@ -332,13 +367,24 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
       )}
       {part !== 'header' && (
         <SiteFooterView
+          backToTop={footer.showBackToTop}
           brand={site.brand}
           contact={site.contact}
+          cta={
+            footer.cta.show && buttonHref
+              ? {
+                  title: footer.cta.title.trim() || DEFAULT_CTA_TITLE,
+                  button: { label: buttonLabel, href: buttonHref },
+                }
+              : null
+          }
           logo={site.logo}
+          logoRing={site.logoRing.footer}
           menu={footer.showMenu ? previewItems : []}
           name={site.name}
           privacyHref={site.privacyHref}
           showContact={footer.showContact}
+          showHours={footer.showHours}
           social={footer.showSocial ? site.social : []}
           text={footer.text || null}
         />
@@ -480,6 +526,13 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             {header.items.length === 0 && (
               <p className="gp-small gp-muted">O menu está vazio. Só a marca aparece no topo.</p>
             )}
+            {menuFit !== 'one' && (
+              <p className="gp-hint gp-hint--warn gp-menufit">
+                {menuFit === 'rows'
+                  ? 'Com estes nomes, o menu não cabe ao lado do nome do site. No computador, os links vão para uma segunda linha, embaixo do nome; em telas menores, para o ☰.'
+                  : 'Os nomes do menu somam mais letras do que cabem numa linha: no computador, os links vão ocupar mais de uma linha embaixo do nome. Nomes curtos, de uma ou duas palavras, deixam o topo mais limpo.'}
+              </p>
+            )}
             {removed && (
               <p className="gp-notice gp-undo" role="status">
                 <span>“{removed.item.label.trim() || 'Link sem texto'}” saiu do menu.</span>
@@ -567,6 +620,45 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           </section>
 
           <section className="gp-card" onFocus={() => setPart('footer')}>
+            <h2>Chamada no fim do site</h2>
+            <p className="gp-small gp-muted">
+              Uma faixa antes do rodapé, em todas as páginas, com o mesmo botão de destaque do topo.
+              Não aparece na página que já termina com uma faixa colorida.
+            </p>
+            <label className="gp-switch">
+              <input
+                checked={footer.cta.show}
+                onChange={(event) =>
+                  changeFooter({ cta: { ...footer.cta, show: event.target.checked } })
+                }
+                type="checkbox"
+              />
+              Mostrar a chamada
+            </label>
+            {footer.cta.show && (
+              <div className="gp-field">
+                <label htmlFor="hf-cta-title">Título da chamada</label>
+                <input
+                  aria-describedby="hf-cta-hint"
+                  className="gp-input"
+                  id="hf-cta-title"
+                  maxLength={CTA_TITLE_LIMIT}
+                  onChange={(event) =>
+                    changeFooter({ cta: { ...footer.cta, title: event.target.value } })
+                  }
+                  placeholder={DEFAULT_CTA_TITLE}
+                  value={footer.cta.title}
+                />
+                <span className="gp-hint" id="hf-cta-hint">
+                  {buttonHref
+                    ? `Até ${CTA_TITLE_LIMIT} letras. O botão é o “${buttonLabel}” do topo.`
+                    : 'Sem o botão de destaque no topo, a chamada não aparece no site.'}
+                </span>
+              </div>
+            )}
+          </section>
+
+          <section className="gp-card" onFocus={() => setPart('footer')}>
             <h2>Rodapé</h2>
             <div className="gp-field">
               <label htmlFor="hf-text">Frase do rodapé</label>
@@ -603,8 +695,24 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               />
               Mostrar as redes sociais
             </label>
+            <label className="gp-switch">
+              <input
+                checked={footer.showHours}
+                onChange={(event) => changeFooter({ showHours: event.target.checked })}
+                type="checkbox"
+              />
+              Mostrar o horário de funcionamento
+            </label>
+            <label className="gp-switch">
+              <input
+                checked={footer.showBackToTop}
+                onChange={(event) => changeFooter({ showBackToTop: event.target.checked })}
+                type="checkbox"
+              />
+              Mostrar “Voltar ao topo”
+            </label>
             <span className="gp-small gp-muted">
-              Telefone, e-mail, endereço e redes vêm de{' '}
+              Telefone, e-mail, endereço, horário e redes vêm de{' '}
               <Link className="gp-link" href={panelHref(adminRoute, 'settings')}>
                 Configurações
               </Link>

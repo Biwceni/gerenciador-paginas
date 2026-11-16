@@ -1,5 +1,6 @@
 'use client'
 
+import { type FooterData, toFooterData } from './footerData'
 import { RequestError, stillLoggedIn } from '@/components/editor/api'
 
 import { askToLogin, request, SessionEndedError } from './session'
@@ -166,7 +167,7 @@ export function deleteForm(apiRoute: string, id: number) {
 }
 
 export type HeaderData = Pick<Header, 'items' | 'button'>
-export type FooterData = Pick<Footer, 'text' | 'showMenu' | 'showContact' | 'showSocial'>
+export { type FooterData, toFooterData } from './footerData'
 
 type GlobalSlug = 'header' | 'footer' | 'site'
 
@@ -267,12 +268,7 @@ export async function discardMenuAndFooter(
   ])
   const published = {
     header: { items: header.items ?? [], button: header.button ?? {} },
-    footer: {
-      text: footer.text ?? '',
-      showMenu: footer.showMenu !== false,
-      showContact: footer.showContact !== false,
-      showSocial: footer.showSocial !== false,
-    },
+    footer: toFooterData(footer),
   }
   await publishMenuAndFooter(apiRoute, published.header, published.footer)
   // Descartar vale para qualquer versão: a tela passa a ter a que acabou de ir ao ar.

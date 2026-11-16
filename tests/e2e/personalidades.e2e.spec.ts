@@ -242,8 +242,13 @@ test.describe.serial('personalidades do site', () => {
 
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await open(page, `/${COVER_SLUG}`)
-    await expect(page.locator('.site-header')).toHaveCSS('position', 'relative')
+    // Topo de sempre: sólido e fora da foto (preso no alto como em toda página, T2).
+    await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky')
     expect(await headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
+    const [plain, photo] = await Promise.all(
+      ['.site-header', '.hero'].map((selector) => page.locator(selector).boundingBox()),
+    )
+    expect(Math.round(photo!.y)).toBeGreaterThanOrEqual(Math.round(plain!.y + plain!.height))
     await page.emulateMedia({ reducedMotion: null })
   })
 

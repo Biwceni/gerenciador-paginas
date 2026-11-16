@@ -7,7 +7,12 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 
 import { thumbnailURL } from '@/components/editor/context'
-import { socialURL } from '@/lib/links'
+import {
+  DEFAULT_WHATSAPP_MESSAGE,
+  normalizeWhatsApp,
+  socialURL,
+  whatsAppGreeting,
+} from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
@@ -361,6 +366,61 @@ export function SettingsEditor({
               'Horário de funcionamento',
               'Ex.: Seg a sáb, das 7h às 19h.',
             )}
+            <fieldset className="gp-fieldset gp-wa">
+              <legend className="gp-label">Botões de WhatsApp do site</legend>
+              <div className="gp-field">
+                <label htmlFor="st-whatsappMessage">Mensagem que já vem escrita</label>
+                <input
+                  className="gp-input"
+                  id="st-whatsappMessage"
+                  maxLength={200}
+                  onChange={(event) =>
+                    update({ contact: { ...state.contact, whatsappMessage: event.target.value } })
+                  }
+                  placeholder={DEFAULT_WHATSAPP_MESSAGE}
+                  value={state.contact.whatsappMessage}
+                />
+                <span className="gp-hint">
+                  Quem toca num botão de WhatsApp do site já encontra este texto, com a página de
+                  onde veio. Os produtos continuam com o nome do produto.
+                </span>
+              </div>
+              <div aria-label="Como a conversa começa" className="gp-wa__chat" role="group">
+                <span className="gp-small gp-muted">A conversa começa assim:</span>
+                <p className="gp-wa__bubble">
+                  {whatsAppGreeting(state.contact.whatsappMessage, 'Contato')}
+                </p>
+              </div>
+              <label className="gp-switch">
+                <input
+                  checked={state.whatsappFloat.phone}
+                  onChange={(event) =>
+                    update({
+                      whatsappFloat: { ...state.whatsappFloat, phone: event.target.checked },
+                    })
+                  }
+                  type="checkbox"
+                />
+                Botão no canto da tela no celular
+              </label>
+              <label className="gp-switch">
+                <input
+                  checked={state.whatsappFloat.desktop}
+                  onChange={(event) =>
+                    update({
+                      whatsappFloat: { ...state.whatsappFloat, desktop: event.target.checked },
+                    })
+                  }
+                  type="checkbox"
+                />
+                Botão no canto da tela também no computador
+              </label>
+              {!normalizeWhatsApp(state.contact.whatsapp) && (
+                <span className="gp-hint">
+                  Os botões de WhatsApp só aparecem no site com o número preenchido acima.
+                </span>
+              )}
+            </fieldset>
           </section>
         </div>
 
