@@ -192,9 +192,9 @@ describe('lista "Adicionar seção"', () => {
     expect(html).toContain('var(--ed-site-on-primary, var(--gp-accent-ink))')
   })
 
-  it('marca como novas só as seções da entrega 4', () => {
+  it('marca como novas só as seções da entrega 4 e os Números do negócio (E10)', () => {
     expect([...NEW_SECTIONS].sort()).toEqual(
-      ['Announcement', 'InstagramStrip', 'PriceList', 'Products'].sort(),
+      ['Announcement', 'InstagramStrip', 'PriceList', 'Products', 'Stats'].sort(),
     )
   })
 })

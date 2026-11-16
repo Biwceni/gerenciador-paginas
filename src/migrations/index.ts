@@ -18,6 +18,7 @@ import * as migration_20261107_180330_personalidade_do_site from './20261107_180
 import * as migration_20261107_205051_animacao_do_site from './20261107_205051_animacao_do_site';
 import * as migration_20261115_022319_personalidade_papel from './20261115_022319_personalidade_papel';
 import * as migration_20261115_022320_personalidade_papel_padrao from './20261115_022320_personalidade_papel_padrao';
+import * as migration_20261116_012023_minhas_secoes from './20261116_012023_minhas_secoes';
 
 export const migrations = [
   {
@@ -119,5 +120,10 @@ export const migrations = [
     up: migration_20261115_022320_personalidade_papel_padrao.up,
     down: migration_20261115_022320_personalidade_papel_padrao.down,
     name: '20261115_022320_personalidade_papel_padrao',
+  },
+  {
+    up: migration_20261116_012023_minhas_secoes.up,
+    down: migration_20261116_012023_minhas_secoes.down,
+    name: '20261116_012023_minhas_secoes'
   },
 ];

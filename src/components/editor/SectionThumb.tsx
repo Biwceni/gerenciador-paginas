@@ -190,6 +190,19 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       ))}
     </>
   ),
+  // Números grandes lado a lado, com a frase embaixo.
+  Stats: (
+    <>
+      {[4, 23, 42].map((x) => (
+        <React.Fragment key={x}>
+          <text fontSize={10} fontWeight={800} style={{ fill: ACCENT }} x={x} y={21}>
+            {x === 4 ? '12' : x === 23 ? '+5' : '4,9'}
+          </text>
+          <Bar h={2.5} r={1.25} w={14} x={x} y={27} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
   ColumnTitle: <Bar f={ACCENT} h={7} w={40} x={8} y={16} />,
   ColumnText: (
     <>
@@ -211,6 +224,7 @@ export const NEW_SECTIONS: ReadonlySet<keyof Components> = new Set([
   'Products',
   'PriceList',
   'InstagramStrip',
+  'Stats',
 ])
 
 /** Uma frase curta do que cada seção é. */
@@ -233,6 +247,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   Products: 'Foto, nome, preço e botão de pedir',
   PriceList: 'Itens e valores, sem precisar de foto',
   InstagramStrip: 'Fotos escolhidas e botão de seguir',
+  Stats: 'Números como “12 anos” ou “+3.000 clientes”, que contam na tela',
   ColumnTitle: 'Um título, dentro de uma coluna',
   ColumnText: 'Um parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',

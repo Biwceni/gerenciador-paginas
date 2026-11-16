@@ -238,6 +238,31 @@ const featureItems: Field = {
   ),
 }
 
+// Números do negócio (E10): de 2 a 4, cada um com a frase embaixo.
+const statItems: Field = {
+  type: 'array',
+  label: 'Números (de 2 a 4)',
+  min: 2,
+  max: 4,
+  arrayFields: {
+    value: text('Número (ex.: 12, +3.000, 4,9)'),
+    text: text('Frase embaixo do número'),
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves name={name} noun="Número" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: { value: '100', text: 'clientes atendidos' },
+  getItemSummary: (item: { value?: string; text?: string }) => (
+    <ItemSummary detail={item.text} fallback="Número" field="items" item={item} nameKey="value" />
+  ),
+}
+
 // Produtos da Vitrine. Como nos Destaques, os botões Subir e Descer ficam em cada item.
 const productItems: Field = {
   type: 'array',
@@ -751,6 +776,31 @@ const sections: { [K in keyof Components]: Section<K> } = {
       // Impeccable aponta como "marquee". Quem quiser movimento escolhe Correndo.
       mode: 'static',
       style: 'brand',
+    },
+  },
+  Stats: {
+    fields: {
+      title: text('Título (opcional)'),
+      items: statItems,
+      ...({
+        statsHint: notice(
+          'No site, cada número conta do zero até o valor quando aparece na tela, uma vez só. Quem pediu menos movimento no aparelho vê o número parado. Escreva o número como quer que apareça: “+3.000”, “4,9”, “24h”.',
+        ),
+      } as object),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Stats'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: '',
+      items: [
+        { value: '10', text: 'anos de experiência' },
+        { value: '+500', text: 'clientes atendidos' },
+        { value: '4,9', text: 'de nota no Google' },
+      ],
+      style: 'soft',
     },
   },
   InstagramStrip: {

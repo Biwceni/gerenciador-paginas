@@ -523,6 +523,28 @@ export const columnsPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Columns),
 })
 
+/**
+ * "Números do negócio" (Elementor, E10): de 2 a 4 números curtos ("12", "+3.000", "4,9") com uma
+ * frase embaixo. No site, contam do zero até o valor quando aparecem (com a animação do site).
+ */
+export const statsPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  items: z
+    .array(
+      z.object({
+        value: z.string().max(LIMITS.statValue),
+        text: z.string().max(LIMITS.statLabel),
+      }),
+    )
+    .min(2)
+    .max(4),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Stats),
+})
+
 export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Hero'), props: heroPropsSchema }),
   z.object({ type: z.literal('TextImage'), props: textImagePropsSchema }),
@@ -545,6 +567,8 @@ export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('PriceList'), props: priceListPropsSchema }),
   z.object({ type: z.literal('Announcement'), props: announcementPropsSchema }),
   z.object({ type: z.literal('InstagramStrip'), props: instagramStripPropsSchema }),
+  // Seção nova (Elementor, E10): idem.
+  z.object({ type: z.literal('Stats'), props: statsPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -590,6 +614,7 @@ export type ProductItem = ProductsProps['items'][number]
 export type PriceListProps = z.infer<typeof priceListPropsSchema>
 export type AnnouncementProps = z.infer<typeof announcementPropsSchema>
 export type InstagramStripProps = z.infer<typeof instagramStripPropsSchema>
+export type StatsProps = z.infer<typeof statsPropsSchema>
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>
 export type ContactChannel = (typeof CONTACT_CHANNELS)[number]

@@ -36,6 +36,11 @@ export function sectionSummary(item: PageComponent): string {
       )
     case 'Announcement':
       return list(item.props.items.map((entry) => entry.text))
+    case 'Stats':
+      return (
+        list(item.props.items.map((entry) => `${entry.value} ${entry.text}`.trim())) ||
+        item.props.title
+      )
     case 'Columns':
       return list(
         // Só as colunas que aparecem: o modelo de duas guarda a terceira sem mostrar.

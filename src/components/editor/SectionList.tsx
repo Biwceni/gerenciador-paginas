@@ -11,6 +11,7 @@ import { requestPiece } from './ColumnPicker'
 import { offerVariants } from './SectionVariants'
 import { copiedName, useCopiedSection, usePasteSection } from './copyPaste'
 import { useAddSection } from './insert'
+import { MySections } from './savedSections'
 import { ROOT_ZONE, usePuck } from './puck'
 import { fullZoneReason, zoneMax } from './zoneLimits'
 import { NEW_SECTIONS, SECTION_DESCRIPTIONS, SectionThumb } from './SectionThumb'
@@ -63,6 +64,7 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
         {full && <p className="ed-hint ed-hint--warn">{fullZoneReason(ROOT_ZONE)}</p>}
       </div>
       <PasteCard full={full} where={where} />
+      <MySections full={full} />
       {children}
     </div>
   )

@@ -22,6 +22,10 @@ export const LIMITS = {
   richTextLetters: 10_000,
   /** Teto do HTML do Texto simples, com as marcações: só para nenhuma página ficar gigante. */
   richTextHTML: 60_000,
+  /** Número dos "Números do negócio": "+3.000", "4,9", "24h". */
+  statValue: 12,
+  /** Frase embaixo do número: "bolos entregues". */
+  statLabel: 40,
   /** Peças em cada coluna das Colunas. */
   columnPieces: 6,
   /** Seções numa página. */

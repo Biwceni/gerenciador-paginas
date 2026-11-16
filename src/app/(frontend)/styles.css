@@ -4924,3 +4924,65 @@
 .site .contact-map--open .contact-map__route {
   padding: 4px 16px 8px;
 }
+
+/* "Números do negócio" (E10): números grandes lado a lado, com a frase embaixo. */
+.site .stats {
+  display: grid;
+  grid-template-columns: repeat(var(--stats-cols, 3), minmax(0, 1fr));
+  gap: clamp(24px, 4cqi, 48px) clamp(16px, 3cqi, 40px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.site .stats[data-items='2'] {
+  --stats-cols: 2;
+}
+
+.site .stats[data-items='4'] {
+  --stats-cols: 4;
+}
+
+.site .section-title + .stats {
+  margin-top: clamp(24px, 4cqi, 40px);
+}
+
+.site .stats__item {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.site .stats__value {
+  color: var(--color-accent-text, var(--color-primary));
+  font-family: var(--font-headings);
+  font-size: clamp(2.4rem, 7cqi, 4rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.site .section--brand .stats__value {
+  color: var(--color-on-primary);
+}
+
+.site .stats__label {
+  opacity: max(0.85, var(--soft-min, 0));
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* No celular, dois por linha (com 3, o terceiro ocupa a linha toda). */
+@container site (max-width: 720px) {
+  .site .stats,
+  .site .stats[data-items='4'] {
+    --stats-cols: 2;
+  }
+
+  .site .stats[data-items='3'] > .stats__item:last-child {
+    grid-column: 1 / -1;
+  }
+}

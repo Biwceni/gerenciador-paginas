@@ -71,6 +71,7 @@ export interface Config {
     media: Media;
     users: User;
     templates: Template;
+    'saved-sections': SavedSection;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -84,6 +85,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     templates: TemplatesSelect<false> | TemplatesSelect<true>;
+    'saved-sections': SavedSectionsSelect<false> | SavedSectionsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -383,6 +385,25 @@ export interface Template {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "saved-sections".
+ */
+export interface SavedSection {
+  id: number;
+  name: string;
+  section:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Campos dos formulários que aparecem na seção "Formulário" das páginas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -572,6 +593,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'templates';
         value: number | Template;
+      } | null)
+    | ({
+        relationTo: 'saved-sections';
+        value: number | SavedSection;
       } | null)
     | ({
         relationTo: 'forms';
@@ -821,6 +846,16 @@ export interface TemplatesSelect<T extends boolean = true> {
         showContact?: T;
         showSocial?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "saved-sections_select".
+ */
+export interface SavedSectionsSelect<T extends boolean = true> {
+  name?: T;
+  section?: T;
   updatedAt?: T;
   createdAt?: T;
 }

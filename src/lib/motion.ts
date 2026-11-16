@@ -64,6 +64,7 @@ export const SECTION_ANIMS = {
   TextImage: ['deslizar', 'cortina', 'esmaecer'],
   CallToAction: ['subir', 'esmaecer'],
   Columns: ['cascata', 'esmaecer'],
+  Stats: ['cascata', 'esmaecer'],
   LinkList: ['cascata', 'esmaecer'],
   Video: ['cortina', 'esmaecer'],
   Faq: ['esmaecer'],
