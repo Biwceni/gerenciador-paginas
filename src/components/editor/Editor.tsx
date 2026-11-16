@@ -27,13 +27,15 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { saveSitePersonality } from '@/components/panel/api'
+import { publishSiteDraft, readSiteLook, saveSiteLook } from '@/components/panel/api'
 import { PanelIcon } from '@/components/panel/PanelIcon'
-import { PERSONALITY_TOKENS } from '@/components/site/theme'
+import { type SiteLook, sameLook } from '@/components/panel/settings'
+import { themeStyle } from '@/components/site/theme'
+import type { Business } from '@/lib/fontPairs'
 import type { FormDefinition } from '@/lib/forms'
 import { exampleMatcher, findExampleSections } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
-import { type Personality, PERSONALITY_LABELS, safePersonality } from '@/lib/theme'
+import { PERSONALITY_LABELS, previewFontFaces } from '@/lib/theme'
 import type { Media } from '@/payload-types'
 import { SECTION_LABELS } from '@/puck/config'
 import { editorConfig } from '@/puck/editor-config'
@@ -77,7 +79,7 @@ import { EditorFrame, FrameStyleProvider } from './EditorFrame'
 import { scrollToSection } from './insert'
 import { OrderPanel } from './OrderPanel'
 import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
-import { PersonalitySwitch } from './PersonalitySwitch'
+import { BrandDots, BrandPanel } from './BrandPanel'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { VisitorPreview } from './VisitorPreview'
@@ -107,11 +109,20 @@ export type EditorProps = {
   domain: string
   /** Textos dos modelos: seção que ainda tem um deles aparece como texto de exemplo. */
   exampleTexts: string[]
-  /** Personalidade que está no ar (a do editor pode ser um rascunho de Sua marca). */
-  livePersonality: Personality
+  /**
+   * Sua marca (E8): como está no rascunho das configurações e como está no ar, o logo (para as cores)
+   * e o ramo (para as letras sugeridas). As fontes guardadas no nosso Storage vêm em `fontFaces`.
+   */
+  brand: {
+    draft: SiteLook
+    live: SiteLook
+    logoURL: string | null
+    business: Business
+    fontFaces: string | null
+    fontKey: string | null
+  }
   whatsappHref: string | null
   theme: Record<string, string>
-  fontFaces: string | null
   chrome: SiteChrome
 }
 
@@ -123,7 +134,7 @@ type SaveState =
   /** `target`: onde está o problema, para o "Ir até o campo". */
   | { state: 'error'; message: string; target?: SaveTarget }
 
-type DialogName = 'publish' | 'versions' | 'settings' | 'more' | 'visitor' | null
+type DialogName = 'publish' | 'versions' | 'settings' | 'more' | 'visitor' | 'brand' | null
 
 const SAVE_DELAY = 1200
 /** Sem internet, tenta salvar de novo depois de 3 s, 6 s, 12 s… até de 30 em 30 s. */
@@ -202,9 +213,8 @@ type Chrome = {
   openMore: (history: { canUndo: boolean; canRedo: boolean }) => void
   /** A barra roda dentro do Puck: entrega o acesso a ele para o resto do editor. */
   connect: (getPuck: GetPuck) => void
-  /** Personalidade do site (rascunho das configurações), trocável daqui. */
-  personality: Personality
-  changePersonality: (value: Personality) => void
+  /** Sua marca (rascunho das configurações): as cores do botão do topo e se falta publicar. */
+  brand: { look: SiteLook; pending: boolean }
 }
 
 const ChromeContext = createContext<Chrome | null>(null)
@@ -251,11 +261,21 @@ function EditorHeader() {
           </span>
         </span>
       </div>
-      <PersonalitySwitch
-        className="ed-hide-sm"
-        onChange={chrome.changePersonality}
-        value={chrome.personality}
-      />
+      <button
+        aria-label={`Sua marca${chrome.brand.pending ? ', em rascunho' : ''}`}
+        className="ed-btn ed-brandbtn ed-hide-sm"
+        onClick={() => chrome.open('brand')}
+        title="Personalidade, cores e letras do site todo"
+        type="button"
+      >
+        <BrandDots colors={chrome.brand.look.colors} />
+        Sua marca
+        {chrome.brand.pending && (
+          <span aria-hidden="true" className="ed-brandbtn__draft">
+            rascunho
+          </span>
+        )}
+      </button>
       <div className="ed-top__actions">
         <button
           aria-label="Desfazer"
@@ -434,9 +454,18 @@ export function Editor(props: EditorProps) {
   const [startUi] = useState<Partial<UiState>>(() =>
     initialData.content.length > 0 ? { ...initialUi, leftSideBarVisible: false } : initialUi,
   )
-  const [personality, setPersonality] = useState<Personality>(() =>
-    safePersonality(props.theme['--personality']),
-  )
+  // Sua marca como está na tela (rascunho), como está no ar e a última que chegou do servidor.
+  const [brand, setBrand] = useState<SiteLook>(props.brand.draft)
+  const [liveBrand, setLiveBrand] = useState<SiteLook>(props.brand.live)
+  const [savedBrand, setSavedBrand] = useState<SiteLook>(props.brand.draft)
+  const serverBrand = useRef<SiteLook>(props.brand.draft)
+  useEffect(() => {
+    serverBrand.current = savedBrand
+  }, [savedBrand])
+  // Mudou Sua marca aqui, neste editor: o "Publicar também Sua marca" já vem marcado.
+  const [brandChangedHere, setBrandChangedHere] = useState(false)
+  // Sua marca mudou noutra tela (outra aba): a prévia oferece atualizar.
+  const [staleBrand, setStaleBrand] = useState<SiteLook | null>(null)
 
   const latest = useRef<PuckPageData>(initialData)
   const lastSaved = useRef(JSON.stringify(initialData))
@@ -896,35 +925,70 @@ export function Editor(props: EditorProps) {
             : 'Falta publicar'
   const problemTarget = save.state === 'error' ? save.target : undefined
 
-  // Troca a personalidade na prévia na hora; guarda no rascunho das configurações um pouco depois
-  // da última troca, um pedido por vez (as setas do teclado trocam a cada toque). Só o último pedido
-  // avisa; se ele falhar, a tela volta para a última personalidade que chegou a ser guardada.
-  const personalitySaver = useMemo(
+  // Troca Sua marca na prévia na hora; guarda no rascunho das configurações um pouco depois da
+  // última troca, um pedido por vez. Só o último pedido avisa; se ele falhar, a tela volta para a
+  // última que chegou a ser guardada.
+  const brandSaver = useMemo(
     () =>
-      createDraftSaver<Personality>({
-        initial: safePersonality(props.theme['--personality']),
-        save: (value) => saveSitePersonality(apiRoute, value),
-        onSaved: (value) =>
-          toast.success(
-            `Personalidade ${PERSONALITY_LABELS[value].name} guardada. O site muda quando você publicar em Sua marca.`,
-          ),
+      createDraftSaver<SiteLook>({
+        initial: props.brand.draft,
+        save: (value) => saveSiteLook(apiRoute, value),
+        onSaved: (value) => {
+          setSavedBrand(value)
+          toast.success('Sua marca guardada. O site muda quando você publicar.')
+        },
         onFailed: (lastSaved) => {
-          setPersonality(lastSaved)
-          toast.error('Não deu para trocar a personalidade. Confira a internet e tente de novo.')
+          setBrand(lastSaved)
+          toast.error('Não deu para guardar Sua marca. Confira a internet e tente de novo.')
         },
       }),
-    // Uma fila só durante o editor aberto: o tema inicial vem do servidor uma vez.
+    // Uma fila só durante o editor aberto: a marca inicial vem do servidor uma vez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [apiRoute],
   )
-  useEffect(() => () => personalitySaver.dispose(), [personalitySaver])
-  const changePersonality = useCallback(
-    (next: Personality) => {
-      setPersonality(next)
-      personalitySaver.change(next)
+  useEffect(() => () => brandSaver.dispose(), [brandSaver])
+  const changeBrand = useCallback(
+    (next: SiteLook) => {
+      setBrand(next)
+      setStaleBrand(null)
+      setBrandChangedHere(true)
+      brandSaver.change(next)
     },
-    [personalitySaver],
+    [brandSaver],
   )
+
+  // Ao voltar para esta aba, confere se Sua marca mudou noutra tela (o painel aberto noutra aba).
+  useEffect(() => {
+    let checking = false
+    const check = async () => {
+      if (document.visibilityState !== 'visible' || checking) return
+      checking = true
+      try {
+        await brandSaver.flush()
+        const { draft, live } = await readSiteLook(apiRoute)
+        setLiveBrand(live)
+        if (!sameLook(draft, serverBrand.current)) setStaleBrand(draft)
+      } catch {
+        // Sem internet: confere de novo na próxima volta.
+      } finally {
+        checking = false
+      }
+    }
+    document.addEventListener('visibilitychange', check)
+    window.addEventListener('focus', check)
+    return () => {
+      document.removeEventListener('visibilitychange', check)
+      window.removeEventListener('focus', check)
+    }
+  }, [apiRoute, brandSaver])
+  const refreshBrand = useCallback(() => {
+    if (!staleBrand) return
+    setSavedBrand(staleBrand)
+    setBrand(staleBrand)
+    setStaleBrand(null)
+    brandSaver.reset(staleBrand)
+  }, [brandSaver, staleBrand])
+  const brandPending = !sameLook(brand, liveBrand)
 
   const chrome: Chrome = {
     title: settings.title,
@@ -965,7 +1029,8 @@ export function Editor(props: EditorProps) {
         input?.focus()
       }, 300)
     },
-    canPublish: !live || hasChanges || unsaved,
+    // Sua marca mudada aqui também pede Publicar, mesmo com a página igual à do ar (E8).
+    canPublish: !live || hasChanges || unsaved || (brandPending && brandChangedHere),
     livePath: live ? path : null,
     backHref: panelHref(adminRoute, 'pages'),
     summary: {
@@ -996,14 +1061,13 @@ export function Editor(props: EditorProps) {
     // Ao sair, guarda também a personalidade que ainda esperava a pausa. Se sobrou mudança sem
     // salvar (erro, sem internet, conflito), a janela explica antes, em vez de sair calado.
     leave: async () => {
-      await Promise.all([flush(), personalitySaver.flush()])
+      await Promise.all([flush(), brandSaver.flush()])
       if (!isDirty()) return true
       setLeaving({ since: unsavedSince.current })
       return false
     },
     connect,
-    personality,
-    changePersonality,
+    brand: { look: brand, pending: brandPending },
   }
 
   // Só o id do título principal, e não a página: um `metadata` novo a cada letra redesenharia todas
@@ -1073,15 +1137,29 @@ export function Editor(props: EditorProps) {
     [props.chrome, settings.campaign, settings.title, isHome],
   )
 
-  // Tema da prévia com a personalidade escolhida aqui (as medidas dela e o `data-personality`).
+  // Tema da prévia com Sua marca de agora: cores, letras e personalidade (o `data-personality`).
   const theme = useMemo<Record<string, string>>(
-    () => ({ ...props.theme, '--personality': personality, ...PERSONALITY_TOKENS[personality] }),
-    [props.theme, personality],
+    () => ({
+      ...props.theme,
+      ...(themeStyle({
+        colors: brand.colors,
+        fonts: brand.fonts,
+        personality: brand.personality,
+      }) as Record<string, string>),
+    }),
+    [props.theme, brand],
   )
-  const frameStyle = useMemo(
-    () => ({ theme, fontFaces: props.fontFaces }),
-    [theme, props.fontFaces],
+  // Letras novas, ainda não publicadas, vêm direto do Google só para a prévia.
+  const fontFaces = useMemo(
+    () =>
+      previewFontFaces({
+        fonts: brand.fonts,
+        fontFaces: props.brand.fontFaces,
+        fontKey: props.brand.fontKey,
+      }),
+    [brand.fonts, props.brand.fontFaces, props.brand.fontKey],
   )
+  const frameStyle = useMemo(() => ({ theme, fontFaces }), [theme, fontFaces])
   // Cores do site para as miniaturas da lista de seções e das escolhas (`--ed-site-*`).
   const siteColors = useMemo(
     () =>
@@ -1163,9 +1241,21 @@ export function Editor(props: EditorProps) {
                   setDialog(null)
                   goToSection(id)
                 }}
-                personalityPending={
-                  personality !== props.livePersonality
-                    ? PERSONALITY_LABELS[personality].name
+                brand={
+                  brandPending
+                    ? {
+                        changedHere: brandChangedHere,
+                        personality:
+                          brand.personality !== liveBrand.personality
+                            ? PERSONALITY_LABELS[brand.personality].name
+                            : null,
+                        publish: async () => {
+                          await brandSaver.flush()
+                          await publishSiteDraft(apiRoute)
+                          setLiveBrand(brand)
+                          setSavedBrand(brand)
+                        },
+                      }
                     : null
                 }
                 slugTakenBy={
@@ -1223,7 +1313,10 @@ export function Editor(props: EditorProps) {
                   <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
                     <PanelIcon name="sliders" size={16} /> Página e Google
                   </button>
-                  <PersonalitySwitch onChange={changePersonality} value={personality} />
+                  <button className="ed-btn" onClick={() => setDialog('brand')} type="button">
+                    <BrandDots colors={brand.colors} /> Sua marca
+                    {brandPending && <span className="ed-brandbtn__draft">rascunho</span>}
+                  </button>
                   {live && (
                     <a className="ed-btn" href={path} rel="noopener" target="_blank">
                       <PanelIcon name="eye" size={16} /> Ver no site
@@ -1233,12 +1326,34 @@ export function Editor(props: EditorProps) {
               </Dialog>
             )}
 
+            {dialog === 'brand' && (
+              <BrandPanel
+                brandHref={panelHref(adminRoute, 'brand')}
+                business={props.brand.business}
+                logoURL={props.brand.logoURL}
+                look={brand}
+                onChange={changeBrand}
+                onClose={closeDialog}
+                pending={brandPending}
+                siteName={props.site.name ?? ''}
+              />
+            )}
+
+            {staleBrand && (
+              <div className="ed-brandstale" role="status">
+                <span>Sua marca mudou em outra tela.</span>
+                <button className="ed-btn ed-btn--primary" onClick={refreshBrand} type="button">
+                  Atualizar prévia
+                </button>
+              </div>
+            )}
+
             {dialog === 'visitor' && (
               <VisitorPreview
                 campaign={Boolean(settings.campaign)}
                 chrome={props.chrome}
                 data={data}
-                fontFaces={props.fontFaces}
+                fontFaces={fontFaces}
                 isHome={isHome}
                 metadata={metadata}
                 onClose={closeDialog}

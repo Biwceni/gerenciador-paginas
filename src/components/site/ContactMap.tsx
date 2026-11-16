@@ -50,31 +50,33 @@ export function ContactMap({ address, editing = false }: { address: string; edit
 
   return (
     <div className="contact-map">
-      <svg
-        aria-hidden="true"
-        className="contact-map__art"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 400 200"
-      >
-        <rect fill="var(--color-surface)" height="200" width="400" />
-        <g
-          fill="none"
-          stroke="color-mix(in srgb, var(--color-text) 14%, transparent)"
-          strokeLinecap="round"
+      <div aria-hidden="true" className="contact-map__stage">
+        <svg
+          className="contact-map__art"
+          preserveAspectRatio="xMidYMid slice"
+          viewBox="0 0 400 200"
         >
-          <path d="M-10 60 C 80 40, 160 90, 260 60 S 380 30, 420 50" strokeWidth="14" />
-          <path d="M-10 150 C 90 160, 200 120, 300 150 S 390 170, 420 160" strokeWidth="10" />
-          <path d="M120 -10 C 110 60, 150 130, 130 210" strokeWidth="10" />
-          <path d="M300 -10 C 290 70, 320 130, 310 210" strokeWidth="8" />
-        </g>
-        <g transform="translate(200 82)">
+          <rect fill="var(--color-surface)" height="200" width="400" />
+          <g
+            fill="none"
+            stroke="color-mix(in srgb, var(--color-text) 14%, transparent)"
+            strokeLinecap="round"
+          >
+            <path d="M-10 60 C 80 40, 160 90, 260 60 S 380 30, 420 50" strokeWidth="14" />
+            <path d="M-10 150 C 90 160, 200 120, 300 150 S 390 170, 420 160" strokeWidth="10" />
+            <path d="M120 -10 C 110 60, 150 130, 130 210" strokeWidth="10" />
+            <path d="M300 -10 C 290 70, 320 130, 310 210" strokeWidth="8" />
+          </g>
+        </svg>
+        {/* O pino fica do mesmo tamanho em qualquer largura (o desenho de fundo estica). */}
+        <svg className="contact-map__pin" viewBox="-22 -28 44 64">
           <path
             d="M0 34 C -14 14 -20 4 -20 -6 a20 20 0 0 1 40 0 c0 10 -6 20 -20 40z"
             fill="var(--color-primary)"
           />
           <circle cx="0" cy="-6" fill="var(--color-on-primary)" r="7" />
-        </g>
-      </svg>
+        </svg>
+      </div>
       <div className="contact-map__info">
         <span className="contact-map__address">{address}</span>
         <span className="contact-map__actions">

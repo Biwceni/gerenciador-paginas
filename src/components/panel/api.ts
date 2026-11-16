@@ -2,11 +2,10 @@
 
 import { request } from '@/components/editor/api'
 import { FORM_STARTERS } from '@/lib/forms'
-import type { Personality } from '@/lib/theme'
 import type { Footer, Form, Header, Page, Site } from '@/payload-types'
 import { emptyPageContent, type PageContent } from '@/puck/schema'
 
-import { type SiteData, toSettingsState, toSiteData } from './settings'
+import { lookOf, type SiteData, type SiteLook, toSettingsState, toSiteData } from './settings'
 
 // Ações da lista de páginas, pela API do Payload com a sessão do painel. As permissões e as regras
 // (como não excluir a página inicial) são conferidas no servidor.
@@ -237,11 +236,26 @@ export async function discardSettings(apiRoute: string) {
 }
 
 /**
- * Troca só a personalidade do site, no rascunho das configurações (atalho do editor). Parte do
- * rascunho mais recente, para não apagar o que mudou em Sua marca ou nas Configurações; o site só
- * muda quando as configurações forem publicadas.
+ * Troca a personalidade, as cores e as letras do site no rascunho das configurações (Sua marca no
+ * editor, E8). Parte do rascunho mais recente, para não apagar o que mudou em Sua marca ou nas
+ * Configurações; o site só muda quando as configurações forem publicadas.
  */
-export async function saveSitePersonality(apiRoute: string, personality: Personality) {
+export async function saveSiteLook(apiRoute: string, look: SiteLook) {
   const site = await request<Site>(apiRoute, '/globals/site?depth=0&draft=true')
-  await saveGlobalDraft(apiRoute, 'site', toSiteData({ ...toSettingsState(site), personality }))
+  await saveGlobalDraft(apiRoute, 'site', toSiteData({ ...toSettingsState(site), ...look }))
+}
+
+/** Sua marca como está no rascunho e como está no ar, para o editor ver se mudou noutra tela. */
+export async function readSiteLook(apiRoute: string) {
+  const [draft, live] = await Promise.all([
+    request<Site>(apiRoute, '/globals/site?depth=0&draft=true'),
+    request<Site>(apiRoute, '/globals/site?depth=0&draft=false'),
+  ])
+  return { draft: lookOf(toSettingsState(draft)), live: lookOf(toSettingsState(live)) }
+}
+
+/** Publica o rascunho das configurações como está (o "Publicar também Sua marca" do editor). */
+export async function publishSiteDraft(apiRoute: string) {
+  const site = await request<Site>(apiRoute, '/globals/site?depth=0&draft=true')
+  await publishSettings(apiRoute, toSiteData(toSettingsState(site)))
 }

@@ -110,3 +110,22 @@ export function validateSettings(state: SettingsState): Record<string, string> {
   }
   return errors
 }
+
+/** A parte de Sua marca que o editor troca: personalidade, cores e letras (E8). */
+export type SiteLook = Pick<SettingsState, 'personality' | 'colors' | 'fonts'>
+
+export function lookOf(state: SettingsState): SiteLook {
+  return { personality: state.personality, colors: state.colors, fonts: state.fonts }
+}
+
+const COLOR_KEYS = ['primary', 'background', 'surface', 'text', 'footer'] as const
+
+/** Mesma personalidade, mesmas cores (sem diferença de maiúscula) e mesmas letras. */
+export function sameLook(a: SiteLook, b: SiteLook): boolean {
+  return (
+    a.personality === b.personality &&
+    COLOR_KEYS.every((key) => a.colors[key]?.toLowerCase() === b.colors[key]?.toLowerCase()) &&
+    a.fonts.headings.trim() === b.fonts.headings.trim() &&
+    a.fonts.body.trim() === b.fonts.body.trim()
+  )
+}

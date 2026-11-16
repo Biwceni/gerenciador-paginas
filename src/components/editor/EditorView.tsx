@@ -7,15 +7,16 @@ import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { themeStyle } from '@/components/site/theme'
 import { siteInfo, siteLinks } from '@/lib/content'
+import { guessBusiness } from '@/lib/fontPairs'
 import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
 import { toFormDefinition } from '@/lib/forms'
 import { getServerURL } from '@/lib/site'
-import { previewFontFaces, safePersonality } from '@/lib/theme'
 import { parsePageContent } from '@/puck/schema'
 import { pageSummary } from '@/puck/summary'
 
 import { loadExampleTexts } from '@/components/panel/data'
+import { lookOf, toSettingsState } from '@/components/panel/settings'
 
 import type { EditorPageSummary } from './context'
 import { Editor } from './Editor'
@@ -39,66 +40,76 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
   if (!Number.isInteger(id) || id <= 0) notFound()
 
   const access = { overrideAccess: false, user } as const
-  const [draft, livePages, pages, photos, site, liveSite, forms, exampleTexts] = await Promise.all([
-    payload.findByID({
-      collection: 'pages',
-      id,
-      depth: 1,
-      draft: true,
-      disableErrors: true,
-      ...access,
-    }),
-    // As que estão no ar: marcam os rascunhos no seletor de links e dizem se esta já foi publicada.
-    payload.find({
-      collection: 'pages',
-      where: { _status: { equals: 'published' } },
-      select: { title: true },
-      depth: 0,
-      draft: false,
-      limit: 200,
-      pagination: false,
-      ...access,
-    }),
-    // Todas as páginas, com as arquivadas marcadas: o seletor de links deixa elas de fora.
-    payload.find({
-      collection: 'pages',
-      select: { title: true, slug: true, _status: true, archived: true, content: true },
-      depth: 0,
-      draft: true,
-      limit: 200,
-      pagination: false,
-      sort: 'title',
-      ...access,
-    }),
-    payload.find({
-      collection: 'media',
-      depth: 0,
-      limit: 500,
-      pagination: false,
-      sort: '-createdAt',
-      ...access,
-    }),
-    // O rascunho das configurações: a prévia mostra o que vai ao ar quando a pessoa publicar.
-    payload.findGlobal({ slug: 'site', depth: 1, draft: true, ...access }),
-    // A página inicial é a que está no ar: a escolhida num rascunho ainda não vale.
-    payload.findGlobal({
-      slug: 'site',
-      select: { homepage: true, personality: true },
-      depth: 0,
-      draft: false,
-      ...access,
-    }),
-    payload.find({
-      collection: 'forms',
-      select: { title: true, submitButtonLabel: true, confirmationMessage: true, fields: true },
-      depth: 0,
-      limit: 100,
-      pagination: false,
-      sort: 'title',
-      ...access,
-    }),
-    loadExampleTexts(payload, user),
-  ])
+  const [draft, livePages, pages, photos, site, liveSite, forms, exampleTexts, templates] =
+    await Promise.all([
+      payload.findByID({
+        collection: 'pages',
+        id,
+        depth: 1,
+        draft: true,
+        disableErrors: true,
+        ...access,
+      }),
+      // As que estão no ar: marcam os rascunhos no seletor de links e dizem se esta já foi publicada.
+      payload.find({
+        collection: 'pages',
+        where: { _status: { equals: 'published' } },
+        select: { title: true },
+        depth: 0,
+        draft: false,
+        limit: 200,
+        pagination: false,
+        ...access,
+      }),
+      // Todas as páginas, com as arquivadas marcadas: o seletor de links deixa elas de fora.
+      payload.find({
+        collection: 'pages',
+        select: { title: true, slug: true, _status: true, archived: true, content: true },
+        depth: 0,
+        draft: true,
+        limit: 200,
+        pagination: false,
+        sort: 'title',
+        ...access,
+      }),
+      payload.find({
+        collection: 'media',
+        depth: 0,
+        limit: 500,
+        pagination: false,
+        sort: '-createdAt',
+        ...access,
+      }),
+      // O rascunho das configurações: a prévia mostra o que vai ao ar quando a pessoa publicar.
+      payload.findGlobal({ slug: 'site', depth: 1, draft: true, ...access }),
+      // A página inicial é a que está no ar: a escolhida num rascunho ainda não vale.
+      payload.findGlobal({
+        slug: 'site',
+        select: { homepage: true, personality: true, colors: true, fonts: true },
+        depth: 0,
+        draft: false,
+        ...access,
+      }),
+      payload.find({
+        collection: 'forms',
+        select: { title: true, submitButtonLabel: true, confirmationMessage: true, fields: true },
+        depth: 0,
+        limit: 100,
+        pagination: false,
+        sort: 'title',
+        ...access,
+      }),
+      loadExampleTexts(payload, user),
+      // Os modelos de site dão o ramo, que escolhe as letras sugeridas em Sua marca (E8).
+      payload.find({
+        collection: 'templates',
+        where: { kind: { equals: 'site' } },
+        select: { key: true, siteType: true, site: true, pages: true },
+        depth: 0,
+        pagination: false,
+        ...access,
+      }),
+    ])
   if (!draft) notFound()
 
   const content = parsePageContent(draft.content)
@@ -135,8 +146,21 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
       apiRoute={payload.config.routes.api}
       domain={new URL(getServerURL()).host}
       exampleTexts={exampleTexts}
-      livePersonality={safePersonality(liveSite.personality)}
-      fontFaces={previewFontFaces(site)}
+      brand={{
+        draft: lookOf(toSettingsState(site)),
+        live: lookOf(toSettingsState(liveSite)),
+        logoURL:
+          site.logo && typeof site.logo === 'object'
+            ? site.logo.sizes?.thumbnail?.url || site.logo.url || null
+            : null,
+        business: guessBusiness(
+          site,
+          pages.docs.filter((doc) => !doc.archived).map((doc) => doc.slug ?? ''),
+          templates.docs,
+        ),
+        fontFaces: site.fontFaces ?? null,
+        fontKey: site.fontKey ?? null,
+      }}
       forms={forms.docs.map(toFormDefinition)}
       homepageId={siteLinks(liveSite).homepageId}
       initialData={content.data.data}

@@ -9,12 +9,11 @@ import { CHOICE_THUMBS, ChoiceThumb } from '@/components/editor/ChoiceThumbs'
 import { createDraftSaver } from '@/components/editor/draftSaver'
 import { PUCK_COLORS, splitSelectors } from '@/components/editor/EditorFrame'
 import { VisualChoiceField } from '@/components/editor/VisualChoiceField'
-import { PersonalitySwitch } from '@/components/editor/PersonalitySwitch'
 import { NEW_SECTIONS, SectionThumb } from '@/components/editor/SectionThumb'
-import { saveSitePersonality } from '@/components/panel/api'
+import { saveSiteLook } from '@/components/panel/api'
 import { contrastRatio } from '@/lib/colors'
 import { PRODUCT_FAVICON } from '@/lib/site'
-import { PERSONALITIES } from '@/lib/theme'
+import { DEFAULT_COLORS } from '@/lib/theme'
 
 // Redesign v3, entrega 5: identidade do produto no painel e no editor.
 
@@ -209,17 +208,10 @@ describe('prévia do editor', () => {
   })
 })
 
-describe('personalidade no topo do editor', () => {
+describe('Sua marca no editor (E8)', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('lista as quatro personalidades com a atual escolhida', () => {
-    const html = renderToStaticMarkup(<PersonalitySwitch onChange={() => {}} value="vitrine" />)
-    expect(html).toContain('>Personalidade</label>')
-    expect(html.match(/<option/g)).toHaveLength(PERSONALITIES.length)
-    expect(html).toMatch(/<option value="vitrine" selected="">Vitrine<\/option>/)
-  })
-
-  it('guarda só a personalidade no rascunho, sem apagar o resto das configurações', async () => {
+  it('guarda personalidade, cores e letras no rascunho, sem apagar o resto das configurações', async () => {
     const calls: { url: string; init?: RequestInit }[] = []
     vi.stubGlobal(
       'fetch',
@@ -239,7 +231,11 @@ describe('personalidade no topo do editor', () => {
       }),
     )
 
-    await saveSitePersonality('/api', 'aconchego')
+    await saveSiteLook('/api', {
+      personality: 'aconchego',
+      colors: { ...DEFAULT_COLORS, primary: '#123456' },
+      fonts: { headings: 'Lora', body: 'Figtree' },
+    })
 
     expect(calls[0].url).toBe('/api/globals/site?depth=0&draft=true')
     expect(calls[1].url).toBe('/api/globals/site?draft=true')
@@ -249,7 +245,8 @@ describe('personalidade no topo do editor', () => {
       personality: 'aconchego',
       name: 'Doces da Ana',
       tagline: 'Feito à mão',
-      colors: { primary: '#aa3355' },
+      colors: { primary: '#123456' },
+      fonts: { headings: 'Lora', body: 'Figtree' },
       contact: { whatsapp: '11999990000' },
     })
   })

@@ -742,7 +742,8 @@ export function Contact({
       label: 'Endereço',
       value: address,
       href: mapsURL(address),
-      extra: 'Ver no mapa',
+      // Com o mapa embaixo, o "Ver no mapa" fica só nele (sem repetir aqui).
+      ...(map ? {} : { extra: 'Ver no mapa' }),
     })
   }
   if (hours) all.push({ key: 'hours', icon: 'clock', label: 'Horário', value: hours })

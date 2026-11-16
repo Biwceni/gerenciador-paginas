@@ -4852,10 +4852,24 @@
   background: var(--color-surface);
 }
 
+.site .contact-map__stage {
+  position: relative;
+}
+
 .site .contact-map__art {
   display: block;
   width: 100%;
   height: clamp(160px, 28cqi, 240px);
+}
+
+.site .contact-map__pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 64px;
+  transform: translate(-50%, -70%);
+  filter: drop-shadow(0 4px 6px rgb(0 0 0 / 18%));
 }
 
 .site .contact-map__info {

@@ -447,7 +447,7 @@ test.describe.serial('editor: seções', () => {
 
       await expect(page.getByRole('group', { name: 'Tamanho da tela' })).toBeVisible()
       await expect(page.getByText(/Computador, reduzido para caber/)).toBeVisible()
-      // Nenhum seletor de tamanho: o único select do topo é o da Personalidade.
+      // Nenhum seletor de tamanho no topo.
       await expect(
         page.locator('select').filter({ hasNot: page.getByRole('option', { name: 'Clássico' }) }),
       ).toHaveCount(0)
