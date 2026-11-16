@@ -8,6 +8,7 @@ import { type Components, COLUMN_PIECES, PIECE_LABELS, SECTION_LABELS } from '@/
 import { insertIndex } from '@/puck/insertPosition'
 
 import { requestPiece } from './ColumnPicker'
+import { copiedName, useCopiedSection, usePasteSection } from './copyPaste'
 import { useAddSection } from './insert'
 import { ROOT_ZONE, usePuck } from './puck'
 import { fullZoneReason, zoneMax } from './zoneLimits'
@@ -60,7 +61,36 @@ export function EditorDrawer({ children }: { children?: React.ReactNode }) {
         </p>
         {full && <p className="ed-hint ed-hint--warn">{fullZoneReason(ROOT_ZONE)}</p>}
       </div>
+      <PasteCard full={full} where={where} />
       {children}
+    </div>
+  )
+}
+
+/** Seção copiada nesta ou em outra página (E1): colar fica no alto da lista. */
+function PasteCard({ full, where }: { full: boolean; where: string }) {
+  const copied = useCopiedSection()
+  const paste = usePasteSection()
+  if (!copied) return null
+  const name = copiedName(copied)
+  return (
+    <div className="ed-paste">
+      <span className="ed-paste__media">
+        <SectionThumb type={copied.type as keyof Components} />
+      </span>
+      <span className="ed-paste__text">
+        <span className="ed-paste__label">Seção copiada</span>
+        <b>{name}</b>
+      </span>
+      <button
+        className="ed-btn ed-btn--sm ed-btn--primary"
+        disabled={full}
+        onClick={() => paste()}
+        title={`Colar “${name}” ${where}`}
+        type="button"
+      >
+        Colar
+      </button>
     </div>
   )
 }

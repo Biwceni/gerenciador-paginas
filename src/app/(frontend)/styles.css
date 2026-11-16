@@ -1874,6 +1874,34 @@
     cursor: pointer;
   }
 
+  /* Fim da página, antes do rodapé (E4). */
+  & .editor-add-end {
+    display: flex;
+    justify-content: center;
+    padding: 28px 20px;
+  }
+
+  & .editor-add-end button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 10px 20px;
+    border: 2px dashed color-mix(in srgb, var(--color-text) 40%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  & .editor-add-end button:hover,
+  & .editor-add-end button:focus-visible {
+    border-color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  }
+
   & [contenteditable]:empty::before {
     content: 'Clique para escrever';
     opacity: 0.5;

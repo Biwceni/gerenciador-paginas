@@ -6,7 +6,7 @@ import React, { createContext, useContext } from 'react'
 import { mainHeadingID } from '@/puck/references'
 import type { PuckPageData } from '@/puck/schema'
 
-import { EmptyPage } from './EmptyPage'
+import { AddAtEnd, EmptyPage } from './EmptyPage'
 
 const usePuck = createUsePuck()
 
@@ -103,6 +103,7 @@ export function SitePreviewRoot({ children }: { children?: React.ReactNode }) {
         <PageTitle preview={preview} />
         {children}
         <EmptyPage />
+        <AddAtEnd />
       </main>
       <Locked
         href={preview.footerAdminHref}

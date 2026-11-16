@@ -233,9 +233,20 @@ test.describe.serial('editor: seções', () => {
       .toEqual([INITIAL[0], INITIAL[1], 'RichText', 'Gallery', ...INITIAL.slice(2)])
   })
 
-  test('sem o "+" entre as seções', async ({ page }) => {
+  test('sem o "+" entre as seções: só o do fim da página (E4)', async ({ page }) => {
     await expect(sectionsIn(page)).toHaveCount(INITIAL.length)
-    await expect(inPreview(page).getByRole('button', { name: /Adicionar seção/ })).toHaveCount(0)
+    const add = inPreview(page).getByRole('button', { name: /Adicionar seção/ })
+    await expect(add).toHaveCount(1)
+    await expect(add).toHaveText(/Adicionar seção aqui/)
+    // Depois de todas as seções, antes do rodapé.
+    const after = await add.evaluate((button) => {
+      const sections = document.querySelectorAll('[data-puck-component]')
+      const last = sections[sections.length - 1]
+      return Boolean(
+        last && last.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    })
+    expect(after).toBe(true)
   })
 
   test('página vazia: a lista aberta orienta, e fechada tem botão', async ({ page }) => {

@@ -1,11 +1,12 @@
 'use client'
 
 import { ActionBar, useGetPuck } from '@puckeditor/core'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 
 import { columnCount, parseColumnZone, useMovePiece } from './columnMove'
+import { copiedName, useCopiedSection, useCopySection, usePasteSection } from './copyPaste'
 import { scrollToSection } from './insert'
 import { ROOT_ZONE, usePuck } from './puck'
 import { fullZoneReason, zoneMax } from './zoneLimits'
@@ -104,6 +105,98 @@ function usePieceNeighbors() {
   }
 }
 
+/** Mac usa ⌘ no lugar do Ctrl nos atalhos. */
+const MOD =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'
+
+/**
+ * Menu "Mais ações" da barrinha (E1/E2): copiar a seção, para colar nesta ou em outra página, e
+ * colar a copiada logo abaixo. Só nas seções da página (uma peça das Colunas não tem).
+ */
+function MoreActions() {
+  const [open, setOpen] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  const toggle = useRef<HTMLButtonElement>(null)
+  const copied = useCopiedSection()
+  const copy = useCopySection()
+  const paste = usePasteSection()
+
+  useEffect(() => {
+    if (!open) return
+    const doc = wrap.current?.ownerDocument
+    if (!doc) return
+    // Primeiro item com o foco, como num menu do sistema.
+    wrap.current?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus()
+    const onDown = (event: PointerEvent) => {
+      if (!wrap.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation()
+        setOpen(false)
+        toggle.current?.focus()
+        return
+      }
+      // Setas andam entre os itens, como num menu do sistema.
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+      const items = Array.from(
+        wrap.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? [],
+      )
+      if (!items.length) return
+      event.preventDefault()
+      const at = items.indexOf(doc.activeElement as HTMLButtonElement)
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      items[(at + step + items.length) % items.length]?.focus()
+    }
+    doc.addEventListener('pointerdown', onDown, true)
+    doc.addEventListener('keydown', onKey, true)
+    return () => {
+      doc.removeEventListener('pointerdown', onDown, true)
+      doc.removeEventListener('keydown', onKey, true)
+    }
+  }, [open])
+
+  const run = (action: () => unknown) => () => {
+    setOpen(false)
+    action()
+  }
+
+  return (
+    <div className="ed-barmore" ref={wrap}>
+      <ActionBar.Action
+        aria-expanded={open}
+        aria-haspopup="menu"
+        label="Mais ações"
+        onClick={() => setOpen((value) => !value)}
+        ref={toggle}
+      >
+        <PanelIcon name="more" size={16} />
+      </ActionBar.Action>
+      {open && (
+        <div aria-label="Mais ações" className="ed-barmore__menu" role="menu">
+          <button className="ed-barmore__item" onClick={run(copy)} role="menuitem" type="button">
+            <PanelIcon name="copy" size={16} />
+            <span>Copiar seção</span>
+            <kbd>{MOD}C</kbd>
+          </button>
+          <button
+            className="ed-barmore__item"
+            disabled={!copied}
+            onClick={run(() => paste())}
+            role="menuitem"
+            title={copied ? undefined : 'Copie uma seção antes, nesta ou em outra página'}
+            type="button"
+          >
+            <PanelIcon name="down" size={16} />
+            <span>{copied ? `Colar “${copiedName(copied)}” abaixo` : 'Colar abaixo'}</span>
+            <kbd>{MOD}V</kbd>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Barra da seção escolhida, na prévia (override do Puck), com as nossas ações no lugar das dele. */
 export function EditorActionBar({
   label,
@@ -116,6 +209,10 @@ export function EditorActionBar({
   const { canGoUp, canGoDown, canDuplicate, fullReason, up, down, duplicate, remove } =
     useSelectedActions()
   const neighbors = usePieceNeighbors()
+  const isSection = usePuck((s) => {
+    const zone = s.appState.ui.itemSelector?.zone
+    return !zone || zone === ROOT_ZONE
+  })
   return (
     <ActionBar>
       <ActionBar.Group>
@@ -165,6 +262,7 @@ export function EditorActionBar({
         <ActionBar.Action label="Remover" onClick={remove}>
           <PanelIcon name="trash" size={16} />
         </ActionBar.Action>
+        {isSection && <MoreActions />}
       </ActionBar.Group>
     </ActionBar>
   )
@@ -176,7 +274,9 @@ export function SectionActionsPanel() {
   const { canGoUp, canGoDown, canDuplicate, fullReason, up, down, duplicate, remove } =
     useSelectedActions()
   const neighbors = usePieceNeighbors()
+  const copy = useCopySection()
   if (!selector) return null
+  const isSection = !selector.zone || selector.zone === ROOT_ZONE
 
   return (
     <div className="ed-section-actions">
@@ -205,6 +305,16 @@ export function SectionActionsPanel() {
       >
         <PanelIcon name="copy" size={14} /> Duplicar
       </button>
+      {isSection && (
+        <button
+          className="ed-btn ed-btn--sm"
+          onClick={copy}
+          title="Para colar nesta ou em outra página, pelo “Adicionar seção”"
+          type="button"
+        >
+          <PanelIcon name="copy" size={14} /> Copiar
+        </button>
+      )}
       <button className="ed-btn ed-btn--sm ed-btn--danger" onClick={remove} type="button">
         <PanelIcon name="trash" size={14} /> Remover
       </button>

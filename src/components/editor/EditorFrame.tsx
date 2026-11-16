@@ -137,6 +137,24 @@ ${SELECTION_HALO}
 }
 /* "← Coluna 1" e "Coluna 2 →" na barrinha de uma peça das Colunas (C2). */
 .ed-move-col { padding: 0 6px; font: 600 12px/1 system-ui, sans-serif; white-space: nowrap; }
+/* Menu "Mais ações" da barrinha (E1): abre embaixo do botão ⋯, alinhado à direita. */
+.ed-barmore { position: relative; display: flex; }
+.ed-barmore__menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 3; display: grid; min-width: 232px;
+  padding: 4px; border-radius: 10px; background: #1f2440; color: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%); font: 500 14px/1.3 system-ui, sans-serif; cursor: default;
+}
+.ed-barmore__item {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 10px;
+  border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer;
+}
+.ed-barmore__item span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ed-barmore__item kbd { font: 12px/1 system-ui, sans-serif; opacity: 0.7; white-space: nowrap; }
+.ed-barmore__item:hover:not(:disabled), .ed-barmore__item:focus-visible { background: rgb(255 255 255 / 14%); outline: none; }
+.ed-barmore__item:focus-visible { box-shadow: inset 0 0 0 2px #c9cff6; }
+.ed-barmore__item:disabled { opacity: 0.55; cursor: not-allowed; }
+@media (pointer: coarse) { .ed-barmore__item { min-height: 44px; } .ed-barmore__item kbd { display: none; } }
 /* Opções abertas no celular (rodada 2, F1): sem a barrinha e sem o espaço dela na faixa. */
 html[data-ed-options] [class*='DraggableComponent-actionsOverlay'] { display: none !important; }
 html[data-ed-options] [data-puck-component] { margin-top: 0 !important; scroll-margin-top: 0 !important; }

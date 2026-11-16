@@ -1,15 +1,19 @@
 'use client'
 
 import { useGetPuck } from '@puckeditor/core'
-import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 import { PanelIcon } from '@/components/panel/PanelIcon'
 
+import { useCopyPasteKeys } from './copyPaste'
 import { MOBILE_WIDTH, ONE_PANEL_WIDTH, usePuck } from './puck'
 
 /** Largura real da tela do visitante de celular, sem zoom. */
 const PHONE_WIDTH = 390
+
+/** Largura de um tablet em pé (E11). O site usa o desenho de computador a partir de 768 px. */
+const TABLET_WIDTH = 768
 
 /**
  * Largura em que a página é desenhada no modo Computador, como num computador comum. O Puck reduz
@@ -147,8 +151,25 @@ function usePanelRules() {
  * Computador ou celular na prévia, acima dela, e o botão das opções, na barra de ícones. O Puck não
  * tem lugar para acrescentar nessas duas áreas, então entram pelo `createPortal`.
  */
+/** Documento da prévia do Puck: muda quando o iframe carrega de novo. */
+function usePreviewDocument(): Document | null {
+  const frame = useElement('.ed-root iframe') as HTMLIFrameElement | null
+  const [doc, setDoc] = useState<Document | null>(null)
+  useEffect(() => {
+    if (!frame) return
+    const update = () => setDoc(frame.contentDocument)
+    update()
+    frame.addEventListener('load', update)
+    return () => frame.removeEventListener('load', update)
+  }, [frame])
+  return doc
+}
+
 export function PreviewTools() {
   usePanelRules()
+  // Ctrl+C e Ctrl+V da seção (E1), fora e dentro da prévia.
+  useCopyPasteKeys(typeof document === 'undefined' ? null : document)
+  useCopyPasteKeys(usePreviewDocument())
   const zoom = useCanvasZoom()
   const dispatch = usePuck((s) => s.dispatch)
   const panelsOpen = usePuck(
@@ -161,8 +182,11 @@ export function PreviewTools() {
 
   if (!rail || !canvas) return null
 
-  const onPhone = viewports.current.width === PHONE_WIDTH
+  const width = viewports.current.width
+  const onPhone = width === PHONE_WIDTH
+  const onTablet = width === TABLET_WIDTH
   const real = zoom >= 0.99
+  const device = onTablet ? 'Tablet' : 'Computador'
   const showAs = (width: number | '100%') =>
     dispatch({
       type: 'setUi',
@@ -177,13 +201,23 @@ export function PreviewTools() {
           <div aria-label="Tamanho da tela" className="ed-canvasbar__group" role="group">
             <button
               aria-label="Ver como computador"
-              aria-pressed={!onPhone}
+              aria-pressed={!onPhone && !onTablet}
               className="ed-icon-btn ed-icon-btn--sm"
               onClick={() => showAs(DESKTOP_WIDTH)}
               title="Computador"
               type="button"
             >
               <PanelIcon name="desktop" />
+            </button>
+            <button
+              aria-label="Ver como tablet"
+              aria-pressed={onTablet}
+              className="ed-icon-btn ed-icon-btn--sm"
+              onClick={() => showAs(TABLET_WIDTH)}
+              title="Tablet"
+              type="button"
+            >
+              <PanelIcon name="tablet" />
             </button>
             <button
               aria-label="Ver como celular"
@@ -223,8 +257,8 @@ export function PreviewTools() {
             {onPhone
               ? 'Celular, tamanho real'
               : real
-                ? 'Computador, tamanho real'
-                : `Computador, reduzido para caber (${Math.round(zoom * 100)}%)`}
+                ? `${device}, tamanho real`
+                : `${device}, reduzido para caber (${Math.round(zoom * 100)}%)`}
           </span>
         </div>,
         canvas,

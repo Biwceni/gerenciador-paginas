@@ -79,6 +79,7 @@ import { type PageSettings, PageSettingsDialog } from './PageSettingsDialog'
 import { PersonalitySwitch } from './PersonalitySwitch'
 import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
+import { VisitorPreview } from './VisitorPreview'
 import { PublishDialog } from './PublishDialog'
 import { type GetPuck, MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErrors'
@@ -120,7 +121,7 @@ type SaveState =
   /** `target`: onde está o problema, para o "Ir até o campo". */
   | { state: 'error'; message: string; target?: SaveTarget }
 
-type DialogName = 'publish' | 'versions' | 'settings' | 'more' | null
+type DialogName = 'publish' | 'versions' | 'settings' | 'more' | 'visitor' | null
 
 const SAVE_DELAY = 1200
 /** Sem internet, tenta salvar de novo depois de 3 s, 6 s, 12 s… até de 30 em 30 s. */
@@ -274,6 +275,14 @@ function EditorHeader() {
         >
           <PanelIcon name="redo" />
         </button>
+        <button
+          className="ed-btn ed-hide-sm"
+          onClick={() => chrome.open('visitor')}
+          title="A página como o visitante vai ver, com o rascunho de agora"
+          type="button"
+        >
+          <PanelIcon name="eye" size={16} /> Ver como visitante
+        </button>
         <button className="ed-btn ed-hide-sm" onClick={() => chrome.open('versions')} type="button">
           Versões
         </button>
@@ -406,6 +415,7 @@ export function Editor(props: EditorProps) {
   // O último "salvo", para voltar a ele quando a mudança se desfaz antes de salvar.
   const settled = useRef<SaveState>({ state: 'saved' })
   const [dialog, setDialog] = useState<DialogName>(null)
+  const closeDialog = useCallback(() => setDialog(null), [])
   const [undoState, setUndoState] = useState({ canUndo: false, canRedo: false })
   const [conflict, setConflict] = useState(false)
   // Voltar com mudança que não foi salva: a janela explica antes de sair.
@@ -1178,6 +1188,9 @@ export function Editor(props: EditorProps) {
                   >
                     <PanelIcon name="redo" size={16} /> Refazer
                   </button>
+                  <button className="ed-btn" onClick={() => setDialog('visitor')} type="button">
+                    <PanelIcon name="eye" size={16} /> Ver como visitante
+                  </button>
                   <button className="ed-btn" onClick={() => setDialog('versions')} type="button">
                     <PanelIcon name="history" size={16} /> Versões
                   </button>
@@ -1192,6 +1205,20 @@ export function Editor(props: EditorProps) {
                   )}
                 </div>
               </Dialog>
+            )}
+
+            {dialog === 'visitor' && (
+              <VisitorPreview
+                campaign={Boolean(settings.campaign)}
+                chrome={props.chrome}
+                data={data}
+                fontFaces={props.fontFaces}
+                isHome={isHome}
+                metadata={metadata}
+                onClose={closeDialog}
+                pageTitle={settings.title}
+                theme={theme}
+              />
             )}
 
             {dialog === 'versions' && (

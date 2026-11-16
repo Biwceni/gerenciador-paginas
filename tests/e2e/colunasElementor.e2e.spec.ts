@@ -268,10 +268,25 @@ test.describe('editor: Colunas no estilo Elementor', () => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await signIn(page)
     await openEditor(page, id, 2)
+    // O Vimeo responde com o nome do arquivo: comprido e sem espaços (achado do Fábio).
+    const longName = `Video_${'muito_comprido_'.repeat(12)}720p.mp4`
+    await page.route('**/vimeo.com/api/oembed.json**', (route) =>
+      route.fulfill({ json: { title: longName, thumbnail_url: null } }),
+    )
     await pick(page, sections(page).nth(1))
     const address = fields(page).getByPlaceholder('Cole o link do YouTube ou do Vimeo')
     await address.fill('https://vimeo.com/603509817?fl=ip&fe=ec')
     await expect(fields(page)).toContainText('O Vimeo só é carregado quando o visitante clica')
+    await expect(fields(page)).toContainText('Vídeo: Video_muito_comprido_')
+    // O painel não anda para o lado: nada entre o formulário e a página fica mais largo que a caixa.
+    const wide = await fields(page).evaluate((form) => {
+      const out: string[] = []
+      for (let node: HTMLElement | null = form as HTMLElement; node; node = node.parentElement) {
+        if (node.scrollWidth > node.clientWidth + 1) out.push(node.className || node.tagName)
+      }
+      return out
+    })
+    expect(wide).toEqual([])
     await expect
       .poll(async () => (await savedContent(id))[1].props.videoId, { timeout: 15_000 })
       .toBe('vimeo:603509817')
