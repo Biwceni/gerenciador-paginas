@@ -244,10 +244,15 @@ test.describe('editor: publicar com confiança e mensagens que ajudam', () => {
   })
 
   test('4.5 lista no máximo diz que chegou ao limite', async ({ page }) => {
-    const { id } = await createPage([features])
+    // Destaques: até 12 desde a etapa 3b (C3).
+    const items = Array.from({ length: 12 }, (_, n) => ({
+      ...features.props.items[0],
+      title: `Item ${n + 1}`,
+    }))
+    const { id } = await createPage([{ ...features, props: { ...features.props, items } }])
     await openEditor(page, id, 1)
     await pick(page, 0)
-    await expect(fields(page)).toContainText('6 de 6: é o máximo desta lista.')
+    await expect(fields(page)).toContainText('12 de 12: é o máximo desta lista.')
   })
 
   test('7.2 com o formulário padrão já criado, o botão usa ele em vez de criar outro', async ({

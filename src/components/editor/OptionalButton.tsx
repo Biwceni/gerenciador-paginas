@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 type ObjectFieldProps = {
   children: React.ReactNode
-  field: { label?: string; objectFields?: Record<string, unknown> }
+  field: { label?: string; objectFields?: Record<string, unknown>; invite?: [string, string] }
   name: string
   readOnly?: boolean
   value?: unknown
@@ -16,8 +16,13 @@ type ObjectFieldProps = {
 const isButtonField = (field: ObjectFieldProps['field']) =>
   Boolean(field.objectFields && 'label' in field.objectFields && 'link' in field.objectFields)
 
-const emptyLabel = (value: unknown) =>
-  !value || typeof value !== 'object' || !String((value as { label?: unknown }).label ?? '').trim()
+/** Sem texto e sem destino. Com destino e sem texto (o link do Destaque, que vira "Saiba mais"),
+ * os campos ficam abertos. */
+const emptyButton = (value: unknown) =>
+  !value ||
+  typeof value !== 'object' ||
+  (!String((value as { label?: unknown }).label ?? '').trim() &&
+    !(value as { link?: unknown }).link)
 
 /**
  * Campos agrupados do painel (override `fieldTypes.object`). O botão de seção vazio vira um convite
@@ -28,7 +33,11 @@ export function OptionalButton({ children, field, onChange, readOnly, value }: O
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   const asked = useRef(false)
-  const collapsed = isButtonField(field) && emptyLabel(value) && !open
+  const collapsed = isButtonField(field) && emptyButton(value) && !open
+  const [invite, hint] = field.invite ?? [
+    '+ Pôr um botão (opcional)',
+    'Sem botão, a seção fica só com o texto.',
+  ]
 
   useEffect(() => {
     if (!open || !asked.current) return
@@ -53,8 +62,8 @@ export function OptionalButton({ children, field, onChange, readOnly, value }: O
         }}
         type="button"
       >
-        <b>+ Pôr um botão (opcional)</b>
-        <span>Sem botão, a seção fica só com o texto.</span>
+        <b>{invite}</b>
+        <span>{hint}</span>
       </button>
     </FieldLabel>
   )

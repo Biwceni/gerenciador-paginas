@@ -466,6 +466,17 @@ textarea.ed-input {
   font-weight: 700;
 }
 
+.ed-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ed-category {
+  display: grid;
+  gap: 6px;
+}
+
 .ed-radio {
   display: inline-flex;
   align-items: center;
@@ -2050,6 +2061,54 @@ textarea.ed-grow {
 .ed-icon-choice:has(input:focus-visible) {
   outline: 2px solid var(--ed-accent);
   outline-offset: 2px;
+}
+
+/* Biblioteca de ícones com busca e temas (C3). */
+.ed-icon-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.ed-icon-picker__now {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ed-icon-picker__now .ed-btn {
+  margin-left: auto;
+}
+
+.ed-icon-picker__current {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 8px;
+}
+
+.ed-icon-picker__current svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ed-icon-picker__box {
+  display: grid;
+  gap: 10px;
+}
+
+.ed-icon-picker__themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ed-icon-picker__box .ed-icons {
+  max-height: 300px;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Palavras em destaque tocando nas palavras do título (achados 11.4 e 3.4). */

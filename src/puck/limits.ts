@@ -14,6 +14,12 @@ export const LIMITS = {
   productButton: 22,
   /** Preço livre ("R$ 45", "a partir de R$ 120", "sob consulta"), sem espremer o nome do item. */
   price: 24,
+  /** Selo do item da Vitrine (B2): "-30%", "Mais vendido", "Venda sob prescrição". */
+  productBadge: 24,
+  /** Categoria do item da Vitrine (B3): vira um botão do filtro. */
+  productCategory: 30,
+  /** Texto de "Mais detalhes" do item da Vitrine (B2). */
+  productDetails: 1000,
   /** Depoimento: o que cabe ler de uma vez (C7, achado Testimonials-3). */
   testimonial: 300,
   /** Frase da Faixa de aviso: uma linha só na faixa. */

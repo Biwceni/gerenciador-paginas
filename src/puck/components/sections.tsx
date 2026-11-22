@@ -18,6 +18,7 @@ import { privacyBlocks } from '@/lib/privacy'
 import { parseCount } from '@/lib/countUp'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
+import { parsePrice, productCategories, PRODUCTS_SEARCH_FROM } from '@/lib/products'
 
 import {
   announcementRun,
@@ -29,6 +30,7 @@ import {
 import { AnnounceRotate, AnnounceStrip, ANNOUNCE_STILL_MAX } from './AnnounceMotion'
 import { AutoRotate } from './AutoRotate'
 import { HeroLater, HeroRotate } from './HeroRotate'
+import { type ProductCard, ProductDetails, ProductsBrowse } from './ProductsBrowse'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
 import {
   COLUMN_COUNT,
@@ -555,8 +557,24 @@ export function TextImage({
 }
 
 /**
- * Destaques, até três por linha, sem caixa. Marcador: nenhum (padrão), um ícone por item, números
- * (passo a passo, e só então uma lista numerada) ou uma foto pequena e redonda (entrega 4).
+ * Arrumação dos Destaques pela quantidade: 2 ou 4 em duas colunas, 8 ou 12 em quatro, o resto em
+ * três. Assim a última linha não fica com um item sozinho num canto quando dá para evitar.
+ */
+export function featureColumns(count: number): 2 | 3 | 4 {
+  if (count === 2 || count === 4) return 2
+  if (count >= 8 && count % 4 === 0) return 4
+  return 3
+}
+
+/** O link de um Destaque (C3): o texto escolhido, ou "Saiba mais". */
+export const featureLinkLabel = (button: ButtonValue | null | undefined) =>
+  String(button?.label ?? '').trim() || 'Saiba mais'
+
+/**
+ * Destaques, até três por linha (quatro com 8 ou 12), sem caixa. Marcador: nenhum (padrão), um
+ * ícone por item, números (passo a passo, e só então uma lista numerada), uma foto pequena e
+ * redonda (entrega 4) ou "Foto grande" (C3), em que a foto ocupa o item e o título fica branco
+ * embaixo. Cada item pode ter um link (C3): o item todo fica clicável, com "Saiba mais →".
  */
 export function Features({
   id,
@@ -570,12 +588,19 @@ export function Features({
 }: WithMetadata<FeaturesProps>) {
   const shown = metadata.editing
     ? items
-    : items.filter((item) => filled(item.title) || filled(item.text))
+    : items.filter(
+        (item) =>
+          filled(item.title) ||
+          filled(item.text) ||
+          (marker === 'cover' && getPhoto(metadata, item.photo ?? null)),
+      )
   if (!shown.length) return null
-  const two = shown.length % 2 === 0 && shown.length < 6
+  const cols = featureColumns(shown.length)
   const List = marker === 'number' ? 'ol' : 'ul'
   // Linha de passos (C6, L-Features): os números ligados por uma linha, um passo em cada coluna.
-  const lined = marker === 'number' && steps === 'line' && shown.length > 1
+  // Até 6 passos: com mais, cada coluna ficaria estreita demais, e os passos voltam para a grade.
+  const lined = marker === 'number' && steps === 'line' && shown.length > 1 && shown.length <= 6
+  const cover = marker === 'cover'
 
   return (
     <Section
@@ -587,26 +612,73 @@ export function Features({
       <div className="container anim-part">
         <SectionTitle title={title} />
         <List
-          className={`features${two ? ' features--two' : ''}${lined ? ' features--steps' : ''}`}
+          className={`features${cols === 2 ? ' features--two' : ''}${cols === 4 ? ' features--four' : ''}${lined ? ' features--steps' : ''}${cover ? ' features--cover' : ''}`}
           data-count={shown.length}
           style={lined ? ({ '--n': shown.length } as React.CSSProperties) : undefined}
         >
-          {shown.map((item, index) => (
-            <li className="features__item anim-part" key={index} style={order(index)}>
-              {marker === 'number' && (
-                <span aria-hidden="true" className="features__number">
-                  {index + 1}
-                </span>
-              )}
-              {marker === 'icon' && <FeatureIcon name={item.icon ?? 'check'} />}
-              {marker === 'photo' && <FeaturePhoto metadata={metadata} photo={item.photo} />}
-              {filled(item.title) && <h3>{item.title}</h3>}
-              <Paragraphs text={item.text} />
-            </li>
-          ))}
+          {shown.map((item, index) => {
+            const href = metadata.editing ? null : getHref(metadata, item.button?.link ?? null)
+            const linked = Boolean(item.button && (metadata.editing || href))
+            const label = featureLinkLabel(item.button)
+            return (
+              <li
+                className={`features__item anim-part${linked ? ' features__item--linked' : ''}`}
+                key={index}
+                style={order(index)}
+              >
+                {marker === 'number' && (
+                  <span aria-hidden="true" className="features__number">
+                    {index + 1}
+                  </span>
+                )}
+                {marker === 'icon' && <FeatureIcon name={item.icon ?? 'check'} />}
+                {marker === 'photo' && <FeaturePhoto metadata={metadata} photo={item.photo} />}
+                {cover && <FeatureCover metadata={metadata} photo={item.photo} />}
+                {filled(item.title) && <h3>{item.title}</h3>}
+                <Paragraphs text={item.text} />
+                {linked &&
+                  (href ? (
+                    <SiteLink className="features__link" href={href}>
+                      {label}
+                      <span aria-hidden="true"> →</span>
+                      {typeof item.title === 'string' && item.title.trim() && (
+                        <span className="visually-hidden">: {item.title}</span>
+                      )}
+                    </SiteLink>
+                  ) : (
+                    <span className="features__link">
+                      {label}
+                      <span aria-hidden="true"> →</span>
+                    </span>
+                  ))}
+              </li>
+            )
+          })}
         </List>
       </div>
     </Section>
+  )
+}
+
+/**
+ * Foto que ocupa o Destaque todo ("Foto grande", C3), com uma sombra embaixo para o título branco
+ * ser lido em foto clara. Sem foto, fica a cor escura do site.
+ */
+function FeatureCover({ photo, metadata }: { photo?: PhotoRef; metadata: ContentMetadata }) {
+  const media = getPhoto(metadata, photo ?? null)
+  return (
+    <span aria-hidden="true" className={`features__cover${media ? '' : ' features__cover--empty'}`}>
+      {media && (
+        <Photo
+          alt=""
+          backdrop={photo?.backdrop}
+          fill
+          fit={photo?.fit}
+          media={media}
+          sizes="(max-width: 720px) 50vw, 400px"
+        />
+      )}
+    </span>
   )
 }
 
@@ -1387,15 +1459,51 @@ const PRODUCT_PHOTO_SIZES = {
   list: '120px',
 } as const
 
+/** Situação do item que aparece escrita no cartão (B2). Disponível não precisa dizer nada. */
+const PRODUCT_STATUS_TEXT = { soldout: 'Esgotado', consult: 'Sob consulta' } as const
+
 /**
- * Vitrine de produtos: foto (4:5), nome, frase curta, preço opcional e um botão por produto. Produto
- * sem foto ou sem nome não aparece no site (o Publicar avisa); no editor, aparece com o aviso.
+ * Preço do item: o antigo riscado ao lado do novo (B2), na segunda cor do site quando há oferta.
+ * "Sob consulta" troca o preço. O leitor de tela ouve "De R$ 79,90 por R$ 55,90".
+ */
+function ProductPrice({ item }: { item: ProductItem }) {
+  const price = typeof item.price === 'string' ? item.price.trim() : ''
+  const old = typeof item.oldPrice === 'string' ? item.oldPrice.trim() : ''
+  if (item.status === 'consult') {
+    return <p className="product__price product__price--consult">Sob consulta</p>
+  }
+  if (!price && !old) return null
+  return (
+    <p
+      className={`product__price${old && price ? ' product__price--sale' : ''}`}
+      data-long={price.length + old.length > PRODUCT_PRICE_SHORT || undefined}
+      data-optional={optional(item.price, 'item')}
+    >
+      {old && (
+        <s className="product__old">
+          <span className="visually-hidden">De </span>
+          {item.oldPrice}
+        </s>
+      )}
+      {old && price && <span className="visually-hidden"> por </span>}
+      {old ? price && <span className="product__now">{item.price}</span> : item.price}
+    </p>
+  )
+}
+
+/**
+ * Vitrine de produtos: foto (4:5), selo, nome, frase curta, preço (com o antigo riscado), situação,
+ * "Mais detalhes" numa janela e um botão por item (B2). Com categorias, filtro e, a partir de 12
+ * itens, busca e "Ordenar" (B3), até 60 itens. Item sem foto ou sem nome não aparece no site (o
+ * Publicar avisa); no editor, aparece com o aviso.
  */
 export function Products({
   id,
   title,
   text = '',
   layout = 'three',
+  badgeBelow = false,
+  sort = 'manual',
   items,
   style = 'light',
   anim,
@@ -1406,6 +1514,21 @@ export function Products({
     : items.filter((item) => getPhoto(metadata, item.image ?? null) && filled(item.name))
   if (!shown.length) return null
 
+  const cards: ProductCard[] = shown.map((item) => {
+    const name = typeof item.name === 'string' ? item.name : ''
+    const category = typeof item.category === 'string' ? item.category.trim() : ''
+    const badge = typeof item.badge === 'string' ? item.badge.trim() : ''
+    return {
+      node: (
+        <ProductCardBody badgeBelow={badgeBelow} item={item} layout={layout} metadata={metadata} />
+      ),
+      name,
+      category,
+      price: item.status === 'consult' ? null : parsePrice(item.price),
+      search: [name, item.text, category, badge].filter(Boolean).join(' '),
+    }
+  })
+
   return (
     <Section
       anim={sectionAnim('Products', anim, metadata)}
@@ -1415,83 +1538,146 @@ export function Products({
     >
       <div className="container anim-part">
         <SectionHead text={text} title={title} />
-        <ul
+        <ProductsBrowse
+          cards={cards}
+          categories={productCategories(cards.map((card) => card.category))}
           className={`products products--${layout}`}
-          data-count={shown.length}
+          editing={metadata.editing}
+          sort={sort}
+          tools={shown.length >= PRODUCTS_SEARCH_FROM}
           // Frase longa num cartão: no celular estreito, um por linha (A4).
-          data-wordy={
-            shown.some((item) => String(item.text ?? '').trim().length > PRODUCT_TEXT_SHORT) ||
-            undefined
-          }
-        >
-          {shown.map((item, index) => {
-            const photo = getPhoto(metadata, item.image ?? null)
-            const href = metadata.editing ? null : productHref(item, metadata)
-            const label = item.button?.label
-            const whats = item.button?.link?.kind === 'whatsapp'
-            // Botão cheio, com o ícone do WhatsApp quando abre a conversa (C3, achado Products-3).
-            const buttonInside = (
-              <>
-                {whats && <ContactIcon name="whatsapp" />}
-                <span className="product__link-text">{label}</span>
-              </>
-            )
-            const price = typeof item.price === 'string' ? item.price.trim() : ''
-            return (
-              <li className="product anim-part" key={index} style={order(index)}>
-                <div className="product__photo">
-                  {photo ? (
-                    <Photo
-                      backdrop={item.image?.backdrop}
-                      className="anim-part"
-                      fill
-                      fit={item.image?.fit}
-                      media={photo}
-                      sizes={PRODUCT_PHOTO_SIZES[layout]}
-                    />
-                  ) : (
-                    <EditorPlaceholder>Escolha uma foto sua do produto</EditorPlaceholder>
-                  )}
-                </div>
-                <div className="product__body">
-                  {filled(item.name) && <h3 className="product__name">{item.name}</h3>}
-                  {filled(item.text) && <p className="product__text">{item.text}</p>}
-                  {filled(item.price) && (
-                    <p
-                      className="product__price"
-                      data-long={price.length > PRODUCT_PRICE_SHORT || undefined}
-                      data-optional={optional(item.price, 'item')}
-                    >
-                      {item.price}
-                    </p>
-                  )}
-                  {metadata.editing
-                    ? item.button && (
-                        <span className={`product__link${whats ? ' product__link--whats' : ''}`}>
-                          {buttonInside}
-                        </span>
-                      )
-                    : href &&
-                      typeof label === 'string' &&
-                      label.trim() && (
-                        <SiteLink
-                          className={`product__link${whats ? ' product__link--whats' : ''}`}
-                          href={href}
-                        >
-                          {buttonInside}
-                          {/* Os botões repetem o texto: o nome do produto diz qual é qual. */}
-                          {typeof item.name === 'string' && (
-                            <span className="visually-hidden">: {item.name}</span>
-                          )}
-                        </SiteLink>
-                      )}
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+          wordy={shown.some((item) => String(item.text ?? '').trim().length > PRODUCT_TEXT_SHORT)}
+        />
       </div>
     </Section>
+  )
+}
+
+/** O que vai dentro de cada cartão da Vitrine (o `<li>` é da lista, que filtra e ordena). */
+function ProductCardBody({
+  item,
+  layout,
+  badgeBelow,
+  metadata,
+}: {
+  item: ProductItem
+  layout: keyof typeof PRODUCT_PHOTO_SIZES
+  badgeBelow: boolean
+  metadata: ContentMetadata
+}) {
+  const photo = getPhoto(metadata, item.image ?? null)
+  const name = typeof item.name === 'string' ? item.name : ''
+  const soldOut = item.status === 'soldout'
+  const href = metadata.editing || soldOut ? null : productHref(item, metadata)
+  const label = item.button?.label
+  const whats = item.button?.link?.kind === 'whatsapp'
+  const badge = typeof item.badge === 'string' ? item.badge.trim() : ''
+  const status = item.status && item.status !== 'available' ? item.status : null
+  const extraPhotos = (item.photos ?? [])
+    .map((entry) => ({ ref: entry.image, media: getPhoto(metadata, entry.image ?? null) }))
+    .filter((entry) => entry.media)
+  const details = typeof item.details === 'string' ? item.details.trim() : ''
+  // Botão cheio, com o ícone do WhatsApp quando abre a conversa (C3, achado Products-3).
+  const buttonInside = (
+    <>
+      {whats && <ContactIcon name="whatsapp" />}
+      <span className="product__link-text">{label}</span>
+    </>
+  )
+  const orderButton = metadata.editing
+    ? item.button &&
+      !soldOut && (
+        <span className={`product__link${whats ? ' product__link--whats' : ''}`}>
+          {buttonInside}
+        </span>
+      )
+    : href &&
+      typeof label === 'string' &&
+      label.trim() && (
+        <SiteLink className={`product__link${whats ? ' product__link--whats' : ''}`} href={href}>
+          {buttonInside}
+          {/* Os botões repetem o texto: o nome do produto diz qual é qual. */}
+          {name && <span className="visually-hidden">: {name}</span>}
+        </SiteLink>
+      )
+  const badgeTag = badge && (
+    <span className={`product__badge${badgeBelow ? ' product__badge--below' : ''}`}>{badge}</span>
+  )
+  const statusTag = status === 'soldout' && (
+    <p className="product__status">{PRODUCT_STATUS_TEXT.soldout}</p>
+  )
+
+  return (
+    <>
+      <div className="product__photo">
+        {photo ? (
+          <Photo
+            backdrop={item.image?.backdrop}
+            className="anim-part"
+            fill
+            fit={item.image?.fit}
+            media={photo}
+            sizes={PRODUCT_PHOTO_SIZES[layout]}
+          />
+        ) : (
+          <EditorPlaceholder>Escolha uma foto sua do produto</EditorPlaceholder>
+        )}
+        {!badgeBelow && badgeTag}
+      </div>
+      <div className="product__body">
+        {badgeBelow && badgeTag}
+        {filled(item.name) && <h3 className="product__name">{item.name}</h3>}
+        {filled(item.text) && <p className="product__text">{item.text}</p>}
+        <ProductPrice item={item} />
+        {statusTag}
+        {(details || extraPhotos.length > 0) && (
+          <ProductDetails editing={metadata.editing} name={name}>
+            {(photo || extraPhotos.length > 0) && (
+              <div
+                aria-label={extraPhotos.length ? 'Fotos' : undefined}
+                className="product-dialog__photos"
+                data-count={extraPhotos.length + (photo ? 1 : 0)}
+                role={extraPhotos.length ? 'group' : undefined}
+                tabIndex={extraPhotos.length ? 0 : undefined}
+              >
+                {photo && (
+                  <span className="product-dialog__photo">
+                    <Photo
+                      backdrop={item.image?.backdrop}
+                      fill
+                      fit={item.image?.fit ?? 'contain'}
+                      media={photo}
+                      sizes="(max-width: 720px) 100vw, 640px"
+                    />
+                  </span>
+                )}
+                {extraPhotos.map((entry, index) => (
+                  <span className="product-dialog__photo" key={index}>
+                    <Photo
+                      backdrop={entry.ref?.backdrop}
+                      fill
+                      fit={entry.ref?.fit ?? 'contain'}
+                      media={entry.media!}
+                      sizes="(max-width: 720px) 100vw, 640px"
+                    />
+                  </span>
+                ))}
+              </div>
+            )}
+            {badge && <span className="product__badge product__badge--below">{badge}</span>}
+            <ProductPrice item={item} />
+            {statusTag}
+            {details && (
+              <div className="product-dialog__text">
+                <Paragraphs text={details} />
+              </div>
+            )}
+            {orderButton}
+          </ProductDetails>
+        )}
+        {orderButton}
+      </div>
+    </>
   )
 }
 

@@ -54,7 +54,12 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
         ? null
         : 'os números estão vazios'
     case 'Features':
-      return item.props.items.some((entry) => text(entry.title) || text(entry.text))
+      return item.props.items.some(
+        (entry) =>
+          text(entry.title) ||
+          text(entry.text) ||
+          (item.props.marker === 'cover' && photo(entry.photo)),
+      )
         ? null
         : 'os destaques estão vazios'
     case 'Testimonials':

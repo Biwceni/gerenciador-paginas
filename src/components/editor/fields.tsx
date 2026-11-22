@@ -1063,42 +1063,199 @@ export function ArrayItemMoves({
 }
 
 /**
- * Ícone de um Destaque, escolhido pelo desenho (achado 4.4): antes era uma lista só de nomes
- * ("Dente", "Folha"), e a pessoa não via o que ia aparecer. Por baixo, botões de rádio: as setas
- * do teclado trocam, e o leitor de tela lê o nome de cada um.
+ * Ícone de um Destaque, escolhido pelo desenho (achado 4.4) numa biblioteca de cerca de 80 ícones
+ * (C3), com busca por palavra ("vacina" acha a seringa) e botões de tema. Fechado, mostra só o
+ * ícone atual e "Trocar ícone", para o painel não ficar comprido. Por baixo da grade, botões de
+ * rádio: as setas do teclado trocam, e o leitor de tela lê o nome de cada um.
  */
-export function IconField<V extends string>({
+export function IconPicker<V extends string>({
+  label,
+  name,
+  onChange,
+  readOnly,
+  value,
+  themes,
+  find,
+  names,
+  draw,
+}: {
+  label: string
+  name: string
+  onChange: (value: V) => void
+  readOnly?: boolean
+  value: V | undefined
+  themes: readonly (readonly [string, string])[]
+  find: (query: string, theme: string) => V[]
+  names: Record<V, string>
+  draw: (icon: V) => React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [theme, setTheme] = useState('todos')
+  const found = find(query, theme)
+  const listId = `${name}-icons`
+
+  return (
+    <div className="ed-icon-picker">
+      <div className="ed-icon-picker__now">
+        {value && <span className="ed-icon-picker__current">{draw(value)}</span>}
+        <span>{value ? names[value] : 'Nenhum'}</span>
+        <button
+          aria-controls={listId}
+          aria-expanded={open}
+          className="ed-btn ed-btn--sm"
+          disabled={readOnly}
+          onClick={() => setOpen(!open)}
+          type="button"
+        >
+          {open ? 'Fechar' : 'Trocar ícone'}
+        </button>
+      </div>
+      {open && (
+        <div className="ed-icon-picker__box" id={listId}>
+          <input
+            aria-label="Buscar ícone"
+            className="ed-input"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar: saúde, entrega, carro…"
+            type="search"
+            value={query}
+          />
+          <div aria-label="Temas" className="ed-icon-picker__themes" role="group">
+            {[['todos', 'Todos'] as const, ...themes].map(([key, title]) => (
+              <button
+                aria-pressed={theme === key}
+                className="ed-word"
+                key={key}
+                onClick={() => setTheme(key)}
+                type="button"
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+          {found.length ? (
+            <div aria-label={label} className="ed-icons" role="radiogroup">
+              {found.map((icon) => (
+                <label className="ed-icon-choice" key={icon} title={names[icon]}>
+                  <input
+                    checked={value === icon}
+                    className="ed-thumb__input"
+                    disabled={readOnly}
+                    name={name}
+                    onChange={() => onChange(icon)}
+                    type="radio"
+                    value={icon}
+                  />
+                  {draw(icon)}
+                  <span className="ed-icon-choice__name">{names[icon]}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="ed-hint" role="status">
+              Nenhum ícone com “{query.trim()}”{theme !== 'todos' ? ' neste tema' : ''}. Tente outra
+              palavra
+              {theme !== 'todos' ? ' ou veja Todos' : ''}.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Escolha em botões redondos com um valor de partida (B2, B3): itens e seções salvos antes da
+ * opção existir aparecem com a primeira já marcada, e não com nenhuma.
+ */
+export function RadioChoice<V extends string | boolean>({
   label,
   name,
   onChange,
   options,
   readOnly,
   value,
+  fallback,
 }: {
   label: string
   name: string
   onChange: (value: V) => void
-  options: { value: V; label: string; icon: React.ReactNode }[]
+  options: readonly { label: string; value: V }[]
   readOnly?: boolean
   value: V | undefined
+  fallback: V
 }) {
   return (
-    <div aria-label={label} className="ed-icons" role="radiogroup">
+    <div aria-label={label} className="ed-radios" role="radiogroup">
       {options.map((option) => (
-        <label className="ed-icon-choice" key={option.value} title={option.label}>
+        <label className="ed-radio" key={String(option.value)}>
           <input
-            checked={value === option.value}
-            className="ed-thumb__input"
+            checked={(value ?? fallback) === option.value}
             disabled={readOnly}
             name={name}
             onChange={() => onChange(option.value)}
             type="radio"
-            value={option.value}
           />
-          {option.icon}
-          <span className="ed-icon-choice__name">{option.label}</span>
+          {option.label}
         </label>
       ))}
+    </div>
+  )
+}
+
+/**
+ * Categoria de um item da Vitrine (B3), com as categorias já usadas na seção como sugestão: assim
+ * "Vitaminas" e "vitaminas " não viram dois botões no filtro do site.
+ */
+export function CategoryField({
+  name,
+  onChange,
+  readOnly,
+  value,
+}: {
+  name: string
+  onChange: (value: string) => void
+  readOnly?: boolean
+  value: string | undefined
+}) {
+  const items = usePuck((s) => s.selectedItem?.props.items as unknown)
+  const used = Array.isArray(items)
+    ? [
+        ...new Set(
+          items
+            .map((item) => String((item as { category?: unknown })?.category ?? '').trim())
+            .filter(Boolean),
+        ),
+      ]
+    : []
+  const listId = `${name}-categorias`
+  const current = value ?? ''
+  return (
+    <div className="ed-category">
+      <input
+        className="ed-input"
+        disabled={readOnly}
+        list={listId}
+        maxLength={LIMITS.productCategory}
+        name={name}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Ex.: Vitaminas, Aluguel, Corte"
+        type="text"
+        value={current}
+      />
+      <datalist id={listId}>
+        {used
+          .filter((category) => category !== current.trim())
+          .map((category) => (
+            <option key={category} value={category} />
+          ))}
+      </datalist>
+      <p className="ed-hint">
+        {used.length
+          ? `Já usadas aqui: ${used.slice(0, 6).join(', ')}${used.length > 6 ? ` e mais ${used.length - 6}` : ''}. Com duas ou mais, o site mostra botões para filtrar.`
+          : 'Com duas ou mais categorias na seção, o site mostra botões para filtrar.'}
+      </p>
     </div>
   )
 }
