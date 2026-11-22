@@ -232,7 +232,7 @@ test.describe.serial('Painel e editor no visual do produto', () => {
 
   test('editor: lista de seções com o selo "novo" sem cortar o nome', async () => {
     await page.locator('[class*="NavItem-link"]').first().click()
-    const item = page.locator('.ed-palitem:not([inert])', { hasText: 'Vitrine de produtos' })
+    const item = page.locator('.ed-palitem:not([inert])', { hasText: 'Nossas unidades' })
     await expect(item.locator('.ed-new')).toHaveText('novo')
     const name = item.locator('.ed-palitem__name b')
     const clipped = await name.evaluate((element) => element.scrollWidth > element.clientWidth)

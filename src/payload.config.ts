@@ -8,6 +8,7 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { FormFiles } from './collections/FormFiles'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Templates } from './collections/Templates'
@@ -267,7 +268,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [Pages, Media, Users, Templates, SavedSections],
+  collections: [Pages, Media, Users, Templates, SavedSections, FormFiles],
   globals: [Site, Header, Footer],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

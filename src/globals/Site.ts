@@ -11,6 +11,14 @@ import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
 import { DEFAULT_MOTION, MOTION_LABELS, MOTIONS } from '../lib/motion'
 import {
+  formatPhone,
+  mainContact,
+  toUnit,
+  toUnitData,
+  UNITS_MAX,
+  type UnitData,
+} from '../lib/units'
+import {
   DEFAULT_COLORS,
   DEFAULT_PERSONALITY,
   FONT_NAME_PATTERN,
@@ -113,6 +121,73 @@ export const prepareSiteFonts: GlobalBeforeChangeHook = async ({ data, originalD
   return data
 }
 
+type ContactData = {
+  units?: UnitData[] | null
+  whatsapp?: string | null
+  phone?: string | null
+  address?: string | null
+  hours?: string | null
+}
+
+/**
+ * D1: as unidades conferidas (horário e datas especiais limpos, telefones formatados) e os campos
+ * de sempre do contato copiados da primeira. Quem grava sem unidade, mas com o contato de sempre (o
+ * seed, uma chamada antiga da API), tem esse contato levado para a primeira unidade. Com unidades,
+ * os campos de sempre são só cópia: mudar o contato é mudar as unidades.
+ */
+export const syncUnits: GlobalBeforeChangeHook = ({ data, originalDoc }) => {
+  const contact = (data as { contact?: ContactData }).contact
+  if (!contact) return data
+  const before = (originalDoc as { contact?: ContactData } | undefined)?.contact
+  // Quem muda só os campos de sempre (uma chamada antiga da API, um script), sem mexer na lista:
+  // a mudança vai para a primeira unidade, para não ser desfeita pela cópia logo abaixo.
+  if (Array.isArray(contact.units) && contact.units.length && before) {
+    const same = (a: unknown, b: unknown) => ((a as string) || '') === ((b as string) || '')
+    const unitsKept =
+      JSON.stringify((before.units ?? []).map(toUnit)) === JSON.stringify(contact.units.map(toUnit))
+    if (unitsKept) {
+      const first = { ...contact.units[0] }
+      if (!same(contact.whatsapp, before.whatsapp)) first.whatsapp = contact.whatsapp
+      if (!same(contact.phone, before.phone)) first.phone = contact.phone
+      if (!same(contact.address, before.address)) first.address = contact.address
+      if (!same(contact.hours, before.hours)) {
+        first.schedule = null
+        first.hoursNote = contact.hours
+      }
+      contact.units = [first, ...contact.units.slice(1)]
+    }
+  }
+  // Sem unidade, mas com o contato de sempre preenchido: ele vira a primeira. (O painel, quando a
+  // pessoa tira todas, manda os campos de sempre vazios.)
+  if (!Array.isArray(contact.units) || !contact.units.length) {
+    const legacy = {
+      whatsapp: contact.whatsapp,
+      phone: contact.phone,
+      address: contact.address,
+      hoursNote: contact.hours,
+    }
+    contact.units = Object.values(legacy).some((value) => value?.trim()) ? [legacy] : []
+  }
+  const units = contact.units.slice(0, UNITS_MAX).map(toUnit)
+  contact.units = units.map((unit, index) => ({
+    ...toUnitData(unit),
+    // Linha nova sem id: o Payload cria um.
+    id: contact.units?.[index]?.id || undefined,
+  }))
+  Object.assign(
+    contact,
+    mainContact(
+      units.map((unit) => ({
+        ...unit,
+        whatsapp: formatPhone(unit.whatsapp),
+        phone: formatPhone(unit.phone),
+        phone2: formatPhone(unit.phone2),
+      })),
+    ),
+  )
+  return data
+}
+
 export const Site: GlobalConfig = {
   slug: 'site',
   label: 'Configurações do site',
@@ -129,7 +204,7 @@ export const Site: GlobalConfig = {
     max: 20,
   },
   hooks: {
-    beforeChange: [prepareSiteFonts],
+    beforeChange: [syncUnits, prepareSiteFonts],
     afterChange: [revalidateGlobalOnPublish],
   },
   fields: [
@@ -337,28 +412,74 @@ export const Site: GlobalConfig = {
                 description: 'Aparece no rodapé e nas seções de contato de todas as páginas.',
               },
               fields: [
+                // D1: as unidades do negócio. A primeira é a principal: os campos de baixo
+                // (WhatsApp, telefone, endereço e horário) são cópia dela (`syncUnits`).
+                {
+                  name: 'units',
+                  type: 'array',
+                  label: 'Unidades',
+                  labels: { singular: 'Unidade', plural: 'Unidades' },
+                  maxRows: UNITS_MAX,
+                  admin: {
+                    description:
+                      'A primeira é a principal: o rodapé, o topo e os botões de WhatsApp usam os dados dela.',
+                  },
+                  validate: (rows: unknown) =>
+                    Array.isArray(rows) &&
+                    rows.length > 1 &&
+                    rows.some((row) => !(row as UnitData)?.name?.trim())
+                      ? 'Com mais de uma unidade, dê um nome a cada uma.'
+                      : true,
+                  fields: [
+                    { name: 'name', type: 'text', label: 'Nome da unidade', maxLength: 60 },
+                    { name: 'address', type: 'textarea', label: 'Endereço', maxLength: 300 },
+                    { name: 'phone', type: 'text', label: 'Telefone', maxLength: 40 },
+                    { name: 'phone2', type: 'text', label: 'Outro telefone', maxLength: 40 },
+                    {
+                      name: 'whatsapp',
+                      type: 'text',
+                      label: 'WhatsApp',
+                      maxLength: 40,
+                      validate: (value: null | string | undefined) =>
+                        !value || normalizeWhatsApp(value)
+                          ? true
+                          : 'Digite o número com DDD. Ex.: (31) 99999-0000.',
+                    },
+                    // Os 7 dias, de domingo a sábado: { open, close } ou null (fechado).
+                    { name: 'schedule', type: 'json', label: 'Horário da semana' },
+                    {
+                      name: 'hoursNote',
+                      type: 'text',
+                      label: 'Observação do horário',
+                      maxLength: 120,
+                    },
+                    // Feriados e horário especial: { date, label, closed, open, close }.
+                    { name: 'specials', type: 'json', label: 'Feriados e horário especial' },
+                  ],
+                },
                 {
                   name: 'whatsapp',
                   type: 'text',
                   label: 'WhatsApp',
-                  admin: {
-                    description:
-                      'Com DDD. Ex.: (31) 99999-0000. Os botões de WhatsApp usam este número.',
-                  },
+                  admin: { hidden: true },
                   validate: (value: null | string | undefined) =>
                     !value || normalizeWhatsApp(value)
                       ? true
                       : 'Digite o número com DDD. Ex.: (31) 99999-0000.',
                 },
-                { name: 'phone', type: 'text', label: 'Telefone' },
+                { name: 'phone', type: 'text', label: 'Telefone', admin: { hidden: true } },
                 { name: 'email', type: 'email', label: 'E-mail' },
-                { name: 'address', type: 'textarea', label: 'Endereço' },
+                {
+                  name: 'address',
+                  type: 'textarea',
+                  label: 'Endereço',
+                  admin: { hidden: true },
+                },
                 {
                   name: 'hours',
                   type: 'text',
                   label: 'Horário de funcionamento',
-                  maxLength: 120,
-                  admin: { description: 'Ex.: Seg a sáb, das 7h às 19h.' },
+                  admin: { hidden: true },
                 },
                 {
                   name: 'whatsappMessage',

@@ -17,6 +17,8 @@ import {
   toFormDefinition,
 } from '../lib/forms'
 import { loadFormUsage } from '../lib/formUsage'
+import { siteUnits, unitName } from '../lib/units'
+import { cleanupFormFiles, FILES_CONTEXT, verifyFormFiles } from './formFiles'
 import { panelHref } from '../lib/panel'
 import { relationID } from '../lib/relations'
 import { FALLBACK_SITE_NAME, getServerURL, PRODUCT_NAME } from '../lib/site'
@@ -83,8 +85,23 @@ export const checkFormSubmission: CollectionBeforeChangeHook = async ({ data, op
     : null
   if (!form) throw new APIError('Este formulário não existe mais.', 400, null, true)
 
-  const result = checkSubmission(toFormDefinition(form), submission.submissionData)
+  const site = await req.payload.findGlobal({ slug: 'site', depth: 0, overrideAccess: true, req })
+  const units = siteUnits(site.contact).map((unit, index) => unitName(unit, index))
+  const result = checkSubmission(toFormDefinition(form), submission.submissionData, { units })
   if (!result.ok) throw new APIError(result.message, 400, null, true)
+
+  // D2: os arquivos já estão no bucket; aqui só se confere que são deste envio.
+  if (result.files.length) {
+    const files = await verifyFormFiles(req, form.id, result.files)
+    if (!files.ok) throw new APIError(files.message, 400, null, true)
+    result.data = result.data.map((item) =>
+      files.labels.has(item.field) ? { ...item, value: files.labels.get(item.field)! } : item,
+    )
+    ;(submission as { files?: number[] }).files = files.ids
+    req.context = { ...req.context, [FILES_CONTEXT]: files.ids }
+  } else {
+    ;(submission as { files?: number[] }).files = []
+  }
 
   submission.submissionData = result.data
   submission.consentText = CONSENT_TEXT
@@ -220,6 +237,12 @@ export const notifyNewMessage: CollectionAfterChangeHook = async ({ doc, operati
     })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'Não deu para avisar da mensagem nova por e-mail')
+  }
+  // D2: a cada mensagem, os arquivos com mais de 90 dias saem (a tarefa diária faz o mesmo).
+  try {
+    await cleanupFormFiles(req.payload, req, 20)
+  } catch (error) {
+    req.payload.logger.error({ err: error }, 'Não deu para limpar os arquivos antigos')
   }
   return doc
 }

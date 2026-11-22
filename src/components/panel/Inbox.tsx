@@ -317,7 +317,21 @@ export function Inbox({
                 {open.fields.map((field) => (
                   <div key={field.name}>
                     <dt>{field.label}</dt>
-                    <dd>{field.value}</dd>
+                    <dd>
+                      {field.type === 'file' && open.files[field.name] ? (
+                        <a
+                          className="gp-link gp-mfile"
+                          href={`${apiRoute}/form-files/${open.files[field.name]}/baixar`}
+                        >
+                          <PanelIcon name="download" size={16} />
+                          {field.value}
+                        </a>
+                      ) : field.type === 'file' ? (
+                        <span className="gp-muted">{field.value} · apagado depois de 90 dias</span>
+                      ) : (
+                        field.value
+                      )}
+                    </dd>
                   </div>
                 ))}
               </dl>

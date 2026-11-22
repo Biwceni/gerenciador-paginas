@@ -24,8 +24,9 @@ import {
   siteInfo,
   siteLinks,
 } from '@/lib/content'
-import { whatsAppGreeting } from '@/lib/links'
+import { whatsAppGreeting, whatsAppURL } from '@/lib/links'
 import { pageTitle } from '@/lib/pageTitle'
+import { siteUnits, unitsWithWhatsApp } from '@/lib/units'
 import { SHARE_IMAGE_SIZE, shareImagePath } from '@/lib/shareImage'
 import { FALLBACK_SITE_NAME, getServerURL } from '@/lib/site'
 import { breadcrumbJsonLd, jsonLdText, localBusinessJsonLd } from '@/lib/structuredData'
@@ -194,6 +195,10 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
       {metadata.whatsappHref && (
         <>
           <WhatsAppFloat
+            choices={unitsWithWhatsApp(siteUnits(site.contact)).flatMap(({ unit, name }) => {
+              const href = whatsAppURL(unit.whatsapp)
+              return href ? [{ name, href }] : []
+            })}
             desktop={site.contact?.whatsappFloat?.desktop === true}
             href={metadata.whatsappHref}
             phone={site.contact?.whatsappFloat?.phone !== false}

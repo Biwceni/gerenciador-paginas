@@ -74,6 +74,7 @@ export const KEEPABLE_TEXTS: readonly string[] = [
   'Agenda',
   'Antes e depois',
   'Quem confia na gente',
+  'Nossas unidades',
 ]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()

@@ -25,8 +25,9 @@ import { ErrorSummary } from './ErrorSummary'
 import { PanelIcon } from './PanelIcon'
 import { PhotoChooser } from './PhotoChooser'
 import { SaveStatus } from './SaveStatus'
-import type { SettingsState } from './settings'
+import { mainOf, type SettingsState } from './settings'
 import { Tip } from './Tip'
+import { UnitsEditor } from './UnitsEditor'
 import { useSettingsDraft } from './useSettingsDraft'
 import { WhyDisabled } from './WhyDisabled'
 
@@ -201,13 +202,18 @@ export function SettingsEditor({
   const privacyName = pageName(state.privacyPage, draftPrivacy)
   const filled = (entries: [string, string][]) =>
     entries.filter(([, value]) => value.trim()).map(([label]) => label)
-  const contactParts = filled([
-    ['WhatsApp', state.contact.whatsapp],
-    ['telefone', state.contact.phone],
-    ['e-mail', state.contact.email],
-    ['endereço', state.contact.address],
-    ['horário', state.contact.hours],
-  ])
+  const main = mainOf(state)
+  const unitCount = state.contact.units.length
+  const contactParts = [
+    ...(unitCount > 1 ? [`${unitCount} unidades`] : []),
+    ...filled([
+      ['WhatsApp', main.whatsapp ?? ''],
+      ['telefone', main.phone ?? ''],
+      ['e-mail', state.contact.email],
+      ['endereço', main.address ?? ''],
+      ['horário', main.hours ?? ''],
+    ]),
+  ]
   const socialParts = filled([
     ['Instagram', state.social.instagram],
     ['Facebook', state.social.facebook],
@@ -254,10 +260,8 @@ export function SettingsEditor({
       label: 'Contato',
       summary: contactParts.length ? join(contactParts).replace(/^./, (c) => c.toUpperCase()) : '',
       missing:
-        fix(['whatsapp', 'email']) ??
-        (state.contact.whatsapp.trim() || state.contact.email.trim()
-          ? undefined
-          : 'Falta o WhatsApp ou o e-mail'),
+        fix(['email', ...Object.keys(errors).filter((key) => key.startsWith('unit-'))]) ??
+        (main.whatsapp || state.contact.email.trim() ? undefined : 'Falta o WhatsApp ou o e-mail'),
     },
     {
       id: 'st-redes',
@@ -390,23 +394,19 @@ export function SettingsEditor({
             <div>
               <h2>Contato</h2>
               <p className="gp-small gp-muted">
-                Aparece no rodapé e na seção “Contato e endereço” de todas as páginas.
+                Aparece no rodapé e nas seções “Contato e endereço” e “Nossas unidades”.
               </p>
             </div>
+            <UnitsEditor
+              errors={errors}
+              onChange={(units) => update({ contact: { ...state.contact, units } })}
+              units={state.contact.units}
+            />
             {group(
               'contact',
-              'whatsapp',
-              'WhatsApp',
-              'Com DDD. Os botões de WhatsApp usam este número.',
-            )}
-            {group('contact', 'phone', 'Telefone')}
-            {group('contact', 'email', 'E-mail')}
-            {group('contact', 'address', 'Endereço')}
-            {group(
-              'contact',
-              'hours',
-              'Horário de funcionamento',
-              'Ex.: Seg a sáb, das 7h às 19h.',
+              'email',
+              'E-mail',
+              'Para onde vão os avisos de mensagem dos formulários. Aparece no rodapé.',
             )}
             <fieldset className="gp-fieldset gp-wa">
               <legend className="gp-label">Botões de WhatsApp do site</legend>
@@ -457,9 +457,17 @@ export function SettingsEditor({
                 />
                 Botão no canto da tela também no computador
               </label>
-              {!normalizeWhatsApp(state.contact.whatsapp) && (
+              {!normalizeWhatsApp(main.whatsapp) && (
                 <span className="gp-hint">
-                  Os botões de WhatsApp só aparecem no site com o número preenchido acima.
+                  Os botões de WhatsApp só aparecem no site com o WhatsApp da unidade principal
+                  preenchido.
+                </span>
+              )}
+              {state.contact.units.filter((unit) => normalizeWhatsApp(unit.whatsapp)).length >
+                1 && (
+                <span className="gp-hint">
+                  Com mais de uma unidade com WhatsApp, o botão do canto deixa o visitante escolher
+                  a unidade.
                 </span>
               )}
             </fieldset>

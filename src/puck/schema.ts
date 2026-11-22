@@ -870,6 +870,21 @@ export const eventsPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Events),
 })
 
+/**
+ * D1: Nossas unidades. Os dados vêm das unidades das Configurações; a seção só escolhe o título,
+ * o texto e se cada cartão tem o "Ver no mapa" (o mapa só carrega depois do toque).
+ */
+export const unitsPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  map: z.boolean().optional(),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Units),
+})
+
 export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Hero'), props: heroPropsSchema }),
   z.object({ type: z.literal('TextImage'), props: textImagePropsSchema }),
@@ -900,6 +915,7 @@ export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('LogoStrip'), props: logoStripPropsSchema }),
   z.object({ type: z.literal('BeforeAfter'), props: beforeAfterPropsSchema }),
   z.object({ type: z.literal('Events'), props: eventsPropsSchema }),
+  z.object({ type: z.literal('Units'), props: unitsPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -964,6 +980,7 @@ export type LogoStripProps = z.infer<typeof logoStripPropsSchema>
 export type LogoLook = (typeof LOGO_LOOKS)[number]
 export type BeforeAfterProps = z.infer<typeof beforeAfterPropsSchema>
 export type EventsProps = z.infer<typeof eventsPropsSchema>
+export type UnitsProps = z.infer<typeof unitsPropsSchema>
 export type EventItem = EventsProps['items'][number]
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>

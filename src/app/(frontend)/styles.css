@@ -7483,3 +7483,463 @@
 .site :is(.section--light, .section--soft) .logos:not(.logos--card) .logos__logo {
   mix-blend-mode: multiply;
 }
+
+/*
+ * D1: Nossas unidades. Cartões com o mesmo contorno da Agenda: endereço (com "Ver no mapa" e
+ * "Como chegar"), telefones, horário da semana, dias especiais e o WhatsApp da unidade. O mapa
+ * abre dentro do cartão, só depois do toque.
+ */
+.site .units {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site .units--one {
+  grid-template-columns: minmax(0, 560px);
+}
+
+.site .unit {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(18px, 2.5cqi, 26px);
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: var(--radius-media, 16px);
+}
+
+.site .unit__name {
+  margin: 0;
+  font-family: var(--font-headings);
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.site .unit__row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.site .unit__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.site .unit__address {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.site .unit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+}
+
+.site .unit__map-button {
+  min-height: 44px;
+  padding: 8px 18px;
+  font-size: 14px;
+}
+
+.site .unit__route,
+.site .unit__phone {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+
+.site .unit__phones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-top: -10px;
+  margin-bottom: -10px;
+}
+
+.site .unit__frame {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  border-radius: calc(var(--radius-media, 16px) - 6px);
+}
+
+.site .unit__hours {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.site .unit__hours > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.site .unit__hours dt {
+  font-weight: 600;
+}
+
+.site .unit__hours dd {
+  margin: 0;
+  text-align: right;
+}
+
+.site .unit__note {
+  font-size: 0.94rem;
+  opacity: 0.85;
+}
+
+.site .unit__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.site .unit__specials {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: calc(var(--radius-media, 16px) - 6px);
+  background: color-mix(in srgb, var(--color-second, var(--color-primary)) 12%, transparent);
+}
+
+.site .unit__specials ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site .unit__whatsapp {
+  align-self: flex-start;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: auto;
+}
+
+.site .unit__whatsapp .contact__icon {
+  margin: 0;
+  color: inherit;
+}
+
+.site .section--brand .unit__whatsapp,
+.site .section--brand .unit__map-button {
+  background: var(--color-on-primary);
+  color: var(--color-primary);
+}
+
+@container site (max-width: 720px) {
+  .site .unit__whatsapp {
+    align-self: stretch;
+  }
+}
+
+/* D1: a lista de unidades do botão do WhatsApp, em cima do botão. */
+.site .wa-choose {
+  display: none;
+}
+
+.site .wa-choose[hidden] {
+  display: none !important;
+}
+
+@container site (max-width: 760px) {
+  .site .wa-choose:not([data-phone-off]) {
+    display: grid;
+  }
+}
+
+@container site (min-width: 761px) {
+  .site .wa-choose[data-desktop] {
+    display: grid;
+  }
+}
+
+.site .wa-choose {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  gap: 6px;
+  width: min(300px, calc(100vw - 32px));
+  max-height: min(60vh, 460px);
+  overflow: auto;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 24%);
+}
+
+.site .wa-choose__title {
+  margin: 0 0 2px;
+  font-weight: 700;
+}
+
+.site .wa-choose ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site .wa-choose__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site .wa-choose__link:hover,
+.site .wa-choose__link:focus-visible {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.site .wa-choose__link .contact__icon {
+  margin: 0;
+  color: var(--color-primary);
+}
+
+@container site (min-width: 761px) {
+  .site .wa-choose {
+    right: 24px;
+    bottom: 92px;
+  }
+}
+
+.site button.wa-float {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+/*
+ * D2: campos novos do formulário. Dia, horário e unidade são botões de pelo menos 44 px (o
+ * botão de rádio fica escondido, o rótulo inteiro é o toque). O arquivo tem "Escolher arquivo",
+ * "Tirar foto" (só em tela de toque) e a barra de andamento.
+ */
+.site .site-form__group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.site .site-form__legend {
+  padding: 0;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.site .site-form__note {
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.85;
+}
+
+.site .site-form__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Os dias quebram em linhas, como os horários: todos à vista, sem fila escondida. */
+.site .site-form__choices--days {
+  max-height: 248px;
+  overflow-y: auto;
+}
+
+.site .site-form__choice {
+  position: relative;
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.site .site-form .site-form__choice input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.site .site-form__choice span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-line);
+  border-radius: min(var(--radius, 999px), 12px);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.site .site-form__choice--day span {
+  min-width: 60px;
+  padding: 6px 10px;
+}
+
+.site .site-form__choice small {
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.site .site-form__choice input:checked + span {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.site .site-form__choice input:focus-visible + span {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.site .site-form__choice input:disabled {
+  cursor: default;
+}
+
+.site .site-form__hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site .site-form__file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.site .site-form__file-button {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius, 999px);
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.site .site-form__file-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.site .site-form__camera {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .site .site-form__camera {
+    display: inline-block;
+  }
+}
+
+.site .site-form__file-status {
+  display: grid;
+  gap: 6px;
+}
+
+.site .site-form__progress {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--color-primary);
+}
+
+.site .site-form__file-done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.site .site-form__file-remove {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.site .section--brand .site-form__legend,
+.site .section--brand .site-form__note,
+.site .section--brand .site-form__file-done,
+.site .section--brand .site-form__file-remove {
+  color: var(--color-on-primary);
+}
+
+/* A fila de dias rola dentro do formulário: o formulário não cresce com ela. */
+.site .site-form {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.site .site-form__group {
+  position: relative;
+}
+
+.site .site-form .site-form__hidden-input {
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+}
+
+.site .site-form__choice {
+  max-width: 100%;
+}
+
+.site .site-form__choice span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

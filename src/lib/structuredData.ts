@@ -1,6 +1,7 @@
 import type { Media, Site } from '@/payload-types'
 
 import { telHref } from './links'
+import { type Schedule, siteUnits, type SpecialDay, unitName } from './units'
 
 // Dados estruturados (JSON-LD) para o Google entender o negócio: `LocalBusiness` na página inicial
 // e `BreadcrumbList` em todas. Só entra o que está preenchido nas Configurações.
@@ -36,9 +37,39 @@ type BusinessInput = {
   sameAs: string[]
 }
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/** O horário da semana de uma unidade (D1) no formato do Google: dias com o mesmo horário juntos. */
+export function openingHoursJsonLd(schedule: Schedule | null): JsonLd[] | undefined {
+  if (!schedule) return undefined
+  const byHours = new Map<string, string[]>()
+  schedule.forEach((day, index) => {
+    if (!day) return
+    const key = `${day.open}|${day.close}`
+    byHours.set(key, [...(byHours.get(key) ?? []), WEEKDAYS[index]])
+  })
+  return [...byHours].map(([key, days]) => {
+    const [opens, closes] = key.split('|')
+    return { '@type': 'OpeningHoursSpecification', dayOfWeek: days, opens, closes }
+  })
+}
+
+/** Feriados e horário especial (D1). Fechado o dia todo, para o Google, abre e fecha às 00:00. */
+export function specialHoursJsonLd(specials: SpecialDay[]): JsonLd[] | undefined {
+  if (!specials.length) return undefined
+  return specials.map((special) => ({
+    '@type': 'OpeningHoursSpecification',
+    validFrom: special.date,
+    validThrough: special.date,
+    opens: special.closed ? '00:00' : special.open,
+    closes: special.closed ? '00:00' : special.close,
+  }))
+}
+
 /**
- * O negócio, como o Google pede. O horário fica no texto da descrição: o campo das Configurações é
- * livre ("Seg a sáb, das 7h às 19h") e não dá para transformar com segurança em horários fixos.
+ * O negócio, como o Google pede. Com as unidades (D1), o horário vai no formato próprio do Google,
+ * com os feriados; a observação livre de antes continua na descrição. As outras unidades entram
+ * como departamentos, cada uma com endereço, telefone e horário.
  */
 export function localBusinessJsonLd({
   site,
@@ -50,9 +81,22 @@ export function localBusinessJsonLd({
 }: BusinessInput): JsonLd {
   const contact = site.contact
   const about = filled(site.seoDescription) ?? filled(site.tagline)
+  const units = siteUnits(contact)
+  const main = units[0]
   const hours = filled(contact?.hours)
   const description = [about, hours && `Horário: ${hours}`].filter(Boolean).join(' ') || undefined
   const address = filled(contact?.address)
+  const departments = units.slice(1).map((unit, index) => {
+    const department: JsonLd = {
+      '@type': 'LocalBusiness',
+      name: `${name} ${unitName(unit, index + 1)}`,
+      address: unit.address ? { '@type': 'PostalAddress', streetAddress: unit.address } : undefined,
+      telephone: internationalPhone(unit.phone || unit.phone2) ?? internationalPhone(unit.whatsapp),
+      openingHoursSpecification: openingHoursJsonLd(unit.schedule),
+      specialOpeningHoursSpecification: specialHoursJsonLd(unit.specials),
+    }
+    return Object.fromEntries(Object.entries(department).filter(([, value]) => value !== undefined))
+  })
   const data: JsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -65,6 +109,9 @@ export function localBusinessJsonLd({
     telephone: internationalPhone(contact?.phone) ?? internationalPhone(contact?.whatsapp),
     email: filled(contact?.email),
     address: address ? { '@type': 'PostalAddress', streetAddress: address } : undefined,
+    openingHoursSpecification: openingHoursJsonLd(main?.schedule ?? null),
+    specialOpeningHoursSpecification: specialHoursJsonLd(main?.specials ?? []),
+    department: departments.length ? departments : undefined,
     sameAs: sameAs.length ? sameAs : undefined,
   }
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined))

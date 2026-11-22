@@ -1,7 +1,22 @@
 // Formulários do site (plugin oficial de formulários do Payload). Aqui fica o que a seção e o
 // servidor dividem: o formato que a seção desenha, o formulário padrão e a conferência de um envio.
 
-export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox'
+import { todayInBrazil } from './events'
+
+export type FormFieldType =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'textarea'
+  | 'select'
+  | 'checkbox'
+  | 'file'
+  | 'date'
+  | 'time'
+  | 'unit'
+
+/** D2: que arquivo o campo aceita. */
+export type FileAccept = 'photo' | 'document'
 
 export type FormFieldDefinition = {
   type: FormFieldType
@@ -10,6 +25,15 @@ export type FormFieldDefinition = {
   required: boolean
   placeholder: string
   options: { label: string; value: string }[]
+  /** Arquivo: só foto ou foto e documento. */
+  accept?: FileAccept
+  /** Dia: quantos dias à frente dá para escolher, e em que dias da semana (0 = domingo). */
+  days?: number
+  weekdays?: number[]
+  /** Horário: das tantas às tantas, de quantos em quantos minutos. */
+  from?: string
+  to?: string
+  step?: number
 }
 
 /** Formulário como a seção desenha: só o que o visitante vê. */
@@ -22,7 +46,18 @@ export type FormDefinition = {
   fields: FormFieldDefinition[]
 }
 
-const FIELD_TYPES: FormFieldType[] = ['text', 'email', 'phone', 'textarea', 'select', 'checkbox']
+const FIELD_TYPES: FormFieldType[] = [
+  'text',
+  'email',
+  'phone',
+  'textarea',
+  'select',
+  'checkbox',
+  'file',
+  'date',
+  'time',
+  'unit',
+]
 
 /** Tipos de resposta como o leigo escolhe na tela de Formulários. */
 export const FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
@@ -32,6 +67,10 @@ export const FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
   phone: 'WhatsApp ou telefone',
   select: 'Lista de opções',
   checkbox: 'Caixa de marcar',
+  date: 'Dia',
+  time: 'Horário',
+  unit: 'Unidade',
+  file: 'Arquivo ou foto',
 }
 
 type RawBlock = {
@@ -41,6 +80,55 @@ type RawBlock = {
   required?: boolean | null
   placeholder?: string | null
   options?: { label?: string | null; value?: string | null }[] | null
+  accept?: string | null
+  days?: number | null
+  weekdays?: string | null
+  from?: string | null
+  to?: string | null
+  step?: number | null
+}
+
+// D2: os limites de cada tipo novo.
+export const FILE_MAX_BYTES = 10 * 1024 * 1024
+export const DATE_DAYS_DEFAULT = 30
+export const DATE_DAYS_MAX = 90
+export const DEFAULT_WEEKDAYS = [1, 2, 3, 4, 5, 6]
+export const TIME_STEPS = [15, 30, 60] as const
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/
+
+/** "1,2,3" → [1, 2, 3]; vazio ou errado → seg a sáb. */
+export function parseWeekdays(value: string | null | undefined): number[] {
+  const days = [
+    ...new Set(
+      (value ?? '')
+        .split(',')
+        .filter((day) => day.trim() !== '')
+        .map((day) => Number(day.trim()))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+    ),
+  ].sort()
+  return days.length ? days : DEFAULT_WEEKDAYS
+}
+
+/** O que cada tipo novo precisa, com o padrão quando falta. */
+function fieldExtras(block: RawBlock): Partial<FormFieldDefinition> {
+  switch (block.blockType) {
+    case 'file':
+      return { accept: block.accept === 'document' ? 'document' : 'photo' }
+    case 'date':
+      return {
+        days: Math.min(Math.max(Math.round(block.days ?? DATE_DAYS_DEFAULT), 1), DATE_DAYS_MAX),
+        weekdays: parseWeekdays(block.weekdays),
+      }
+    case 'time': {
+      const from = block.from && CLOCK.test(block.from) ? block.from : '08:00'
+      const to = block.to && CLOCK.test(block.to) && block.to > from ? block.to : '18:00'
+      const step = TIME_STEPS.includes(block.step as 15) ? (block.step as number) : 30
+      return { from, to: to > from ? to : '23:59', step }
+    }
+    default:
+      return {}
+  }
 }
 
 /** Do documento do plugin para o formato da seção (blocos que não usamos ficam de fora). */
@@ -69,6 +157,7 @@ export function toFormDefinition(doc: {
           options: (block.options ?? []).flatMap((option) =>
             option.value ? [{ label: option.label || option.value, value: option.value }] : [],
           ),
+          ...fieldExtras(block),
         },
       ]
     }),
@@ -282,7 +371,146 @@ const MAX_VALUE = 5000
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type SubmissionCheck =
-  { ok: true; data: { field: string; value: string }[] } | { ok: false; message: string }
+  | {
+      ok: true
+      data: { field: string; value: string }[]
+      /** Arquivos enviados: o campo, o id do arquivo e a senha do envio (o servidor confere). */
+      files: { field: string; id: number; token: string }[]
+    }
+  | { ok: false; message: string }
+
+/** Contexto do envio: a hora de agora e os nomes das unidades das Configurações. */
+export type SubmissionContext = { now?: Date; units?: string[] }
+
+// D2: dia, horário e arquivo.
+
+const WEEKDAY_LONG = [
+  'domingo',
+  'segunda-feira',
+  'terça-feira',
+  'quarta-feira',
+  'quinta-feira',
+  'sexta-feira',
+  'sábado',
+]
+const WEEKDAY_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+const addDays = (iso: string, days: number) => {
+  const date = new Date(`${iso}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+const weekdayOf = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay()
+
+/** Os dias que o visitante pode escolher: de hoje até `days` à frente, nos dias da semana certos. */
+export function bookableDays(
+  today: string,
+  days = DATE_DAYS_DEFAULT,
+  weekdays = DEFAULT_WEEKDAYS,
+): string[] {
+  const list: string[] = []
+  for (let offset = 0; offset <= days; offset++) {
+    const day = addDays(today, offset)
+    if (weekdays.includes(weekdayOf(day))) list.push(day)
+  }
+  return list
+}
+
+/** O botão do dia: "seg" e "24/11". */
+export const dayButtonText = (iso: string) => ({
+  weekday: WEEKDAY_SHORT[weekdayOf(iso)],
+  date: `${iso.slice(8, 10)}/${iso.slice(5, 7)}`,
+})
+
+/** O dia como vai na mensagem: "24/11/2026 (segunda-feira)". */
+export const dayText = (iso: string) =>
+  `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)} (${WEEKDAY_LONG[weekdayOf(iso)]})`
+
+/** Os horários do campo: "08:00", "08:30"... até antes do fim. */
+export function timeSlots(from = '08:00', to = '18:00', step = 30): string[] {
+  const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
+  const slots: string[] = []
+  for (let at = minutes(from); at < minutes(to); at += step) {
+    slots.push(
+      `${String(Math.floor(at / 60)).padStart(2, '0')}:${String(at % 60).padStart(2, '0')}`,
+    )
+  }
+  return slots
+}
+
+/** A hora de agora em Brasília: "14:05". */
+export function clockInBrazil(now: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(now)
+}
+
+/** Os horários que ainda servem no dia escolhido: hoje, só os que não passaram. */
+export function openSlots(slots: string[], day: string | null | undefined, now: Date): string[] {
+  if (!day || day !== todayInBrazil(now)) return slots
+  const clock = clockInBrazil(now)
+  return slots.filter((slot) => slot > clock)
+}
+
+/** Tipos de arquivo de cada opção (pelo tipo e, quando o navegador não diz, pela extensão). */
+export const FILE_TYPES: Record<FileAccept, { mime: string[]; ext: string[]; names: string }> = {
+  photo: {
+    mime: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
+    ext: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+    names: 'foto (JPG, PNG, WEBP ou HEIC)',
+  },
+  document: {
+    mime: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+    ext: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'pdf', 'doc', 'docx'],
+    names: 'foto, PDF ou Word',
+  },
+}
+
+/** `accept` do campo de arquivo do navegador. */
+export const acceptAttribute = (accept: FileAccept) =>
+  [...FILE_TYPES[accept].mime, ...FILE_TYPES[accept].ext.map((ext) => `.${ext}`)].join(',')
+
+/** "1,2 MB", "830 KB". */
+export function fileSizeText(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',').replace(',0', '')} MB`
+  }
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+/** Confere um arquivo antes de enviar: mensagem, ou `true` quando serve. Vale no navegador e no servidor. */
+export function checkFile(
+  file: { name: string; type: string; size: number },
+  accept: FileAccept,
+): string | true {
+  if (!file.size) return 'O arquivo está vazio. Escolha outro.'
+  if (file.size > FILE_MAX_BYTES) {
+    return `O arquivo tem ${fileSizeText(file.size)}. O máximo é ${fileSizeText(FILE_MAX_BYTES)}.`
+  }
+  const types = FILE_TYPES[accept]
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  const typeOk = file.type ? types.mime.includes(file.type) : false
+  const genericType = !file.type || file.type === 'application/octet-stream'
+  if (!typeOk && !(genericType && types.ext.includes(ext))) {
+    return `Esse tipo de arquivo não vale aqui. Envie ${types.names}.`
+  }
+  return true
+}
+
+/** O valor de um campo de arquivo no envio: "12.senha". */
+const FILE_VALUE = /^(\d{1,12})\.([A-Za-z0-9_-]{16,64})$/
 
 /**
  * Confere um envio contra o formulário: campos obrigatórios, e-mail e telefone válidos, opções da
@@ -291,7 +519,11 @@ export type SubmissionCheck =
 export function checkSubmission(
   form: FormDefinition,
   submission: { field?: unknown; value?: unknown }[] | null | undefined,
+  context: SubmissionContext = {},
 ): SubmissionCheck {
+  const now = context.now ?? new Date()
+  const today = todayInBrazil(now)
+  const units = context.units ?? []
   const values = new Map<string, string>()
   for (const item of submission ?? []) {
     if (typeof item?.field === 'string' && typeof item.value === 'string') {
@@ -300,8 +532,14 @@ export function checkSubmission(
   }
 
   const data: { field: string; value: string }[] = []
+  const files: { field: string; id: number; token: string }[] = []
+  // O dia escolhido no formulário (o primeiro campo de dia): o horário de hoje não pode ter passado.
+  const dayField = form.fields.find((field) => field.type === 'date')
+  const chosenDay = dayField ? values.get(dayField.name) : undefined
   for (const field of form.fields) {
     const value = values.get(field.name) ?? ''
+    // Unidade sem nenhuma unidade nas Configurações: o campo nem aparece no site.
+    if (field.type === 'unit' && !units.length) continue
     if (field.type === 'checkbox') {
       const checked = value === 'true'
       if (field.required && !checked) return { ok: false, message: `Marque “${field.label}”.` }
@@ -325,10 +563,34 @@ export function checkSubmission(
     if (field.type === 'select' && !field.options.some((option) => option.value === value)) {
       return { ok: false, message: `Escolha uma opção em “${field.label}”.` }
     }
+    if (field.type === 'unit' && !units.includes(value)) {
+      return { ok: false, message: `Escolha uma unidade em “${field.label}”.` }
+    }
+    if (field.type === 'date') {
+      if (!bookableDays(today, field.days, field.weekdays).includes(value)) {
+        return { ok: false, message: `Escolha um dia da lista em “${field.label}”.` }
+      }
+      data.push({ field: field.name, value: dayText(value) })
+      continue
+    }
+    if (field.type === 'time') {
+      const slots = timeSlots(field.from, field.to, field.step)
+      if (!slots.includes(value)) {
+        return { ok: false, message: `Escolha um horário da lista em “${field.label}”.` }
+      }
+      if (!openSlots(slots, chosenDay, now).includes(value)) {
+        return { ok: false, message: `O horário de “${field.label}” já passou. Escolha outro.` }
+      }
+    }
+    if (field.type === 'file') {
+      const match = FILE_VALUE.exec(value)
+      if (!match) return { ok: false, message: `Envie o arquivo de novo em “${field.label}”.` }
+      files.push({ field: field.name, id: Number(match[1]), token: match[2] })
+    }
     data.push({ field: field.name, value })
   }
   if (!data.length) return { ok: false, message: 'Preencha o formulário antes de enviar.' }
-  return { ok: true, data }
+  return { ok: true, data, files }
 }
 
 /** Uma página que usa o formulário, com o estado dela: no ar, só rascunho ou arquivada. */

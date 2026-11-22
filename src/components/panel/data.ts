@@ -292,12 +292,15 @@ export type InboxMessage = {
   consentText: string
   whatsappHref: string | null
   emailHref: string | null
+  /** D2: arquivos da mensagem que ainda estão guardados, por campo (somem depois de 90 dias). */
+  files: Record<string, number>
 }
 
 function toInboxMessage(
   doc: FormSubmission,
   forms: Map<number, FormDefinition>,
   pageTitles: Map<number, string>,
+  files: Map<number, Record<string, number>>,
 ): InboxMessage {
   const form = forms.get(relationID(doc.form) ?? 0)
   const fields = messageFields(form, doc.submissionData)
@@ -317,6 +320,7 @@ function toInboxMessage(
     consentText: doc.consentText ?? '',
     whatsappHref: messageWhatsApp(fields, sender),
     emailHref: email ? messageMailto(email) : null,
+    files: files.get(doc.id) ?? {},
   }
 }
 
@@ -341,7 +345,30 @@ async function toInboxMessages(
       })
     : null
   const titles = new Map((pages?.docs ?? []).map((page) => [page.id, pageTitle(page.title)]))
-  return docs.map((doc) => toInboxMessage(doc, forms, titles))
+  const stored = docs.length
+    ? await payload.find({
+        collection: 'form-files',
+        where: {
+          and: [
+            { submission: { in: docs.map((doc) => doc.id) } },
+            { status: { equals: 'attached' } },
+          ],
+        },
+        select: { field: true, submission: true },
+        depth: 0,
+        limit: 1000,
+        pagination: false,
+        overrideAccess: false,
+        user,
+      })
+    : null
+  const files = new Map<number, Record<string, number>>()
+  for (const file of stored?.docs ?? []) {
+    const message = relationID(file.submission)
+    if (!message) continue
+    files.set(message, { ...files.get(message), [file.field]: file.id })
+  }
+  return docs.map((doc) => toInboxMessage(doc, forms, titles, files))
 }
 
 async function loadFormDefinitions(payload: Payload, user: TypedUser) {

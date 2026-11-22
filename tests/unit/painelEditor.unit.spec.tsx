@@ -192,9 +192,9 @@ describe('lista "Adicionar seção"', () => {
     expect(html).toContain('var(--ed-site-on-primary, var(--gp-accent-ink))')
   })
 
-  it('marca como novas só as seções da etapa 4a', () => {
+  it('marca como novas só as seções das etapas 4a e 4b', () => {
     expect([...NEW_SECTIONS].sort()).toEqual(
-      ['BeforeAfter', 'Events', 'LogoStrip', 'Table', 'Team'].sort(),
+      ['BeforeAfter', 'Events', 'LogoStrip', 'Table', 'Team', 'Units'].sort(),
     )
   })
 })

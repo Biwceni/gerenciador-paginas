@@ -8,6 +8,7 @@ import { templateBlockType } from './forms'
 import { PRIVACY_TEMPLATE_KEY } from './privacy'
 import { relationID } from './relations'
 import { archivedSlug, slugify, uniqueSlug } from './slug'
+import { siteUnits, toUnitData } from './units'
 
 export { archivedSlug }
 import {
@@ -248,6 +249,8 @@ export function templateSiteData(
     motion: site.motion,
     contact: {
       ...site.contact,
+      // D1: o WhatsApp respondido vai para a unidade principal (os campos de sempre são cópia dela).
+      units: templateUnits(site.contact, answers.whatsapp),
       whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
       address: site.contact?.address || null,
       hours: site.contact?.hours || null,
@@ -256,6 +259,15 @@ export function templateSiteData(
     },
     _status: 'published' as const,
   }
+}
+
+/** As unidades de hoje, com o WhatsApp respondido no início guiado na principal. */
+export function templateUnits(contact: Site['contact'], whatsapp: string | null | undefined) {
+  const units = siteUnits(contact).map(toUnitData)
+  const answer = whatsapp?.trim()
+  if (!answer) return units
+  if (!units.length) return [{ whatsapp: answer }]
+  return [{ ...units[0], whatsapp: answer }, ...units.slice(1)]
 }
 
 /**

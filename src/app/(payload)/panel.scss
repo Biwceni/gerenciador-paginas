@@ -4913,3 +4913,244 @@ textarea.gp-input {
     margin-left: 14px;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * Etapa 4b (D1): unidades em Configurações › Contato, cada uma na sua janela
+ * ------------------------------------------------------------------------------------------- */
+
+.gp-units {
+  display: grid;
+  gap: 10px;
+
+  > div > p {
+    margin: 2px 0 0;
+  }
+
+  &__list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.gp-unit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--gp-line);
+  border-radius: 12px;
+  padding: 10px 10px 10px 14px;
+
+  &__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+
+    > span {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__badge {
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--gp-accent-soft);
+    color: var(--gp-ink);
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+  }
+
+  &__moves {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+
+    .gp-iconbtn[disabled] {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@media (max-width: 760px) {
+  .gp-unit {
+    flex-wrap: wrap;
+
+    &__moves {
+      width: 100%;
+
+      .gp-btn {
+        margin-right: auto;
+        min-height: 44px;
+      }
+    }
+  }
+}
+
+.gp-unitform {
+  gap: 16px;
+}
+
+.gp-hours {
+  &__shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+  }
+
+  &__rows {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    min-height: 44px;
+  }
+
+  &__open {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 120px;
+    font-weight: 600;
+    cursor: pointer;
+
+    input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--gp-accent);
+    }
+  }
+
+  &__times {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    .gp-input {
+      width: auto;
+      min-width: 112px;
+      padding: 8px 10px;
+    }
+  }
+}
+
+.gp-specials {
+  > p {
+    margin: 0;
+  }
+
+  &__list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 4px 4px 12px;
+    border-radius: 10px;
+    background: var(--gp-surface-2);
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__new {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr) 170px;
+    gap: 10px;
+    align-items: end;
+  }
+
+  &__times {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .gp-specials__new {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gp-linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* D2: opções dos tipos novos de pergunta (dia e horário). */
+.gp-qopts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+
+  > .gp-hint {
+    flex-basis: 100%;
+  }
+
+  .gp-input--short {
+    width: 110px;
+  }
+
+  &__days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    > legend {
+      width: 100%;
+      margin-bottom: 4px;
+      padding: 0;
+    }
+  }
+
+  &__day {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    cursor: pointer;
+
+    input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--gp-accent);
+    }
+  }
+}
+
+.gp-mfile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}

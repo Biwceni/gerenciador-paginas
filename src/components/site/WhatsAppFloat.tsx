@@ -2,6 +2,8 @@ import React from 'react'
 
 import { ContactIcon } from '@/puck/components/FeatureIcon'
 
+import { WhatsAppChooser } from './WhatsAppChooser'
+
 /**
  * Botão do WhatsApp no canto da tela: só o ícone redondo de 56 px, sempre à vista (componentes,
  * C16, achado G1). Quem decide onde ele aparece é o dono, em Configurações › Contato (W1): no
@@ -12,12 +14,17 @@ export function WhatsAppFloat({
   href,
   phone = true,
   desktop = false,
+  choices = [],
 }: {
   href: string
   phone?: boolean
   desktop?: boolean
+  /** D1: uma por unidade com WhatsApp. Com duas ou mais, o botão pergunta qual. */
+  choices?: { name: string; href: string }[]
 }) {
   if (!phone && !desktop) return null
+  if (choices.length > 1)
+    return <WhatsAppChooser choices={choices} desktop={desktop} phone={phone} />
   return (
     <a
       aria-label="Falar no WhatsApp"

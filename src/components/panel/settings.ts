@@ -1,9 +1,10 @@
 import { formatCNPJ, validateCNPJ } from '@/lib/company'
-import { normalizeWhatsApp, socialURL, validateSocial } from '@/lib/links'
+import { socialURL, validateSocial } from '@/lib/links'
 import { type Motion, safeMotion } from '@/lib/motion'
 import { relationID } from '@/lib/relations'
 import type { SiteColors } from '@/lib/style-presets'
 import { DEFAULT_COLORS, type Personality, safePersonality } from '@/lib/theme'
+import { mainContact, siteUnits, toUnitData, type Unit, unitErrors } from '@/lib/units'
 import type { Site } from '@/payload-types'
 
 // Estado da tela Configurações e a conversão de/para o global `site`. Fica fora do componente
@@ -25,11 +26,9 @@ export type SettingsState = {
   motion: Motion
   fonts: { headings: string; body: string }
   contact: {
-    whatsapp: string
-    phone: string
+    /** D1: as unidades. A primeira é a principal (rodapé, topo, botões de WhatsApp). */
+    units: Unit[]
     email: string
-    address: string
-    hours: string
     /** Mensagem que já vem escrita no WhatsApp (W2). */
     whatsappMessage: string
   }
@@ -61,11 +60,8 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
     motion: safeMotion(site.motion),
     fonts: { headings: site.fonts?.headings ?? '', body: site.fonts?.body ?? '' },
     contact: {
-      whatsapp: site.contact?.whatsapp ?? '',
-      phone: site.contact?.phone ?? '',
+      units: siteUnits(site.contact),
       email: site.contact?.email ?? '',
-      address: site.contact?.address ?? '',
-      hours: site.contact?.hours ?? '',
       whatsappMessage: site.contact?.whatsappMessage ?? '',
     },
     whatsappFloat: {
@@ -110,11 +106,9 @@ export function toSiteData(state: SettingsState) {
     motion: state.motion,
     fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
     contact: {
-      whatsapp: orNull(state.contact.whatsapp),
-      phone: orNull(state.contact.phone),
+      units: state.contact.units.map(toUnitData),
+      ...mainContact(state.contact.units),
       email: orNull(state.contact.email),
-      address: orNull(state.contact.address),
-      hours: orNull(state.contact.hours),
       whatsappMessage: orNull(state.contact.whatsappMessage),
       whatsappFloat: state.whatsappFloat,
     },
@@ -138,15 +132,20 @@ export function toSiteData(state: SettingsState) {
 
 export type SiteData = ReturnType<typeof toSiteData>
 
+/** Os dados da unidade principal, para as prévias (rodapé, topo) e o resumo da tela. */
+export const mainOf = (state: Pick<SettingsState, 'contact'>) => mainContact(state.contact.units)
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Problemas que impedem salvar, por campo, em linguagem simples. */
 export function validateSettings(state: SettingsState): Record<string, string> {
   const errors: Record<string, string> = {}
   if (!state.name.trim()) errors.name = 'Escreva o nome do negócio.'
-  if (state.contact.whatsapp && !normalizeWhatsApp(state.contact.whatsapp)) {
-    errors.whatsapp = 'Digite o número com DDD. Ex.: (31) 99999-0000.'
-  }
+  state.contact.units.forEach((unit, index) => {
+    for (const [key, message] of Object.entries(unitErrors(unit, state.contact.units.length))) {
+      errors[`unit-${index}-${key}`] = message
+    }
+  })
   if (state.contact.email && !EMAIL.test(state.contact.email.trim())) {
     errors.email = 'Confira o e-mail. Ex.: contato@seunegocio.com.br'
   }

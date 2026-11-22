@@ -4,6 +4,7 @@ import type { Block, Field } from 'payload'
 
 import { anyone, authenticated } from '../access/authenticated'
 import { spreadsheetEndpoint } from '../endpoints/messagesSpreadsheet'
+import { attachFormFiles, deleteSubmissionFiles } from '../hooks/formFiles'
 import {
   checkFormSubmission,
   notifyNewMessage,
@@ -91,6 +92,67 @@ const phoneBlock: Block = {
   ],
 }
 
+const baseFields: Field[] = [
+  { name: 'name', type: 'text', label: 'Nome do campo', required: true },
+  { name: 'label', type: 'text', label: 'Pergunta' },
+  { name: 'width', type: 'number', label: 'Largura' },
+  { name: 'required', type: 'checkbox', label: 'Obrigatório' },
+]
+
+/** D2: arquivo ou foto. O arquivo vai para o armazenamento privado (coleção `form-files`). */
+const fileBlock: Block = {
+  slug: 'file',
+  labels: { singular: 'Arquivo ou foto', plural: 'Arquivos ou fotos' },
+  fields: [
+    ...baseFields,
+    {
+      name: 'accept',
+      type: 'select',
+      label: 'Aceita',
+      defaultValue: 'photo',
+      options: [
+        { value: 'photo', label: 'Só foto' },
+        { value: 'document', label: 'Foto, PDF ou Word' },
+      ],
+    },
+  ],
+}
+
+/** D2: dia, em botões, de hoje até tantos dias à frente, nos dias da semana marcados. */
+const dateBlock: Block = {
+  slug: 'date',
+  labels: { singular: 'Dia', plural: 'Dias' },
+  fields: [
+    ...baseFields,
+    { name: 'days', type: 'number', label: 'Dias à frente', defaultValue: 30, min: 1, max: 90 },
+    {
+      name: 'weekdays',
+      type: 'text',
+      label: 'Dias da semana (0 = domingo)',
+      defaultValue: '1,2,3,4,5,6',
+    },
+  ],
+}
+
+/** D2: horário, em botões, das tantas às tantas. Hoje, os que já passaram somem. */
+const timeBlock: Block = {
+  slug: 'time',
+  labels: { singular: 'Horário', plural: 'Horários' },
+  fields: [
+    ...baseFields,
+    { name: 'from', type: 'text', label: 'Primeiro horário', defaultValue: '08:00' },
+    { name: 'to', type: 'text', label: 'Até', defaultValue: '18:00' },
+    { name: 'step', type: 'number', label: 'De quantos em quantos minutos', defaultValue: 30 },
+  ],
+}
+
+/** D2: unidade, com as unidades das Configurações. */
+const unitBlock: Block = {
+  slug: 'unit',
+  labels: { singular: 'Unidade', plural: 'Unidades' },
+  fields: baseFields,
+}
+
 /**
  * Formulários do site (plugin oficial). Formulários: o leigo monta os campos. Mensagens: cada envio
  * do site, guardado no painel e avisado por e-mail. Decisão de 26/10/2026: lista e e-mail, com a
@@ -111,7 +173,10 @@ export const formsPlugin = formBuilderPlugin({
     state: false,
     number: false,
     message: false,
-    date: false,
+    date: dateBlock as unknown as FieldConfig,
+    time: timeBlock as unknown as FieldConfig,
+    unit: unitBlock as unknown as FieldConfig,
+    file: fileBlock as unknown as FieldConfig,
     radio: false,
     payment: false,
     upload: false,
@@ -182,6 +247,16 @@ export const formsPlugin = formBuilderPlugin({
         admin: { readOnly: true },
       },
       {
+        // D2: arquivos enviados com a mensagem (privados, apagados sozinhos depois de 90 dias).
+        name: 'files',
+        type: 'relationship',
+        relationTo: 'form-files',
+        hasMany: true,
+        label: 'Arquivos',
+        access: locked,
+        admin: { readOnly: true },
+      },
+      {
         // Quem envia pelo site não escolhe: toda mensagem nasce não lida.
         name: 'read',
         type: 'checkbox',
@@ -193,7 +268,8 @@ export const formsPlugin = formBuilderPlugin({
     ],
     hooks: {
       beforeChange: [checkFormSubmission],
-      afterChange: [notifyNewMessage],
+      afterChange: [attachFormFiles, notifyNewMessage],
+      afterDelete: [deleteSubmissionFiles],
     },
   },
 })

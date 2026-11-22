@@ -29,6 +29,7 @@ function sectionText(item: PageComponent): string {
     case 'Team':
     case 'BeforeAfter':
     case 'Events':
+    case 'Units':
       return item.props.text
     case 'Features':
       return item.props.items[0]?.text ?? ''

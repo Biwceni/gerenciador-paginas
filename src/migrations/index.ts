@@ -24,6 +24,7 @@ import * as migration_20261116_180000_menu_rodape_whatsapp from './20261116_1800
 import * as migration_20261122_013907_aviso_no_alto from './20261122_013907_aviso_no_alto';
 import * as migration_20261122_112409_marca_logo_segunda_cor from './20261122_112409_marca_logo_segunda_cor';
 import * as migration_20261122_125509_menu_grupos_rodape_empresa from './20261122_125509_menu_grupos_rodape_empresa';
+import * as migration_20261122_212843_unidades_formulario_arquivos from './20261122_212843_unidades_formulario_arquivos';
 
 export const migrations = [
   {
@@ -154,6 +155,11 @@ export const migrations = [
   {
     up: migration_20261122_125509_menu_grupos_rodape_empresa.up,
     down: migration_20261122_125509_menu_grupos_rodape_empresa.down,
-    name: '20261122_125509_menu_grupos_rodape_empresa'
+    name: '20261122_125509_menu_grupos_rodape_empresa',
+  },
+  {
+    up: migration_20261122_212843_unidades_formulario_arquivos.up,
+    down: migration_20261122_212843_unidades_formulario_arquivos.down,
+    name: '20261122_212843_unidades_formulario_arquivos'
   },
 ];

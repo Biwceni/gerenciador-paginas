@@ -22,6 +22,7 @@ import {
   LogoStrip,
   BeforeAfter,
   Events,
+  Units,
   LinkList,
   PriceList,
   Privacy,
@@ -53,6 +54,7 @@ import type {
   LogoStripProps,
   BeforeAfterProps,
   EventsProps,
+  UnitsProps,
   LinkListProps,
   PriceListProps,
   PrivacyProps,
@@ -95,6 +97,7 @@ export type Components = {
   LogoStrip: Props<LogoStripProps>
   BeforeAfter: Props<BeforeAfterProps>
   Events: Props<EventsProps>
+  Units: Props<UnitsProps>
   ColumnTitle: Props<ColumnTitleProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
@@ -121,6 +124,7 @@ export const SECTION_LABELS = {
   Table: 'Tabela',
   CallToAction: 'Chamada para ação',
   Contact: 'Contato e endereço',
+  Units: 'Nossas unidades',
   LinkList: 'Lista de links',
   Columns: 'Colunas',
   RichText: 'Texto simples',
@@ -258,6 +262,10 @@ export const renderConfig: Config<Components> = {
     Events: {
       label: SECTION_LABELS.Events,
       render: ({ puck, ...props }) => <Events {...props} metadata={meta(puck)} />,
+    },
+    Units: {
+      label: SECTION_LABELS.Units,
+      render: ({ puck, ...props }) => <Units {...props} metadata={meta(puck)} />,
     },
     ColumnTitle: {
       label: PIECE_LABELS.ColumnTitle,
