@@ -1,7 +1,13 @@
 import type { Payload, TypedUser, Where } from 'payload'
 import { cache } from 'react'
 
-import { exampleTexts, findExampleSections, isExamplePhoto } from '@/lib/examples'
+import {
+  exampleTexts,
+  findChromeExamples,
+  findExampleSections,
+  footerExampleTexts,
+  isExamplePhoto,
+} from '@/lib/examples'
 import { type FormDefinition, toFormDefinition } from '@/lib/forms'
 import {
   messageDate,
@@ -99,6 +105,19 @@ export async function loadExampleTexts(payload: Payload, user: TypedUser): Promi
   return exampleTexts(docs)
 }
 
+/** Textos do rodapé que vêm dos modelos: a frase e a chamada (A7). */
+export async function loadFooterExampleTexts(payload: Payload, user: TypedUser): Promise<string[]> {
+  const { docs } = await payload.find({
+    collection: 'templates',
+    select: { footer: true },
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+    user,
+  })
+  return footerExampleTexts(docs)
+}
+
 /**
  * O que o cartão "Para o site ficar pronto" precisa. Vale o que a pessoa está editando (o rascunho
  * mais recente de cada página fora de "Arquivadas") e as configurações que estão no ar. `pageOrder`
@@ -110,11 +129,11 @@ export async function loadFinishInput(
   pageOrder: PageRow[],
 ): Promise<FinishInput> {
   const access = { overrideAccess: false, user } as const
-  const [latest, photos, site, texts] = await Promise.all([
+  const [latest, photos, site, texts, footer, footerTexts] = await Promise.all([
     payload.find({
       collection: 'pages',
       where: NOT_ARCHIVED,
-      select: { content: true, seo: true },
+      select: { title: true, content: true, seo: true },
       depth: 0,
       draft: true,
       limit: 500,
@@ -131,6 +150,8 @@ export async function loadFinishInput(
     }),
     payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access }),
     loadExampleTexts(payload, user),
+    payload.findGlobal({ slug: 'footer', depth: 0, draft: true, ...access }),
+    loadFooterExampleTexts(payload, user),
   ])
 
   const examplePhotos = new Set(photos.docs.filter(isExamplePhoto).map((photo) => photo.id))
@@ -143,7 +164,9 @@ export async function loadFinishInput(
     const data = content.success ? content.data.data : null
     const used = pagePhotoIds(data, doc.seo?.image)
     if (used.some((id) => examplePhotos.has(id))) examplePhotoPages++
-    if (data && findExampleSections(data, texts).length) withTexts.add(doc.id)
+    if (data && findExampleSections(data, texts, { pageTitle: doc.title }).length) {
+      withTexts.add(doc.id)
+    }
     // As fotos de exemplo têm o próprio passo: aqui contam só as fotos da pessoa.
     const small = smallPhotos(data, (id) => photoById.get(id)).filter(
       ({ id }) => !examplePhotos.has(id),
@@ -160,6 +183,7 @@ export async function loadFinishInput(
       .filter((page) => withTexts.has(page.id))
       .map(({ id, title }) => ({ id, title })),
     examplePhotoPages,
+    chromeExamples: findChromeExamples(footer, footerTexts).map((hit) => hit.place),
     smallPhotoPages: pageOrder
       .filter((page) => withSmallPhotos.has(page.id))
       .map(({ id, title }) => ({ id, title })),

@@ -30,6 +30,16 @@ export function counterText(length: number, max: number): string {
 /** Quanto esperar a pessoa parar de digitar para levar o texto à prévia (achado 13.5). */
 export const TYPING_PAUSE = 250
 
+/**
+ * O rascunho foi salvo e a página na tela é igual à salva (o editor avisa). O campo que mudou
+ * mostra "Guardado" (A5).
+ */
+export const DRAFT_SAVED_EVENT = 'gp:rascunho-salvo'
+/** A pessoa saiu de um campo de texto: o editor salva já, sem esperar a pausa (A5). */
+export const FIELD_LEFT_EVENT = 'gp:campo-deixado'
+/** Quanto tempo o "Guardado" fica embaixo do campo. */
+export const SAVED_SHOWN = 3000
+
 type Change = (value: unknown, ...rest: unknown[]) => void
 
 /**
@@ -40,19 +50,23 @@ type Change = (value: unknown, ...rest: unknown[]) => void
  * campo vem antes de qualquer outra escolha (outra seção, Publicar), então o texto nunca vai para
  * a seção errada.
  */
-function usePausedChange(onChange: Change | undefined) {
+function usePausedChange(onChange: Change | undefined, onSent?: () => void) {
   const pending = useRef<unknown[] | null>(null)
+  const sent = useRef(onSent)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const latest = useRef(onChange)
   useEffect(() => {
     latest.current = onChange
+    sent.current = onSent
   })
 
   const flush = useCallback(() => {
     clearTimeout(timer.current)
     const args = pending.current
     pending.current = null
-    if (args) latest.current?.(...(args as [unknown, ...unknown[]]))
+    if (!args) return
+    latest.current?.(...(args as [unknown, ...unknown[]]))
+    sent.current?.()
   }, [])
 
   const deferred = useCallback<Change>(
@@ -168,7 +182,34 @@ export function CountedField({
   value?: unknown
 }) {
   const paused = field?.type === 'text' || field?.type === 'textarea'
-  const { deferred, flush } = usePausedChange(onChange)
+  // O texto deste campo já foi para a página, mas o rascunho ainda não foi salvo com ele.
+  const unsaved = useRef(false)
+  const [savedShown, setSavedShown] = useState(false)
+  const { deferred, flush } = usePausedChange(onChange, () => {
+    unsaved.current = true
+  })
+  // Saiu do campo: o texto vai para a página e o editor salva já (A5).
+  const leave = useCallback(() => {
+    flush()
+    if (unsaved.current) window.dispatchEvent(new Event(FIELD_LEFT_EVENT))
+  }, [flush])
+
+  useEffect(() => {
+    if (!paused) return
+    let hide: ReturnType<typeof setTimeout> | undefined
+    const onSaved = () => {
+      if (!unsaved.current) return
+      unsaved.current = false
+      setSavedShown(true)
+      clearTimeout(hide)
+      hide = setTimeout(() => setSavedShown(false), SAVED_SHOWN)
+    }
+    window.addEventListener(DRAFT_SAVED_EVENT, onSaved)
+    return () => {
+      window.removeEventListener(DRAFT_SAVED_EVENT, onSaved)
+      clearTimeout(hide)
+    }
+  }, [paused])
   // O texto que a pessoa vê no campo, antes de chegar à prévia (para o contador). Vale enquanto o
   // valor do Puck for o de quando a pessoa digitou; um Desfazer, por exemplo, troca o valor e manda.
   const [typed, setTyped] = useState<{ text: unknown; over: unknown } | null>(null)
@@ -215,23 +256,44 @@ export function CountedField({
     else input.removeAttribute('aria-invalid')
   }, [id, max, over])
 
+  // "Guardado" só no campo que mudou, por 3 s, e o leitor de tela ouve uma vez (A5).
+  const savedNote = paused ? (
+    <span aria-live="polite" className="ed-saved-note">
+      {savedShown && (
+        <>
+          <span aria-hidden="true">✓ </span>Guardado
+        </>
+      )}
+    </span>
+  ) : null
+
   if (max === null) {
     return paused ? (
-      <div onBlur={flush} style={{ display: 'contents' }}>
+      <div className="ed-counted ed-counted--free" data-name={name} onBlur={leave}>
         {field_}
+        {savedNote}
       </div>
     ) : (
-      <>{children}</>
+      <div data-name={name} style={{ display: 'contents' }}>
+        {children}
+      </div>
     )
   }
   const tone = over ? 'over' : length >= max * 0.9 ? 'near' : 'ok'
 
   return (
-    <div className="ed-counted" data-tone={tone} onBlur={paused ? flush : undefined} ref={box}>
+    <div
+      className="ed-counted"
+      data-name={name}
+      data-tone={tone}
+      onBlur={paused ? leave : undefined}
+      ref={box}
+    >
       {field_}
       <span aria-live={over ? 'polite' : 'off'} className="ed-counter" id={id}>
         {counterText(length, max)}
       </span>
+      {savedNote}
     </div>
   )
 }

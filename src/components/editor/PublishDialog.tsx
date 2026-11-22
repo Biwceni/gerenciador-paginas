@@ -19,7 +19,16 @@ import type { PuckPageData } from '@/puck/schema'
 import { getHeader, updatePhotoAlt } from './api'
 import { thumbnailURL, useEditor } from './context'
 import { Dialog } from './Dialog'
-import { addMenuItem, linksTo, type MenuItems, type MenuState, readMenu } from './menu'
+import { EXAMPLES_SHOWN } from './ExampleTexts'
+import {
+  addMenuItem,
+  linksTo,
+  menuLabel,
+  type MenuItems,
+  type MenuState,
+  readMenu,
+  swapMenuItem,
+} from './menu'
 
 /** Descrição que não ajuda ninguém: nome de arquivo ou uma palavra só (como o "sdfsds" da POC). */
 export function weakAlt(alt: string | null | undefined): boolean {
@@ -42,9 +51,14 @@ type Props = {
     opensSite: boolean
     /** Foto escolhida em "Página e Google". */
     seoImage: Media | number | null | undefined
+    /** Página de campanha: não costuma ir para o menu. */
+    campaign: boolean
   }
-  /** Seções que ainda têm texto de exemplo, na ordem da página. */
-  exampleSections: { id: string; label: string }[]
+  /**
+   * Textos de exemplo, na ordem da página (A7): o lugar, o texto e a seção (vazia nos do rodapé,
+   * que mudam em Menu e rodapé).
+   */
+  examples: { id: string; label: string; text: string }[]
   /** Botões e links com nome e sem destino: no site eles somem. */
   linkless: { id: string; label: string; section: string }[]
   /** Botões que levam para uma seção sem nome no menu: no site, vão para o topo (achado 13.6). */
@@ -72,7 +86,7 @@ export function PublishDialog({
   apiRoute,
   data,
   page,
-  exampleSections,
+  examples,
   linkless,
   unnamedLinks,
   onGoTo,
@@ -84,14 +98,26 @@ export function PublishDialog({
 }: Props) {
   const { pageId, homepageId, pages, photoById, whatsappHref, site, adminRoute } = useEditor()
   const [alts, setAlts] = useState<Record<number, string>>({})
-  const [addToMenu, setAddToMenu] = useState(true)
+  // "Colocar no menu" vem marcado só nas páginas que costumam ir para o topo (A6): campanha e
+  // privacidade, não. Ficar fora do menu não é aviso.
+  const [addToMenu, setAddToMenu] = useState(
+    () => !page.campaign && !data.content.some((section) => section.type === 'Privacy'),
+  )
+  // Menu cheio: o passo em que a pessoa escolhe qual link sai (o último vem marcado).
+  const [choosing, setChoosing] = useState(false)
+  const [leaving, setLeaving] = useState<number | 'none'>(-1)
   // A página inicial não precisa estar no menu: o logo já leva até ela.
   const [menu, setMenu] = useState<MenuState>(
     pageId === homepageId ? { kind: 'in-menu' } : { kind: 'loading' },
   )
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ addedToMenu: boolean; menuError?: string } | null>(null)
+  const [done, setDone] = useState<{
+    addedToMenu: boolean
+    /** O link que saiu do menu para a página entrar. */
+    replaced?: string
+    menuError?: string
+  } | null>(null)
   const [withBrand, setWithBrand] = useState(Boolean(brand?.changedHere))
   // Sua marca depois de publicar a página: foi junto, falhou (com o "Tentar de novo") ou nem foi.
   const [brandResult, setBrandResult] = useState<
@@ -173,7 +199,7 @@ export function PublishDialog({
   // O que está na tela como aviso. A foto já descrita e o menu marcado se resolvem ao publicar.
   const hasWarning =
     data.content.length === 0 ||
-    exampleSections.length > 0 ||
+    examples.length > 0 ||
     hidden.length > 0 ||
     deviceLinks.length > 0 ||
     examplePhotos.length > 0 ||
@@ -184,11 +210,21 @@ export function PublishDialog({
     (brand !== null && !withBrand) ||
     slugTakenBy !== null ||
     whatsappWithoutNumber ||
-    missing.length > 0 ||
-    menu.kind === 'cannot-add' ||
-    (menu.kind === 'can-add' && !addToMenu)
+    missing.length > 0
+
+  const menuItemFor = {
+    label: menuLabel(page.title),
+    link: { kind: 'page' as const, page: pageId },
+  }
+  // Vai entrar no menu cheio: antes de publicar, a escolha do link que sai.
+  const swapping = menu.kind === 'full' && addToMenu
 
   const publish = async () => {
+    if (swapping && !choosing) {
+      setLeaving(menu.items.length - 1)
+      setChoosing(true)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -207,11 +243,11 @@ export function PublishDialog({
     if (brand && withBrand) await sendBrand()
     try {
       if (menu.kind === 'can-add' && addToMenu) {
-        await addMenuItem(apiRoute, menu.items, {
-          label: page.title.slice(0, 30),
-          link: { kind: 'page', page: pageId },
-        })
+        await addMenuItem(apiRoute, menu.items, menuItemFor)
         setDone({ addedToMenu: true })
+      } else if (swapping && typeof leaving === 'number' && menu.items[leaving]) {
+        await swapMenuItem(apiRoute, menu.items, leaving, menuItemFor)
+        setDone({ addedToMenu: true, replaced: menu.items[leaving].label })
       } else setDone({ addedToMenu: false })
     } catch (caught) {
       setDone({
@@ -244,7 +280,10 @@ export function PublishDialog({
       <Dialog onClose={onClose} title="Pronto, a página está no ar">
         <p>
           Quem acessar <b>{address}</b> já vê a versão nova.
-          {done.addedToMenu && ' Ela também entrou no menu.'}
+          {done.addedToMenu &&
+            (done.replaced
+              ? ` Ela também entrou no menu, no lugar de “${done.replaced}”.`
+              : ' Ela também entrou no menu.')}
           {brandResult?.state === 'published' &&
             ' Sua marca também foi publicada: todas as páginas já mostram as cores e letras novas.'}
         </p>
@@ -292,6 +331,66 @@ export function PublishDialog({
     )
   }
 
+  if (choosing && menu.kind === 'full') {
+    const name = menuLabel(page.title)
+    return (
+      <Dialog
+        description={`Para entrar “${name}”, escolha qual link sai do topo.`}
+        footer={
+          <>
+            <button
+              className="ed-btn"
+              disabled={busy}
+              onClick={() => setChoosing(false)}
+              type="button"
+            >
+              Voltar
+            </button>
+            <button
+              className="ed-btn ed-btn--primary"
+              disabled={busy || slugTakenBy !== null}
+              onClick={publish}
+              type="button"
+            >
+              {busy
+                ? 'Publicando…'
+                : leaving === 'none'
+                  ? 'Publicar sem pôr no menu'
+                  : `Publicar com “${name}”`}
+            </button>
+          </>
+        }
+        onClose={onClose}
+        title={`O menu já tem ${menu.items.length} links`}
+      >
+        <fieldset aria-label="Qual link sai do topo" className="ed-menu-swap">
+          {menu.items.map((item, index) => (
+            <label className="ed-menu-swap__option" key={item.id ?? index}>
+              <input
+                checked={leaving === index}
+                name="ed-menu-swap"
+                onChange={() => setLeaving(index)}
+                type="radio"
+              />
+              <span>{item.label}</span>
+              {leaving === index && <span className="ed-hint">sai do topo e continua no ar</span>}
+            </label>
+          ))}
+          <label className="ed-menu-swap__option ed-menu-swap__option--none">
+            <input
+              checked={leaving === 'none'}
+              name="ed-menu-swap"
+              onChange={() => setLeaving('none')}
+              type="radio"
+            />
+            <span>Não pôr “{name}” no menu agora</span>
+          </label>
+        </fieldset>
+        {error && <p className="ed-hint ed-hint--warn">Não deu para publicar: {error}</p>}
+      </Dialog>
+    )
+  }
+
   return (
     <Dialog
       description={
@@ -304,7 +403,7 @@ export function PublishDialog({
         <>
           {/* Fica sempre à vista, junto dos botões: a pessoa decide antes de publicar, mesmo com
               uma lista comprida de avisos (rodada 2, F9). */}
-          {menu.kind === 'can-add' && (
+          {(menu.kind === 'can-add' || menu.kind === 'full') && (
             <label className="ed-switch ed-publish-menu">
               <input
                 checked={addToMenu}
@@ -337,9 +436,11 @@ export function PublishDialog({
               ? 'Publicando…'
               : menu.kind === 'loading'
                 ? 'Conferindo o menu…'
-                : hasWarning
-                  ? 'Publicar mesmo assim'
-                  : 'Publicar agora'}
+                : swapping
+                  ? 'Continuar'
+                  : hasWarning
+                    ? 'Publicar mesmo assim'
+                    : 'Publicar agora'}
           </button>
         </>
       }
@@ -352,16 +453,16 @@ export function PublishDialog({
             Duas páginas não podem ter o mesmo endereço. Troque em Página e Google para publicar.
           </Check>
         )}
-        {exampleSections.length ? (
+        {examples.length ? (
           <Check
             title={
-              exampleSections.length === 1
-                ? 'Uma seção ainda tem texto de exemplo'
-                : `${exampleSections.length} seções ainda têm texto de exemplo`
+              examples.length === 1
+                ? 'Um texto de exemplo para trocar'
+                : `${examples.length} textos de exemplo para trocar`
             }
           >
             Os visitantes vão ver esse texto. Troque pelo seu:
-            <GoToList items={exampleSections} onGoTo={onGoTo} />
+            <ExampleList items={examples} onGoTo={onGoTo} />
           </Check>
         ) : (
           <Check ok title="Sem texto de exemplo" />
@@ -539,11 +640,51 @@ export function PublishDialog({
           </Check>
         )}
         {menu.kind === 'cannot-add' && (
-          <Check title="Esta página não está no menu">{menu.reason}</Check>
+          <Check ok title="Esta página fica fora do menu">
+            {menu.reason}
+          </Check>
         )}
       </ul>
       {error && <p className="ed-hint ed-hint--warn">Não deu para publicar: {error}</p>}
     </Dialog>
+  )
+}
+
+/** Textos de exemplo (A7): o lugar, o texto e o "Ir até"; até 3, e o resto num toque. */
+function ExampleList({
+  items,
+  onGoTo,
+}: {
+  items: { id: string; label: string; text: string }[]
+  onGoTo: (id: string) => void
+}) {
+  const [all, setAll] = useState(false)
+  const shown = all ? items : items.slice(0, EXAMPLES_SHOWN)
+  return (
+    <span className="ed-goto-list">
+      {shown.map((item, index) => (
+        <span className="ed-goto ed-goto--example" key={`${item.id}-${index}`}>
+          <span className="ed-goto__text">
+            <span>{item.label}</span>
+            <q className="ed-examples__quote">
+              {item.text.length > 120 ? `${item.text.slice(0, 117).trimEnd()}…` : item.text}
+            </q>
+          </span>
+          {item.id && (
+            <button className="ed-btn ed-btn--sm" onClick={() => onGoTo(item.id)} type="button">
+              Ir até
+            </button>
+          )}
+        </span>
+      ))}
+      {shown.length < items.length && (
+        <button className="ed-linkbtn" onClick={() => setAll(true)} type="button">
+          {items.length - shown.length === 1
+            ? 'Ver o outro'
+            : `Ver os outros ${items.length - shown.length}`}
+        </button>
+      )}
+    </span>
   )
 }
 

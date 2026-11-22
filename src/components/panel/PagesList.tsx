@@ -428,14 +428,24 @@ function MoreMenu({
               A página inicial não pode sair do ar, ser arquivada nem ser excluída. Escolha outra
               página inicial antes.
             </p>
-          ) : inMenu ? (
-            <p className="gp-moremenu__help">
-              Esta página está no menu do site. Para arquivar ou excluir, tire ela do menu antes.
-            </p>
           ) : (
             <>
-              {active && item('archive', 'archive', 'Arquivar (sai do site e da lista)')}
-              {item('delete', 'trash', 'Excluir página', true)}
+              {/* A6: arquivar já tira do menu e do rodapé, num passo só. */}
+              {active &&
+                item(
+                  'archive',
+                  'archive',
+                  inMenu
+                    ? 'Arquivar (sai do site, do menu e da lista)'
+                    : 'Arquivar (sai do site e da lista)',
+                )}
+              {inMenu ? (
+                <p className="gp-moremenu__help">
+                  Para excluir de vez, tire ela do menu antes (ou arquive, que já tira).
+                </p>
+              ) : (
+                item('delete', 'trash', 'Excluir página', true)
+              )}
             </>
           )}
         </div>
@@ -465,7 +475,7 @@ function ConfirmDialog({ busy, error, inMenu, kind, onCancel, onConfirm, page }:
     },
     archive: {
       title: `Arquivar “${page.title}”?`,
-      body: `${live ? 'Ela sai do ar: quem abrir o endereço dela vai ver “página não encontrada”. ' : ''}Ela fica guardada em Arquivadas, no fim desta lista, e pode ser restaurada quando quiser.`,
+      body: `${live ? 'Ela sai do ar: quem abrir o endereço dela vai ver “página não encontrada”. ' : ''}${inMenu ? 'O link dela sai do menu e do rodapé. ' : ''}O endereço /${page.slug} fica livre para outra página. Ela fica guardada em Arquivadas, no fim desta lista, e pode ser restaurada quando quiser.`,
       button: 'Arquivar',
     },
     delete: {

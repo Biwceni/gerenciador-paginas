@@ -144,13 +144,15 @@ export type FinishInput = {
   examplePages: { id: number; title: string }[]
   /** Quantas páginas usam foto de exemplo. */
   examplePhotoPages: number
+  /** Onde o menu e o rodapé ainda têm texto de exemplo ("Rodapé › Frase"), A7. */
+  chromeExamples?: string[]
   /** Páginas com foto pequena demais para onde está (borrada no computador). */
   smallPhotoPages?: { id: number; title: string }[]
   home: { id: number; live: boolean } | null
 }
 
 export type FinishStep = {
-  key: 'tagline' | 'contact' | 'texts' | 'photos' | 'sharp' | 'home'
+  key: 'tagline' | 'contact' | 'texts' | 'chrome' | 'photos' | 'sharp' | 'home'
   done: boolean
   title: string
   detail?: string
@@ -183,6 +185,7 @@ export function nameList(names: string[], max = 2): string {
 export function finishSteps(input: FinishInput): FinishStep[] {
   const { examplePages, examplePhotoPages, home } = input
   const smallPages = input.smallPhotoPages ?? []
+  const chrome = input.chromeExamples ?? []
   const hasTagline = Boolean(input.tagline?.trim())
   const hasContact = Boolean(input.whatsapp?.trim() || input.email?.trim())
   return [
@@ -214,6 +217,21 @@ export function finishSteps(input: FinishInput): FinishStep[] {
       action: 'Editar',
       target: examplePages[0] ? { page: examplePages[0].id } : { screen: 'pages' },
     },
+    // A7: o menu e o rodapé também (antes o texto do modelo ficava lá sem ninguém avisar).
+    ...(chrome.length
+      ? [
+          {
+            key: 'chrome',
+            done: false,
+            title: 'Troque o texto de exemplo do rodapé',
+            detail: `Ainda do modelo: ${nameList(
+              chrome.map((place) => place.replace(/^Rodapé › /, '').toLowerCase()),
+            )} do rodapé.`,
+            action: 'Trocar',
+            target: { screen: 'menu' },
+          } satisfies FinishStep,
+        ]
+      : []),
     {
       key: 'photos',
       done: examplePhotoPages === 0,

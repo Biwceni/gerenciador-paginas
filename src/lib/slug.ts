@@ -40,3 +40,20 @@ export function validateSlug(slug: string | null | undefined): string | true {
   }
   return true
 }
+
+/**
+ * Endereço de uma página arquivada (A6): "contato" vira "contato-arquivada-12" (o número é o da
+ * página, então não se repete), e o endereço de antes fica livre para outra página.
+ */
+export function archivedSlug(slug: string, id: number): string {
+  if (isArchivedSlug(slug)) return slug
+  return `${slug.slice(0, 60).replace(/-+$/, '')}-arquivada-${id}`
+}
+
+const ARCHIVED = /-arquivada-\d+$/
+
+/** O endereço já é o de uma página arquivada. */
+export const isArchivedSlug = (slug: string) => ARCHIVED.test(slug)
+
+/** Ao restaurar: o endereço de antes de arquivar ("contato-arquivada-12" volta a "contato"). */
+export const slugBeforeArchive = (slug: string) => slug.replace(ARCHIVED, '')

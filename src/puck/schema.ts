@@ -572,7 +572,18 @@ export const componentSchema = z.discriminatedUnion('type', [
 ])
 
 export const puckDataSchema = z.object({
-  root: z.object({ props: z.object({}).default({}) }).default({ props: {} }),
+  root: z
+    .object({
+      props: z
+        .object({
+          // O Puck conhece o `title` da página (não usamos: o nome fica em "Página e Google").
+          title: z.string().max(200).optional(),
+          // Textos de exemplo que a pessoa mandou manter ("Manter assim", A7): saem do aviso.
+          keptTexts: z.array(z.string().max(5000)).max(100).optional(),
+        })
+        .default({}),
+    })
+    .default({ props: {} }),
   // A primeira seção aparece sempre, nos dois (E3): é o começo da página e o que o Google mede.
   content: z
     .array(componentSchema)

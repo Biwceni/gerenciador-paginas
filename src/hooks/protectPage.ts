@@ -8,6 +8,7 @@ import { APIError } from 'payload'
 import type { Header } from '../payload-types'
 import { isStaleVersion, PAGE_VERSION_HEADER } from '../lib/editor'
 import { relationID } from '../lib/relations'
+import { archivedSlug, isArchivedSlug, slugBeforeArchive } from '../lib/slug'
 
 type HeaderLink = NonNullable<Header['items']>[number]['link']
 
@@ -134,13 +135,79 @@ export const rejectStaleSave: CollectionBeforeChangeHook = ({
   return data
 }
 
+/** O link leva para a página (inteira ou uma seção dela). */
+const linksToPage = (link: HeaderLink | undefined, pageId: number) =>
+  ['page', 'section'].includes(link?.kind ?? '') && relationID(link?.page) === pageId
+
+/** O cabeçalho sem os links para a página: itens do menu e, se for o caso, o botão do topo. */
+export function headerWithoutPage(
+  header: Pick<Header, 'notice' | 'items' | 'button'>,
+  pageId: number,
+): Pick<Header, 'notice' | 'items' | 'button'> | null {
+  const items = header.items ?? []
+  const kept = items.filter((item) => !linksToPage(item.link, pageId))
+  const button = linksToPage(header.button?.link, pageId)
+  if (kept.length === items.length && !button) return null
+  return {
+    notice: header.notice,
+    items: kept,
+    button: button ? { label: null, link: { kind: 'page', page: null } } : header.button,
+  }
+}
+
+/**
+ * Tira a página do menu e do botão do topo (A6: arquivar num passo só). Publica o menu do ar sem
+ * ela e, se havia um rascunho do menu ainda não publicado, guarda de novo esse rascunho sem ela:
+ * a mudança guardada não vai para o ar e nem se perde.
+ */
+export async function removePageFromHeader(req: PayloadRequest, pageId: number): Promise<void> {
+  const [published, draft] = await Promise.all(
+    [false, true].map((isDraft) =>
+      req.payload.findGlobal({
+        slug: 'header',
+        depth: 0,
+        draft: isDraft,
+        overrideAccess: true,
+        req,
+      }),
+    ),
+  )
+  const pendingDraft = draft._status === 'draft'
+  const live = headerWithoutPage(published, pageId)
+  if (live) {
+    await req.payload.updateGlobal({
+      slug: 'header',
+      data: { ...live, _status: 'published' },
+      overrideAccess: true,
+      req,
+    })
+  }
+  if (!pendingDraft) return
+  const nextDraft = headerWithoutPage(draft, pageId) ?? (live ? draft : null)
+  if (!nextDraft) return
+  await req.payload.updateGlobal({
+    slug: 'header',
+    data: {
+      notice: nextDraft.notice,
+      items: nextDraft.items,
+      button: nextDraft.button,
+      _status: 'draft',
+    },
+    draft: true,
+    overrideAccess: true,
+    req,
+  })
+}
+
 /**
  * Arquivar (fase v2): a página sai do site e da lista, guardada em "Arquivadas". As regras ficam
  * no servidor:
  * - página arquivada é sempre rascunho: publicar tira do arquivo;
- * - a página inicial e as páginas do menu não podem ser arquivadas (o site ficaria sem início ou com
- *   um item de menu que não leva a lugar nenhum). O "Começar de novo com um modelo" troca a página
- *   inicial e o menu antes de arquivar as páginas antigas, então passa pelas mesmas regras.
+ * - a página inicial não pode ser arquivada (o site ficaria sem início). O "Começar de novo com um
+ *   modelo" troca a página inicial antes de arquivar as páginas antigas;
+ * - A6: arquivar tira a página do menu e do botão do topo, e libera o endereço dela
+ *   ("contato" vira "contato-arquivada-12"). Ao restaurar, ela volta para o endereço de antes se
+ *   ninguém tiver pegado.
  */
 export const archiveRules: CollectionBeforeChangeHook = async ({
   context,
@@ -151,13 +218,26 @@ export const archiveRules: CollectionBeforeChangeHook = async ({
 }) => {
   if (data._status === 'published') {
     data.archived = false
-    return data
   }
-  if (operation !== 'update' || data.archived !== true || originalDoc?.archived === true) {
-    return data
-  }
-  if (context.seedRecreate) return data
+  if (operation !== 'update') return data
   const pageId = Number(originalDoc?.id)
+  const slug = typeof data.slug === 'string' ? data.slug : String(originalDoc?.slug ?? '')
+
+  // Restaurar (ou publicar uma arquivada): o endereço de antes, se estiver livre.
+  if (data.archived !== true && originalDoc?.archived === true && isArchivedSlug(slug)) {
+    const before = slugBeforeArchive(slug)
+    const { totalDocs } = await req.payload.count({
+      collection: 'pages',
+      where: { and: [{ slug: { equals: before } }, { id: { not_equals: pageId } }] },
+      overrideAccess: true,
+      req,
+    })
+    if (!totalDocs) data.slug = before
+    return data
+  }
+
+  if (data.archived !== true || originalDoc?.archived === true) return data
+  if (context.seedRecreate) return data
   if ((await homepageIDs(req)).has(pageId)) {
     throw new APIError(
       'A página inicial não pode ser arquivada. Escolha outra página inicial antes.',
@@ -166,13 +246,7 @@ export const archiveRules: CollectionBeforeChangeHook = async ({
       true,
     )
   }
-  if ((await pagesInMenu(req)).has(pageId)) {
-    throw new APIError(
-      'Esta página está no menu do site. Tire ela do menu antes de arquivar.',
-      400,
-      null,
-      true,
-    )
-  }
+  if ((await pagesInMenu(req)).has(pageId)) await removePageFromHeader(req, pageId)
+  if (slug) data.slug = archivedSlug(slug, pageId)
   return data
 }
