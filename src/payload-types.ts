@@ -1055,6 +1055,17 @@ export interface Site {
    */
   logoLight?: (number | null) | Media;
   logoOnDark?: ('auto' | 'white' | 'plate') | null;
+  /**
+   * Opcional. Aparecem numa linha no fim do rodapé.
+   */
+  company?: {
+    legalName?: string | null;
+    cnpj?: string | null;
+    /**
+     * Nome e registro. Ex.: Dra. Ana Lima · CRF-MG 12345.
+     */
+    responsible?: string | null;
+  };
   logoRing?: {
     header?: boolean | null;
     footer?: boolean | null;
@@ -1172,7 +1183,24 @@ export interface Header {
     until?: string | null;
   };
   /**
-   * Itens que levam para páginas que não estão no ar ficam escondidos.
+   * Opcional. Telefone e horário vêm das configurações do site.
+   */
+  topBar?: {
+    phone?: boolean | null;
+    hours?: boolean | null;
+    linkLabel?: string | null;
+    link?: {
+      kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
+      page?: (number | null) | Page;
+      section?: string | null;
+      /**
+       * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
+       */
+      url?: string | null;
+    };
+  };
+  /**
+   * Itens que levam para páginas que não estão no ar ficam escondidos. Um item com links dentro vira um grupo, que abre ao clicar.
    */
   items?:
     | {
@@ -1186,6 +1214,21 @@ export interface Header {
            */
           url?: string | null;
         };
+        children?:
+          | {
+              label: string;
+              link?: {
+                kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
+                page?: (number | null) | Page;
+                section?: string | null;
+                /**
+                 * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
+                 */
+                url?: string | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -1224,6 +1267,27 @@ export interface Footer {
     show?: boolean | null;
     title?: string | null;
   };
+  columns?:
+    | {
+        title: string;
+        links?:
+          | {
+              label: string;
+              link?: {
+                kind?: ('page' | 'section' | 'whatsapp' | 'url') | null;
+                page?: (number | null) | Page;
+                section?: string | null;
+                /**
+                 * Endereço completo, como https://instagram.com/seusite, mailto:contato@seusite.com.br ou tel:+5531999990000.
+                 */
+                url?: string | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
   showMenu?: boolean | null;
   showContact?: boolean | null;
   showSocial?: boolean | null;
@@ -1244,6 +1308,13 @@ export interface SiteSelect<T extends boolean = true> {
   showNameWithLogo?: T;
   logoLight?: T;
   logoOnDark?: T;
+  company?:
+    | T
+    | {
+        legalName?: T;
+        cnpj?: T;
+        responsible?: T;
+      };
   logoRing?:
     | T
     | {
@@ -1315,6 +1386,21 @@ export interface HeaderSelect<T extends boolean = true> {
         text?: T;
         until?: T;
       };
+  topBar?:
+    | T
+    | {
+        phone?: T;
+        hours?: T;
+        linkLabel?: T;
+        link?:
+          | T
+          | {
+              kind?: T;
+              page?: T;
+              section?: T;
+              url?: T;
+            };
+      };
   items?:
     | T
     | {
@@ -1326,6 +1412,20 @@ export interface HeaderSelect<T extends boolean = true> {
               page?: T;
               section?: T;
               url?: T;
+            };
+        children?:
+          | T
+          | {
+              label?: T;
+              link?:
+                | T
+                | {
+                    kind?: T;
+                    page?: T;
+                    section?: T;
+                    url?: T;
+                  };
+              id?: T;
             };
         id?: T;
       };
@@ -1358,6 +1458,26 @@ export interface FooterSelect<T extends boolean = true> {
     | {
         show?: T;
         title?: T;
+      };
+  columns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              link?:
+                | T
+                | {
+                    kind?: T;
+                    page?: T;
+                    section?: T;
+                    url?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
       };
   showMenu?: T;
   showContact?: T;

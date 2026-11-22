@@ -4017,9 +4017,15 @@ textarea.gp-input {
       grid-column: auto;
     }
 
-    &:not(:first-child) .gp-menuitem__label {
+    // Só o rótulo do próprio link (os de dentro de um grupo têm o seu, no primeiro deles).
+    &:not(:first-child):not(.gp-menuitem--group) > .gp-menuitem__field > .gp-menuitem__label {
       display: none;
     }
+  }
+
+  // M1: no grupo, o nome e os botões na mesma linha; os links de dentro embaixo.
+  .gp-menuitem.gp-menuitem--group {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 
@@ -4843,5 +4849,67 @@ textarea.gp-input {
     .gp-colorrow__end {
       grid-column: 1 / -1;
     }
+  }
+}
+
+// M1: grupo do menu e coluna do rodapé. O nome em cima; os links de dentro recuados, com uma linha
+// à esquerda e sem fundo, para ler como "dentro de".
+.gp-menuitem--group {
+  > .gp-menuitem__field:first-child {
+    grid-column: 1 / 2;
+  }
+
+  > .gp-menugroup,
+  > .gp-menugroup__add {
+    grid-column: 1 / -1;
+  }
+}
+
+.gp-menugroup {
+  list-style: none;
+  margin: 2px 0 0 6px;
+  padding: 2px 0 0 16px;
+  border-left: 2px solid var(--gp-line-strong);
+  display: grid;
+  gap: 10px;
+}
+
+.gp-menugroup__add {
+  margin-left: 24px;
+}
+
+// "Pôr links dentro deste": a ação discreta embaixo do link, que não compete com os campos.
+.gp-menuitem__makegroup {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+// Em 320 px o texto inteiro não cabe numa linha: quebra em vez de rolar para o lado (vale também
+// para "Adicionar link em <nome do grupo>", com um nome de 30 letras).
+.gp-menuitem__makegroup,
+.gp-menugroup__add .gp-btn {
+  max-width: 100%;
+  height: auto;
+  min-height: 36px;
+  white-space: normal;
+  text-align: left;
+}
+
+.gp-footcol + .gp-footcol {
+  padding-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .gp-menuitem--group > .gp-menuitem__field:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .gp-menugroup {
+    margin-left: 2px;
+    padding-left: 12px;
+  }
+
+  .gp-menugroup__add {
+    margin-left: 14px;
   }
 }

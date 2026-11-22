@@ -19,7 +19,10 @@ export function headerPageIds(header: Pick<Header, 'items' | 'button'>): number[
     const id = ['page', 'section'].includes(link?.kind ?? '') ? relationID(link?.page) : null
     if (id && !ids.includes(id)) ids.push(id)
   }
-  header.items?.forEach((item) => add(item.link))
+  header.items?.forEach((item) => {
+    add(item.link)
+    item.children?.forEach((child) => add(child.link))
+  })
   add(header.button?.link)
   return ids
 }
@@ -141,15 +144,32 @@ const linksToPage = (link: HeaderLink | undefined, pageId: number) =>
 
 /** O cabeçalho sem os links para a página: itens do menu e, se for o caso, o botão do topo. */
 export function headerWithoutPage(
-  header: Pick<Header, 'notice' | 'items' | 'button'>,
+  header: Pick<Header, 'notice' | 'topBar' | 'items' | 'button'>,
   pageId: number,
-): Pick<Header, 'notice' | 'items' | 'button'> | null {
+): Pick<Header, 'notice' | 'topBar' | 'items' | 'button'> | null {
   const items = header.items ?? []
-  const kept = items.filter((item) => !linksToPage(item.link, pageId))
+  let changed = false
+  // Os links de dentro dos grupos (M1) também saem; um grupo que fica vazio sai junto.
+  const kept = items.flatMap((item) => {
+    if (linksToPage(item.link, pageId) && !item.children?.length) {
+      changed = true
+      return []
+    }
+    if (!item.children?.length) return [item]
+    const children = item.children.filter((child) => !linksToPage(child.link, pageId))
+    if (children.length === item.children.length) return [item]
+    changed = true
+    return children.length ? [{ ...item, children }] : []
+  })
   const button = linksToPage(header.button?.link, pageId)
-  if (kept.length === items.length && !button) return null
+  // O link curto da linha de cima (M1) que levava para a página fica sem destino e some do site.
+  const topBarLink = linksToPage(header.topBar?.link, pageId)
+  if (!changed && !button && !topBarLink) return null
   return {
     notice: header.notice,
+    topBar: topBarLink
+      ? { ...header.topBar, linkLabel: null, link: { kind: 'page', page: null } }
+      : header.topBar,
     items: kept,
     button: button ? { label: null, link: { kind: 'page', page: null } } : header.button,
   }
@@ -189,6 +209,7 @@ export async function removePageFromHeader(req: PayloadRequest, pageId: number):
     slug: 'header',
     data: {
       notice: nextDraft.notice,
+      topBar: nextDraft.topBar,
       items: nextDraft.items,
       button: nextDraft.button,
       _status: 'draft',
@@ -246,7 +267,8 @@ export const archiveRules: CollectionBeforeChangeHook = async ({
       true,
     )
   }
-  if ((await pagesInMenu(req)).has(pageId)) await removePageFromHeader(req, pageId)
+  // Sempre: além do menu e do botão, o link curto da linha de cima (M1) pode levar para ela.
+  await removePageFromHeader(req, pageId)
   if (slug) data.slug = archivedSlug(slug, pageId)
   return data
 }

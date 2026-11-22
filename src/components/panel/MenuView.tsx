@@ -9,6 +9,7 @@ import {
   siteBrand,
 } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
+import { companyLine } from '@/lib/company'
 import { populatedMedia, privacyHref, siteLinks } from '@/lib/content'
 import { NOT_ARCHIVED, PANEL_PATHS } from '@/lib/panel'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
@@ -66,6 +67,7 @@ export async function MenuView(props: AdminViewServerProps) {
             items: header.items ?? [],
             button: header.button ?? {},
             notice: header.notice ?? {},
+            topBar: header.topBar ?? {},
           },
           footer: toFooterData(footer),
           pending: header._status === 'draft' || footer._status === 'draft',
@@ -88,6 +90,7 @@ export async function MenuView(props: AdminViewServerProps) {
             footer: Boolean(site.logoRing?.footer),
           },
           look: logoLook(site, populatedMedia(site.logoLight)),
+          company: companyLine(site.company),
         }}
       />
     </PanelTemplate>

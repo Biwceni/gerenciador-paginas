@@ -4,6 +4,7 @@ import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { linkField } from '../fields/link'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
+import { MENU_GROUP_LIMIT, TOPBAR_LABEL_MAX } from '../lib/menu'
 import { NOTICE_MAX } from '../lib/notice'
 
 export const Header: GlobalConfig = {
@@ -46,17 +47,48 @@ export const Header: GlobalConfig = {
       ],
     },
     {
+      // Linha de cima (M1): fina, acima do topo, com o telefone, o horário ou um link curto.
+      name: 'topBar',
+      type: 'group',
+      label: 'Linha de cima',
+      admin: { description: 'Opcional. Telefone e horário vêm das configurações do site.' },
+      fields: [
+        { name: 'phone', type: 'checkbox', label: 'Mostrar o telefone', defaultValue: false },
+        { name: 'hours', type: 'checkbox', label: 'Mostrar o horário', defaultValue: false },
+        {
+          name: 'linkLabel',
+          type: 'text',
+          label: 'Texto do link curto',
+          maxLength: TOPBAR_LABEL_MAX,
+        },
+        linkField({ required: false }),
+      ],
+    },
+    {
       name: 'items',
       type: 'array',
       label: 'Menu',
       labels: { singular: 'Item do menu', plural: 'Itens do menu' },
       maxRows: 8,
       admin: {
-        description: 'Itens que levam para páginas que não estão no ar ficam escondidos.',
+        description:
+          'Itens que levam para páginas que não estão no ar ficam escondidos. Um item com links dentro vira um grupo, que abre ao clicar.',
       },
       fields: [
         { name: 'label', type: 'text', label: 'Texto no menu', required: true, maxLength: 30 },
-        linkField(),
+        // Num grupo (com links dentro), o item só abre a lista e não leva a lugar nenhum.
+        linkField({ required: false }),
+        {
+          name: 'children',
+          type: 'array',
+          label: 'Links dentro do grupo',
+          labels: { singular: 'Link do grupo', plural: 'Links do grupo' },
+          maxRows: MENU_GROUP_LIMIT,
+          fields: [
+            { name: 'label', type: 'text', label: 'Texto no menu', required: true, maxLength: 30 },
+            linkField(),
+          ],
+        },
       ],
     },
     {

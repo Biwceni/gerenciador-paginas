@@ -8,6 +8,7 @@ import { ContactIcon } from '@/puck/components/FeatureIcon'
 import { DEFAULT_COLORS, type Personality } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
+import { HeaderGroup } from './HeaderGroup'
 import { HeaderMenu } from './HeaderMenu'
 import { HeaderWatch } from './HeaderWatch'
 import { Photo } from './Photo'
@@ -18,7 +19,17 @@ import { sitePersonality } from './theme'
 // Desenho do topo e do rodapé, só a partir dos dados. O site passa o que está publicado
 // (`SiteHeader`, `SiteFooter`); a tela "Menu e rodapé" do painel passa o rascunho, na prévia.
 
-export type MenuItem = { id: string; label: string; href: string; current: boolean }
+/** Link do menu. Um grupo (M1) tem `children` e não leva a lugar nenhum (`href` vazio). */
+export type MenuItem = {
+  id: string
+  label: string
+  href: string
+  current: boolean
+  children?: MenuItem[]
+}
+
+/** Coluna de links própria do rodapé (M1). */
+export type FooterColumn = { id: string; title: string; links: MenuItem[] }
 
 /**
  * O que muda no topo e no rodapé com a personalidade (redesign v3). No Clássico, nada: o topo e o
@@ -201,13 +212,17 @@ export function SiteHeaderView({
 
   const links = (
     <ul>
-      {items.map((item) => (
-        <li key={item.id}>
-          <SiteLink aria-current={item.current ? 'page' : undefined} href={item.href}>
-            {item.label}
-          </SiteLink>
-        </li>
-      ))}
+      {items.map((item) =>
+        item.children?.length ? (
+          <HeaderGroup item={item} key={item.id} />
+        ) : (
+          <li key={item.id}>
+            <SiteLink aria-current={item.current ? 'page' : undefined} href={item.href}>
+              {item.label}
+            </SiteLink>
+          </li>
+        ),
+      )}
     </ul>
   )
   const mainButton = button && (
@@ -401,6 +416,10 @@ type FooterProps = {
   logoRing?: boolean
   /** Versão clara e fundo escuro do logo (E2). */
   look?: LogoLook
+  /** Colunas de links próprias do rodapé (M1), depois de "Páginas". */
+  columns?: FooterColumn[]
+  /** Razão social, CNPJ e responsável técnico (D3), numa linha no fim. */
+  company?: string[]
 }
 
 function FooterItem({
@@ -444,8 +463,15 @@ export function SiteFooterView({
   backToTop = true,
   logoRing,
   look,
+  columns = [],
+  company = [],
 }: FooterProps) {
   const year = new Date().getFullYear()
+  // No rodapé, um grupo do menu (M1) vira os links de dentro dele, sem repetir o mesmo endereço
+  // (dois grupos com a mesma página dariam o link duas vezes).
+  const pages = menu
+    .flatMap((item) => (item.children?.length ? item.children : [item]))
+    .filter((item, index, all) => all.findIndex((other) => other.href === item.href) === index)
   const privacy = privacyHref && (
     <>
       {' · '}
@@ -510,8 +536,21 @@ export function SiteFooterView({
     </section>
   )
 
+  const companyLine = company.length > 0 && (
+    <p className="site-footer__company">
+      {company.map((part, index) => (
+        <span key={part}>
+          {index > 0 && ' · '}
+          {part}
+        </span>
+      ))}
+    </p>
+  )
+  // Colunas sem nenhum link no ar não aparecem.
+  const linkColumns = columns.filter((column) => column.links.length > 0)
+
   // Tudo desligado (R5): uma linha só, com a marca e o ©, em vez de um nome solto e um vazio.
-  if (!text && !menu.length && !contactItems && !hours && !social.length) {
+  if (!text && !pages.length && !contactItems && !hours && !social.length && !linkColumns.length) {
     return (
       <>
         {band}
@@ -526,6 +565,7 @@ export function SiteFooterView({
               {privacy}
             </span>
           </div>
+          {companyLine && <div className="container">{companyLine}</div>}
         </footer>
       </>
     )
@@ -557,19 +597,24 @@ export function SiteFooterView({
               )}
             </div>
 
-            {menu.length > 0 && (
-              <nav aria-labelledby="rodape-paginas">
+            {pages.length > 0 && (
+              <nav
+                aria-labelledby="rodape-paginas"
+                className={
+                  pages.length >= TWO_COLUMN_PAGES ? 'site-footer__pagescol--two' : undefined
+                }
+              >
                 <h2 className="site-footer__title" id="rodape-paginas">
                   Páginas
                 </h2>
                 <ul
                   className={
-                    menu.length >= TWO_COLUMN_PAGES
+                    pages.length >= TWO_COLUMN_PAGES
                       ? 'site-footer__pages site-footer__pages--two'
                       : 'site-footer__pages'
                   }
                 >
-                  {menu.map((item) => (
+                  {pages.map((item) => (
                     <li key={item.id}>
                       <SiteLink href={item.href}>{item.label}</SiteLink>
                     </li>
@@ -577,6 +622,21 @@ export function SiteFooterView({
                 </ul>
               </nav>
             )}
+
+            {linkColumns.map((column) => (
+              <nav aria-labelledby={`rodape-${column.id}`} key={column.id}>
+                <h2 className="site-footer__title" id={`rodape-${column.id}`}>
+                  {column.title}
+                </h2>
+                <ul className="site-footer__pages">
+                  {column.links.map((link) => (
+                    <li key={link.id}>
+                      <SiteLink href={link.href}>{link.label}</SiteLink>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
 
             {contactItems && (
               <div className="site-footer__contactcol">
@@ -625,6 +685,7 @@ export function SiteFooterView({
             )}
           </div>
 
+          {companyLine}
           <div className="site-footer__copy">
             {copy}
             {backToTop && (

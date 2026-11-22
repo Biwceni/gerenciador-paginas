@@ -367,6 +367,8 @@ export async function applySiteTemplate(
         button: header?.button?.label
           ? { label: header.button.label, link: headerLink(header.button.link, ids.pages) }
           : { label: null, link: { kind: 'page', page: null } },
+        // M1: o modelo começa sem a linha de cima (as páginas antigas saem do menu).
+        topBar: { phone: false, hours: false, linkLabel: null, link: { kind: 'page', page: null } },
         _status: 'published',
       },
       ...access,
@@ -382,6 +384,8 @@ export async function applySiteTemplate(
         cta: { show: true, title: footer?.ctaTitle || null },
         showHours: true,
         showBackToTop: true,
+        // As colunas de links levavam para as páginas antigas, que vão para "Arquivadas".
+        columns: [],
         _status: 'published',
       },
       ...access,

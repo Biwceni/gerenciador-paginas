@@ -18,9 +18,17 @@ import {
   type LogoLook,
 } from '@/components/site/SiteChrome'
 import { SiteNoticeView } from '@/components/site/SiteNoticeView'
+import { hasTopBar, SiteTopBarView } from '@/components/site/SiteTopBarView'
 import { externalLink, isSafeURL, validateExternalURL, validateLinkInput } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { activeNotice, NOTICE_MAX } from '@/lib/notice'
+import {
+  FOOTER_COLUMN_LIMIT,
+  FOOTER_LINK_LIMIT,
+  MENU_GROUP_LIMIT,
+  MENU_LIMIT,
+  TOPBAR_LABEL_MAX,
+} from '@/lib/menu'
 import { panelHref } from '@/lib/panel'
 import type { Header, Media } from '@/payload-types'
 import type { PageSummary } from '@/puck/summary'
@@ -42,17 +50,19 @@ import { SaveStatus } from './SaveStatus'
 import { SiteFrame } from './SiteFrame'
 import { WhyDisabled } from './WhyDisabled'
 
-const MENU_LIMIT = 8
 const LABEL_LIMIT = 30
 const CTA_TITLE_LIMIT = 50
 
 type Item = NonNullable<Header['items']>[number]
+type Child = NonNullable<Item['children']>[number]
 type LinkValue = NonNullable<Item['link']>
+type FooterColumnData = Footer['columns'][number]
 type Footer = FooterData
 type HeaderState = {
   items: Item[]
   button: NonNullable<Header['button']>
   notice: NonNullable<Header['notice']>
+  topBar: NonNullable<Header['topBar']>
   showButton: boolean
 }
 
@@ -80,6 +90,8 @@ type Props = {
     shortcuts: HeaderShortcuts
     logoRing: { header: boolean; footer: boolean }
     look: LogoLook
+    /** Razão social, CNPJ e responsável técnico (D3), já na ordem do rodapé. */
+    company: string[]
   }
 }
 
@@ -217,7 +229,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     return () => window.removeEventListener('beforeunload', onLeave)
   }, [save])
 
-  const problems = findProblems(header, pageById)
+  const problems = findProblems(header, footer, pageById)
 
   const publish = async () => {
     if (problems.length) {
@@ -275,12 +287,42 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     const page = pageById.get(pageID(link) ?? 0)
     return page?.published ? '/' : null
   }
-  const previewItems: MenuItem[] = header.items.flatMap((item, index) => {
+  const previewItems: MenuItem[] = header.items.flatMap((item, index): MenuItem[] => {
+    const id = item.id ?? String(index)
+    if (item.children?.length) {
+      const children = item.children.flatMap((child, childIndex): MenuItem[] => {
+        const href = previewHref(child.link)
+        return href && child.label.trim()
+          ? [{ id: child.id ?? `${id}-${childIndex}`, label: child.label, href, current: false }]
+          : []
+      })
+      return children.length && item.label.trim()
+        ? [{ id, label: item.label, href: '', current: false, children }]
+        : []
+    }
     const href = previewHref(item.link)
-    return href && item.label.trim()
-      ? [{ id: item.id ?? String(index), label: item.label, href, current: false }]
-      : []
+    return href && item.label.trim() ? [{ id, label: item.label, href, current: false }] : []
   })
+  const previewColumns = footer.columns.map((column) => ({
+    id: column.id,
+    title: column.title.trim(),
+    links: column.links.flatMap((link): MenuItem[] => {
+      const href = previewHref(link.link)
+      return href && link.label.trim()
+        ? [{ id: link.id, label: link.label, href, current: false }]
+        : []
+    }),
+  }))
+  const topBarLabel = (header.topBar.linkLabel ?? '').trim()
+  const topBarHref = topBarLabel ? previewHref(header.topBar.link) : null
+  const previewTopBar = {
+    phone:
+      header.topBar.phone && site.contact.phone && site.contact.phoneHref
+        ? { label: site.contact.phone, href: site.contact.phoneHref }
+        : null,
+    hours: header.topBar.hours ? site.contact.hours?.trim() || null : null,
+    link: topBarLabel && topBarHref ? { label: topBarLabel, href: topBarHref } : null,
+  }
   const buttonLabel = header.showButton ? (header.button.label ?? '').trim() : ''
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
   const menuFit = estimateMenuFit(
@@ -313,13 +355,15 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     items.splice(index + by, 0, item)
     changeHeader({ ...header, items })
   }
-  /** Tira o link, mostra "Desfazer" e leva o foco ao link seguinte (B4). */
+  /** Tira o link (ou o grupo inteiro), mostra "Desfazer" e leva o foco ao seguinte (B4). */
   const removeItem = (index: number) => {
     const item = header.items[index]
     changeHeader({ ...header, items: header.items.filter((_, i) => i !== index) })
     setRemoved({ item, index })
     requestAnimationFrame(() => {
-      const rows = document.querySelectorAll<HTMLInputElement>('.gp-menuitem input.gp-input')
+      const rows = document.querySelectorAll<HTMLInputElement>(
+        '.gp-menulist > .gp-menuitem > .gp-menuitem__field:first-child input.gp-input',
+      )
       const next = rows[Math.min(index, rows.length - 1)]
       ;(next ?? document.getElementById('hf-add'))?.focus()
     })
@@ -332,20 +376,91 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
     setRemoved(null)
   }
 
-  const addItem = () => {
-    const inMenu = new Set(header.items.map((item) => pageID(item.link)))
+  /** Uma página que ainda não está no menu (nem dentro de um grupo), para um link novo. */
+  const nextPageLink = (): { label: string; link: LinkValue } => {
+    const inMenu = new Set(
+      header.items.flatMap((item) => [item, ...(item.children ?? [])]).map((i) => pageID(i.link)),
+    )
     const page =
       pages.find((p) => p.published && !inMenu.has(p.id)) ??
       pages.find((p) => !inMenu.has(p.id)) ??
       pages[0]
-    const item: Item = page
-      ? {
-          id: newRowID(),
-          label: page.title.slice(0, LABEL_LIMIT),
-          link: { kind: 'page', page: page.id },
-        }
-      : { id: newRowID(), label: 'WhatsApp', link: { kind: 'whatsapp' } }
-    changeHeader({ ...header, items: [...header.items, item] })
+    return page
+      ? { label: page.title.slice(0, LABEL_LIMIT), link: { kind: 'page', page: page.id } }
+      : { label: 'WhatsApp', link: { kind: 'whatsapp' } }
+  }
+
+  const addItem = () => {
+    changeHeader({ ...header, items: [...header.items, { id: newRowID(), ...nextPageLink() }] })
+  }
+
+  // M1: grupos do menu. O link vira o primeiro de dentro do grupo, que fica com o mesmo nome.
+  const makeGroup = (index: number) => {
+    const item = header.items[index]
+    setItem(index, {
+      link: { kind: 'page', page: null },
+      children: [{ id: newRowID(), label: item.label, link: item.link }],
+    })
+    requestAnimationFrame(() =>
+      document.getElementById(`hf-group-${index}`)?.focus({ preventScroll: false }),
+    )
+  }
+  const setChildren = (index: number, children: Child[]) => {
+    const item = header.items[index]
+    // Sem nenhum link dentro, o grupo volta a ser um link comum, com o destino do último.
+    if (!children.length) {
+      const last = item.children?.[0]
+      setItem(index, { children: [], link: last?.link ?? { kind: 'page', page: null } })
+      return
+    }
+    setItem(index, { children })
+  }
+  const setChild = (index: number, childIndex: number, next: Partial<Child>) =>
+    setChildren(
+      index,
+      (header.items[index].children ?? []).map((child, i) =>
+        i === childIndex ? { ...child, ...next } : child,
+      ),
+    )
+  const moveChild = (index: number, childIndex: number, by: -1 | 1) => {
+    const children = [...(header.items[index].children ?? [])]
+    const [child] = children.splice(childIndex, 1)
+    children.splice(childIndex + by, 0, child)
+    setChildren(index, children)
+  }
+  const removeChild = (index: number, childIndex: number) =>
+    setChildren(
+      index,
+      (header.items[index].children ?? []).filter((_, i) => i !== childIndex),
+    )
+  const addChild = (index: number) =>
+    setChildren(index, [
+      ...(header.items[index].children ?? []),
+      { id: newRowID(), ...nextPageLink() },
+    ])
+
+  // M1: colunas de links do rodapé.
+  const setColumns = (columns: FooterColumnData[]) => changeFooter({ columns })
+  const setColumn = (index: number, next: Partial<FooterColumnData>) =>
+    setColumns(footer.columns.map((column, i) => (i === index ? { ...column, ...next } : column)))
+  const moveColumn = (index: number, by: -1 | 1) => {
+    const columns = [...footer.columns]
+    const [column] = columns.splice(index, 1)
+    columns.splice(index + by, 0, column)
+    setColumns(columns)
+  }
+  const addColumn = () =>
+    setColumns([
+      ...footer.columns,
+      { id: newRowID(), title: '', links: [{ id: newRowID(), ...nextPageLink() }] },
+    ])
+  const setColumnLinks = (index: number, links: FooterColumnData['links']) =>
+    setColumn(index, { links })
+  const moveColumnLink = (index: number, linkIndex: number, by: -1 | 1) => {
+    const links = [...footer.columns[index].links]
+    const [link] = links.splice(linkIndex, 1)
+    links.splice(linkIndex + by, 0, link)
+    setColumnLinks(index, links)
   }
 
   // O que a prévia desenha; a mesma coisa na miniatura e na janela de tamanho real.
@@ -353,6 +468,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const previewContent = (
     <>
       {part !== 'footer' && notice && <SiteNoticeView text={notice.text} />}
+      {part !== 'footer' && hasTopBar(previewTopBar) && <SiteTopBarView bar={previewTopBar} />}
       {part !== 'footer' && (
         <SiteHeaderView
           brand={site.brand}
@@ -382,6 +498,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
         <SiteFooterView
           backToTop={footer.showBackToTop}
           brand={site.brand}
+          columns={previewColumns}
+          company={site.company}
           contact={site.contact}
           cta={
             footer.cta.show && buttonHref
@@ -471,71 +589,111 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             <div>
               <h2>Links do menu</h2>
               <p className="gp-small gp-muted">
-                A ordem aqui é a ordem no site. Até {MENU_LIMIT} links.
+                A ordem aqui é a ordem no site. Até {MENU_LIMIT} itens no topo; um grupo conta como
+                um e abre uma lista com até {MENU_GROUP_LIMIT} links.
               </p>
             </div>
             <ol className="gp-menulist">
-              {header.items.map((item, index) => (
-                <li className="gp-menuitem" key={item.id ?? index}>
-                  <div className="gp-menuitem__field">
-                    <span aria-hidden="true" className="gp-menuitem__label">
-                      Texto no menu
-                    </span>
-                    <input
-                      aria-label={`Texto do link ${index + 1}`}
-                      className="gp-input"
-                      maxLength={LABEL_LIMIT}
-                      onChange={(event) => setItem(index, { label: event.target.value })}
-                      placeholder="Texto no menu"
-                      value={item.label}
-                    />
-                  </div>
-                  <div className="gp-menuitem__field">
-                    <span aria-hidden="true" className="gp-menuitem__label">
-                      Abre a página
-                    </span>
-                    <LinkPicker
-                      label={`Página do link ${index + 1}`}
-                      onChange={(link) => setItem(index, { link })}
-                      pages={pages}
-                      value={item.link}
-                      whatsapp={Boolean(site.whatsappHref)}
-                    />
-                  </div>
-                  <div className="gp-menuitem__moves">
-                    <button
-                      aria-label={`Subir ${item.label.trim() || `o link ${index + 1}`}`}
-                      className="gp-iconbtn gp-iconbtn--move"
-                      disabled={index === 0}
-                      onClick={() => moveItem(index, -1)}
-                      type="button"
-                    >
-                      <PanelIcon name="up" size={18} />
-                      <span className="gp-menuitem__btntext">Subir</span>
-                    </button>
-                    <button
-                      aria-label={`Descer ${item.label.trim() || `o link ${index + 1}`}`}
-                      className="gp-iconbtn gp-iconbtn--move"
-                      disabled={index === header.items.length - 1}
-                      onClick={() => moveItem(index, 1)}
-                      type="button"
-                    >
-                      <PanelIcon name="down" size={18} />
-                      <span className="gp-menuitem__btntext">Descer</span>
-                    </button>
-                    <button
-                      aria-label={`Tirar ${item.label.trim() || `o link ${index + 1}`} do menu`}
-                      className="gp-iconbtn gp-iconbtn--move"
-                      onClick={() => removeItem(index)}
-                      type="button"
-                    >
-                      <PanelIcon name="x" size={18} />
-                      <span className="gp-menuitem__btntext">Tirar</span>
-                    </button>
-                  </div>
-                  <LinkWarning link={item.link} pageById={pageById} whatsapp={site.whatsappHref} />
-                </li>
-              ))}
+              {header.items.map((item, index) => {
+                const moves = (
+                  <RowMoves
+                    count={header.items.length}
+                    index={index}
+                    name={item.label.trim() || `o link ${index + 1}`}
+                    onMove={(by) => moveItem(index, by)}
+                    onRemove={() => removeItem(index)}
+                    removeText={
+                      item.children?.length ? 'do menu, com os links de dentro' : 'do menu'
+                    }
+                  />
+                )
+                if (item.children?.length) {
+                  const groupName = item.label.trim() || `Grupo ${index + 1}`
+                  return (
+                    <li className="gp-menuitem gp-menuitem--group" key={item.id ?? index}>
+                      <div className="gp-menuitem__field">
+                        <span aria-hidden="true" className="gp-menuitem__label">
+                          Nome do grupo
+                        </span>
+                        <input
+                          aria-label={`Nome do grupo ${index + 1}`}
+                          className="gp-input"
+                          id={`hf-group-${index}`}
+                          maxLength={LABEL_LIMIT}
+                          onChange={(event) => setItem(index, { label: event.target.value })}
+                          placeholder="Ex.: Serviços"
+                          value={item.label}
+                        />
+                      </div>
+                      {moves}
+                      <ol aria-label={`Links dentro de ${groupName}`} className="gp-menugroup">
+                        {item.children.map((child, childIndex) => (
+                          <LinkRow
+                            count={item.children?.length ?? 0}
+                            index={childIndex}
+                            key={child.id ?? childIndex}
+                            label={child.label}
+                            link={child.link}
+                            name={`${childIndex + 1} de ${groupName}`}
+                            onLabel={(label) => setChild(index, childIndex, { label })}
+                            onLink={(link) => setChild(index, childIndex, { link })}
+                            onMove={(by) => moveChild(index, childIndex, by)}
+                            onRemove={() => removeChild(index, childIndex)}
+                            pageById={pageById}
+                            pages={pages}
+                            removeText={`de ${groupName}`}
+                            whatsapp={site.whatsappHref}
+                          />
+                        ))}
+                      </ol>
+                      <div className="gp-addrow gp-menugroup__add">
+                        <button
+                          className="gp-btn gp-btn--sm"
+                          disabled={item.children.length >= MENU_GROUP_LIMIT}
+                          onClick={() => addChild(index)}
+                          type="button"
+                        >
+                          <PanelIcon name="plus" size={14} />
+                          Adicionar link em {groupName}
+                        </button>
+                        {item.children.length >= MENU_GROUP_LIMIT && (
+                          <span className="gp-hint">
+                            O grupo já tem {MENU_GROUP_LIMIT} links, o máximo.
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  )
+                }
+                return (
+                  <LinkRow
+                    count={header.items.length}
+                    extra={
+                      <button
+                        className="gp-btn gp-btn--sm gp-btn--ghost gp-menuitem__makegroup"
+                        onClick={() => makeGroup(index)}
+                        type="button"
+                      >
+                        <PanelIcon name="plus" size={14} />
+                        Pôr links dentro deste (vira um grupo)
+                      </button>
+                    }
+                    index={index}
+                    key={item.id ?? index}
+                    label={item.label}
+                    link={item.link}
+                    moves={moves}
+                    name={String(index + 1)}
+                    onLabel={(label) => setItem(index, { label })}
+                    onLink={(link) => setItem(index, { link })}
+                    onMove={(by) => moveItem(index, by)}
+                    onRemove={() => removeItem(index)}
+                    pageById={pageById}
+                    pages={pages}
+                    whatsapp={site.whatsappHref}
+                  />
+                )
+              })}
             </ol>
             {header.items.length === 0 && (
               <p className="gp-small gp-muted">O menu está vazio. Só a marca aparece no topo.</p>
@@ -569,8 +727,8 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
               </button>
               {header.items.length >= MENU_LIMIT && (
                 <span className="gp-hint" id="hf-add-why">
-                  O menu já tem {MENU_LIMIT} links, o máximo que cabe no topo do site. Tire um para
-                  colocar outro.
+                  O menu já tem {MENU_LIMIT} itens, o máximo que cabe no topo do site. Tire um ou
+                  ponha links dentro de um grupo.
                 </span>
               )}
             </div>
@@ -679,6 +837,93 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             </div>
           </section>
 
+          <section className="gp-card" onFocus={() => setPart('header')}>
+            <div>
+              <h2>Linha de cima</h2>
+              <p className="gp-small gp-muted">
+                Opcional. Uma linha fina acima do topo, com o telefone, o horário ou um link curto.
+                No celular, o horário não aparece, para caber numa linha.
+              </p>
+            </div>
+            <label className="gp-switch">
+              <input
+                checked={Boolean(header.topBar.phone)}
+                disabled={!site.contact.phoneHref && !header.topBar.phone}
+                onChange={(event) =>
+                  changeHeader({
+                    ...header,
+                    topBar: { ...header.topBar, phone: event.target.checked },
+                  })
+                }
+                type="checkbox"
+              />
+              Mostrar o telefone{site.contact.phone ? ` (${site.contact.phone})` : ''}
+            </label>
+            <label className="gp-switch">
+              <input
+                checked={Boolean(header.topBar.hours)}
+                disabled={!site.contact.hours?.trim() && !header.topBar.hours}
+                onChange={(event) =>
+                  changeHeader({
+                    ...header,
+                    topBar: { ...header.topBar, hours: event.target.checked },
+                  })
+                }
+                type="checkbox"
+              />
+              Mostrar o horário
+            </label>
+            {(!site.contact.phoneHref || !site.contact.hours?.trim()) && (
+              <span className="gp-hint">
+                {!site.contact.phoneHref && !site.contact.hours?.trim()
+                  ? 'Telefone e horário'
+                  : !site.contact.phoneHref
+                    ? 'O telefone'
+                    : 'O horário'}{' '}
+                vêm de{' '}
+                <Link className="gp-link" href={panelHref(adminRoute, 'settings')}>
+                  Configurações
+                </Link>
+                . Preencha lá para poder mostrar aqui.
+              </span>
+            )}
+            <div className="gp-field">
+              <label htmlFor="hf-topbar-label">Link curto (opcional)</label>
+              <input
+                className="gp-input"
+                id="hf-topbar-label"
+                maxLength={TOPBAR_LABEL_MAX}
+                onChange={(event) =>
+                  changeHeader({
+                    ...header,
+                    topBar: { ...header.topBar, linkLabel: event.target.value },
+                  })
+                }
+                placeholder="Ex.: Trabalhe conosco"
+                value={header.topBar.linkLabel ?? ''}
+              />
+            </div>
+            {topBarLabel && (
+              <div className="gp-field">
+                <span className="gp-label">Leva para</span>
+                <LinkPicker
+                  label="Para onde o link curto leva"
+                  onChange={(link) =>
+                    changeHeader({ ...header, topBar: { ...header.topBar, link } })
+                  }
+                  pages={pages}
+                  value={header.topBar.link ?? undefined}
+                  whatsapp={Boolean(site.whatsappHref)}
+                />
+                <LinkWarning
+                  link={header.topBar.link ?? undefined}
+                  pageById={pageById}
+                  whatsapp={site.whatsappHref}
+                />
+              </div>
+            )}
+          </section>
+
           <section className="gp-card" onFocus={() => setPart('footer')}>
             <h2>Chamada no fim do site</h2>
             <p className="gp-small gp-muted">
@@ -777,6 +1022,128 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
                 Configurações
               </Link>
               .
+            </span>
+          </section>
+          <section className="gp-card" onFocus={() => setPart('footer')}>
+            <div>
+              <h2>Colunas de links no rodapé</h2>
+              <p className="gp-small gp-muted">
+                Opcional. Até {FOOTER_COLUMN_LIMIT} colunas com título, cada uma com até{' '}
+                {FOOTER_LINK_LIMIT} links. Aparecem depois de “Páginas”.
+              </p>
+            </div>
+            {footer.columns.map((column, index) => {
+              const columnName = column.title.trim() || `Coluna ${index + 1}`
+              return (
+                <div className="gp-menuitem gp-menuitem--group gp-footcol" key={column.id}>
+                  <div className="gp-menuitem__field">
+                    <span aria-hidden="true" className="gp-menuitem__label">
+                      Título da coluna
+                    </span>
+                    <input
+                      aria-label={`Título da coluna ${index + 1}`}
+                      className="gp-input"
+                      id={`hf-col-${index}`}
+                      maxLength={LABEL_LIMIT}
+                      onChange={(event) => setColumn(index, { title: event.target.value })}
+                      placeholder="Ex.: Institucional"
+                      value={column.title}
+                    />
+                  </div>
+                  <RowMoves
+                    count={footer.columns.length}
+                    index={index}
+                    name={columnName}
+                    onMove={(by) => moveColumn(index, by)}
+                    onRemove={() => setColumns(footer.columns.filter((_, i) => i !== index))}
+                    removeText="do rodapé"
+                  />
+                  <ol aria-label={`Links de ${columnName}`} className="gp-menugroup">
+                    {column.links.map((link, linkIndex) => (
+                      <LinkRow
+                        count={column.links.length}
+                        index={linkIndex}
+                        key={link.id}
+                        label={link.label}
+                        link={link.link}
+                        name={`${linkIndex + 1} de ${columnName}`}
+                        onLabel={(label) =>
+                          setColumnLinks(
+                            index,
+                            column.links.map((item, i) =>
+                              i === linkIndex ? { ...item, label } : item,
+                            ),
+                          )
+                        }
+                        onLink={(value) =>
+                          setColumnLinks(
+                            index,
+                            column.links.map((item, i) =>
+                              i === linkIndex ? { ...item, link: value } : item,
+                            ),
+                          )
+                        }
+                        onMove={(by) => moveColumnLink(index, linkIndex, by)}
+                        onRemove={() =>
+                          setColumnLinks(
+                            index,
+                            column.links.filter((_, i) => i !== linkIndex),
+                          )
+                        }
+                        pageById={pageById}
+                        pages={pages}
+                        removeText={`de ${columnName}`}
+                        textLabel="Texto do link"
+                        whatsapp={site.whatsappHref}
+                      />
+                    ))}
+                  </ol>
+                  <div className="gp-addrow gp-menugroup__add">
+                    <button
+                      className="gp-btn gp-btn--sm"
+                      disabled={column.links.length >= FOOTER_LINK_LIMIT}
+                      onClick={() =>
+                        setColumnLinks(index, [
+                          ...column.links,
+                          { id: newRowID(), ...nextPageLink() },
+                        ])
+                      }
+                      type="button"
+                    >
+                      <PanelIcon name="plus" size={14} />
+                      Adicionar link em {columnName}
+                    </button>
+                    {column.links.length >= FOOTER_LINK_LIMIT && (
+                      <span className="gp-hint">
+                        A coluna já tem {FOOTER_LINK_LIMIT} links, o máximo.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+            <div className="gp-addrow">
+              <button
+                className="gp-btn gp-btn--sm"
+                disabled={footer.columns.length >= FOOTER_COLUMN_LIMIT}
+                onClick={addColumn}
+                type="button"
+              >
+                <PanelIcon name="plus" size={14} />
+                Adicionar coluna
+              </button>
+              {footer.columns.length >= FOOTER_COLUMN_LIMIT && (
+                <span className="gp-hint">
+                  O rodapé já tem {FOOTER_COLUMN_LIMIT} colunas, o máximo.
+                </span>
+              )}
+            </div>
+            <span className="gp-small gp-muted">
+              Razão social, CNPJ e responsável técnico ficam em{' '}
+              <Link className="gp-link" href={`${panelHref(adminRoute, 'settings')}#st-empresa`}>
+                Configurações › Dados da empresa
+              </Link>
+              {site.company.length ? ' e já aparecem no fim do rodapé.' : '.'}
             </span>
           </section>
         </div>
@@ -889,19 +1256,40 @@ function noticeEndText(notice: HeaderState['notice']): string {
 /** O cabeçalho como o Payload guarda: botão desligado vai sem texto (e some do site). */
 function toHeaderData(header: HeaderState): HeaderData {
   return {
-    items: header.items.map((item) => ({ ...item, label: item.label.trim() })),
+    items: header.items.map((item) => ({
+      ...item,
+      label: item.label.trim(),
+      children: (item.children ?? []).map((child) => ({ ...child, label: child.label.trim() })),
+    })),
     button: {
       ...header.button,
       label: header.showButton ? (header.button.label ?? '').trim() : '',
     },
     notice: { text: (header.notice.text ?? '').trim(), until: header.notice.until || null },
+    topBar: { ...header.topBar, linkLabel: (header.topBar.linkLabel ?? '').trim() },
   }
 }
 
 /** O que impediria publicar, em linguagem simples. */
-function findProblems(header: HeaderState, pageById: Map<number, PageSummary>): string[] {
+function findProblems(
+  header: HeaderState,
+  footer: Footer,
+  pageById: Map<number, PageSummary>,
+): string[] {
   const problems: string[] = []
   header.items.forEach((item, index) => {
+    if (item.children?.length) {
+      const group = item.label.trim() ? `O grupo "${item.label.trim()}"` : `O grupo ${index + 1}`
+      if (!item.label.trim()) problems.push(`${group} do menu está sem nome.`)
+      item.children.forEach((child, childIndex) => {
+        const name = child.label.trim()
+          ? `"${child.label.trim()}"`
+          : `O link ${childIndex + 1} de ${group.replace(/^O /, 'o ')}`
+        if (!child.label.trim()) problems.push(`${name} está sem texto.`)
+        problems.push(...linkProblems(child.link, name, pageById))
+      })
+      return
+    }
     const name = item.label.trim() ? `"${item.label.trim()}"` : `O link ${index + 1}`
     if (!item.label.trim()) problems.push(`${name} do menu está sem texto.`)
     problems.push(...linkProblems(item.link, name, pageById))
@@ -910,6 +1298,24 @@ function findProblems(header: HeaderState, pageById: Map<number, PageSummary>): 
     if (!header.button.label?.trim()) problems.push('O botão de destaque está sem texto.')
     problems.push(...linkProblems(header.button.link, 'O botão de destaque', pageById))
   }
+  if (header.topBar.linkLabel?.trim()) {
+    problems.push(
+      ...linkProblems(header.topBar.link ?? undefined, 'O link da linha de cima', pageById),
+    )
+  }
+  footer.columns.forEach((column, index) => {
+    const title = column.title.trim()
+      ? `A coluna "${column.title.trim()}"`
+      : `A coluna ${index + 1}`
+    if (!column.title.trim()) problems.push(`${title} do rodapé está sem título.`)
+    column.links.forEach((link, linkIndex) => {
+      const name = link.label.trim()
+        ? `"${link.label.trim()}"`
+        : `O link ${linkIndex + 1} de ${title.replace(/^A /, 'a ')}`
+      if (!link.label.trim()) problems.push(`${name} está sem texto.`)
+      problems.push(...linkProblems(link.link ?? undefined, name, pageById))
+    })
+  })
   return problems
 }
 
@@ -927,6 +1333,122 @@ function linkProblems(
     if (link.kind === 'section' && !link.section) return [`${name}: escolha a seção.`]
   }
   return []
+}
+
+type MovesProps = {
+  index: number
+  count: number
+  /** Nome do que se move, para o leitor de tela ("Subir Serviços"). */
+  name: string
+  onMove: (by: -1 | 1) => void
+  onRemove: () => void
+  /** "do menu", "de Serviços"… para "Tirar Contato do menu". */
+  removeText: string
+}
+
+/** Subir, descer e tirar: os botões de cada linha do menu, dos grupos e das colunas do rodapé. */
+function RowMoves({ index, count, name, onMove, onRemove, removeText }: MovesProps) {
+  return (
+    <div className="gp-menuitem__moves">
+      <button
+        aria-label={`Subir ${name}`}
+        className="gp-iconbtn gp-iconbtn--move"
+        disabled={index === 0}
+        onClick={() => onMove(-1)}
+        type="button"
+      >
+        <PanelIcon name="up" size={18} />
+        <span className="gp-menuitem__btntext">Subir</span>
+      </button>
+      <button
+        aria-label={`Descer ${name}`}
+        className="gp-iconbtn gp-iconbtn--move"
+        disabled={index === count - 1}
+        onClick={() => onMove(1)}
+        type="button"
+      >
+        <PanelIcon name="down" size={18} />
+        <span className="gp-menuitem__btntext">Descer</span>
+      </button>
+      <button
+        aria-label={`Tirar ${name} ${removeText}`}
+        className="gp-iconbtn gp-iconbtn--move"
+        onClick={onRemove}
+        type="button"
+      >
+        <PanelIcon name="x" size={18} />
+        <span className="gp-menuitem__btntext">Tirar</span>
+      </button>
+    </div>
+  )
+}
+
+type LinkRowProps = Omit<MovesProps, 'name' | 'removeText'> & {
+  label: string
+  link: LinkValue | null | undefined
+  /** Número e lugar do link, para os nomes dos campos ("2 de Serviços"). */
+  name: string
+  onLabel: (label: string) => void
+  onLink: (link: LinkValue) => void
+  pages: PageSummary[]
+  pageById: Map<number, PageSummary>
+  whatsapp: string | null
+  /** Botões prontos (o link do topo os monta antes, para o grupo usar os mesmos). */
+  moves?: React.ReactNode
+  removeText?: string
+  textLabel?: string
+  extra?: React.ReactNode
+}
+
+/** Uma linha de link: o texto, para onde leva e os botões. */
+function LinkRow({
+  label,
+  link,
+  name,
+  onLabel,
+  onLink,
+  pages,
+  pageById,
+  whatsapp,
+  moves,
+  removeText = 'do menu',
+  textLabel = 'Texto no menu',
+  extra,
+  ...move
+}: LinkRowProps) {
+  const visible = label.trim() || `o link ${name}`
+  return (
+    <li className="gp-menuitem">
+      <div className="gp-menuitem__field">
+        <span aria-hidden="true" className="gp-menuitem__label">
+          {textLabel}
+        </span>
+        <input
+          aria-label={`Texto do link ${name}`}
+          className="gp-input"
+          maxLength={LABEL_LIMIT}
+          onChange={(event) => onLabel(event.target.value)}
+          placeholder={textLabel}
+          value={label}
+        />
+      </div>
+      <div className="gp-menuitem__field">
+        <span aria-hidden="true" className="gp-menuitem__label">
+          Abre a página
+        </span>
+        <LinkPicker
+          label={`Página do link ${name}`}
+          onChange={onLink}
+          pages={pages}
+          value={link ?? undefined}
+          whatsapp={Boolean(whatsapp)}
+        />
+      </div>
+      {moves ?? <RowMoves {...move} name={visible} removeText={removeText} />}
+      <LinkWarning link={link ?? undefined} pageById={pageById} whatsapp={whatsapp} />
+      {extra}
+    </li>
+  )
 }
 
 /** Aviso de link que não vai aparecer no site (página em rascunho, WhatsApp sem número). */

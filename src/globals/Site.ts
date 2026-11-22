@@ -5,6 +5,7 @@ import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { colorField } from '../fields/color'
 import { HEX_COLOR_PATTERN } from '../lib/colors'
+import { validateCNPJ } from '../lib/company'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
 import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
@@ -193,6 +194,30 @@ export const Site: GlobalConfig = {
                 { value: 'auto', label: 'Como está (com contorno quando some no fundo)' },
                 { value: 'white', label: 'Versão branca' },
                 { value: 'plate', label: 'Placa branca atrás do logo' },
+              ],
+            },
+            // D3: dados da empresa, que o rodapé mostra numa linha embaixo.
+            {
+              name: 'company',
+              type: 'group',
+              label: 'Dados da empresa',
+              admin: { description: 'Opcional. Aparecem numa linha no fim do rodapé.' },
+              fields: [
+                { name: 'legalName', type: 'text', label: 'Razão social', maxLength: 120 },
+                {
+                  name: 'cnpj',
+                  type: 'text',
+                  label: 'CNPJ',
+                  maxLength: 18,
+                  validate: (value: null | string | undefined) => validateCNPJ(value),
+                },
+                {
+                  name: 'responsible',
+                  type: 'text',
+                  label: 'Responsável técnico',
+                  maxLength: 120,
+                  admin: { description: 'Nome e registro. Ex.: Dra. Ana Lima · CRF-MG 12345.' },
+                },
               ],
             },
             // Calculado em Sua marca a partir das cores do logo (T6): logo que some no fundo do topo

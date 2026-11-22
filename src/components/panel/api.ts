@@ -166,7 +166,7 @@ export function deleteForm(apiRoute: string, id: number) {
   return request(apiRoute, `/forms/${id}`, { method: 'DELETE' })
 }
 
-export type HeaderData = Pick<Header, 'items' | 'button' | 'notice'>
+export type HeaderData = Pick<Header, 'items' | 'button' | 'notice' | 'topBar'>
 export { type FooterData, toFooterData } from './footerData'
 
 type GlobalSlug = 'header' | 'footer' | 'site'
@@ -267,7 +267,12 @@ export async function discardMenuAndFooter(
     request<Footer>(apiRoute, '/globals/footer?depth=0&draft=false'),
   ])
   const published = {
-    header: { items: header.items ?? [], button: header.button ?? {}, notice: header.notice ?? {} },
+    header: {
+      items: header.items ?? [],
+      button: header.button ?? {},
+      notice: header.notice ?? {},
+      topBar: header.topBar ?? {},
+    },
     footer: toFooterData(footer),
   }
   await publishMenuAndFooter(apiRoute, published.header, published.footer)

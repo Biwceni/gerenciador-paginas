@@ -13,6 +13,7 @@ import {
   socialURL,
   whatsAppGreeting,
 } from '@/lib/links'
+import { formatCNPJ } from '@/lib/company'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import type { Media } from '@/payload-types'
@@ -149,6 +150,36 @@ export function SettingsEditor({
     </div>
   )
 
+  /** D3: os campos dos dados da empresa (o CNPJ ganha pontos e barra ao sair do campo). */
+  const companyField = (
+    key: keyof SettingsState['company'],
+    label: string,
+    max: number,
+    hint: string,
+  ) => (
+    <div className="gp-field">
+      <label htmlFor={`st-${key}`}>{label}</label>
+      <input
+        aria-describedby={`st-${key}-hint`}
+        aria-invalid={Boolean(errors[key])}
+        className="gp-input"
+        id={`st-${key}`}
+        inputMode={key === 'cnpj' ? 'numeric' : undefined}
+        maxLength={max}
+        onBlur={(event) => {
+          if (key !== 'cnpj') return
+          const next = formatCNPJ(event.target.value)
+          if (next !== event.target.value) update({ company: { ...state.company, cnpj: next } })
+        }}
+        onChange={(event) => update({ company: { ...state.company, [key]: event.target.value } })}
+        value={state.company[key]}
+      />
+      <span className={errors[key] ? 'gp-hint gp-hint--error' : 'gp-hint'} id={`st-${key}-hint`}>
+        {errors[key] ?? hint}
+      </span>
+    </div>
+  )
+
   /** O endereço completo que a rede vai ter, quando é diferente do que foi digitado. */
   const willBecome = (key: keyof SettingsState['social']) => {
     const typed = state.social[key].trim()
@@ -183,6 +214,11 @@ export function SettingsEditor({
     ['YouTube', state.social.youtube],
     ['TikTok', state.social.tiktok],
     ['LinkedIn', state.social.linkedin],
+  ])
+  const companyParts = filled([
+    ['Razão social', state.company.legalName],
+    ['CNPJ', state.company.cnpj],
+    ['responsável técnico', state.company.responsible],
   ])
   const fix = (keys: string[]) =>
     keys.some((key) => errors[key]) ? 'Campo para corrigir' : undefined
@@ -228,6 +264,12 @@ export function SettingsEditor({
       label: 'Redes sociais',
       summary: socialParts.length ? join(socialParts) : 'Nenhuma rede',
       missing: fix(['instagram', 'facebook', 'youtube', 'tiktok', 'linkedin']),
+    },
+    {
+      id: 'st-empresa',
+      label: 'Empresa',
+      summary: companyParts.length ? join(companyParts) : 'Nada no rodapé',
+      missing: fix(['cnpj']),
     },
     {
       id: 'st-google',
@@ -495,6 +537,22 @@ export function SettingsEditor({
             {group('social', 'youtube', 'YouTube', 'Ex.: youtube.com/@seunegocio')}
             {group('social', 'tiktok', 'TikTok', 'Ex.: tiktok.com/@seunegocio')}
             {group('social', 'linkedin', 'LinkedIn', 'Ex.: linkedin.com/company/seunegocio')}
+          </section>
+          <section className="gp-card" id="st-empresa">
+            <div>
+              <h2>Dados da empresa</h2>
+              <p className="gp-small gp-muted">
+                Aparecem numa linha no fim do rodapé. Deixe em branco o que não precisa mostrar.
+              </p>
+            </div>
+            {companyField('legalName', 'Razão social', 120, 'Ex.: Seu Negócio Comércio Ltda.')}
+            {companyField('cnpj', 'CNPJ', 18, 'Os 14 números. O site mostra com pontos e barra.')}
+            {companyField(
+              'responsible',
+              'Responsável técnico',
+              120,
+              'Nome e registro, quando a sua área pede. Ex.: Dra. Ana Lima, CRO-MG 12345.',
+            )}
           </section>
         </div>
 

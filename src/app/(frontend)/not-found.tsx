@@ -5,6 +5,7 @@ import React from 'react'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteNotice } from '@/components/site/SiteNotice'
+import { SiteTopBar } from '@/components/site/SiteTopBar'
 
 // A aba diz o que aconteceu ("Página não encontrada | nome do site"). O noindex o Next já põe na 404.
 export const metadata: Metadata = { title: 'Página não encontrada' }
@@ -13,6 +14,7 @@ export default function NotFound() {
   return (
     <>
       <SiteNotice />
+      <SiteTopBar />
       <SiteHeader />
       <main className="not-found" id="conteudo">
         <div className="container">
