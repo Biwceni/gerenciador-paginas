@@ -376,6 +376,17 @@ export const CHOICE_THUMBS = {
       ))}
     </>
   ),
+  'marker-cover': (
+    <>
+      {FEATURE_X.map((x) => (
+        <React.Fragment key={x}>
+          <Box f={ACCENT} h={40} o={0.45} r={3} w={26} x={x} y={8} />
+          <Box f="#fff" h={4} r={1} w={16} x={x + 4} y={36} />
+          <Box f="#fff" h={3} o={0.8} r={1} w={11} x={x + 4} y={42} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
 } satisfies Record<string, React.ReactNode>
 
 export type ChoiceThumbName = keyof typeof CHOICE_THUMBS

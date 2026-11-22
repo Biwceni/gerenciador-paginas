@@ -96,7 +96,10 @@ export function featureProblem(
   editor: EditorContextValue,
   section: Record<string, unknown> | undefined,
 ): string | null {
-  if (section?.marker !== 'photo') return null
+  if (section?.marker !== 'photo' && section?.marker !== 'cover') return null
   const photo = item.photo as { mediaId: number } | null | undefined
-  return photo && editor.photoById[photo.mediaId] ? null : 'Sem foto: fica só com o texto'
+  if (photo && editor.photoById[photo.mediaId]) return null
+  return section.marker === 'cover'
+    ? 'Sem foto: fica a cor do site'
+    : 'Sem foto: fica só com o texto'
 }

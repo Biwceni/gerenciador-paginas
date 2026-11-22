@@ -114,8 +114,8 @@ describe('esquema: seções novas com padrão, sem mudar a versão', () => {
     expect(insta.props).toMatchObject({ style: 'light', anim: 'site' })
   })
 
-  it('limites: até 12 produtos, 5 frases na faixa e 8 fotos no Instagram', () => {
-    const products = Array.from({ length: 13 }, () => ({ name: 'Bolo' }))
+  it('limites: até 60 produtos (B3), 5 frases na faixa e 8 fotos no Instagram', () => {
+    const products = Array.from({ length: 61 }, () => ({ name: 'Bolo' }))
     expect(
       page([{ type: 'Products', props: { id: 'p', menuLabel: '', title: '', items: products } }])
         .success,

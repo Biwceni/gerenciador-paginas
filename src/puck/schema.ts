@@ -176,6 +176,81 @@ export const textImagePropsSchema = z.object({
   anim: anim(SECTION_ANIMS.TextImage),
 })
 
+/** Ícones a mais da biblioteca (C3), por tema. */
+const FEATURE_ICONS_MORE = [
+  // Geral
+  'chat',
+  'mail',
+  'user',
+  'users',
+  'award',
+  'lock',
+  'globe',
+  'bolt',
+  'target',
+  'sparkle',
+  'bulb',
+  'camera',
+  'music',
+  // Comércio
+  'cart',
+  'store',
+  'box',
+  'cash',
+  'tag',
+  // Saúde
+  'stethoscope',
+  'pill',
+  'syringe',
+  'thermometer',
+  'pulse',
+  'baby',
+  'plus',
+  'eye',
+  // Beleza
+  'drop',
+  'flower',
+  'mirror',
+  // Veículos
+  'car',
+  'bike',
+  'fuel',
+  'key',
+  'gauge',
+  'plane',
+  // Casa
+  'building',
+  'bed',
+  'ruler',
+  'paint',
+  'tree',
+  // Tecnologia
+  'laptop',
+  'mobile',
+  'wifi',
+  'chart',
+  'gear',
+  'headset',
+  'gamepad',
+  // Esporte
+  'ball',
+  'trophy',
+  'dumbbell',
+  'ticket',
+  // Educação
+  'book',
+  'cap',
+  'pencil',
+  'file',
+  // Comida
+  'cutlery',
+  'pizza',
+  'wine',
+  'burger',
+  'icecream',
+  'apple',
+] as const
+
 /** Ícones dos Destaques (desenhos em `components/FeatureIcon.tsx`). */
 export const FEATURE_ICONS = [
   'tooth',
@@ -201,10 +276,19 @@ export const FEATURE_ICONS = [
   'scissors',
   'gift',
   'truck',
+  // Biblioteca para qualquer ramo (C3): só valores a mais, a versão continua a 2. Os desenhos, os
+  // nomes, os temas e as palavras da busca ficam em `components/FeatureIcon.tsx`.
+  ...FEATURE_ICONS_MORE,
 ] as const
 
-/** Marcador dos Destaques. `photo` (entrega 4): uma foto pequena e redonda no lugar do ícone. */
-export const FEATURE_MARKERS = ['none', 'icon', 'number', 'photo'] as const
+/**
+ * Marcador dos Destaques. `photo` (entrega 4): uma foto pequena e redonda no lugar do ícone.
+ * `cover` (C3, "Foto grande"): a foto ocupa o item todo, com o título branco embaixo.
+ */
+export const FEATURE_MARKERS = ['none', 'icon', 'number', 'photo', 'cover'] as const
+
+/** Destaques numa seção (C3): até 12. Os modelos novos ficam entre 3 e 6. */
+export const FEATURES_MAX = 12
 
 /**
  * Destaques. `marker`, `icon` e `photo` são opções novas com valor padrão (sem marcador, ícone
@@ -228,10 +312,12 @@ export const featuresPropsSchema = z.object({
         text: z.string().max(300),
         icon: z.enum(FEATURE_ICONS).default('check'),
         photo: photoRefSchema.default(null),
+        // Link do item (C3): o item todo vira clicável, com "Saiba mais →" (ou o texto escolhido).
+        button: buttonSchema.nullable().optional(),
       }),
     )
     .min(1)
-    .max(6),
+    .max(FEATURES_MAX),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Features),
 })
@@ -305,6 +391,23 @@ export const galleryPropsSchema = z.object({
 /** Arrumação da Vitrine de produtos: 3 por linha, 2 grandes ou lista com foto. */
 export const PRODUCT_LAYOUTS = ['three', 'two', 'list'] as const
 
+/** Situação do item (B2): disponível (nada aparece), esgotado (sem botão) ou sob consulta. */
+export const PRODUCT_STATUSES = ['available', 'soldout', 'consult'] as const
+
+/** Ordem da Vitrine (extra do B3): a da lista, por nome, por preço ou os mais novos primeiro. */
+export const PRODUCT_SORTS = ['manual', 'name', 'price', 'newest'] as const
+
+/** Itens numa Vitrine (B3): antes 12; com categorias e busca, até 60. */
+export const PRODUCTS_MAX = 60
+
+/** Fotos a mais de um item (B2), que aparecem em "Mais detalhes". */
+export const PRODUCT_EXTRA_PHOTOS = 4
+
+/**
+ * Vitrine. Preço antigo, selo, situação, fotos a mais, detalhes e categoria (B2, B3) são novos e
+ * são opcionais (sem eles: vazio, disponível, nenhuma): páginas salvas antes continuam iguais, na
+ * versão 2.
+ */
 export const productsPropsSchema = z.object({
   id: componentId,
   devices,
@@ -312,6 +415,9 @@ export const productsPropsSchema = z.object({
   title,
   text: z.string().max(300).default(''),
   layout: z.enum(PRODUCT_LAYOUTS).default('three'),
+  // Selo em cima da foto (padrão) ou embaixo dela, quando a foto já tem texto (B2).
+  badgeBelow: z.boolean().optional(),
+  sort: z.enum(PRODUCT_SORTS).optional().catch(undefined),
   items: z
     .array(
       z.object({
@@ -321,6 +427,19 @@ export const productsPropsSchema = z.object({
         text: z.string().max(200).default(''),
         // Texto livre: "R$ 45", "a partir de R$ 120", "sob consulta". Vazio: sem preço.
         price: z.string().max(LIMITS.price).default(''),
+        // Preço de antes, riscado ao lado do preço (B2). Vazio: sem preço antigo.
+        oldPrice: z.string().max(LIMITS.price).optional(),
+        // "-30%", "Novo", "Mais vendido" (B2), na segunda cor do site.
+        badge: z.string().max(LIMITS.productBadge).optional(),
+        status: z.enum(PRODUCT_STATUSES).optional().catch(undefined),
+        // Categoria para o filtro da seção (B3). Vazia: só aparece em "Todos".
+        category: z.string().max(LIMITS.productCategory).optional(),
+        // "Mais detalhes" (B2): texto e fotos a mais, numa janela no próprio site.
+        details: z.string().max(LIMITS.productDetails).optional(),
+        photos: z
+          .array(z.object({ image: photoRefSchema.default(null) }))
+          .max(PRODUCT_EXTRA_PHOTOS)
+          .optional(),
         // "Pedir pelo WhatsApp" monta a mensagem com o nome do produto; ou um link qualquer. Até 22
         // letras, para caber numa linha no cartão (componentes, C3).
         button: buttonSchema
@@ -330,7 +449,7 @@ export const productsPropsSchema = z.object({
       }),
     )
     .min(1)
-    .max(12),
+    .max(PRODUCTS_MAX),
   style: sectionStyle.default('light'),
   anim: anim(SECTION_ANIMS.Products),
 })

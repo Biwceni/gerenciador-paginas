@@ -167,7 +167,13 @@ export function themeStyle(site: Partial<Site>): CSSProperties {
 
   return {
     ...(second
-      ? { '--color-second': second, '--color-on-second': secondTextColor(second, text) }
+      ? {
+          '--color-second': second,
+          '--color-on-second': secondTextColor(second, text),
+          // A segunda cor como texto (preço de oferta, B2): escurecida ou clareada até 4,5:1 no
+          // fundo e no fundo suave.
+          '--color-second-text': readableTint(readableTint(second, background), surface),
+        }
       : {}),
     '--color-primary': primary,
     '--color-on-primary': onPrimary,

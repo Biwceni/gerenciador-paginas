@@ -98,7 +98,9 @@ export function sectionChecks(
   // achado Features-2).
   const featuresWithoutPhoto = data.content
     .flatMap((item) =>
-      item.type === 'Features' && item.props.marker === 'photo' ? item.props.items : [],
+      item.type === 'Features' && (item.props.marker === 'photo' || item.props.marker === 'cover')
+        ? item.props.items
+        : [],
     )
     .filter((item) => (item.title.trim() || item.text.trim()) && !withPhoto(item.photo)).length
   if (featuresWithoutPhoto) {
@@ -108,7 +110,7 @@ export function sectionChecks(
         'Um destaque está sem foto',
         '# destaques estão sem foto',
       ),
-      text: 'O marcador escolhido é Foto: sem ela, o destaque fica só com o texto. Escolha a foto no item, nas opções da seção.',
+      text: 'O marcador escolhido é Foto ou Foto grande: sem ela, o destaque fica só com o texto (ou com a cor do site, na Foto grande). Escolha a foto no item, nas opções da seção.',
     })
   }
 

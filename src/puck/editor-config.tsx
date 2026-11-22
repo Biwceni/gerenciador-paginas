@@ -9,7 +9,9 @@ import {
   ContactChannelsField,
   FormField,
   HighlightField,
-  IconField,
+  CategoryField,
+  IconPicker,
+  RadioChoice,
   LinkField,
   MenuLabelField,
   Notice,
@@ -38,7 +40,13 @@ import { type AnimatedSection, type SectionAnimOf } from '@/lib/motion'
 import { SECTION_MIN_WIDTH } from '@/lib/photoSize'
 import { PRIVACY_TITLE } from '@/lib/privacy'
 
-import { FeatureIcon, FEATURE_ICON_LABELS } from './components/FeatureIcon'
+import {
+  FeatureIcon,
+  FEATURE_ICON_LABELS,
+  findIcons,
+  ICON_THEMES,
+  type IconTheme,
+} from './components/FeatureIcon'
 import { Columns } from './components/sections'
 import { tabbedFields } from './fieldTabs'
 import type { ContentMetadata } from './references'
@@ -47,6 +55,9 @@ import {
   type ButtonValue,
   CONTACT_CHANNELS,
   FEATURE_ICONS,
+  FEATURES_MAX,
+  PRODUCT_EXTRA_PHOTOS,
+  PRODUCTS_MAX,
   type FeatureMarker,
   HERO_EXTRA_SLIDES,
   HERO_INTERVALS,
@@ -184,6 +195,12 @@ const featureMarker = thumbChoice<FeatureMarker>('Marcador', [
   { value: 'icon', label: 'Ícone', hint: 'Um desenho em cima de cada um', thumb: 'marker-icon' },
   { value: 'number', label: 'Números', hint: 'Passo a passo: 1, 2, 3', thumb: 'marker-number' },
   { value: 'photo', label: 'Foto', hint: 'Uma foto pequena e redonda', thumb: 'marker-photo' },
+  {
+    value: 'cover',
+    label: 'Foto grande',
+    hint: 'A foto ocupa o destaque, com o título em cima',
+    thumb: 'marker-cover',
+  },
 ])
 
 // O Ícone e a Foto de cada Destaque só aparecem com o marcador deles (achado 4.4). A lista de
@@ -193,16 +210,15 @@ const featureIcon: CustomField<(typeof FEATURE_ICONS)[number]> = {
   label: 'Ícone',
   render: ({ field, name, onChange, readOnly, value }) => (
     <FieldLabel el="div" label={field.label ?? ''}>
-      <IconField
+      <IconPicker
+        draw={(icon) => <FeatureIcon name={icon} />}
+        find={(query, theme) => findIcons(query, theme as IconTheme | 'todos')}
         label="Ícone"
         name={name}
+        names={FEATURE_ICON_LABELS}
         onChange={onChange}
-        options={FEATURE_ICONS.map((icon) => ({
-          value: icon,
-          label: FEATURE_ICON_LABELS[icon],
-          icon: <FeatureIcon name={icon} />,
-        }))}
         readOnly={readOnly}
+        themes={ICON_THEMES}
         value={value}
       />
     </FieldLabel>
@@ -213,12 +229,19 @@ const featureItems: Field = {
   type: 'array',
   label: 'Destaques',
   min: 1,
-  max: 6,
+  max: FEATURES_MAX,
   arrayFields: {
     title: text('Título'),
     text: textarea('Texto'),
     icon: onlyWhen(featureIcon, 'marker', ['icon']),
-    photo: onlyWhen(photo('Foto', undefined, 1), 'marker', ['photo']),
+    photo: onlyWhen(photo('Foto', undefined, 1), 'marker', ['photo', 'cover']),
+    // Link do item (C3): vazio, o texto do link é "Saiba mais".
+    button: {
+      type: 'object',
+      label: 'Link (opcional)',
+      objectFields: { label: text('Texto do link (vazio: “Saiba mais”)'), link },
+      invite: ['+ Pôr um link (opcional)', 'Com link, o destaque todo leva para lá.'],
+    } as Field,
     // Só botões: não guarda nada no item.
     move: {
       type: 'custom',
@@ -273,17 +296,72 @@ const statItems: Field = {
   ),
 }
 
+/** Escolha em botões redondos que já vem marcada para itens e seções salvos antes da opção. */
+const radioChoice = <V extends string | boolean>(
+  label: string,
+  options: readonly { label: string; value: V }[],
+  fallback: V,
+): CustomField<V | undefined> => ({
+  type: 'custom',
+  label,
+  render: ({ field, name, onChange, readOnly, value }) => (
+    <FieldLabel el="div" label={field.label ?? ''}>
+      <RadioChoice
+        fallback={fallback}
+        label={label}
+        name={name}
+        onChange={(next) => onChange(next)}
+        options={options}
+        readOnly={readOnly}
+        value={value}
+      />
+    </FieldLabel>
+  ),
+})
+
+// Fotos a mais de um produto (B2): aparecem em "Mais detalhes", depois da foto principal.
+const productPhotos: Field = {
+  type: 'array',
+  label: `Mais fotos (até ${PRODUCT_EXTRA_PHOTOS}, aparecem em “Mais detalhes”)`,
+  max: PRODUCT_EXTRA_PHOTOS,
+  arrayFields: { image: photo('Foto', SECTION_MIN_WIDTH, 4 / 3) },
+  defaultItemProps: { image: null },
+  getItemSummary: (_item: unknown, index?: number) => itemName(`Foto ${(index ?? 0) + 1}`),
+}
+
 // Produtos da Vitrine. Como nos Destaques, os botões Subir e Descer ficam em cada item.
 const productItems: Field = {
   type: 'array',
   label: 'Produtos',
   min: 1,
-  max: 12,
+  max: PRODUCTS_MAX,
   arrayFields: {
     image: photo('Foto (obrigatória para aparecer no site)', SECTION_MIN_WIDTH, 1),
     name: text('Nome'),
     text: textarea('Frase curta'),
     price: text('Preço (opcional)'),
+    oldPrice: text('Preço antigo, riscado (opcional)'),
+    badge: text('Selo (opcional): “-30%”, “Novo”, “Mais vendido”'),
+    status: radioChoice(
+      'Situação',
+      [
+        { label: 'Disponível', value: 'available' },
+        { label: 'Esgotado', value: 'soldout' },
+        { label: 'Sob consulta', value: 'consult' },
+      ],
+      'available',
+    ),
+    category: {
+      type: 'custom',
+      label: 'Categoria (opcional)',
+      render: ({ field, name, onChange, readOnly, value }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <CategoryField name={name} onChange={onChange} readOnly={readOnly} value={value} />
+        </FieldLabel>
+      ),
+    } as CustomField<string>,
+    details: textarea('Mais detalhes (opcional, abre numa janela no site)'),
+    photos: productPhotos,
     button,
     move: {
       type: 'custom',
@@ -723,9 +801,27 @@ const sections: { [K in keyof Components]: Section<K> } = {
       items: productItems,
       ...({
         productsHint: notice(
-          'O preço é texto livre: “R$ 45”, “a partir de R$ 120” ou “sob consulta”. O botão “Pedir pelo WhatsApp” já abre a conversa com o nome do produto. Produto sem foto não aparece no site.',
+          'O preço é texto livre: “R$ 45”, “a partir de R$ 120” ou “sob consulta”. O botão “Pedir pelo WhatsApp” já abre a conversa com o nome do produto. Produto sem foto não aparece no site. Com 12 ou mais produtos, o site mostra uma busca.',
         ),
       } as object),
+      badgeBelow: radioChoice(
+        'Onde fica o selo',
+        [
+          { label: 'Em cima da foto', value: false },
+          { label: 'Embaixo da foto', value: true },
+        ],
+        false,
+      ),
+      sort: radioChoice(
+        'Ordem no site',
+        [
+          { label: 'A da lista', value: 'manual' },
+          { label: 'Por nome', value: 'name' },
+          { label: 'Por preço', value: 'price' },
+          { label: 'Mais novos primeiro', value: 'newest' },
+        ],
+        'manual',
+      ),
       style: sectionStyle,
       menuLabel,
       anim: animField('Products'),
