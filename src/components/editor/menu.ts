@@ -24,7 +24,7 @@ const linkedPage = (link: MenuLink) => (typeof link?.page === 'object' ? link.pa
 /** O menu publicado já tem um item igual a este? */
 export const linksTo =
   (pageId: number, sectionId?: string) =>
-  (item: MenuItems[number]): boolean =>
+  (item: { link?: MenuLink | null }): boolean =>
     sectionId
       ? item.link?.kind === 'section' &&
         linkedPage(item.link) === pageId &&
@@ -38,7 +38,7 @@ export const linksTo =
  */
 export async function readMenu(
   apiRoute: string,
-  isLinked: (item: MenuItems[number]) => boolean,
+  isLinked: (item: { link?: MenuLink | null }) => boolean,
 ): Promise<Exclude<MenuState, { kind: 'loading' }>> {
   try {
     const [published, draft] = await Promise.all([
@@ -46,7 +46,10 @@ export async function readMenu(
       getHeader(apiRoute, true),
     ])
     const items = published.items ?? []
-    if (items.some(isLinked)) return { kind: 'in-menu' }
+    // Num grupo (M1) também conta: a página já está no menu.
+    if (items.some((item) => isLinked(item) || item.children?.some(isLinked))) {
+      return { kind: 'in-menu' }
+    }
     if (draft._status === 'draft') {
       return {
         kind: 'cannot-add',
@@ -104,6 +107,7 @@ export async function menuRename(
   const items = published.items ?? []
   const label = menuLabel(title)
   const labels = items
+    .flatMap((item) => [item, ...(item.children ?? [])])
     .filter((item) => linksTo(pageId)(item) && item.label !== label)
     .map((item) => item.label)
   if (!labels.length) return { kind: 'nothing' }
@@ -116,6 +120,11 @@ export function renameMenuLinks(apiRoute: string, items: MenuItems, pageId: numb
   const label = menuLabel(title)
   return publishHeaderItems(
     apiRoute,
-    items.map((item) => (linksTo(pageId)(item) ? { ...item, label } : item)),
+    items.map((item) => {
+      const children = item.children?.map((child) =>
+        linksTo(pageId)(child) ? { ...child, label } : child,
+      )
+      return { ...(linksTo(pageId)(item) ? { ...item, label } : item), children }
+    }),
   )
 }

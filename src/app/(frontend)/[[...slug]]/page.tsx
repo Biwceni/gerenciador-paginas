@@ -9,6 +9,7 @@ import { Photo } from '@/components/site/Photo'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteNotice } from '@/components/site/SiteNotice'
+import { SiteTopBar } from '@/components/site/SiteTopBar'
 import { SiteLink } from '@/components/site/SiteLink'
 import { WhatsAppFloat } from '@/components/site/WhatsAppFloat'
 import { WhatsAppPrefill } from '@/components/site/WhatsAppPrefill'
@@ -181,6 +182,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
       />
       <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={page.id} />
       <SiteNotice />
+      {!campaign && <SiteTopBar />}
       <SiteHeader campaign={campaign} currentPageId={page.id} />
       <main id="conteudo">
         {!metadata.mainHeadingId && (

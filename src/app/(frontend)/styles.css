@@ -2213,6 +2213,11 @@
       color: inherit;
     }
 
+    /* M1: o grupo da página atual também fica branco sobre a foto (marrom sumia no escuro). */
+    & > .site-header .site-header__nav .site-header__groupbtn:is(:hover, [data-current]) {
+      color: inherit;
+    }
+
     & > .site-header--rows .site-header__nav {
       border-top-color: rgb(255 255 255 / 30%);
     }
@@ -5489,6 +5494,12 @@
   flex: 1.7 1 240px;
 }
 
+/* Páginas em duas colunas pede a largura de duas (com as colunas de links do M1 ao lado, a lista
+   ficava com uma palavra por linha). */
+.site .site-footer__cols > .site-footer__pagescol--two {
+  flex: 2 1 300px;
+}
+
 .site .site-footer__brand p {
   max-width: 36ch;
   margin: 8px 0 0;
@@ -5686,6 +5697,7 @@
 
   .site .site-footer__cols > *,
   .site .site-footer__cols > .site-footer__brand,
+  .site .site-footer__cols > .site-footer__pagescol--two,
   .site .site-footer__cols > .site-footer__contactcol {
     flex: none;
   }
@@ -5745,4 +5757,199 @@
   .site:has(> .wa-float[data-desktop]) > .site-footer {
     padding-bottom: 96px;
   }
+}
+
+/*
+ * M1: grupos do menu. No topo do computador, o botão parece um link (com a setinha) e a lista abre
+ * embaixo dele, num cartão com o fundo e as letras da página (também por cima da foto da Vitrine).
+ * No menu do ☰, a lista abre no lugar, com recuo.
+ */
+.site .site-header__groupbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.site .site-header__groupbtn svg {
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.site .site-header__groupbtn[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.site .site-header__nav .site-header__groupbtn:hover,
+.site .site-header__nav .site-header__groupbtn[data-current] {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.site .site-header__nav .site-header__group {
+  position: relative;
+}
+
+.site .site-header__nav ul.site-header__sub {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -12px;
+  z-index: 30;
+  display: grid;
+  gap: 0;
+  width: max-content;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 6px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  background: var(--color-background);
+  color: var(--color-text);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+}
+
+.site .site-header__nav ul.site-header__sub[hidden] {
+  display: none;
+}
+
+.site .site-header__nav ul.site-header__sub a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--color-text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.site .site-header__nav ul.site-header__sub a:hover,
+.site .site-header__nav ul.site-header__sub a:focus-visible {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.site .site-header__nav ul.site-header__sub a[aria-current='page'] {
+  color: var(--color-primary);
+}
+
+/* Perto da borda direita, a lista abre para a esquerda. */
+.site .site-header__nav .site-header__group:nth-last-child(-n + 2) ul.site-header__sub {
+  right: -12px;
+  left: auto;
+}
+
+.site .site-header__mobile .site-header__groupbtn {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px;
+  border-bottom: 1px solid var(--color-line);
+  font-family: var(--font-headings);
+  font-size: 19px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+}
+
+.site .site-header__mobile .site-header__groupbtn[data-current] {
+  color: var(--color-primary);
+}
+
+.site .site-header__mobile ul.site-header__sub {
+  padding-left: 16px;
+  border-left: 2px solid var(--color-line);
+  margin-left: 2px;
+}
+
+.site .site-header__mobile ul.site-header__sub a {
+  min-height: 48px;
+  font-size: 17px;
+}
+
+/* M1: linha de cima, fina, acima do topo. No celular, uma linha só: o horário sai. */
+.site .site-topbar {
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.site .site-topbar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 24px;
+  min-height: 36px;
+}
+
+.site .site-topbar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.site .site-topbar__item svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.site a.site-topbar__item:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.site .site-topbar__link {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+@container site (max-width: 720px) {
+  .site .site-topbar__inner {
+    flex-wrap: nowrap;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  .site .site-topbar__hours {
+    display: none;
+  }
+
+  .site .site-topbar__item {
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .site .site-topbar__link {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* D3: dados da empresa no fim do rodapé, na cor das letras do rodapé, sem transparência. */
+.site .site-footer .site-footer__company {
+  margin: 24px 0 0;
+  color: var(--color-on-footer);
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 1;
+  overflow-wrap: anywhere;
+}
+
+.site .site-footer--line .site-footer__company {
+  margin-top: 8px;
 }

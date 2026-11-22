@@ -23,6 +23,7 @@ import * as migration_20261116_170000_versoes_em_cascata from './20261116_170000
 import * as migration_20261116_180000_menu_rodape_whatsapp from './20261116_180000_menu_rodape_whatsapp';
 import * as migration_20261122_013907_aviso_no_alto from './20261122_013907_aviso_no_alto';
 import * as migration_20261122_112409_marca_logo_segunda_cor from './20261122_112409_marca_logo_segunda_cor';
+import * as migration_20261122_125509_menu_grupos_rodape_empresa from './20261122_125509_menu_grupos_rodape_empresa';
 
 export const migrations = [
   {
@@ -148,6 +149,11 @@ export const migrations = [
   {
     up: migration_20261122_112409_marca_logo_segunda_cor.up,
     down: migration_20261122_112409_marca_logo_segunda_cor.down,
-    name: '20261122_112409_marca_logo_segunda_cor'
+    name: '20261122_112409_marca_logo_segunda_cor',
+  },
+  {
+    up: migration_20261122_125509_menu_grupos_rodape_empresa.up,
+    down: migration_20261122_125509_menu_grupos_rodape_empresa.down,
+    name: '20261122_125509_menu_grupos_rodape_empresa'
   },
 ];

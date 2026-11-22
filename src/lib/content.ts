@@ -5,6 +5,7 @@ import config from '@/payload.config'
 import type { Footer, Header, Media, Page, Site } from '@/payload-types'
 
 import { whatsAppURL } from './links'
+import { flatMenu } from './menu'
 import { safeMotion } from './motion'
 import { relationID } from './relations'
 import { FALLBACK_SITE_NAME } from './site'
@@ -128,8 +129,13 @@ type LinkValue = {
  * Uma busca só por requisição, dividida entre cabeçalho e rodapé.
  */
 export const getMenuAnchors = cache(async (): Promise<Record<number, Record<string, string>>> => {
-  const header = await getHeader()
-  const links = [...(header.items ?? []).map((item) => item.link), header.button?.link]
+  const [header, footer] = await Promise.all([getHeader(), getFooter()])
+  const links = [
+    ...flatMenu(header.items ?? []).map((item) => item.link),
+    header.button?.link,
+    header.topBar?.link,
+    ...(footer.columns ?? []).flatMap((column) => (column.links ?? []).map((item) => item.link)),
+  ]
   const ids = [
     ...new Set(links.flatMap((link) => (link?.kind === 'section' ? [relationID(link.page)] : []))),
   ].filter((id): id is number => id !== null)

@@ -12,16 +12,16 @@ const PATHS: Record<string, React.ReactNode> = {
       <circle cx="16.6" cy="7.4" fill="currentColor" r="0.6" stroke="none" />
     </>
   ),
-  facebook: <path d="M14.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.6-1.5h1.5V4.4a20 20 0 0 0-2.3-.1c-2.3 0-3.8 1.4-3.8 3.9v2.3H8.9v3h2.6V21" />,
+  facebook: (
+    <path d="M14.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.6-1.5h1.5V4.4a20 20 0 0 0-2.3-.1c-2.3 0-3.8 1.4-3.8 3.9v2.3H8.9v3h2.6V21" />
+  ),
   youtube: (
     <>
       <rect height="13" rx="4" width="19" x="2.5" y="5.5" />
       <path d="M10.2 9.2v5.6l4.8-2.8z" />
     </>
   ),
-  tiktok: (
-    <path d="M14 3.5v11.2a3.3 3.3 0 1 1-3.3-3.3M14 3.5c.4 2.4 2 4 4.6 4.3" />
-  ),
+  tiktok: <path d="M14 3.5v11.2a3.3 3.3 0 1 1-3.3-3.3M14 3.5c.4 2.4 2 4 4.6 4.3" />,
   linkedin: (
     <>
       <rect height="16" rx="3" width="16" x="4" y="4" />

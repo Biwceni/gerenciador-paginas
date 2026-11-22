@@ -1,3 +1,4 @@
+import { formatCNPJ, validateCNPJ } from '@/lib/company'
 import { normalizeWhatsApp, socialURL, validateSocial } from '@/lib/links'
 import { type Motion, safeMotion } from '@/lib/motion'
 import { relationID } from '@/lib/relations'
@@ -39,6 +40,8 @@ export type SettingsState = {
   social: { instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
   seoDescription: string
   shareImage: number | null
+  /** D3: dados da empresa, que o rodapé só lê. */
+  company: { legalName: string; cnpj: string; responsible: string }
 }
 
 /** As configurações como a tela mostra (sem valor vira texto vazio). */
@@ -82,6 +85,11 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
     },
     seoDescription: site.seoDescription ?? '',
     shareImage: relationID(site.shareImage),
+    company: {
+      legalName: site.company?.legalName ?? '',
+      cnpj: site.company?.cnpj ?? '',
+      responsible: site.company?.responsible ?? '',
+    },
   }
 }
 
@@ -120,6 +128,11 @@ export function toSiteData(state: SettingsState) {
     },
     seoDescription: orNull(state.seoDescription),
     shareImage: state.shareImage,
+    company: {
+      legalName: orNull(state.company.legalName),
+      cnpj: orNull(formatCNPJ(state.company.cnpj)),
+      responsible: orNull(state.company.responsible),
+    },
   }
 }
 
@@ -141,6 +154,8 @@ export function validateSettings(state: SettingsState): Record<string, string> {
     const result = validateSocial(key, state.social[key])
     if (result !== true) errors[key] = result
   }
+  const cnpj = validateCNPJ(state.company.cnpj)
+  if (cnpj !== true) errors.cnpj = cnpj
   return errors
 }
 

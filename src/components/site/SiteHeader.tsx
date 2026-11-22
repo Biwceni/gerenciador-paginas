@@ -27,14 +27,32 @@ export async function getMenuItems(
     getMenuAnchors(),
   ])
   const links = { ...siteLinks(site), pageAnchors }
-  return (header.items ?? []).flatMap((item, index) => {
+  const isCurrent = (link: (typeof header.items & object)[number]['link']) =>
+    currentPageId != null && link?.kind === 'page' && relationID(link.page) === currentPageId
+  return (header.items ?? []).flatMap((item, index): MenuItem[] => {
+    const id = item.id ?? String(index)
+    // Grupo (M1): fica no menu se ao menos um link de dentro está no ar.
+    if (item.children?.length) {
+      const children = item.children.flatMap((child, childIndex): MenuItem[] => {
+        const href = resolveLink(child.link, links)
+        return href
+          ? [
+              {
+                id: child.id ?? `${id}-${childIndex}`,
+                label: child.label,
+                href,
+                current: isCurrent(child.link),
+              },
+            ]
+          : []
+      })
+      return children.length
+        ? [{ id, label: item.label, href: '', current: children.some((c) => c.current), children }]
+        : []
+    }
     const href = resolveLink(item.link, links)
     if (!href) return []
-    const current =
-      currentPageId != null &&
-      item.link?.kind === 'page' &&
-      relationID(item.link.page) === currentPageId
-    return [{ id: item.id ?? String(index), label: item.label, href, current }]
+    return [{ id, label: item.label, href, current: isCurrent(item.link) }]
   })
 }
 

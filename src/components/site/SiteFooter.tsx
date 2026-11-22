@@ -1,11 +1,21 @@
 import React from 'react'
 
-import { getFooter, getSite, populatedMedia, privacyHref } from '@/lib/content'
+import { companyLine } from '@/lib/company'
+import {
+  getFooter,
+  getMenuAnchors,
+  getSite,
+  populatedMedia,
+  privacyHref,
+  resolveLink,
+  siteLinks,
+} from '@/lib/content'
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Site } from '@/payload-types'
 
 import {
   DEFAULT_CTA_TITLE,
+  type FooterColumn,
   footerContact,
   footerSocial,
   logoLook,
@@ -26,11 +36,26 @@ export async function SiteFooter({
   campaign?: boolean
   site?: Partial<Site>
 }) {
-  const [site, footer, button] = await Promise.all([
+  const [site, footer, button, pageAnchors] = await Promise.all([
     draftSite ?? getSite(),
     getFooter(),
     campaign ? null : getHeaderButton(draftSite),
+    getMenuAnchors(),
   ])
+  const links = { ...siteLinks(site), pageAnchors }
+  // Colunas de links (M1): os links que não estão no ar somem, como no menu.
+  const columns: FooterColumn[] = campaign
+    ? []
+    : (footer.columns ?? []).map((column, index) => ({
+        id: column.id ?? String(index),
+        title: column.title,
+        links: (column.links ?? []).flatMap((link, linkIndex) => {
+          const href = resolveLink(link.link, links)
+          return href
+            ? [{ id: link.id ?? `${index}-${linkIndex}`, label: link.label, href, current: false }]
+            : []
+        }),
+      }))
   // A chamada do fim usa o botão de destaque do topo: sem botão, não há chamada.
   const cta =
     button && footer.cta?.show !== false
@@ -42,6 +67,8 @@ export async function SiteFooter({
       backToTop={footer.showBackToTop !== false}
       brand={siteBrand(site)}
       campaign={campaign}
+      columns={columns}
+      company={companyLine(site.company)}
       cta={cta}
       logo={populatedMedia(site.logo)}
       logoRing={Boolean(site.logoRing?.footer)}
