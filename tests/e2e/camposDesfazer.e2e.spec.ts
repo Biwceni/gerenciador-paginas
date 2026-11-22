@@ -216,6 +216,8 @@ test.describe('editor: campos mais claros e desfazer com segurança', () => {
     await fields(page).locator('[class*="ArrayFieldItem-summary"]').first().click()
     await expect(fields(page).getByRole('radiogroup', { name: 'Ícone' })).toHaveCount(0)
     await fields(page).locator('label', { hasText: 'Ícone' }).first().click()
+    // Biblioteca de ícones (C3): fechada, mostra o ícone atual e "Trocar ícone".
+    await fields(page).getByRole('button', { name: 'Trocar ícone' }).click()
     const icons = fields(page).getByRole('radiogroup', { name: 'Ícone' })
     await expect(icons).toBeVisible()
     await icons.getByRole('radio', { name: 'Coração' }).check({ force: true })

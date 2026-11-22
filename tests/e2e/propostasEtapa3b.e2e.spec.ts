@@ -194,7 +194,7 @@ test.describe.serial('Etapa 3b: vitrine e destaques', () => {
     await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' }).catch(() => {})
     const list = page.locator('.products > li')
     await expect(page.getByRole('button', { name: 'Higiene', pressed: true })).toBeVisible()
-    await expect(list).toHaveCount(3)
+    await expect(list).toHaveCount(4) // 02, 06, 10 e 14
 
     await page.getByRole('button', { name: 'Mamãe e bebê' }).click()
     await expect(page).toHaveURL(/categoria=mamae-e-bebe/)
@@ -206,7 +206,7 @@ test.describe.serial('Etapa 3b: vitrine e destaques', () => {
     // 14 itens: busca e "Ordenar" aparecem.
     const search = page.getByRole('searchbox', { name: 'Buscar nesta lista' })
     await search.fill('item 1')
-    await expect(list).toHaveCount(5) // 01, 10 a 14
+    await expect(list).toHaveCount(6) // 01 e 10 a 14
     await search.fill('xpto')
     await expect(page.locator('.products-empty')).toContainText('Nada com “xpto”.')
     await page.getByRole('button', { name: 'Ver todos' }).click()
@@ -223,10 +223,10 @@ test.describe.serial('Etapa 3b: vitrine e destaques', () => {
     const { slug } = await createPage([vitrine(photo, 3)], 'published')
     await openSite(page, slug)
     const first = page.locator('.products > li').first()
-    await expect(first.locator('.product__badge')).toHaveText('-30%')
-    await expect(first.locator('.product__old')).toContainText('R$ 99,00')
+    await expect(first.locator('.product__photo .product__badge')).toHaveText('-30%')
+    await expect(first.locator('.product__body > .product__price .product__old')).toContainText('R$ 99,00')
     const soldOut = page.locator('.products > li').nth(1)
-    await expect(soldOut.locator('.product__status')).toHaveText('Esgotado')
+    await expect(soldOut.locator('.product__body > .product__status')).toHaveText('Esgotado')
     await expect(soldOut.locator('a.product__link')).toHaveCount(0)
 
     const more = page.getByRole('button', { name: 'Mais detalhes: Item 01' })
