@@ -274,7 +274,7 @@ const packs: Pack[] = [
             style: 'soft',
             height: 'compact',
           }),
-          b.gallery({ title: 'Nossos trabalhos', layout: 'masonry' }),
+          b.gallery({ title: 'Nossos trabalhos' }),
           b.cta({
             title: 'Quer um assim na sua festa?',
             text: 'Mande uma foto de inspiração e a gente cria o seu.',
@@ -577,7 +577,7 @@ const packs: Pack[] = [
               ['Sobrancelha e cílios', 'Design, henna e lash lifting.', 'heart'],
             ],
           }),
-          b.gallery({ title: 'Nossos trabalhos', layout: 'masonry', style: 'soft' }),
+          b.gallery({ title: 'Nossos trabalhos', style: 'soft' }),
           b.testimonials({
             title: 'O que as clientes dizem',
             style: 'light',
@@ -1479,7 +1479,7 @@ const packs: Pack[] = [
               ],
             ],
           }),
-          b.gallery({ id: 'projetos', menu: 'Projetos', title: 'Projetos', layout: 'masonry' }),
+          b.gallery({ id: 'projetos', menu: 'Projetos', title: 'Projetos' }),
           b.testimonials({
             title: 'Quem já construiu com a gente',
             items: [
@@ -1764,7 +1764,6 @@ const packs: Pack[] = [
             id: 'trabalhos',
             menu: 'Trabalhos',
             title: 'Trabalhos',
-            layout: 'masonry',
             style: 'soft',
           }),
           b.features({
@@ -2205,7 +2204,7 @@ const pageModels: {
         style: 'soft',
         height: 'compact',
       }),
-      b.gallery({ title: 'Galeria', layout: 'masonry' }),
+      b.gallery({ title: 'Galeria' }),
       b.cta({
         title: 'Quer um assim?',
         text: 'Mande uma mensagem com a foto que você gostou.',

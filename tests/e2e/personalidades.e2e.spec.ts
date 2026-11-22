@@ -225,30 +225,23 @@ test.describe.serial('personalidades do site', () => {
     expect(new Set(await lefts()).size).toBe(2)
   })
 
-  test('Vitrine: topo por cima da foto fica sólido ao rolar; com menos movimento, topo de sempre', async () => {
+  test('Vitrine: topo por cima da foto fica sólido ao rolar, também com menos movimento (A1)', async () => {
     await publishPersonality('vitrine')
     await page.setViewportSize({ width: 1440, height: 900 })
-    await open(page, `/${COVER_SLUG}`)
-    await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky')
-    expect(await headerBackground(page)).toBe('rgba(0, 0, 0, 0)')
-    // O topo cobre o começo da foto: o banner sobe até o alto da página.
-    const [header, hero] = await Promise.all(
-      ['.site-header', '.hero'].map((selector) => page.locator(selector).boundingBox()),
-    )
-    expect(Math.round(hero!.y)).toBe(Math.round(header!.y))
+    for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+      await page.emulateMedia({ reducedMotion })
+      await open(page, `/${COVER_SLUG}`)
+      await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky')
+      expect(await headerBackground(page)).toBe('rgba(0, 0, 0, 0)')
+      // O topo cobre o começo da foto: o banner sobe a altura medida do topo.
+      const [header, hero] = await Promise.all(
+        ['.site-header', '.hero'].map((selector) => page.locator(selector).boundingBox()),
+      )
+      expect(Math.round(hero!.y)).toBe(Math.round(header!.y))
 
-    await page.mouse.wheel(0, 600)
-    await expect.poll(() => headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
-
-    await page.emulateMedia({ reducedMotion: 'reduce' })
-    await open(page, `/${COVER_SLUG}`)
-    // Topo de sempre: sólido e fora da foto (preso no alto como em toda página, T2).
-    await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky')
-    expect(await headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
-    const [plain, photo] = await Promise.all(
-      ['.site-header', '.hero'].map((selector) => page.locator(selector).boundingBox()),
-    )
-    expect(Math.round(photo!.y)).toBeGreaterThanOrEqual(Math.round(plain!.y + plain!.height))
+      await page.mouse.wheel(0, 600)
+      await expect.poll(() => headerBackground(page)).not.toBe('rgba(0, 0, 0, 0)')
+    }
     await page.emulateMedia({ reducedMotion: null })
   })
 

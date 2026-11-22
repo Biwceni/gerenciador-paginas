@@ -46,7 +46,7 @@ export const SECTION_VARIANTS: Partial<
   Gallery: {
     field: 'layout',
     variants: [
-      { value: 'grid', label: 'Grade', thumb: 'gallery-grid' },
+      { value: 'grid', label: 'Grade igual', thumb: 'gallery-grid' },
       { value: 'masonry', label: 'Mosaico', thumb: 'gallery-masonry' },
     ],
   },

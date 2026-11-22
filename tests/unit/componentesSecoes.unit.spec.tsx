@@ -166,12 +166,17 @@ describe('C2: Faixa de aviso', () => {
     expect(editor).toContain('Uma por vez no site')
   })
 
-  it('sem botão de pausar: para com mouse, foco e dedo, e fica parada com reduzir movimento', () => {
+  it('para com mouse, foco, dedo e o botão de pausar (A2), e fica parada com reduzir movimento', () => {
     const html = strip(2, 'move')
     expect(html).not.toContain('<input')
     expect(html).toContain('tabindex="0"')
-    expect(css).not.toContain('announce__pause')
-    expect(css).toMatch(/:is\(:hover, :focus-within, \[data-held\]\) \.announce__track/)
+    expect(html).toContain('aria-label="Pausar o aviso"')
+    expect(html).toContain('aria-pressed="false"')
+    // O botão só aparece com a faixa se mexendo (site no ar, sem "reduzir movimento").
+    expect(css).toMatch(/\.site \.announce__pause \{\s*display: none/)
+    expect(css).toMatch(
+      /:is\(:hover, :focus-within, \[data-held\], \[data-paused\]\)\s*\.announce__track/,
+    )
     // A troca e a trilha só existem dentro do bloco sem pedido de menos movimento.
     const motion = css.slice(
       css.indexOf(
@@ -432,26 +437,34 @@ describe('C8: Perguntas frequentes', () => {
 })
 
 describe('C9: Galeria e Instagram', () => {
-  it('mosaico em linhas: a ordem da lista e a largura pelo formato da foto', () => {
-    const wide = { ...photo(1), width: 1600, height: 900 } as Media
-    const tall = { ...photo(2), width: 800, height: 1200 } as Media
-    const html = renderToStaticMarkup(
-      <GalleryGrid
-        items={[
-          { photo: wide, caption: '' },
-          { photo: tall, caption: '' },
-        ]}
-        layout="masonry"
-        viewer={false}
-      />,
-    )
-    expect(html).toContain('--ar:1.778')
-    expect(html).toContain('--ar:0.667')
-    expect(html.indexOf('--ar:1.778')).toBeLessThan(html.indexOf('--ar:0.667'))
+  it('mosaico (A4): a primeira foto grande, as outras em volta e sem buraco no fim', () => {
+    const many = (count: number) =>
+      renderToStaticMarkup(
+        <GalleryGrid
+          items={Array.from({ length: count }, (_, index) => ({
+            photo: photo(index + 1),
+            caption: '',
+          }))}
+          layout="masonry"
+          viewer={false}
+        />,
+      )
+    // Com menos de 3 fotos, fica a grade igual.
+    expect(many(2)).toContain('gallery gallery--grid')
+    expect(many(3)).toContain('gallery gallery--masonry')
+    // 4 fotos: a grande da altura das outras três; 5: a última ocupa as duas casas que sobram;
+    // 7: a penúltima e a antepenúltima ocupam duas cada.
+    expect(many(4)).toContain('data-tall="true"')
+    expect(many(4)).not.toContain('data-end-wide')
+    expect(many(5).match(/data-end-wide="2"/g)).toHaveLength(1)
+    expect(many(6)).not.toContain('data-end-wide')
+    expect(many(7).match(/data-end-wide="2"/g)).toHaveLength(2)
+    // No celular (2 colunas): sobra uma depois da grande quando o resto é ímpar.
+    expect(many(4)).toContain('data-end-narrow="2"')
+    expect(many(5)).not.toContain('data-end-narrow')
     expect(css).toMatch(
-      /\.gallery\.gallery--masonry > li \{\s*flex: var\(--ar, 1\) 1 calc\(var\(--ar, 1\) \* var\(--row-h\)\)/,
+      /\.gallery--masonry > li:first-child \{\s*grid-row: span 2;\s*grid-column: span 2/,
     )
-    expect(css).toMatch(/\.gallery\.gallery--masonry \{[^}]*display: flex/)
   })
 
   it('legendas com quebra equilibrada', () => {

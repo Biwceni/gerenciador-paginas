@@ -70,67 +70,6 @@ function useHeaderLayout(button: React.RefObject<HTMLButtonElement | null>) {
 }
 
 /**
- * Topo preso no alto ao rolar (T2): fica mais baixo e ganha uma sombra (`--scrolled`). No celular
- * some quando a pessoa desce e volta ao menor movimento para cima (`--hidden`); com "reduzir
- * movimento" ligado, nunca some. A altura do topo vai para `--site-header-h`, que os links para
- * uma seção descontam (o título não fica escondido embaixo do topo).
- */
-function useStickyHeader(button: React.RefObject<HTMLButtonElement | null>, open: boolean) {
-  const openRef = useRef(open)
-  useEffect(() => {
-    openRef.current = open
-  }, [open])
-
-  useEffect(() => {
-    const header = button.current?.closest<HTMLElement>('.site-header')
-    const view = header?.ownerDocument.defaultView
-    // No editor o topo fica parado (`data-editor`): sem encolher, nada se mexe embaixo do mouse.
-    if (!header || !view || header.closest('[data-editor]')) return
-    const root = header.ownerDocument.documentElement
-    const calm = view.matchMedia('(prefers-reduced-motion: reduce)')
-
-    const size = new view.ResizeObserver(() => {
-      root.style.setProperty('--site-header-h', `${header.offsetHeight}px`)
-    })
-    size.observe(header)
-
-    let last = view.scrollY
-    let frame = 0
-    const update = () => {
-      frame = 0
-      const y = Math.max(0, view.scrollY)
-      header.classList.toggle('site-header--scrolled', y > 4)
-      const phone = header.clientWidth <= 720
-      const down = y > last
-      if (!phone || calm.matches || openRef.current || y < header.offsetHeight) {
-        header.classList.remove('site-header--hidden')
-      } else if (down && y - last > 2) {
-        header.classList.add('site-header--hidden')
-      } else if (!down) {
-        header.classList.remove('site-header--hidden')
-      }
-      last = y
-    }
-    const onScroll = () => {
-      if (!frame) frame = view.requestAnimationFrame(update)
-    }
-    update()
-    view.addEventListener('scroll', onScroll, { passive: true })
-    // Foco num link escondido embaixo do topo sumido: o topo volta.
-    const onFocus = (event: FocusEvent) => {
-      if (header.contains(event.target as Node)) header.classList.remove('site-header--hidden')
-    }
-    header.addEventListener('focusin', onFocus)
-    return () => {
-      size.disconnect()
-      view.removeEventListener('scroll', onScroll)
-      header.removeEventListener('focusin', onFocus)
-      if (frame) view.cancelAnimationFrame(frame)
-    }
-  }, [button])
-}
-
-/**
  * Menu do ☰ (T3): abre em tela cheia, embaixo do topo, com a própria rolagem por dentro, e a página
  * de trás fica parada enquanto ele está aberto. Fica fora do topo (no elemento em volta dele), para
  * nenhum efeito do topo (como o vidro da Vitrine) prender o menu dentro dele. Enquanto aberto, a
@@ -141,7 +80,6 @@ export function HeaderMenu({ children }: { children: React.ReactNode }) {
   const button = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLElement>(null)
   const compact = useHeaderLayout(button)
-  useStickyHeader(button, open)
   const [host, setHost] = useState<Element | null>(null)
   useEffect(() => {
     setHost(button.current?.closest('.site-header')?.parentElement ?? null)

@@ -8,6 +8,7 @@ import { footerSocial } from '@/components/site/SiteChrome'
 import { Photo } from '@/components/site/Photo'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
+import { SiteNotice } from '@/components/site/SiteNotice'
 import { SiteLink } from '@/components/site/SiteLink'
 import { WhatsAppFloat } from '@/components/site/WhatsAppFloat'
 import { WhatsAppPrefill } from '@/components/site/WhatsAppPrefill'
@@ -139,9 +140,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
             </SiteLink>
           )}
         </main>
-        {whatsappHref && (
-          <WhatsAppPrefill text={whatsAppGreeting(site.contact?.whatsappMessage)} />
-        )}
+        {whatsappHref && <WhatsAppPrefill text={whatsAppGreeting(site.contact?.whatsappMessage)} />}
       </>
     )
   }
@@ -181,6 +180,7 @@ export default async function SitePage({ params }: { params: Promise<Params> }) 
         type="application/ld+json"
       />
       <PanelBar adminRoute={adminRoute} apiRoute={apiRoute} pageId={page.id} />
+      <SiteNotice />
       <SiteHeader campaign={campaign} currentPageId={page.id} />
       <main id="conteudo">
         {!metadata.mainHeadingId && (

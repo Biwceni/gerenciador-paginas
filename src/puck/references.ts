@@ -125,7 +125,9 @@ export function pageHref(page: { id: number; slug?: string | null }, homepageId?
 
 /** Primeira seção que pode ter o título principal da página: banner, lista de links ou política. */
 export function mainHeadingID(data: PuckPageData): string | undefined {
-  const first = data.content[0]
+  // Uma faixa de aviso antes do banner não conta (A2): o título do banner continua sendo o da
+  // página, e o site não repete o nome da página antes da faixa.
+  const first = data.content.find((item) => item.type !== 'Announcement')
   return first?.type === 'Hero' || first?.type === 'LinkList' || first?.type === 'Privacy'
     ? first.props.id
     : undefined

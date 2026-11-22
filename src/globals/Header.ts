@@ -4,6 +4,7 @@ import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { linkField } from '../fields/link'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
+import { NOTICE_MAX } from '../lib/notice'
 
 export const Header: GlobalConfig = {
   slug: 'header',
@@ -25,6 +26,25 @@ export const Header: GlobalConfig = {
     afterChange: [revalidateGlobalOnPublish],
   },
   fields: [
+    {
+      // Faixa fina no alto de todas as páginas (extra do A2), com data para sair do ar sozinha.
+      name: 'notice',
+      type: 'group',
+      label: 'Aviso no alto do site',
+      admin: { description: 'Opcional. Aparece em todas as páginas, acima do topo.' },
+      fields: [
+        { name: 'text', type: 'text', label: 'Texto do aviso', maxLength: NOTICE_MAX },
+        {
+          name: 'until',
+          type: 'date',
+          label: 'Mostrar até',
+          admin: {
+            date: { pickerAppearance: 'dayOnly' },
+            description: 'Opcional. Depois desse dia, o aviso some sozinho.',
+          },
+        },
+      ],
+    },
     {
       name: 'items',
       type: 'array',

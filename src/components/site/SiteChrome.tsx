@@ -8,6 +8,7 @@ import type { Personality } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
+import { HeaderWatch } from './HeaderWatch'
 import { Photo } from './Photo'
 import { SiteLink } from './SiteLink'
 import { SOCIAL_NAMES, SocialIcon } from './SocialIcon'
@@ -250,6 +251,7 @@ export function SiteHeaderView({
             <HeaderMenu>{mobileContent}</HeaderMenu>
           </>
         )}
+        <HeaderWatch />
       </div>
     </header>
   )
@@ -401,8 +403,7 @@ export function SiteFooterView({
   }
 
   const contactItems =
-    showContact &&
-    (contact.whatsappHref || contact.phoneHref || contact.email || contact.address)
+    showContact && (contact.whatsappHref || contact.phoneHref || contact.email || contact.address)
   const hours = showHours ? contact.hours?.trim() || null : null
   const logoImage = logo && (
     <Photo

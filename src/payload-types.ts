@@ -1149,6 +1149,16 @@ export interface Site {
 export interface Header {
   id: number;
   /**
+   * Opcional. Aparece em todas as páginas, acima do topo.
+   */
+  notice?: {
+    text?: string | null;
+    /**
+     * Opcional. Depois desse dia, o aviso some sozinho.
+     */
+    until?: string | null;
+  };
+  /**
    * Itens que levam para páginas que não estão no ar ficam escondidos.
    */
   items?:
@@ -1282,6 +1292,12 @@ export interface SiteSelect<T extends boolean = true> {
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
+  notice?:
+    | T
+    | {
+        text?: T;
+        until?: T;
+      };
   items?:
     | T
     | {

@@ -61,7 +61,11 @@ export async function MenuView(props: AdminViewServerProps) {
         adminRoute={adminRoute}
         apiRoute={payload.config.routes.api}
         initial={{
-          header: { items: header.items ?? [], button: header.button ?? {} },
+          header: {
+            items: header.items ?? [],
+            button: header.button ?? {},
+            notice: header.notice ?? {},
+          },
           footer: toFooterData(footer),
           pending: header._status === 'draft' || footer._status === 'draft',
           versions: { header: header.updatedAt ?? '', footer: footer.updatedAt ?? '' },
@@ -78,7 +82,10 @@ export async function MenuView(props: AdminViewServerProps) {
           fontFaces: previewFontFaces(site),
           brand: siteBrand(site),
           shortcuts: headerShortcuts(site),
-          logoRing: { header: Boolean(site.logoRing?.header), footer: Boolean(site.logoRing?.footer) },
+          logoRing: {
+            header: Boolean(site.logoRing?.header),
+            footer: Boolean(site.logoRing?.footer),
+          },
         }}
       />
     </PanelTemplate>
