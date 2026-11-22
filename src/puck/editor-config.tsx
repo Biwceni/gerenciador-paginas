@@ -47,6 +47,7 @@ import {
   CONTACT_CHANNELS,
   FEATURE_ICONS,
   type FeatureMarker,
+  type GalleryImage,
   INSTAGRAM_MAX_PHOTOS,
   type LinkRef,
   type PhotoRef,
@@ -608,6 +609,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
       layout: 'grid',
       showCaptions: false,
       style: 'light',
+    },
+    // A primeira legenda escrita liga "Legendas embaixo das fotos" sozinha (A5, achado ODO7): antes
+    // ela ficava escondida no site até a pessoa achar a outra opção. Desligar depois continua valendo.
+    resolveData: ({ props }, { changed, lastData }) => {
+      const captioned = (images: GalleryImage[] | undefined) =>
+        Boolean(images?.some((image) => image.caption?.trim()))
+      const first = changed.images && captioned(props.images) && !captioned(lastData?.props.images)
+      return { props: first && !props.showCaptions ? { ...props, showCaptions: true } : props }
     },
   },
   Products: {

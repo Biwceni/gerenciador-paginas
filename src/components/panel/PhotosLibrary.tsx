@@ -6,7 +6,7 @@
 import { useDocumentDrawer } from '@payloadcms/ui'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { request } from './session'
 import { thumbnailURL } from '@/components/editor/context'
@@ -299,31 +299,56 @@ function PhotoDetail({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const saved = useRef(photo.alt ?? '')
+  // O texto da caixa agora, para guardar ao fechar (o efeito de saída não vê o estado novo).
+  const typed = useRef(alt)
   const [ReplaceDrawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
     collectionSlug: 'media',
     id: photo.id,
   })
 
-  // Salva a descrição um pouco depois de a pessoa parar de digitar.
-  useEffect(() => {
-    const text = alt.trim()
-    if (text === saved.current) return
-    const timer = setTimeout(async () => {
-      setSave('saving')
+  // Guarda a descrição (A5): na pausa da digitação, ao sair da caixa e ao fechar ou trocar de
+  // foto. Antes só a pausa valia, e fechar logo depois de digitar perdia o texto (achado CAR6).
+  const commit = useCallback(
+    async (text: string, { quiet = false } = {}) => {
+      if (text === saved.current) return
+      saved.current = text
+      if (!quiet) setSave('saving')
       try {
         await request(apiRoute, `/media/${photo.id}`, {
           method: 'PATCH',
           body: JSON.stringify({ alt: text }),
+          keepalive: true,
         })
-        saved.current = text
-        setSave('saved')
+        if (!quiet) setSave('saved')
         onAltSaved()
       } catch {
-        setSave('error')
+        if (!quiet) setSave('error')
       }
-    }, 800)
+    },
+    [apiRoute, onAltSaved, photo.id],
+  )
+  const commitRef = useRef(commit)
+  useEffect(() => {
+    commitRef.current = commit
+  }, [commit])
+
+  useEffect(() => {
+    const text = alt.trim()
+    typed.current = text
+    if (text === saved.current) return
+    const timer = setTimeout(() => void commit(text), 800)
     return () => clearTimeout(timer)
-  }, [alt, apiRoute, onAltSaved, photo.id])
+  }, [alt, commit])
+
+  // Fechou ou trocou de foto com texto ainda não guardado: guarda na saída.
+  useEffect(() => () => void commitRef.current(typed.current, { quiet: true }), [])
+
+  // "Guardado" fica 3 s e volta para a dica (A5).
+  useEffect(() => {
+    if (save !== 'saved') return
+    const timer = setTimeout(() => setSave('idle'), 3000)
+    return () => clearTimeout(timer)
+  }, [save])
 
   const remove = async () => {
     setError(null)
@@ -359,6 +384,7 @@ function PhotoDetail({
             setAlt(event.target.value)
             setSave('idle')
           }}
+          onBlur={() => void commit(alt.trim())}
           placeholder="Ex.: Xícara de espresso vista de cima"
           rows={3}
           value={alt}
@@ -367,9 +393,9 @@ function PhotoDetail({
           {!alt.trim()
             ? 'Escreva uma descrição: ela ajuda o Google e pessoas que usam leitor de tela.'
             : save === 'saving'
-              ? 'Salvando…'
+              ? 'Guardando…'
               : save === 'saved'
-                ? 'Salvo.'
+                ? '✓ Guardado'
                 : save === 'error'
                   ? 'Não deu para salvar. Confira a internet e tente de novo.'
                   : 'Ajuda o Google e pessoas que usam leitor de tela. Salva sozinho.'}

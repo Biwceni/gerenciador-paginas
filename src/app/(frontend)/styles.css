@@ -1909,6 +1909,27 @@
   }
 
   /*
+   * A5 (achado ODO5): botão vazio na prévia não parece um botão de verdade. Some e, com o mouse sobre
+   * a seção (ou escrevendo nele), vira um convite tracejado na cor do texto da seção.
+   */
+  & .button:has(> [contenteditable]:empty) {
+    border: 2px dashed currentColor;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+  }
+
+  & .button:has(> [contenteditable]:empty) > [contenteditable]:empty::before {
+    content: '+ Botão (opcional)';
+    opacity: 1;
+  }
+
+  /* Escondido sem sair do lugar: a página não pula quando o mouse entra ou sai da seção. */
+  & [data-puck-component]:not(:hover, :focus-within) .button:has(> [contenteditable]:empty) {
+    visibility: hidden;
+  }
+
+  /*
    * Personalidades (redesign v3). O Clássico é o visual de antes: nada daqui vale para ele. As
    * medidas (letras, cantos, espaços, largura) vêm das variáveis de theme.ts; aqui fica o que muda
    * a arrumação. Uma regra por seletor (ver o aviso lá em cima).
@@ -3704,6 +3725,12 @@
 
   .site[data-personality='aconchego'] .section-head {
     justify-content: center;
+  }
+
+  /* O @ do Instagram embaixo do título, e não solto no meio entre o título e o botão (A5). */
+  .site[data-personality] .section-head--stacked .section-head__text {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
   }
 }
 

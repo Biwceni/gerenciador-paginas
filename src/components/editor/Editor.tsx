@@ -33,7 +33,7 @@ import { type SiteLook, sameLook } from '@/components/panel/settings'
 import { themeStyle } from '@/components/site/theme'
 import type { Business } from '@/lib/fontPairs'
 import type { FormDefinition } from '@/lib/forms'
-import { exampleMatcher, findExampleSections } from '@/lib/examples'
+import { type ChromeExample, exampleMatcher, findExampleTexts, keptTexts } from '@/lib/examples'
 import { panelHref } from '@/lib/panel'
 import { PERSONALITY_LABELS, previewFontFaces } from '@/lib/theme'
 import type { Media } from '@/payload-types'
@@ -66,8 +66,9 @@ import {
   stillLoggedIn,
 } from './api'
 import { type EditorPageSummary, EditorProvider } from './context'
-import { CountedField } from './CountedField'
+import { CountedField, DRAFT_SAVED_EVENT, FIELD_LEFT_EVENT } from './CountedField'
 import { ListLimit } from './ListLimit'
+import { OptionalButton } from './OptionalButton'
 import { dictionary } from './dictionary'
 import { AdjustedBar, KeyboardRoom, ChoiceField } from './adjusted'
 import { ColumnPicker, pieceRequested } from './ColumnPicker'
@@ -86,14 +87,19 @@ import { PhotoPicker } from './PhotoPicker'
 import { PreviewTools } from './PreviewTools'
 import { VisitorPreview } from './VisitorPreview'
 import { SectionVariantsBar } from './SectionVariants'
+import { type ExampleItem, ExampleTexts, revealField } from './ExampleTexts'
+import { examplePlace } from './examplePlace'
 import { PublishDialog } from './PublishDialog'
+import { RenameMenuDialog } from './RenameMenuDialog'
+import { menuRename, type MenuItems } from './menu'
 import { type GetPuck, MOBILE_WIDTH, ROOT_ZONE, usePuck } from './puck'
 import { describeSaveError, type FieldsByType, type SaveTarget } from './saveErrors'
 import { EditorActionBar, SectionActionsPanel } from './SectionActions'
 import { EditorDrawer, EditorDrawerItem } from './SectionList'
 import { type SiteChrome, SitePreviewProvider } from './SitePreview'
 import { dismissUndo, showUndo } from './undoToast'
-import { VersionsDialog } from './VersionsDialog'
+import { type HistoryList, VersionsDialog } from './VersionsDialog'
+import { describeStep, HISTORY_SHOWN } from './historySteps'
 import { hiddenColumnNotice, layoutProblem } from './zoneLimits'
 
 export type EditorProps = {
@@ -111,6 +117,8 @@ export type EditorProps = {
   domain: string
   /** Textos dos modelos: seção que ainda tem um deles aparece como texto de exemplo. */
   exampleTexts: string[]
+  /** Textos de exemplo que ainda estão no rodapé (A7): entram no mesmo aviso. */
+  chromeExamples: ChromeExample[]
   /**
    * Sua marca (E8): como está no rascunho das configurações e como está no ar, o logo (para as cores)
    * e o ramo (para as letras sugeridas). As fontes guardadas no nosso Storage vêm em `fontFaces`.
@@ -139,6 +147,8 @@ type SaveState =
 type DialogName = 'publish' | 'versions' | 'settings' | 'more' | 'visitor' | 'brand' | null
 
 const SAVE_DELAY = 1200
+/** Depois de sair de um campo, a mudança que chegar neste tempo salva sem esperar. */
+const QUICK_WINDOW = 400
 /** Sem internet, tenta salvar de novo depois de 3 s, 6 s, 12 s… até de 30 em 30 s. */
 const RETRY_FIRST = 3000
 const RETRY_MAX = 30000
@@ -179,6 +189,7 @@ const countedFields = {
   radio: ChoiceField,
   select: ChoiceField,
   array: ListLimit,
+  object: OptionalButton,
 } as unknown as NonNullable<Parameters<typeof Puck>[0]['overrides']>['fieldTypes']
 
 const timeFormat = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -205,9 +216,13 @@ type Chrome = {
   livePath: string | null
   backHref: string
   /** Resumo que aparece no painel da direita quando nenhuma seção está escolhida. */
-  summary: { sections: number; address: string; exampleSections: number }
-  /** Escolhe a próxima seção que ainda tem texto de exemplo e rola até ela. */
-  goToExample: () => void
+  summary: { sections: number; address: string }
+  /** Os textos de exemplo da página e do rodapé, com o lugar de cada um (A7). */
+  examples: { items: ExampleItem[]; chrome: ChromeExample[]; chromeHref: string }
+  /** Escolhe a seção do texto, rola até ela e abre o campo dele. */
+  goToText: (item: ExampleItem) => void
+  /** "Manter assim": o texto sai do aviso (fica guardado na página). */
+  keepText: (item: ExampleItem) => void
   open: (dialog: DialogName) => void
   /** Salva o que falta antes de sair. `false`: sobrou mudança sem salvar, e a janela já pergunta. */
   leave: () => Promise<boolean>
@@ -394,7 +409,7 @@ function EditorFields({
       </>
     )
   }
-  const { sections, address, exampleSections } = chrome.summary
+  const { sections, address } = chrome.summary
 
   return (
     <>
@@ -411,14 +426,14 @@ function EditorFields({
             </>
           )}
         </span>
-        {exampleSections > 0 && (
-          <button className="ed-linkbtn ed-hint--warn" onClick={chrome.goToExample} type="button">
-            {exampleSections === 1
-              ? '1 seção ainda tem texto de exemplo. Ver qual'
-              : `${exampleSections} seções ainda têm texto de exemplo. Ver a próxima`}
-          </button>
-        )}
       </div>
+      <ExampleTexts
+        chrome={chrome.examples.chrome}
+        chromeHref={chrome.examples.chromeHref}
+        items={chrome.examples.items}
+        onGoTo={chrome.goToText}
+        onKeep={chrome.keepText}
+      />
       {children}
     </>
   )
@@ -498,7 +513,6 @@ export function Editor(props: EditorProps) {
   const unsavedSince = useRef<Date | null>(null)
   // Acesso ao Puck para quem está fora dele (voltar versão, desfazer peça solta).
   const getPuck = useRef<GetPuck | null>(null)
-  const exampleCursor = useRef(0)
   const connect = useCallback((value: GetPuck) => {
     getPuck.current = value
   }, [])
@@ -600,6 +614,8 @@ export function Editor(props: EditorProps) {
           clearLocalCopy(pageId)
           settled.current = { state: 'saved', at: new Date() }
           setSave(settled.current)
+          // O campo que mudou mostra "Guardado" (A5).
+          window.dispatchEvent(new Event(DRAFT_SAVED_EVENT))
         } else {
           setSave({ state: 'pending' })
         }
@@ -640,6 +656,18 @@ export function Editor(props: EditorProps) {
     return () => window.removeEventListener('online', online)
   }, [flush])
 
+  // Saiu de um campo de texto: a próxima mudança (o texto chegando à página) salva já, sem a pausa
+  // de 1,2 s, e o que já esperava a pausa também (A5).
+  const quickSave = useRef(0)
+  useEffect(() => {
+    const left = () => {
+      quickSave.current = Date.now()
+      if (timer.current) void flush()
+    }
+    window.addEventListener(FIELD_LEFT_EVENT, left)
+    return () => window.removeEventListener(FIELD_LEFT_EVENT, left)
+  }, [flush])
+
   const onChange = useCallback(
     (next: Data) => {
       const puckData = next as PuckPageData
@@ -650,7 +678,8 @@ export function Editor(props: EditorProps) {
       unsavedSince.current ??= new Date()
       setSave({ state: 'pending' })
       if (timer.current) clearTimeout(timer.current)
-      timer.current = setTimeout(() => void flush(), SAVE_DELAY)
+      const quick = Date.now() - quickSave.current < QUICK_WINDOW
+      timer.current = setTimeout(() => void flush(), quick ? 0 : SAVE_DELAY)
     },
     [flush],
   )
@@ -877,6 +906,63 @@ export function Editor(props: EditorProps) {
     [apiRoute, pageId, send, stopIfConflict],
   )
 
+  // Renomeou a página e o menu ainda tem o nome antigo: a pergunta "Trocar também no menu?" (A6).
+  const [renameAsk, setRenameAsk] = useState<{
+    from: string
+    to: string
+    current: string
+    items: MenuItems
+  } | null>(null)
+  const saveSettingsAndAsk = useCallback(
+    async (next: PageSettings) => {
+      const from = settings.title
+      await saveSettings(next)
+      if (next.title === from) return
+      menuRename(apiRoute, pageId, next.title)
+        .then((result) => {
+          if (result.kind === 'ask') {
+            setRenameAsk({ from, to: next.title, current: result.labels[0], items: result.items })
+          } else if (result.kind === 'draft') {
+            toast.info(
+              'O link do menu ainda tem o nome antigo. Troque em Menu e rodapé: o menu tem mudanças ainda não publicadas.',
+            )
+          }
+        })
+        .catch(() => undefined)
+    },
+    [apiRoute, pageId, saveSettings, settings.title],
+  )
+
+  /** Os passos do Desfazer desta visita, para a janela Versões (extra do A5). */
+  const historyList = (): HistoryList | undefined => {
+    const puck = getPuck.current?.()
+    if (!puck) return undefined
+    const { histories, index, setHistoryIndex } = puck.history
+    const steps: HistoryList['steps'] = []
+    for (let at = histories.length - 1; at > 0 && steps.length < HISTORY_SHOWN; at--) {
+      const newer = histories[at]?.state?.data as PuckPageData | undefined
+      const older = histories[at - 1]?.state?.data as PuckPageData | undefined
+      const label = newer && older ? describeStep(newer, older) : null
+      if (label) steps.push({ index: at, label })
+    }
+    return {
+      steps,
+      current: index,
+      goTo: (target) => {
+        setHistoryIndex(target)
+        setDialog(null)
+        toast.info('A página voltou para aquele passo. Desfazer e Refazer continuam valendo.')
+      },
+    }
+  }
+
+  // A lista é tirada ao abrir a janela Versões: a janela fica fora do Puck e não acompanha sozinha.
+  const [historySnapshot, setHistorySnapshot] = useState<HistoryList | undefined>(undefined)
+  const openDialog = (name: DialogName) => {
+    if (name === 'versions') setHistorySnapshot(historyList())
+    setDialog(name)
+  }
+
   /** Escolhe uma seção da página e mostra ela na prévia (o "Ir até" do Publicar). */
   const goToSection = useCallback((id: string) => {
     const puck = getPuck.current?.()
@@ -908,9 +994,16 @@ export function Editor(props: EditorProps) {
   }, [knownTexts])
   // Procura os textos de exemplo sem atrasar a digitação: a lista pode esperar a pessoa parar.
   const settledData = useDeferredValue(data)
-  const exampleSections = useMemo(
-    () => findExampleSections(settledData, knownTexts),
-    [settledData, knownTexts],
+  const exampleItems = useMemo<ExampleItem[]>(
+    () =>
+      findExampleTexts(settledData, knownTexts, { pageTitle: settings.title }).map((hit) => ({
+        key: `${hit.sectionId}:${hit.path.join('.')}`,
+        place: examplePlace(hit),
+        text: hit.text,
+        sectionId: hit.sectionId,
+        path: hit.path,
+      })),
+    [settledData, knownTexts, settings.title],
   )
   const googleSite = { name: site.name, tagline }
 
@@ -1051,24 +1144,62 @@ export function Editor(props: EditorProps) {
     summary: {
       sections: data.content.length,
       address: `${props.domain}${path === '/' ? '' : path}`,
-      exampleSections: exampleSections.length,
     },
-    goToExample: () => {
+    examples: {
+      items: exampleItems,
+      chrome: props.chromeExamples,
+      chromeHref: panelHref(adminRoute, 'menu'),
+    },
+    goToText: (item) => {
       const puck = getPuck.current?.()
-      if (!puck || !exampleSections.length) return
-      // A cada clique, a próxima da lista (volta à primeira depois da última).
-      const next = exampleSections[exampleCursor.current % exampleSections.length]
-      exampleCursor.current += 1
-      const index = puck.appState.data.content.findIndex((item) => item.props.id === next.props.id)
+      if (!puck) return
+      const index = puck.appState.data.content.findIndex(
+        (section) => section.props.id === item.sectionId,
+      )
       if (index < 0) return
+      const section = puck.appState.data.content[index]
+      const first = typeof item.path[0] === 'string' ? item.path[0] : ''
+      const phone = window.innerWidth < MOBILE_WIDTH
       puck.dispatch({
         type: 'setUi',
-        ui: { itemSelector: { index, zone: ROOT_ZONE }, rightSideBarVisible: true },
+        ui: {
+          itemSelector: { index, zone: ROOT_ZONE },
+          // No celular, as Opções são a folha de baixo (o plugin dos campos): fica aberta, já no
+          // campo do texto.
+          ...(phone
+            ? { plugin: { current: 'fields' }, leftSideBarVisible: true }
+            : { rightSideBarVisible: true }),
+          ...(first ? { fieldTab: tabOf(section.type, first) } : {}),
+        },
         recordHistory: false,
       })
-      scrollToSection(next.props.id)
+      scrollToSection(item.sectionId)
+      revealField(item.path)
     },
-    open: setDialog,
+    keepText: (item) => {
+      const puck = getPuck.current?.()
+      if (!puck) return
+      const current = puck.appState.data
+      const kept = keptTexts(current)
+      if (kept.includes(item.text)) return
+      puck.dispatch({
+        type: 'setData',
+        // Entra no Desfazer, como qualquer mudança.
+        recordHistory: true,
+        data: {
+          ...current,
+          root: {
+            ...current.root,
+            props: {
+              ...current.root.props,
+              keptTexts: [...kept, item.text].slice(-100),
+            } as typeof current.root.props,
+          },
+        },
+      })
+      toast.info(`“${item.text.slice(0, 60)}${item.text.length > 60 ? '…' : ''}” fica como está.`)
+    },
+    open: openDialog,
     openMore: (history) => {
       setUndoState(history)
       setDialog('more')
@@ -1226,10 +1357,18 @@ export function Editor(props: EditorProps) {
                 onClose={() => setDialog(null)}
                 onPhotoChanged={addPhoto}
                 onPublish={publish}
-                exampleSections={exampleSections.map((section) => ({
-                  id: String(section.props.id),
-                  label: editorConfig.components[section.type]?.label ?? section.type,
-                }))}
+                examples={[
+                  ...exampleItems.map((item) => ({
+                    id: item.sectionId,
+                    label: item.place,
+                    text: item.text,
+                  })),
+                  ...props.chromeExamples.map((item) => ({
+                    id: '',
+                    label: item.place,
+                    text: item.text,
+                  })),
+                ]}
                 unnamedLinks={buttonsToUnnamedSection(data, (target, section) =>
                   target === pageId
                     ? Boolean(sectionAnchors(data)[section])
@@ -1290,6 +1429,7 @@ export function Editor(props: EditorProps) {
                   path,
                   opensSite: isHome && !live,
                   seoImage: settings.seo?.image,
+                  campaign: Boolean(settings.campaign),
                 }}
               />
             )}
@@ -1322,7 +1462,7 @@ export function Editor(props: EditorProps) {
                   <button className="ed-btn" onClick={() => setDialog('visitor')} type="button">
                     <PanelIcon name="eye" size={16} /> Ver como visitante
                   </button>
-                  <button className="ed-btn" onClick={() => setDialog('versions')} type="button">
+                  <button className="ed-btn" onClick={() => openDialog('versions')} type="button">
                     <PanelIcon name="history" size={16} /> Versões
                   </button>
                   <button className="ed-btn" onClick={() => setDialog('settings')} type="button">
@@ -1406,6 +1546,7 @@ export function Editor(props: EditorProps) {
             {dialog === 'versions' && (
               <VersionsDialog
                 apiRoute={apiRoute}
+                history={historySnapshot}
                 onClose={() => setDialog(null)}
                 onRestore={(restored) => {
                   getPuck.current?.().dispatch({ type: 'setData', data: restored })
@@ -1420,11 +1561,24 @@ export function Editor(props: EditorProps) {
               <PageSettingsDialog
                 automaticDescription={extractDescription(data, isExampleText) ?? ''}
                 onClose={() => setDialog(null)}
-                onSave={saveSettings}
+                onSave={saveSettingsAndAsk}
                 settings={settings}
                 titleFor={(seoTitle) =>
                   googleTitle({ title: settings.title, seoTitle }, googleSite, isHome)
                 }
+              />
+            )}
+
+            {renameAsk && (
+              <RenameMenuDialog
+                apiRoute={apiRoute}
+                current={renameAsk.current}
+                from={renameAsk.from}
+                items={renameAsk.items}
+                onClose={() => setRenameAsk(null)}
+                onRenamed={() => toast.success('Pronto: o menu já mostra o nome novo.')}
+                pageId={pageId}
+                to={renameAsk.to}
               />
             )}
 

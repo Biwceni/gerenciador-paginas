@@ -1559,10 +1559,16 @@ textarea.ed-input {
 /* Entrega 1 (teste de estresse): limite de letras à vista em todo campo que tem limite. */
 .ed-counted {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px;
 }
 
+.ed-counted > :first-child {
+  grid-column: 1 / -1;
+}
+
 .ed-counter {
+  grid-column: 2;
   justify-self: end;
   color: var(--ed-muted);
   font-size: var(--gp-fs-help);
@@ -1576,6 +1582,7 @@ textarea.ed-input {
 }
 
 .ed-counted[data-tone='over'] .ed-counter {
+  grid-column: 1 / -1;
   justify-self: stretch;
   color: var(--gp-danger);
   font-weight: 600;
@@ -1585,6 +1592,60 @@ textarea.ed-input {
 .ed-counted[data-tone='over'] :is(input, textarea, [contenteditable='true']) {
   border-color: var(--gp-danger);
   box-shadow: 0 0 0 1px var(--gp-danger);
+}
+
+/* A5: botão vazio da seção vira convite tracejado, não um botão esquecido. */
+.ed-add-optional {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 2px dashed var(--ed-line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ed-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-add-optional span {
+  color: var(--ed-muted);
+  font-size: var(--gp-fs-help);
+}
+
+.ed-add-optional:hover,
+.ed-add-optional:focus-visible {
+  border-color: var(--ed-accent);
+  background: var(--ed-accent-soft);
+}
+
+/* A5: "Guardado" embaixo do campo que acabou de mudar, por 3 s. */
+.ed-saved-note {
+  grid-row: 2;
+  grid-column: 1;
+  color: var(--gp-ok);
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ed-counted[data-tone='over'] .ed-saved-note {
+  grid-row: auto;
+}
+
+.ed-counted--free {
+  display: block;
+}
+
+.ed-counted--free .ed-saved-note {
+  display: block;
+  margin-top: 4px;
+}
+
+.ed-counted--free .ed-saved-note:empty {
+  margin-top: 0;
 }
 
 /* Página com 100 seções: o catálogo fica apagado (o aviso no topo dele diz por quê). */
@@ -3069,5 +3130,192 @@ textarea.ed-grow {
   font:
     600 13px/1.3 system-ui,
     sans-serif;
+  white-space: nowrap;
+}
+
+/* A6: menu cheio, a escolha do link que sai do topo. */
+.ed-menu-swap {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ed-menu-swap__option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.ed-menu-swap__option input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ed-accent);
+}
+
+.ed-menu-swap__option:has(input:checked) {
+  border-color: var(--ed-accent);
+  background: var(--ed-accent-soft);
+}
+
+.ed-menu-swap__option:has(input:focus-visible) {
+  outline: 2px solid var(--ed-accent);
+  outline-offset: 2px;
+}
+
+.ed-menu-swap__option--none {
+  margin-top: 4px;
+}
+
+/* A6: como o menu vai ficar com o nome novo da página. */
+.ed-menu-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+}
+
+.ed-menu-preview ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-menu-preview li {
+  padding: 4px 0;
+}
+
+.ed-menu-preview li.ed-menu-preview__new {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ed-ok-soft);
+  color: var(--gp-ok);
+  font-weight: 600;
+}
+
+/*
+ * A7: textos de exemplo com o lugar e o texto. A citação fica em itálico sobre um fundo neutro, sem
+ * borda de um lado só (o detector apontou o padrão cansado).
+ */
+.ed-examples {
+  display: grid;
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ed-warn-soft);
+  color: var(--ed-text);
+}
+
+.ed-examples__title {
+  margin: 0;
+  font-size: var(--gp-fs-text);
+  font-weight: 700;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.ed-examples__list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-examples__item {
+  display: grid;
+  gap: 6px;
+}
+
+.ed-examples__place {
+  font-size: var(--gp-fs-help);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ed-examples__quote {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ed-bg);
+  color: var(--ed-text);
+  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.ed-examples__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ed-goto--example {
+  align-items: flex-start;
+}
+
+.ed-goto__text {
+  display: grid;
+  gap: 4px;
+}
+
+.ed-goto__text .ed-examples__quote {
+  background: var(--ed-soft);
+  color: var(--ed-text);
+}
+
+/* Extra do A5: as mudanças desta visita, com "Voltar até aqui". */
+.ed-versions__heading {
+  margin: 8px 0 4px;
+  font-size: var(--gp-fs-text);
+  font-weight: 700;
+}
+
+.ed-history {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.ed-history__list {
+  max-height: min(320px, 40vh);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.ed-history__step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ed-line);
+  overflow-wrap: anywhere;
+}
+
+.ed-history__step--undone > span:first-child {
+  color: var(--ed-muted);
+}
+
+.ed-history__step .ed-chip,
+.ed-history__step .ed-btn {
+  flex: none;
   white-space: nowrap;
 }

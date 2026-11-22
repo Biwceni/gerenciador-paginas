@@ -40,6 +40,8 @@ export function ListLimit({
   const getPuck = useGetPuck()
   const box = useRef<HTMLDivElement>(null)
   const removing = useRef<{ count: number; before: unknown; section: string } | null>(null)
+  // "+ Adicionar": o item novo já abre para preencher (A5); antes entrava fechado no fim da lista.
+  const adding = useRef<number | null>(null)
   const count = Array.isArray(value) ? value.length : 0
   const max = field.max
   const [noun, gender] = ITEM_NAMES[field.label ?? ''] ?? ['Item', 'o']
@@ -67,12 +69,34 @@ export function ListLimit({
     removing.current = null
   }, [count, gender, getPuck, name, noun])
 
+  useEffect(() => {
+    const before = adding.current
+    if (before === null || count !== before + 1) return
+    adding.current = null
+    const items = [
+      ...(box.current?.querySelectorAll<HTMLElement>('[class*="ArrayFieldItem-summary"]') ?? []),
+    ].filter((summary) => summary.closest('.ed-list') === box.current)
+    const last = items.at(-1)
+    const item = last?.closest<HTMLElement>('[class*="ArrayFieldItem_"]')
+    if (!last || item?.className.includes('isExpanded')) return
+    last.click()
+    requestAnimationFrame(() => {
+      const field = item?.querySelector<HTMLElement>(
+        '[class*="ArrayFieldItem-body"] :is(input, textarea, [contenteditable="true"])',
+      )
+      field?.focus({ preventScroll: true })
+      ;(field ?? last).scrollIntoView({ block: 'nearest' })
+    })
+  }, [count])
+
   return (
     <div
       className="ed-list"
+      data-name={name}
       onClickCapture={(event) => {
         const button = (event.target as HTMLElement).closest('button')
         const own = button?.closest('.ed-list') === box.current
+        if (own && button?.className.includes('ArrayField-addButton')) adding.current = count
         if (
           own &&
           button?.closest('[class*="ArrayFieldItem-actions"]') &&

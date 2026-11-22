@@ -49,15 +49,32 @@ describe('ordem da lista de páginas', () => {
 })
 
 describe('arquivar', () => {
-  // Página inicial 5; menu com a página 8.
+  // Página inicial 5; menu com a página 8 (e um rascunho do menu guardado, com ela também).
+  const updates: Record<string, unknown>[] = []
   const req = {
     payloadAPI: 'REST',
     query: {},
     payload: {
-      findGlobal: async ({ slug }: { slug: string }) =>
+      findGlobal: async ({ slug, draft }: { slug: string; draft?: boolean }) =>
         slug === 'site'
           ? { homepage: 5 }
-          : { items: [{ label: 'Menu', link: { kind: 'page', page: 8 } }] },
+          : {
+              _status: draft ? 'draft' : 'published',
+              notice: { text: null },
+              items: [
+                { label: 'Menu', link: { kind: 'page', page: 8 } },
+                { label: 'Outro', link: { kind: 'page', page: 9 } },
+                ...(draft ? [{ label: 'Novo', link: { kind: 'page', page: 10 } }] : []),
+              ],
+              button: { label: 'Fale', link: { kind: 'page', page: 8 } },
+            },
+      updateGlobal: async (args: Record<string, unknown>) => {
+        updates.push(args)
+        return {}
+      },
+      count: async ({ where }: { where: { and: [{ slug: { equals: string } }] } }) => ({
+        totalDocs: where.and[0].slug.equals === 'ocupado' ? 1 : 0,
+      }),
     },
   } as unknown as PayloadRequest
 
@@ -70,13 +87,46 @@ describe('arquivar', () => {
       req,
     } as unknown as HookArgs)
 
-  it('recusa a página inicial e as do menu', async () => {
+  it('recusa a página inicial', async () => {
     await expect(run({ archived: true, _status: 'draft' }, 5)).rejects.toThrow(
       'A página inicial não pode ser arquivada',
     )
-    await expect(run({ archived: true, _status: 'draft' }, 8)).rejects.toThrow(
-      'Esta página está no menu do site',
-    )
+  })
+
+  it('A6: página do menu sai do menu e do botão do topo, no ar e no rascunho guardado', async () => {
+    updates.length = 0
+    const data = await run({ archived: true, _status: 'draft', slug: 'contato' }, 8)
+    expect(data).toMatchObject({ archived: true, slug: 'contato-arquivada-8' })
+    const [live, draft] = updates as { data: Record<string, unknown>; draft?: boolean }[]
+    expect(live.data).toMatchObject({
+      _status: 'published',
+      items: [{ label: 'Outro', link: { kind: 'page', page: 9 } }],
+      button: { label: null },
+    })
+    expect(live.draft).toBeUndefined()
+    // O rascunho do menu continua guardado (com o item novo), só sem a página arquivada.
+    expect(draft.draft).toBe(true)
+    expect(draft.data).toMatchObject({
+      _status: 'draft',
+      items: [
+        { label: 'Outro', link: { kind: 'page', page: 9 } },
+        { label: 'Novo', link: { kind: 'page', page: 10 } },
+      ],
+    })
+  })
+
+  it('A6: arquivar libera o endereço, e restaurar volta para ele se estiver livre', async () => {
+    await expect(
+      run({ archived: true, _status: 'draft', slug: 'sobre' }, 7),
+    ).resolves.toMatchObject({ archived: true, slug: 'sobre-arquivada-7' })
+    await expect(
+      run({ archived: false, _status: 'draft', slug: 'sobre-arquivada-7' }, 7, { archived: true }),
+    ).resolves.toMatchObject({ slug: 'sobre' })
+    await expect(
+      run({ archived: false, _status: 'draft', slug: 'ocupado-arquivada-7' }, 7, {
+        archived: true,
+      }),
+    ).resolves.toMatchObject({ slug: 'ocupado-arquivada-7' })
   })
 
   it('aceita as outras, e restaurar sempre', async () => {

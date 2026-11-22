@@ -1143,14 +1143,17 @@ function SectionHead({
   title,
   text,
   aside,
+  stacked,
 }: {
   title: React.ReactNode
   text?: React.ReactNode
   aside?: React.ReactNode
+  /** A frase fica sempre embaixo do título (o @ do Instagram, A5), nunca ao lado. */
+  stacked?: boolean
 }) {
   if (!filled(title) && !filled(text) && !aside) return null
   return (
-    <div className="section-head anim-part">
+    <div className={`section-head anim-part${stacked ? ' section-head--stacked' : ''}`}>
       <div className="section-head__text">
         {filled(title) && <h2 className="section-title">{title}</h2>}
         {filled(text) && (
@@ -1541,7 +1544,7 @@ export function InstagramStrip({
       style={style}
     >
       <div className="container anim-part">
-        <SectionHead aside={follow} text={profile?.label} title={title} />
+        <SectionHead aside={follow} stacked text={profile?.label} title={title} />
         {metadata.editing && !profile && (
           <EditorPlaceholder>
             O @ e o botão “Seguir no Instagram” aparecem quando o Instagram for preenchido nas

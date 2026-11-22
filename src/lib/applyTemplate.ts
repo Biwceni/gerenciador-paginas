@@ -7,7 +7,9 @@ import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/s
 import { templateBlockType } from './forms'
 import { PRIVACY_TEMPLATE_KEY } from './privacy'
 import { relationID } from './relations'
-import { slugify, uniqueSlug } from './slug'
+import { archivedSlug, slugify, uniqueSlug } from './slug'
+
+export { archivedSlug }
 import {
   fillExamples,
   isTemplatePhotoURL,
@@ -198,14 +200,6 @@ function headerLink(link: TemplateLink | null | undefined, pageIds: number[]) {
 
 /** O que a pessoa respondeu no Começar. A cidade só entra nos textos de exemplo. */
 export type SiteAnswers = { name: string; tagline: string; whatsapp: string; city?: string }
-
-/**
- * Endereço que uma página arquivada passa a ter quando uma página nova do modelo precisa do dela:
- * "contato" vira "contato-arquivada-12" (o número é o da página, então não se repete).
- */
-export function archivedSlug(slug: string, id: number): string {
-  return `${slug.slice(0, 60).replace(/-+$/, '')}-arquivada-${id}`
-}
 
 /** Dados para guardar uma página em "Arquivadas": o rascunho mais recente inteiro, com o endereço. */
 function archivedPageData(page: Page, slug: string) {
