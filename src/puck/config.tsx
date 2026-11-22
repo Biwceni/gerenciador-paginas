@@ -17,6 +17,11 @@ import {
   Hero,
   InstagramStrip,
   Stats,
+  Table,
+  Team,
+  LogoStrip,
+  BeforeAfter,
+  Events,
   LinkList,
   PriceList,
   Privacy,
@@ -43,6 +48,11 @@ import type {
   HeroProps,
   InstagramStripProps,
   StatsProps,
+  TableProps,
+  TeamProps,
+  LogoStripProps,
+  BeforeAfterProps,
+  EventsProps,
   LinkListProps,
   PriceListProps,
   PrivacyProps,
@@ -80,6 +90,11 @@ export type Components = {
   Announcement: Props<AnnouncementProps>
   InstagramStrip: Props<InstagramStripProps>
   Stats: Props<StatsProps>
+  Table: Props<TableProps>
+  Team: Props<TeamProps>
+  LogoStrip: Props<LogoStripProps>
+  BeforeAfter: Props<BeforeAfterProps>
+  Events: Props<EventsProps>
   ColumnTitle: Props<ColumnTitleProps>
   ColumnText: Props<ColumnTextProps>
   ColumnImage: Props<ColumnImageProps>
@@ -99,6 +114,11 @@ export const SECTION_LABELS = {
   Gallery: 'Galeria de fotos',
   InstagramStrip: 'Instagram',
   Stats: 'Números do negócio',
+  Team: 'Equipe',
+  LogoStrip: 'Faixa de logos',
+  BeforeAfter: 'Antes e depois',
+  Events: 'Agenda',
+  Table: 'Tabela',
   CallToAction: 'Chamada para ação',
   Contact: 'Contato e endereço',
   LinkList: 'Lista de links',
@@ -218,6 +238,26 @@ export const renderConfig: Config<Components> = {
     Stats: {
       label: SECTION_LABELS.Stats,
       render: ({ puck, ...props }) => <Stats {...props} metadata={meta(puck)} />,
+    },
+    Table: {
+      label: SECTION_LABELS.Table,
+      render: ({ puck, ...props }) => <Table {...props} metadata={meta(puck)} />,
+    },
+    Team: {
+      label: SECTION_LABELS.Team,
+      render: ({ puck, ...props }) => <Team {...props} metadata={meta(puck)} />,
+    },
+    LogoStrip: {
+      label: SECTION_LABELS.LogoStrip,
+      render: ({ puck, ...props }) => <LogoStrip {...props} metadata={meta(puck)} />,
+    },
+    BeforeAfter: {
+      label: SECTION_LABELS.BeforeAfter,
+      render: ({ puck, ...props }) => <BeforeAfter {...props} metadata={meta(puck)} />,
+    },
+    Events: {
+      label: SECTION_LABELS.Events,
+      render: ({ puck, ...props }) => <Events {...props} metadata={meta(puck)} />,
     },
     ColumnTitle: {
       label: PIECE_LABELS.ColumnTitle,

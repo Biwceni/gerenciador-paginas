@@ -17,6 +17,9 @@ const ITEM_NAMES: Record<string, [string, 'o' | 'a']> = {
   Links: ['Link', 'o'],
   'Mais chamadas (até 2, trocam no site)': ['Chamada', 'a'],
   'Mais fotos (até 4, aparecem em “Mais detalhes”)': ['Foto', 'a'],
+  'Pessoas (até 24)': ['Pessoa', 'a'],
+  'Comparações (até 6)': ['Comparação', 'a'],
+  'Datas (até 40)': ['Data', 'a'],
 }
 
 /** O texto do botão Remover de cada item (`field-arrayitem-delete`, no `dictionary.ts`). */

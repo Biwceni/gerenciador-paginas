@@ -732,6 +732,144 @@ export const statsPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Stats),
 })
 
+/**
+ * Seções novas da etapa 4a (C5, B5): Tabela, Equipe, Faixa de logos, Antes e depois e Agenda. Só
+ * acrescentam tipos: as páginas de antes não mudam e a versão continua a 2.
+ */
+
+/** Tabela (C5): até 8 colunas e 30 linhas de texto curto, coladas da planilha ou escritas. */
+export const TABLE_MAX_COLUMNS = 8
+export const TABLE_MAX_ROWS = 30
+const tableCell = z.string().max(LIMITS.tableCell)
+
+export const tablePropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  // A linha de cima: o nome de cada coluna.
+  head: z.array(tableCell).min(1).max(TABLE_MAX_COLUMNS),
+  // Cada linha tem uma célula por coluna (o editor completa e corta).
+  rows: z.array(z.array(tableCell).max(TABLE_MAX_COLUMNS)).max(TABLE_MAX_ROWS),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Table),
+})
+
+/** Equipe (C5): foto, cargo em cima do nome, uma frase e um contato opcional. */
+export const TEAM_MAX = 24
+
+export const teamPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  items: z
+    .array(
+      z.object({
+        photo: photoRefSchema.default(null),
+        role: z.string().max(LIMITS.teamRole).default(''),
+        name: z.string().max(LIMITS.teamName),
+        text: z.string().max(LIMITS.teamText).default(''),
+        // Contato opcional: WhatsApp, e-mail, Instagram ou outro link, com o texto do link.
+        contact: buttonSchema.nullable().default(null),
+      }),
+    )
+    .min(1)
+    .max(TEAM_MAX),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Team),
+})
+
+/**
+ * Faixa de logos (C5): parceiros, clientes, marcas. `trim` é a parte do logo sem a sobra em volta
+ * (fundo branco ou transparente), em frações da foto, medida no editor quando o logo entra.
+ */
+export const LOGOS_MAX = 16
+export const LOGO_LOOKS = ['color', 'gray', 'card'] as const
+const fraction = z.number().min(0).max(1)
+
+export const logoStripPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  images: z
+    .array(
+      z.object({
+        mediaId: id,
+        trim: z.object({ x: fraction, y: fraction, w: fraction, h: fraction }).optional(),
+      }),
+    )
+    .max(LOGOS_MAX),
+  look: z.enum(LOGO_LOOKS).optional().catch(undefined),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.LogoStrip),
+})
+
+/** Antes e depois (C5): pares de fotos. No computador, lado a lado; no celular, deslizante. */
+export const BEFORE_AFTER_MAX = 6
+export const BEFORE_AFTER_LAYOUTS = ['auto', 'slider'] as const
+
+export const beforeAfterPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  layout: z.enum(BEFORE_AFTER_LAYOUTS).optional().catch(undefined),
+  items: z
+    .array(
+      z.object({
+        before: photoRefSchema.default(null),
+        after: photoRefSchema.default(null),
+        caption: z.string().max(LIMITS.beforeAfterCaption).default(''),
+      }),
+    )
+    .min(1)
+    .max(BEFORE_AFTER_MAX),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.BeforeAfter),
+})
+
+/**
+ * Agenda (B5): datas com título, local, horário e botão. A data é o dia no calendário
+ * (`2026-12-14`) e o horário é o de Brasília (`19:30`, ou vazio). Os passados saem sozinhos ou vão
+ * para "Já aconteceu".
+ */
+export const EVENTS_MAX = 40
+export const EVENT_PAST = ['hide', 'list'] as const
+export const EVENT_DATE = /^\d{4}-\d{2}-\d{2}$/
+export const EVENT_TIME = /^([01]\d|2[0-3]):[0-5]\d$/
+
+export const eventsPropsSchema = z.object({
+  id: componentId,
+  devices,
+  menuLabel,
+  title,
+  text: z.string().max(300).default(''),
+  items: z
+    .array(
+      z.object({
+        // Vazio num rascunho; data errada também vira vazio (o Publicar avisa).
+        date: z.string().regex(EVENT_DATE).or(z.literal('')).catch(''),
+        time: z.string().regex(EVENT_TIME).or(z.literal('')).catch(''),
+        title: z.string().max(LIMITS.eventTitle),
+        place: z.string().max(LIMITS.eventPlace).default(''),
+        text: z.string().max(LIMITS.eventText).default(''),
+        button: buttonSchema.nullable().default(null),
+      }),
+    )
+    .min(1)
+    .max(EVENTS_MAX),
+  past: z.enum(EVENT_PAST).optional().catch(undefined),
+  // Contagem até a próxima data: só dias e horas.
+  countdown: z.boolean().optional(),
+  style: sectionStyle,
+  anim: anim(SECTION_ANIMS.Events),
+})
+
 export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('Hero'), props: heroPropsSchema }),
   z.object({ type: z.literal('TextImage'), props: textImagePropsSchema }),
@@ -756,6 +894,12 @@ export const componentSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('InstagramStrip'), props: instagramStripPropsSchema }),
   // Seção nova (Elementor, E10): idem.
   z.object({ type: z.literal('Stats'), props: statsPropsSchema }),
+  // Seções novas (etapa 4a): idem.
+  z.object({ type: z.literal('Table'), props: tablePropsSchema }),
+  z.object({ type: z.literal('Team'), props: teamPropsSchema }),
+  z.object({ type: z.literal('LogoStrip'), props: logoStripPropsSchema }),
+  z.object({ type: z.literal('BeforeAfter'), props: beforeAfterPropsSchema }),
+  z.object({ type: z.literal('Events'), props: eventsPropsSchema }),
 ])
 
 export const puckDataSchema = z.object({
@@ -813,6 +957,14 @@ export type PriceListProps = z.infer<typeof priceListPropsSchema>
 export type AnnouncementProps = z.infer<typeof announcementPropsSchema>
 export type InstagramStripProps = z.infer<typeof instagramStripPropsSchema>
 export type StatsProps = z.infer<typeof statsPropsSchema>
+export type TableProps = z.infer<typeof tablePropsSchema>
+export type TeamProps = z.infer<typeof teamPropsSchema>
+export type TeamMember = TeamProps['items'][number]
+export type LogoStripProps = z.infer<typeof logoStripPropsSchema>
+export type LogoLook = (typeof LOGO_LOOKS)[number]
+export type BeforeAfterProps = z.infer<typeof beforeAfterPropsSchema>
+export type EventsProps = z.infer<typeof eventsPropsSchema>
+export type EventItem = EventsProps['items'][number]
 export type CallToActionProps = z.infer<typeof callToActionPropsSchema>
 export type ContactProps = z.infer<typeof contactPropsSchema>
 export type ContactChannel = (typeof CONTACT_CHANNELS)[number]

@@ -19,6 +19,8 @@ import { parseCount } from '@/lib/countUp'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 import { parsePrice, productCategories, PRODUCTS_SEARCH_FROM } from '@/lib/products'
+import { eventDateParts, eventTimeText, icsHref, renderTime, validDate } from '@/lib/events'
+import { logoBox, logoRatio, trimStyle } from '@/lib/logos'
 
 import {
   announcementRun,
@@ -31,6 +33,8 @@ import { AnnounceRotate, AnnounceStrip, ANNOUNCE_STILL_MAX } from './AnnounceMot
 import { AutoRotate } from './AutoRotate'
 import { HeroLater, HeroRotate } from './HeroRotate'
 import { type ProductCard, ProductDetails, ProductsBrowse } from './ProductsBrowse'
+import { BeforeAfterPair } from './BeforeAfter'
+import { type EventCard, EventsBrowse } from './EventsBrowse'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
 import {
   COLUMN_COUNT,
@@ -56,6 +60,13 @@ import type {
   HeroProps,
   InstagramStripProps,
   StatsProps,
+  TableProps,
+  TeamProps,
+  TeamMember,
+  LogoStripProps,
+  BeforeAfterProps,
+  EventsProps,
+  EventItem,
   LinkListProps,
   PhotoFit,
   PhotoRef,
@@ -2010,5 +2021,479 @@ export function Stats({ id, title, items, style, anim, metadata }: WithMetadata<
         </ul>
       </div>
     </Section>
+  )
+}
+
+// Seções novas da etapa 4a (C5, B5).
+
+/** Só o texto, para conferir se a célula ou o campo está vazio (no editor pode chegar outra coisa). */
+const plainText = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
+
+/** Número, preço ou porcentagem ("R$ 45", "1.200", "30%", "4,9"): a coluna inteira assim alinha à direita. */
+const NUMBER_CELL = /^[-+]?(R\$\s?)?\d[\d.,\s]*(%|h|min|kg|g|ml|l|m²|un\.?)?$/i
+
+/**
+ * Tabela (C5): linhas e colunas simples. A primeira linha é o nome das colunas e a primeira coluna
+ * é o nome de cada linha (cabeçalho para o leitor de tela). No celular, a tabela rola para o lado
+ * dentro da própria caixa, com a primeira coluna parada. Coluna só de números alinha à direita.
+ * No site, linhas e colunas vazias saem.
+ */
+export function Table({
+  id,
+  title,
+  text = '',
+  head,
+  rows,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<TableProps>) {
+  const width = head.length
+  const cell = (row: string[], column: number) => plainText(row[column])
+  const keptRows = metadata.editing
+    ? rows
+    : rows.filter((row) => head.some((_, column) => cell(row, column)))
+  const keptColumns = head
+    .map((_, column) => column)
+    .filter(
+      (column) =>
+        metadata.editing || cell(head, column) || keptRows.some((row) => cell(row, column)),
+    )
+  if (!keptColumns.length || (!metadata.editing && !keptRows.length)) return null
+  const numeric = keptColumns.map(
+    (column) =>
+      column > 0 &&
+      keptRows.some((row) => cell(row, column)) &&
+      keptRows.every((row) => !cell(row, column) || NUMBER_CELL.test(cell(row, column))),
+  )
+  const label = plainText(title) || 'Tabela'
+
+  return (
+    <Section anim={sectionAnim('Table', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
+        <SectionHead text={text} title={title} />
+        <div
+          aria-label={label}
+          className="table-box anim-part"
+          role="region"
+          // A caixa rola para o lado no celular: com o teclado, as setas rolam depois do Tab.
+          tabIndex={0}
+        >
+          <table className="table" data-cols={width}>
+            <thead>
+              <tr>
+                {keptColumns.map((column, index) => (
+                  <th data-num={numeric[index] || undefined} key={column} scope="col">
+                    {head[column]}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {keptRows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {keptColumns.map((column, index) =>
+                    index === 0 ? (
+                      <th key={column} scope="row">
+                        {row[column]}
+                      </th>
+                    ) : (
+                      <td data-num={numeric[index] || undefined} key={column}>
+                        {row[column]}
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {metadata.editing && !rows.length && (
+          <EditorPlaceholder>Escreva ou cole a tabela no painel ao lado.</EditorPlaceholder>
+        )}
+      </div>
+    </Section>
+  )
+}
+
+/** Colunas da Equipe no computador: até 4 por linha; 5 e 6 ficam em 3, e a última linha centraliza. */
+export function teamColumns(count: number): 1 | 2 | 3 | 4 {
+  if (count <= 1) return 1
+  if (count === 2) return 2
+  if (count === 3 || count === 5 || count === 6 || count === 9) return 3
+  return 4
+}
+
+/** Equipe (C5): foto (ou as iniciais), cargo em cima do nome, uma frase e um contato opcional. */
+export function Team({
+  id,
+  title,
+  text = '',
+  items,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<TeamProps>) {
+  const shown = metadata.editing ? items : items.filter((item) => filled(item.name))
+  if (!shown.length) return null
+  const cols = teamColumns(shown.length)
+  return (
+    <Section anim={sectionAnim('Team', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
+        <SectionHead text={text} title={title} />
+        <ul className="team" data-count={shown.length} style={columns(cols)}>
+          {shown.map((item, index) => (
+            <li className="team__item anim-part" key={index} style={order(index)}>
+              <TeamCard item={item} metadata={metadata} single={shown.length === 1} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  )
+}
+
+function TeamCard({
+  item,
+  metadata,
+  single,
+}: {
+  item: TeamMember
+  metadata: ContentMetadata
+  single: boolean
+}) {
+  const media = getPhoto(metadata, item.photo ?? null)
+  const name = plainText(item.name)
+  const contact = item.contact ?? null
+  const href = contact && !metadata.editing ? getHref(metadata, contact.link) : null
+  const contactLabel = plainText(contact?.label) || 'Falar comigo'
+  return (
+    <article className="team__card">
+      <div className={`team__photo${media ? '' : ' team__photo--empty'}`}>
+        {media ? (
+          <Photo
+            alt=""
+            backdrop={item.photo?.backdrop}
+            fill
+            fit={item.photo?.fit}
+            media={media}
+            sizes={single ? '(max-width: 720px) 60vw, 320px' : '(max-width: 720px) 50vw, 260px'}
+          />
+        ) : (
+          <span aria-hidden="true" className="team__initials">
+            {name ? initials(name) : metadata.editing ? 'Foto' : ''}
+          </span>
+        )}
+      </div>
+      <div className="team__text">
+        {filled(item.role) && (
+          <p className="team__role" data-optional={optional(item.role, 'item')}>
+            {item.role}
+          </p>
+        )}
+        <h3 className="team__name">{item.name}</h3>
+        {filled(item.text) && (
+          <p className="team__about" data-optional={optional(item.text, 'item')}>
+            {item.text}
+          </p>
+        )}
+        {contact &&
+          (href ? (
+            <SiteLink className="team__contact" href={href}>
+              {contactLabel}
+              {name && <span className="visually-hidden">: {name}</span>}
+            </SiteLink>
+          ) : metadata.editing ? (
+            <span className="team__contact">{contactLabel}</span>
+          ) : null)}
+      </div>
+    </article>
+  )
+}
+
+/**
+ * Faixa de logos (C5): parceiros, clientes, marcas. Sem a sobra em volta (medida no editor) e todos
+ * com a mesma área, para nenhum parecer maior. Coloridos, em cinza (a cor volta ao passar o mouse)
+ * ou em cartões brancos (para logos escuros num fundo escuro). Logo sem descrição é lido como
+ * "Logo"; a descrição da foto vira o nome da marca.
+ */
+export function LogoStrip({
+  id,
+  title,
+  images,
+  look = 'color',
+  style,
+  anim,
+  metadata,
+}: WithMetadata<LogoStripProps>) {
+  const logos = images
+    .map((ref) => ({ ref, media: getPhoto(metadata, { mediaId: ref.mediaId }) }))
+    .filter((logo) => logo.media)
+  if (!logos.length) {
+    return metadata.editing ? (
+      <Section id={id} metadata={metadata} style={style}>
+        <div className="container">
+          <SectionTitle title={title} />
+          <EditorPlaceholder>Escolha os logos no painel ao lado.</EditorPlaceholder>
+        </div>
+      </Section>
+    ) : null
+  }
+  return (
+    <Section
+      anim={sectionAnim('LogoStrip', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container anim-part">
+        <SectionTitle title={title} />
+        <ul className={`logos logos--${look}`} data-count={logos.length}>
+          {logos.map(({ ref, media }, index) => {
+            const photo = media!
+            const ratio = logoRatio(photo.width ?? 1, photo.height ?? 1, ref.trim)
+            const box = logoBox(ratio)
+            const crop = trimStyle(ref.trim)
+            const alt = plainText(photo.alt) || 'Logo'
+            return (
+              <li
+                className="logos__item anim-part"
+                key={`${ref.mediaId}-${index}`}
+                style={order(index)}
+              >
+                <span
+                  className="logos__logo"
+                  style={
+                    {
+                      '--logo-w': `${box.width}px`,
+                      '--logo-h': `${box.height}px`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <span className="logos__crop" style={crop ?? undefined}>
+                    <Photo
+                      alt={alt}
+                      fill
+                      fit="contain"
+                      backdrop="none"
+                      media={photo}
+                      sizes={`${Math.ceil(box.width / (ref.trim?.w ?? 1)) * 2}px`}
+                    />
+                  </span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </Section>
+  )
+}
+
+/**
+ * Antes e depois (C5): pares de fotos com legenda. Padrão: lado a lado no computador e deslizante
+ * no celular; "Deslizante" usa o controle nos dois. Par sem uma das fotos não aparece no site.
+ */
+export function BeforeAfter({
+  id,
+  title,
+  text = '',
+  layout = 'auto',
+  items,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<BeforeAfterProps>) {
+  const shown = metadata.editing
+    ? items
+    : items.filter(
+        (item) => getPhoto(metadata, item.before ?? null) && getPhoto(metadata, item.after ?? null),
+      )
+  if (!shown.length) return null
+  const sizes =
+    layout === 'slider' ? '(max-width: 720px) 100vw, 900px' : '(max-width: 720px) 100vw, 520px'
+  const side = (ref: PhotoRef | undefined, label: string) => {
+    const media = getPhoto(metadata, ref ?? null)
+    return media ? (
+      <Photo
+        alt={plainText(media.alt) || label}
+        fill
+        fit={ref?.fit}
+        backdrop={ref?.backdrop}
+        media={media}
+        sizes={sizes}
+      />
+    ) : (
+      <span className="ba__empty">{metadata.editing ? `Foto de ${label.toLowerCase()}` : ''}</span>
+    )
+  }
+  return (
+    <Section
+      anim={sectionAnim('BeforeAfter', anim, metadata)}
+      id={id}
+      metadata={metadata}
+      style={style}
+    >
+      <div className="container anim-part">
+        <SectionHead text={text} title={title} />
+        <ul className="ba-list" data-count={shown.length} data-layout={layout}>
+          {shown.map((item, index) => (
+            <li className="ba-list__item anim-part" key={index} style={order(index)}>
+              <figure className="ba-figure">
+                <BeforeAfterPair
+                  after={side(item.after, 'Depois')}
+                  before={side(item.before, 'Antes')}
+                  caption={plainText(item.caption)}
+                  layout={layout}
+                />
+                {filled(item.caption) && (
+                  <figcaption data-optional={optional(item.caption, 'item')}>
+                    {item.caption}
+                  </figcaption>
+                )}
+              </figure>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  )
+}
+
+/**
+ * Agenda (B5): datas com título, local, horário, frase e botão. Os próximos primeiro; os que
+ * passaram saem sozinhos ou vão para "Já aconteceu" (`EventsBrowse`). Contagem opcional até a
+ * próxima data, só em dias e horas. Cada data tem "Adicionar à agenda", que abre a agenda do
+ * celular. Data sem dia ou sem título não aparece no site (o Publicar avisa).
+ */
+export function Events({
+  id,
+  title,
+  text = '',
+  items,
+  past = 'hide',
+  countdown = false,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<EventsProps>) {
+  const shown = metadata.editing
+    ? items
+    : items.filter((item) => validDate(item.date) && filled(item.title))
+  const now = renderTime()
+  const year = new Date(now).getUTCFullYear()
+  const cards: EventCard[] = shown.map((item) => ({
+    node: <EventCardBody item={item} metadata={metadata} year={year} />,
+    date: item.date,
+    time: item.time,
+    title: plainText(item.title),
+  }))
+  return (
+    <Section anim={sectionAnim('Events', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
+        <SectionHead text={text} title={title} />
+        <EventsBrowse
+          cards={cards}
+          countdown={countdown}
+          editing={metadata.editing}
+          now={now}
+          past={past}
+        />
+      </div>
+    </Section>
+  )
+}
+
+function EventCardBody({
+  item,
+  metadata,
+  year,
+}: {
+  item: EventItem
+  metadata: ContentMetadata
+  year: number
+}) {
+  const parts = eventDateParts(item.date)
+  const time = eventTimeText(item.time)
+  const ics = metadata.editing
+    ? null
+    : icsHref({
+        date: item.date,
+        time: item.time,
+        title: plainText(item.title),
+        place: plainText(item.place),
+        text: plainText(item.text),
+      })
+  return (
+    <article className="event">
+      {parts ? (
+        <time
+          className="event__date"
+          dateTime={item.time ? `${item.date}T${item.time}-03:00` : item.date}
+        >
+          <span aria-hidden="true" className="event__weekday">
+            {parts.weekday}
+          </span>
+          <span aria-hidden="true" className="event__day">
+            {parts.day}
+          </span>
+          <span aria-hidden="true" className="event__month">
+            {parts.month}
+            {Number(parts.year) !== year && ` ${parts.year}`}
+          </span>
+          <span className="visually-hidden">{parts.full}</span>
+        </time>
+      ) : (
+        <span className="event__date event__date--empty">{metadata.editing ? 'Dia?' : ''}</span>
+      )}
+      <div className="event__body">
+        <h3 className="event__title">{item.title}</h3>
+        {(time || filled(item.place)) && (
+          <p className="event__meta">
+            {time && <span className="event__time">{time}</span>}
+            {filled(item.place) && (
+              <span className="event__place" data-optional={optional(item.place, 'item')}>
+                {item.place}
+              </span>
+            )}
+          </p>
+        )}
+        {filled(item.text) && (
+          <p className="event__text" data-optional={optional(item.text, 'item')}>
+            {item.text}
+          </p>
+        )}
+        {metadata.editing && <span className="event__gone">Já passou</span>}
+        <div className="event__actions">
+          <SectionButton button={item.button ?? null} metadata={metadata} />
+          {ics ? (
+            <a
+              aria-label={`Adicionar à agenda: ${plainText(item.title)}`}
+              className="event__ics"
+              href={ics}
+              rel="nofollow"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+                width="18"
+              >
+                <rect height="16" rx="2.5" width="17" x="3.5" y="5" />
+                <path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5" />
+              </svg>
+              Adicionar à agenda
+            </a>
+          ) : (
+            metadata.editing && <span className="event__ics">Adicionar à agenda</span>
+          )}
+        </div>
+      </div>
+    </article>
   )
 }

@@ -24,6 +24,9 @@ import {
 import { AnimField } from '@/components/editor/AnimField'
 import { DevicesField } from '@/components/editor/DevicesField'
 import { MapField } from '@/components/editor/MapField'
+import { TableField } from '@/components/editor/TableField'
+import { EventDateField, EventTimeField } from '@/components/editor/EventFields'
+import { measureTrim } from '@/components/editor/logoTrim'
 import { ColumnPiecesField, ColumnTag, EmptyColumn } from '@/components/editor/ColumnPieces'
 import {
   featureProblem,
@@ -56,6 +59,10 @@ import {
   CONTACT_CHANNELS,
   FEATURE_ICONS,
   FEATURES_MAX,
+  BEFORE_AFTER_MAX,
+  EVENTS_MAX,
+  LOGOS_MAX,
+  TEAM_MAX,
   PRODUCT_EXTRA_PHOTOS,
   PRODUCTS_MAX,
   type FeatureMarker,
@@ -293,6 +300,125 @@ const statItems: Field = {
   defaultItemProps: { value: '100', text: 'clientes atendidos' },
   getItemSummary: (item: { value?: string; text?: string }) => (
     <ItemSummary detail={item.text} fallback="Número" field="items" item={item} nameKey="value" />
+  ),
+}
+
+// Equipe (C5): de 1 a 24 pessoas. Contato opcional, como o link dos Destaques.
+const teamItems: Field = {
+  type: 'array',
+  label: `Pessoas (até ${TEAM_MAX})`,
+  min: 1,
+  max: TEAM_MAX,
+  arrayFields: {
+    photo: photo('Foto (opcional: sem ela, as iniciais)', undefined, 4 / 5),
+    role: text('Cargo (aparece em cima do nome)'),
+    name: text('Nome'),
+    text: textarea('Frase (opcional)'),
+    contact: {
+      type: 'object',
+      label: 'Contato (opcional)',
+      objectFields: { label: text('Texto do link (vazio: “Falar comigo”)'), link },
+      invite: ['+ Pôr um contato (opcional)', 'WhatsApp, e-mail, Instagram ou outro link.'],
+    } as Field,
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves label="name" name={name} noun="Pessoa" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: { photo: null, role: 'Cargo', name: 'Nome da pessoa', text: '', contact: null },
+  getItemSummary: (item: { name?: string; role?: string }) => (
+    <ItemSummary detail={item.role} fallback="Pessoa" field="items" item={item} nameKey="name" />
+  ),
+}
+
+// Antes e depois (C5): pares de fotos com legenda.
+const beforeAfterItems: Field = {
+  type: 'array',
+  label: `Comparações (até ${BEFORE_AFTER_MAX})`,
+  min: 1,
+  max: BEFORE_AFTER_MAX,
+  arrayFields: {
+    before: photo('Foto de antes', SECTION_MIN_WIDTH, 4 / 3),
+    after: photo('Foto de depois', SECTION_MIN_WIDTH, 4 / 3),
+    caption: text('Legenda (opcional)'),
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves label="caption" name={name} noun="Comparação" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: { before: null, after: null, caption: '' },
+  getItemSummary: (item: { caption?: string }, index?: number) => (
+    <ItemSummary
+      fallback={`Comparação ${(index ?? 0) + 1}`}
+      field="items"
+      item={item}
+      nameKey="caption"
+    />
+  ),
+}
+
+// Agenda (B5): até 40 datas, com o calendário e o relógio do aparelho.
+const eventItems: Field = {
+  type: 'array',
+  label: `Datas (até ${EVENTS_MAX})`,
+  min: 1,
+  max: EVENTS_MAX,
+  arrayFields: {
+    date: {
+      type: 'custom',
+      label: 'Dia',
+      render: ({ field, onChange, readOnly, value }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <EventDateField label="Dia" onChange={onChange} readOnly={readOnly} value={value} />
+        </FieldLabel>
+      ),
+    } as CustomField<string>,
+    time: {
+      type: 'custom',
+      label: 'Horário (opcional, de Brasília)',
+      render: ({ field, onChange, readOnly, value }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <EventTimeField label="Horário" onChange={onChange} readOnly={readOnly} value={value} />
+        </FieldLabel>
+      ),
+    } as CustomField<string>,
+    title: text('Título'),
+    place: text('Local (opcional)'),
+    text: textarea('Frase (opcional)'),
+    button: {
+      ...button,
+      label: 'Botão (opcional)',
+      invite: ['+ Pôr um botão (opcional)', 'Ingresso, inscrição, WhatsApp.'],
+    } as Field,
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves label="title" name={name} noun="Data" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: { date: '', time: '', title: 'Nova data', place: '', text: '', button: null },
+  getItemSummary: (item: { title?: string; date?: string; time?: string }) => (
+    <ItemSummary
+      detail={[item.date?.split('-').reverse().join('/'), item.time].filter(Boolean).join(' ')}
+      fallback="Data"
+      field="items"
+      item={item}
+      nameKey="title"
+    />
   ),
 }
 
@@ -999,6 +1125,169 @@ const sections: { [K in keyof Components]: Section<K> } = {
         { value: '4,9', text: 'de nota no Google' },
       ],
       style: 'soft',
+    },
+  },
+  Table: {
+    fields: {
+      title: text('Título (opcional)'),
+      text: textarea('Frase (opcional)'),
+      // O nome das colunas é editado junto com as linhas, no quadro da Tabela.
+      head: { type: 'custom', render: () => <></> },
+      rows: {
+        type: 'custom',
+        label: 'Tabela',
+        render: ({ field, readOnly }) => (
+          <FieldLabel el="div" label={field.label ?? ''}>
+            <TableField readOnly={readOnly} />
+          </FieldLabel>
+        ),
+      },
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Table'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Planos e valores',
+      text: '',
+      head: ['Plano', 'O que inclui', 'Valor'],
+      rows: [
+        ['Básico', 'Um atendimento por mês', 'R$ 90'],
+        ['Completo', 'Dois atendimentos por mês', 'R$ 160'],
+        ['Premium', 'Atendimento toda semana', 'R$ 290'],
+      ],
+      style: 'light',
+    },
+  },
+  Team: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      items: teamItems,
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Team'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Nossa equipe',
+      text: '',
+      items: [1, 2, 3].map(() => ({
+        photo: null,
+        role: 'Cargo',
+        name: 'Nome da pessoa',
+        text: '',
+        contact: null,
+      })),
+      style: 'light',
+    },
+  },
+  LogoStrip: {
+    fields: {
+      title: text('Título (opcional)'),
+      images: {
+        type: 'custom',
+        label: `Logos (até ${LOGOS_MAX})`,
+        render: (props) => (
+          <FieldLabel el="div" label={props.field.label ?? ''}>
+            <PhotoListField
+              {...props}
+              max={LOGOS_MAX}
+              noun="logo"
+              prepare={async (item, picked) => {
+                const trim = await measureTrim(picked)
+                return trim ? { ...item, trim } : item
+              }}
+            />
+          </FieldLabel>
+        ),
+      },
+      ...({
+        logosHint: notice(
+          'A sobra em volta de cada logo (fundo branco ou transparente) é cortada sozinha, e todos ficam do mesmo tamanho. A descrição da foto vira o nome da marca para quem usa leitor de tela.',
+        ),
+      } as object),
+      look: radioChoice(
+        'Jeito dos logos',
+        [
+          { label: 'Coloridos', value: 'color' },
+          { label: 'Em cinza (a cor volta ao passar o mouse)', value: 'gray' },
+          { label: 'Em cartões brancos (para fundo escuro)', value: 'card' },
+        ],
+        'color',
+      ),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('LogoStrip'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Quem confia na gente',
+      images: [],
+      style: 'light',
+    },
+  },
+  BeforeAfter: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      items: beforeAfterItems,
+      layout: radioChoice(
+        'Jeito',
+        [
+          { label: 'Lado a lado no computador, de arrastar no celular', value: 'auto' },
+          { label: 'De arrastar no computador e no celular', value: 'slider' },
+        ],
+        'auto',
+      ),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('BeforeAfter'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Antes e depois',
+      text: '',
+      items: [{ before: null, after: null, caption: '' }],
+      style: 'light',
+    },
+  },
+  Events: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      items: eventItems,
+      past: radioChoice(
+        'Datas que já passaram',
+        [
+          { label: 'Saem sozinhas do site', value: 'hide' },
+          { label: 'Vão para “Já aconteceu”', value: 'list' },
+        ],
+        'hide',
+      ),
+      countdown: radioChoice(
+        'Contagem até a próxima data',
+        [
+          { label: 'Sem contagem', value: false },
+          { label: 'Mostrar “Faltam 3 dias e 4 horas”', value: true },
+        ],
+        false,
+      ),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Events'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Agenda',
+      text: '',
+      items: [{ date: '', time: '', title: 'Nova data', place: '', text: '', button: null }],
+      style: 'light',
     },
   },
   InstagramStrip: {

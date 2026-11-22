@@ -96,6 +96,22 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
     }
     case 'Form':
       return item.props.form ? null : 'falta escolher qual formulário, e só o título aparece'
+    case 'Table':
+      return item.props.rows.some((row) => row.some((cell) => text(cell)))
+        ? null
+        : 'a tabela está vazia'
+    case 'Team':
+      return item.props.items.some((entry) => text(entry.name)) ? null : 'ninguém tem nome'
+    case 'LogoStrip':
+      return item.props.images.some(photo) ? null : 'não tem nenhum logo'
+    case 'BeforeAfter':
+      return item.props.items.some((entry) => photo(entry.before) && photo(entry.after))
+        ? null
+        : 'nenhum par tem as duas fotos'
+    case 'Events':
+      return item.props.items.some((entry) => entry.date && text(entry.title))
+        ? null
+        : 'nenhuma data tem dia e título'
     default:
       return null
   }

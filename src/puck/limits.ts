@@ -34,6 +34,22 @@ export const LIMITS = {
   statValue: 16,
   /** Frase embaixo do número: "bolos entregues". */
   statLabel: 40,
+  /** Célula da Tabela (C5): um valor curto, como numa planilha. */
+  tableCell: 120,
+  /** Cargo na Equipe (C5): "Dentista", "Gerente de vendas". */
+  teamRole: 40,
+  /** Nome na Equipe. */
+  teamName: 60,
+  /** Frase da pessoa na Equipe. */
+  teamText: 200,
+  /** Legenda do par de fotos do Antes e depois. */
+  beforeAfterCaption: 120,
+  /** Título de uma data da Agenda (B5). */
+  eventTitle: 80,
+  /** Local de uma data da Agenda. */
+  eventPlace: 80,
+  /** Frase de uma data da Agenda. */
+  eventText: 200,
   /** Peças em cada coluna das Colunas. */
   columnPieces: 6,
   /** Seções numa página. */
