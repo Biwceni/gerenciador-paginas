@@ -203,6 +203,63 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       ))}
     </>
   ),
+  // Grade com a linha de cima mais forte.
+  Table: (
+    <>
+      <Bar f={ACCENT} h={6} o={0.8} r={1.5} w={52} x={4} y={6} />
+      {[15, 22, 29].map((y) => (
+        <React.Fragment key={y}>
+          <Bar h={3} r={1.5} w={14} x={4} y={y} />
+          <Bar h={3} r={1.5} w={14} x={23} y={y} />
+          <Bar h={3} r={1.5} w={14} x={42} y={y} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
+  // Fotos em pé, cargo e nome embaixo.
+  Team: (
+    <>
+      {[4, 23, 42].map((x) => (
+        <React.Fragment key={x}>
+          <Bar f={ACCENT} h={17} o={0.45} r={3} w={14} x={x} y={4} />
+          <Bar f={ACCENT} h={2} r={1} w={8} x={x} y={25} />
+          <Bar h={3} r={1.5} w={13} x={x} y={30} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
+  // Logos de formatos diferentes, numa linha.
+  LogoStrip: (
+    <>
+      <Bar h={3} r={1.5} w={24} x={18} y={8} />
+      <Bar f={ACCENT} h={6} o={0.6} r={1.5} w={12} x={3} y={20} />
+      <Bar f={ACCENT} h={10} o={0.6} r={5} w={10} x={18} y={18} />
+      <Bar f={ACCENT} h={5} o={0.6} r={1.5} w={14} x={31} y={21} />
+      <Bar f={ACCENT} h={9} o={0.6} r={1.5} w={9} x={48} y={18} />
+    </>
+  ),
+  // Uma foto cortada ao meio, com a linha e o botão de arrastar.
+  BeforeAfter: (
+    <>
+      <Bar f={ACCENT} h={30} o={0.25} r={3} w={48} x={6} y={5} />
+      <Bar f={ACCENT} h={30} o={0.6} r={3} w={24} x={6} y={5} />
+      <Bar f={ACCENT} h={30} r={0.5} w={1.5} x={29.25} y={5} />
+      <circle cx={30} cy={20} r={4.5} style={{ fill: ACCENT }} />
+    </>
+  ),
+  // Dia em destaque ao lado do título, em duas linhas.
+  Events: (
+    <>
+      {[6, 22].map((y) => (
+        <React.Fragment key={y}>
+          <Bar f={ACCENT} h={12} o={0.8} r={2} w={11} x={4} y={y} />
+          <Bar h={3} r={1.5} w={26} x={19} y={y + 2} />
+          <Bar h={2.5} o={0.7} r={1.25} w={16} x={19} y={y + 8} />
+          <Bar f={ACCENT} h={5} r={2.5} w={9} x={47} y={y + 3.5} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
   ColumnTitle: <Bar f={ACCENT} h={7} w={40} x={8} y={16} />,
   ColumnText: (
     <>
@@ -216,15 +273,15 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
 }
 
 /**
- * Seções que acabaram de chegar (redesign v3, entrega 4): ganham o selo "novo" na lista. Tirar daqui
+ * Seções que acabaram de chegar (etapa 4a): ganham o selo "novo" na lista. Tirar daqui
  * quando deixarem de ser novidade.
  */
 export const NEW_SECTIONS: ReadonlySet<keyof Components> = new Set([
-  'Announcement',
-  'Products',
-  'PriceList',
-  'InstagramStrip',
-  'Stats',
+  'Table',
+  'Team',
+  'LogoStrip',
+  'BeforeAfter',
+  'Events',
 ])
 
 /** Uma frase curta do que cada seção é. */
@@ -248,6 +305,11 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   PriceList: 'Itens e valores, sem precisar de foto',
   InstagramStrip: 'Fotos escolhidas e botão de seguir',
   Stats: 'Números como “12 anos” ou “+3.000 clientes”, que contam na tela',
+  Table: 'Linhas e colunas, como numa planilha (dá para colar)',
+  Team: 'Foto, cargo e nome de quem atende',
+  LogoStrip: 'Marcas de clientes e parceiros, do mesmo tamanho',
+  BeforeAfter: 'Duas fotos para comparar, com um controle de arrastar',
+  Events: 'Datas com local, horário e “Adicionar à agenda”',
   ColumnTitle: 'Um título, dentro de uma coluna',
   ColumnText: 'Um parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',

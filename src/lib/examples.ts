@@ -23,7 +23,17 @@ const TEXT_KEYS = new Set([
   'answer',
   'caption',
   'description',
+  // Equipe e Agenda (etapa 4a).
+  'role',
+  'place',
 ])
+
+/**
+ * Células da Tabela (C5): as linhas guardam listas de textos, sem nome de campo. O nome das colunas
+ * ("Plano", "Valor") fica de fora: qualquer negócio mantém.
+ */
+const isCells = (key: string, field: unknown): field is unknown[][] =>
+  key === 'rows' && Array.isArray(field) && field.every((row) => Array.isArray(row))
 
 /**
  * Títulos e nomes legíveis dos modelos, bons para manter: não contam como exemplo. Os modelos
@@ -60,6 +70,10 @@ export const KEEPABLE_TEXTS: readonly string[] = [
   'Vamos conversar?',
   'Por que escolher a gente',
   'Assista ao nosso vídeo',
+  'Nossa equipe',
+  'Agenda',
+  'Antes e depois',
+  'Quem confia na gente',
 ]
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -73,6 +87,11 @@ function collectTexts(value: unknown, found: Set<string>) {
     if (typeof field === 'string') {
       if (TEXT_KEYS.has(key) || key === 'body') {
         const text = normalize(key === 'body' ? richTextToPlain(field) : field)
+        if (text && !KEEPABLE.has(text)) found.add(text)
+      }
+    } else if (isCells(key, field)) {
+      for (const cell of field.flat()) {
+        const text = typeof cell === 'string' ? normalize(cell) : ''
         if (text && !KEEPABLE.has(text)) found.add(text)
       }
     } else collectTexts(field, found)
@@ -216,6 +235,12 @@ function walkTexts(
       if (TEXT_KEYS.has(key) || key === 'body') {
         visit(key, key === 'body' ? richTextToPlain(field) : field, [...path, key])
       }
+    } else if (isCells(key, field)) {
+      field.forEach((row, r) =>
+        row.forEach((cell, c) => {
+          if (typeof cell === 'string') visit('cell', cell, [...path, key, r, c])
+        }),
+      )
     } else walkTexts(field, [...path, key], visit)
   }
 }

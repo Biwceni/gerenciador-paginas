@@ -25,6 +25,10 @@ function sectionText(item: PageComponent): string {
     case 'Form':
     case 'Products':
     case 'PriceList':
+    case 'Table':
+    case 'Team':
+    case 'BeforeAfter':
+    case 'Events':
       return item.props.text
     case 'Features':
       return item.props.items[0]?.text ?? ''
@@ -42,6 +46,7 @@ function sectionText(item: PageComponent): string {
     case 'Announcement':
     case 'InstagramStrip':
     case 'Stats':
+    case 'LogoStrip':
       return ''
   }
 }

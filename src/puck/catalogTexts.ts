@@ -3,6 +3,19 @@
 // no Publicar e ficam fora da descrição automática do Google (achados 2.3, 10.3 e 9.4). A ficha
 // das seções é do navegador; esta lista serve também ao site. Um teste confere que as duas batem.
 export const CATALOG_TEXTS: readonly string[] = [
+  'atendimento toda semana',
+  'básico',
+  'cargo',
+  'completo',
+  'dois atendimentos por mês',
+  'nome da pessoa',
+  'nova data',
+  'planos e valores',
+  'premium',
+  'r$ 160',
+  'r$ 290',
+  'r$ 90',
+  'um atendimento por mês',
   'anos de experiência',
   'clientes atendidos',
   'de nota no google',

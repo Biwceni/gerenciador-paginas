@@ -311,7 +311,18 @@ export function PhotoListField<T extends PhotoListItem>({
   max = 24,
   captions = false,
   name,
-}: FieldProps<T[]> & { minWidth?: number; max?: number; captions?: boolean; name?: string }) {
+  prepare,
+  noun = 'foto',
+}: FieldProps<T[]> & {
+  minWidth?: number
+  max?: number
+  captions?: boolean
+  name?: string
+  /** Completa o item da foto escolhida antes de entrar (os logos medem a sobra em volta). */
+  prepare?: (item: T, photo: Media) => Promise<T>
+  /** Como chamar cada item nos botões e avisos: "foto" ou "logo". */
+  noun?: 'foto' | 'logo'
+}) {
   const { photoById, pickPhoto } = useEditor()
   const getPuck = useGetPuck()
   const setCaption = (index: number, caption: string) =>
@@ -381,21 +392,22 @@ export function PhotoListField<T extends PhotoListItem>({
           className="ed-btn ed-btn--sm"
           disabled={readOnly}
           onClick={() =>
-            pickPhoto((picked) =>
-              onChange([
-                ...value,
-                (captions ? { mediaId: picked.id, caption: '' } : { mediaId: picked.id }) as T,
-              ]),
-            )
+            pickPhoto(async (picked) => {
+              const item = (
+                captions ? { mediaId: picked.id, caption: '' } : { mediaId: picked.id }
+              ) as T
+              onChange([...value, prepare ? await prepare(item, picked) : item])
+            })
           }
           type="button"
         >
-          + Adicionar foto
+          + Adicionar {noun}
         </button>
       )}
       {value.length >= max && (
         <p className="ed-hint" role="status">
-          {value.length} de {max}: é o máximo de fotos desta seção. Para colocar outra, tire uma.
+          {value.length} de {max}: é o máximo de {noun}s desta seção. Para colocar outro
+          {noun === 'foto' ? 'a' : ''}, tire um{noun === 'foto' ? 'a' : ''}.
         </p>
       )}
     </div>

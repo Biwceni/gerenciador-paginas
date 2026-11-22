@@ -66,11 +66,14 @@ export function photoNeeds(data: PuckPageData | null): Map<number, number> {
     if (typeof record.mediaId === 'number') add(record.mediaId, width)
     if (typeof record.type === 'string' && record.props && typeof record.props === 'object') {
       const { image, ...rest } = record.props
-      // Fotos pequenas de propósito: a dos depoimentos, a redonda dos Destaques e as do Instagram.
+      // Fotos pequenas de propósito: a dos depoimentos, a redonda dos Destaques, as do Instagram, as
+      // da Equipe e os logos.
       if (
         record.type === 'Testimonials' ||
         record.type === 'Features' ||
-        record.type === 'InstagramStrip'
+        record.type === 'InstagramStrip' ||
+        record.type === 'Team' ||
+        record.type === 'LogoStrip'
       ) {
         return
       }

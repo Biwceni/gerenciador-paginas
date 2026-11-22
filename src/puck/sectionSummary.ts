@@ -41,6 +41,18 @@ export function sectionSummary(item: PageComponent): string {
         list(item.props.items.map((entry) => `${entry.value} ${entry.text}`.trim())) ||
         item.props.title
       )
+    case 'Table':
+      return item.props.title || list(item.props.head)
+    case 'Team':
+      return list(item.props.items.map((entry) => entry.name)) || item.props.title
+    case 'LogoStrip': {
+      const count = item.props.images.length
+      return item.props.title || (count === 1 ? '1 logo' : `${count} logos`)
+    }
+    case 'BeforeAfter':
+      return list(item.props.items.map((entry) => entry.caption)) || item.props.title
+    case 'Events':
+      return list(item.props.items.map((entry) => entry.title)) || item.props.title
     case 'Columns':
       return list(
         // Só as colunas que aparecem: o modelo de duas guarda a terceira sem mostrar.
