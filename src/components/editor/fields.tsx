@@ -14,6 +14,7 @@ import { externalLink, validateLinkInput } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
 import { panelHref } from '@/lib/panel'
 import { highlightRange, titleWords } from '@/lib/highlight'
+import { fitForPick, fitMismatch } from '@/lib/photoFit'
 import { photoLabel } from '@/lib/photos'
 import { slugify } from '@/lib/slug'
 import {
@@ -36,7 +37,9 @@ import {
   type PuckPageData,
 } from '@/puck/schema'
 
+import { announceChange } from './adjusted'
 import { request } from './api'
+import { ChoiceThumb } from './ChoiceThumbs'
 import { thumbnailURL, useEditor } from './context'
 import { FocusPicker } from './FocusPicker'
 import { counterText } from './CountedField'
@@ -109,10 +112,28 @@ export function PhotoField({
   onChange,
   readOnly,
   minWidth,
-}: FieldProps<PhotoRef> & { minWidth?: number | 'banner' }) {
+  frame,
+}: FieldProps<PhotoRef> & {
+  minWidth?: number | 'banner'
+  /**
+   * Proporção do espaço da foto (largura / altura). Com ela, o campo oferece "Foto inteira" ou
+   * "Preencher" (C2) e já marca a foto inteira quando ela não combina com o espaço.
+   */
+  frame?: number
+}) {
   const { apiRoute, photoById, pickPhoto, updatePhoto } = useEditor()
   const photo = value ? photoById[value.mediaId] : null
   const [focusOpen, setFocusOpen] = useState(false)
+  const whole = value?.fit === 'contain'
+  const pick = (picked: Media) => {
+    if (!frame) return onChange({ mediaId: picked.id })
+    const fit = fitForPick(picked, frame, value?.fit)
+    onChange({
+      mediaId: picked.id,
+      ...(fit ? { fit } : {}),
+      ...(fit === 'contain' && value?.backdrop ? { backdrop: value.backdrop } : {}),
+    })
+  }
 
   return (
     <div className="ed-photo-field">
@@ -125,7 +146,7 @@ export function PhotoField({
         <button
           className="ed-btn ed-btn--sm"
           disabled={readOnly}
-          onClick={() => pickPhoto((picked) => onChange({ mediaId: picked.id }))}
+          onClick={() => pickPhoto(pick)}
           type="button"
         >
           {value ? 'Trocar foto' : 'Escolher foto'}
@@ -149,7 +170,7 @@ export function PhotoField({
         ) : (
           <SmallPhotoNote minWidth={minWidth} photo={photo} />
         )}
-        {photo && (
+        {photo && !whole && (
           <button
             aria-expanded={focusOpen}
             className="ed-linkbtn"
@@ -160,7 +181,16 @@ export function PhotoField({
           </button>
         )}
       </div>
-      {photo && focusOpen && (
+      {photo && frame && value && (
+        <PhotoFitChoice
+          frame={frame}
+          onChange={onChange}
+          photo={photo}
+          readOnly={readOnly}
+          value={value}
+        />
+      )}
+      {photo && focusOpen && !whole && (
         <FocusPicker
           apiRoute={apiRoute}
           key={photo.id}
@@ -168,6 +198,100 @@ export function PhotoField({
           photo={photo}
           readOnly={readOnly}
         />
+      )}
+    </div>
+  )
+}
+
+const FIT_OPTIONS = [
+  { value: 'cover', label: 'Preencher', hint: 'Ocupa o espaço todo; as pontas podem ser cortadas' },
+  { value: 'contain', label: 'Foto inteira', hint: 'Sem cortar; sobra um fundo dos lados' },
+] as const
+
+const BACKDROP_OPTIONS = [
+  { value: 'neutral', label: 'Neutro' },
+  { value: 'brand', label: 'Cor do site' },
+  { value: 'none', label: 'Transparente' },
+] as const
+
+/**
+ * "Como a foto ocupa o espaço" (C2): Preencher ou Foto inteira, com o fundo das sobras. Avisa quando
+ * a foto é bem mais alta ou mais larga que o espaço.
+ */
+function PhotoFitChoice({
+  value,
+  onChange,
+  photo,
+  frame,
+  readOnly,
+}: {
+  value: NonNullable<PhotoRef>
+  onChange: (value: PhotoRef) => void
+  photo: Media
+  frame: number
+  readOnly?: boolean
+}) {
+  const id = React.useId()
+  const fit = value.fit ?? 'cover'
+  const mismatch = fitMismatch(photo, frame)
+  const shape = mismatch === 'taller' ? 'mais alta' : 'mais larga'
+  return (
+    <div className="ed-photo-fit">
+      <span className="ed-photo-fit__label" id={`${id}-fit`}>
+        Como a foto ocupa o espaço
+      </span>
+      <div aria-labelledby={`${id}-fit`} className="ed-thumbs" role="radiogroup">
+        {FIT_OPTIONS.map((option) => (
+          <label className="ed-thumb" key={option.value}>
+            <input
+              checked={fit === option.value}
+              className="ed-thumb__input"
+              disabled={readOnly}
+              name={`${id}-fit`}
+              onChange={() => {
+                const { backdrop, ...rest } = value
+                onChange(
+                  option.value === 'contain'
+                    ? { ...rest, fit: 'contain', ...(backdrop ? { backdrop } : {}) }
+                    : { ...rest, fit: 'cover' },
+                )
+                announceChange(option.label)
+              }}
+              type="radio"
+              value={option.value}
+            />
+            <ChoiceThumb name={option.value === 'cover' ? 'fit-cover' : 'fit-contain'} />
+            <span className="ed-thumb__text">
+              <b>{option.label}</b>
+              <span className="ed-hint">{option.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {mismatch && (
+        <span className={`ed-hint${fit === 'cover' ? ' ed-hint--warn' : ''}`}>
+          {fit === 'contain'
+            ? `Esta foto é bem ${shape} que o espaço: por isso está inteira, sem cortar.`
+            : `Esta foto é bem ${shape} que o espaço: preenchendo, boa parte dela fica cortada.`}
+        </span>
+      )}
+      {fit === 'contain' && (
+        <fieldset className="ed-photo-fit__backdrop">
+          <legend>Fundo nas sobras</legend>
+          {BACKDROP_OPTIONS.map((option) => (
+            <label className="ed-radio" key={option.value}>
+              <input
+                checked={(value.backdrop ?? 'neutral') === option.value}
+                disabled={readOnly}
+                name={`${id}-backdrop`}
+                onChange={() => onChange({ ...value, backdrop: option.value })}
+                type="radio"
+                value={option.value}
+              />
+              {option.label}
+            </label>
+          ))}
+        </fieldset>
       )}
     </div>
   )
@@ -1135,5 +1259,26 @@ export function ContactChannelsField({ value, onChange, readOnly }: FieldProps<C
         </label>
       ))}
     </fieldset>
+  )
+}
+
+/**
+ * Aviso na Chamada em faixa fina quando a página já tem outra (C4): no máximo uma por página. O
+ * Publicar avisa também (`checks.ts`).
+ */
+export function StripNotice() {
+  const strips = usePuck(
+    (s) =>
+      s.appState.data.content.filter(
+        (item) =>
+          item.type === 'CallToAction' && (item.props as { layout?: string }).layout === 'strip',
+      ).length,
+  )
+  const mine = usePuck((s) => (s.selectedItem?.props as { layout?: string } | undefined)?.layout)
+  if (mine !== 'strip' || strips < 2) return null
+  return (
+    <p className="ed-hint ed-hint--warn" role="status">
+      Esta página já tem {strips} faixas finas. Use no máximo uma: troque as outras para Bloco.
+    </p>
   )
 }

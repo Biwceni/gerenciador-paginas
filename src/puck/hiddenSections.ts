@@ -84,7 +84,7 @@ function hiddenReason(item: Item, hasPhoto: (id: number) => boolean): string | n
     case 'CallToAction': {
       const button = item.props.button
       return text(item.props.title) ||
-        text(item.props.text) ||
+        (item.props.layout !== 'strip' && text(item.props.text)) ||
         (button?.label.trim() && button.link)
         ? null
         : 'está sem título, frase e botão'

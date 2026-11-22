@@ -178,7 +178,8 @@ test.describe('editor e painel: propostas, etapa 1b', () => {
     await signIn(page)
     await openEditor(page, id, 2)
     await pick(page, 0)
-    const invite = page.locator('.ed-add-optional:visible')
+    // O banner tem o botão e, desde a etapa 3a, o segundo botão: o convite do primeiro.
+    const invite = page.locator('.ed-add-optional:visible').first()
     await expect(invite).toContainText('Pôr um botão (opcional)')
     await invite.click()
     expect(await focusedName(page)).toBe('button.label')

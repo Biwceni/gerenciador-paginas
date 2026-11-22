@@ -15,6 +15,7 @@ import {
 import { instagramLink } from '@/lib/links'
 import { parseVideo, youtubeThumbURL } from '@/lib/youtube'
 import { privacyBlocks } from '@/lib/privacy'
+import { parseCount } from '@/lib/countUp'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 
@@ -27,9 +28,16 @@ import {
 } from '../layout'
 import { AnnounceRotate, AnnounceStrip, ANNOUNCE_STILL_MAX } from './AnnounceMotion'
 import { AutoRotate } from './AutoRotate'
+import { HeroLater, HeroRotate } from './HeroRotate'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
-import { COLUMN_COUNT, CONTACT_CHANNELS, INSTAGRAM_MIN_PHOTOS } from '../schema'
+import {
+  COLUMN_COUNT,
+  CONTACT_CHANNELS,
+  HERO_SLIDE_DEFAULTS,
+  INSTAGRAM_MIN_PHOTOS,
+} from '../schema'
 import type {
+  ButtonValue,
   ColumnTitleProps,
   ContactChannel,
   AnnouncementProps,
@@ -47,6 +55,7 @@ import type {
   InstagramStripProps,
   StatsProps,
   LinkListProps,
+  PhotoFit,
   PhotoRef,
   PriceListProps,
   PrivacyProps,
@@ -107,6 +116,9 @@ function Paragraphs({ text }: { text: React.ReactNode }) {
 }
 
 /** Aviso no lugar do que falta (foto, vídeo, dados de contato). Só aparece no editor. */
+/** Campos novos (etapa 3a) que as páginas de antes não têm: o componente usa o valor padrão. */
+type Loose<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
 function EditorPlaceholder({ children }: { children: React.ReactNode }) {
   return <div className="editor-placeholder">{children}</div>
 }
@@ -220,8 +232,48 @@ function HighlightedTitle({ title, words }: { title: React.ReactNode; words: str
   )
 }
 
-export function Hero(props: WithMetadata<HeroProps>) {
+/** O botão aparece? (no editor, sempre que existe; no site, só com texto e destino no ar). */
+function showsButton(button: ButtonValue | null, metadata: ContentMetadata) {
+  if (metadata.editing) return Boolean(button)
+  return Boolean(button?.label.trim() && getHref(metadata, button.link))
+}
+
+/**
+ * Botões do banner: com o segundo botão (C1), os dois lado a lado, o segundo só com o contorno. Sem
+ * ele, o botão de sempre, no mesmo lugar de antes.
+ */
+function HeroButtons({
+  button,
+  button2,
+  metadata,
+}: {
+  button: ButtonValue | null
+  button2: ButtonValue | null
+  metadata: ContentMetadata
+}) {
+  if (!showsButton(button2, metadata)) {
+    return <SectionButton button={button} className="anim-part" metadata={metadata} />
+  }
+  return (
+    <div className="hero__buttons anim-part">
+      <SectionButton button={button} metadata={metadata} />
+      <SectionButton button={button2} className="button--ghost" metadata={metadata} />
+    </div>
+  )
+}
+
+type HeroCall = {
+  title: React.ReactNode
+  text: React.ReactNode
+  photo: ReturnType<typeof getPhoto>
+  fit: PhotoFit | undefined
+  button: ButtonValue | null
+  button2: ButtonValue | null
+}
+
+export function Hero(props: WithMetadata<Loose<HeroProps, keyof typeof HERO_SLIDE_DEFAULTS>>) {
   const { id, title, text, image, button, metadata } = props
+  const button2 = props.button2 ?? null
   const highlight = props.highlight ?? ''
   const photo = getPhoto(metadata, image)
   // Banner que pede foto e ainda não tem (como os dos modelos): no editor, o aviso "Escolha uma foto
@@ -244,6 +296,22 @@ export function Hero(props: WithMetadata<HeroProps>) {
   const isMain = metadata.mainHeadingId === id
   const Heading = isMain ? 'h1' : 'h2'
   const anim = sectionAnim('Hero', props.anim, metadata)
+  // Chamadas 2 e 3 (C1): só no site, e só as que têm título ou texto. No editor fica a primeira,
+  // com um aviso de que as outras trocam no site.
+  const calls: HeroCall[] = [
+    { title, text, photo, fit: image?.fit, button, button2 },
+    ...(metadata.editing ? [] : (props.slides ?? []))
+      .filter((slide) => slide.title.trim() || slide.text.trim())
+      .map((slide) => ({
+        title: slide.title,
+        text: slide.text,
+        photo: getPhoto(metadata, slide.image),
+        fit: slide.image?.fit,
+        button: slide.button,
+        button2: slide.button2,
+      })),
+  ]
+  const multi = calls.length > 1
   const classes = [
     'section',
     style === 'side' ? 'section--soft hero--side' : `section--${style}`,
@@ -254,39 +322,102 @@ export function Hero(props: WithMetadata<HeroProps>) {
     // Frase longa no título: tamanho menor que o de uma ou duas palavras, para não ocupar a tela.
     // No editor, o título é o elemento da edição no lugar (não é texto): não dá para medir, e
     // chamar `.trim()` nele derrubava o editor inteiro.
-    typeof title === 'string' && title.trim().length > 20 && 'hero--long',
+    calls.some((call) => typeof call.title === 'string' && call.title.trim().length > 20) &&
+      'hero--long',
     props.height === 'compact' && 'hero--compact',
+    multi && `hero--slides hero--${props.transition === 'slide' ? 'slide' : 'fade'}`,
     animClass(anim),
   ]
+
+  /** Camada de uma chamada: a primeira já vem no HTML; as outras, depois que a página carrega. */
+  const layer = (index: number, content: React.ReactNode, className: string) => (
+    <div
+      className={className}
+      data-on={index === 0 ? '' : undefined}
+      data-slide={index}
+      key={index}
+    >
+      {index === 0 ? content : <HeroLater>{content}</HeroLater>}
+    </div>
+  )
+
+  const titleOf = (call: HeroCall, index: number) => {
+    if (!filled(call.title)) return null
+    const Tag = index === 0 ? Heading : 'h2'
+    return (
+      <Tag className="hero__title">
+        {anim === 'linhas' && index === 0 ? (
+          <LinedTitle title={call.title} words={highlight} />
+        ) : (
+          <HighlightedTitle title={call.title} words={highlight} />
+        )}
+      </Tag>
+    )
+  }
+
+  const sideSizes = '(max-width: 720px) 100vw, 50vw'
 
   return (
     <section className={classes.filter(Boolean).join(' ')}>
       {style === 'image' && photo && (
         <>
-          <Photo
-            className="hero__bg anim-part"
-            fill
-            media={photo}
-            priority={isMain && !metadata.editing}
-            sizes="100vw"
-          />
+          {multi ? (
+            calls.map((call, index) =>
+              layer(
+                index,
+                call.photo ? (
+                  <Photo
+                    className="hero__bg anim-part"
+                    fill
+                    fit={call.fit === 'contain' ? 'contain' : undefined}
+                    backdrop="brand"
+                    media={call.photo}
+                    priority={index === 0 && isMain}
+                    sizes="100vw"
+                  />
+                ) : (
+                  <span className="hero__fill" />
+                ),
+                'hero__layer',
+              ),
+            )
+          ) : (
+            <Photo
+              className="hero__bg anim-part"
+              fill
+              media={photo}
+              priority={isMain && !metadata.editing}
+              sizes="100vw"
+            />
+          )}
           <div aria-hidden="true" className="hero__shade" />
         </>
       )}
       <div className="container hero__container">
-        <div className="hero__inner anim-part">
-          {filled(title) && (
-            <Heading className="hero__title">
-              {anim === 'linhas' ? (
-                <LinedTitle title={title} words={highlight} />
-              ) : (
-                <HighlightedTitle title={title} words={highlight} />
-              )}
-            </Heading>
+        <div className={`hero__inner anim-part${multi ? ' hero__inner--slides' : ''}`}>
+          {multi ? (
+            calls.map((call, index) => (
+              <div
+                aria-hidden={index === 0 ? undefined : true}
+                className="hero__copy"
+                data-on={index === 0 ? '' : undefined}
+                data-slide={index}
+                inert={index === 0 ? undefined : true}
+                key={index}
+              >
+                {titleOf(call, index)}
+                {filled(call.text) && <p className="hero__text anim-part">{call.text}</p>}
+                <HeroButtons button={call.button} button2={call.button2} metadata={metadata} />
+              </div>
+            ))
+          ) : (
+            <>
+              {titleOf(calls[0], 0)}
+              {metadata.editing && highlight.trim() && <EditorHighlight words={highlight} />}
+              {filled(text) && <p className="hero__text anim-part">{text}</p>}
+              <HeroButtons button={button} button2={button2} metadata={metadata} />
+            </>
           )}
-          {metadata.editing && highlight.trim() && <EditorHighlight words={highlight} />}
-          {filled(text) && <p className="hero__text anim-part">{text}</p>}
-          <SectionButton button={button} className="anim-part" metadata={metadata} />
           {photoSlot && props.style === 'image' && (
             <div className="hero__slot">
               <EditorPlaceholder>
@@ -294,16 +425,41 @@ export function Hero(props: WithMetadata<HeroProps>) {
               </EditorPlaceholder>
             </div>
           )}
+          {metadata.editing && (props.slides?.length ?? 0) > 0 && (
+            <div className="hero__slot">
+              <EditorPlaceholder>
+                Este banner tem {(props.slides?.length ?? 0) + 1} chamadas. Aqui aparece a primeira;
+                as outras trocam no site.
+              </EditorPlaceholder>
+            </div>
+          )}
         </div>
         {style === 'side' && photo && (
           <div className="hero__photo anim-part">
-            <Photo
-              className="anim-part"
-              fill
-              media={photo}
-              priority={isMain && !metadata.editing}
-              sizes="(max-width: 720px) 100vw, 50vw"
-            />
+            {multi ? (
+              calls.map((call, index) =>
+                layer(
+                  index,
+                  <Photo
+                    className="anim-part"
+                    fill
+                    fit={call.fit === 'contain' ? 'contain' : undefined}
+                    media={call.photo ?? photo}
+                    priority={index === 0 && isMain}
+                    sizes={sideSizes}
+                  />,
+                  'hero__layer',
+                ),
+              )
+            ) : (
+              <Photo
+                className="anim-part"
+                fill
+                media={photo}
+                priority={isMain && !metadata.editing}
+                sizes={sideSizes}
+              />
+            )}
           </div>
         )}
         {style === 'side' && photoSlot && (
@@ -312,6 +468,14 @@ export function Hero(props: WithMetadata<HeroProps>) {
           </div>
         )}
       </div>
+      {multi && (
+        <HeroRotate
+          autoplay={props.autoplay !== false}
+          count={calls.length}
+          dots={props.dots !== false}
+          seconds={Number(props.interval ?? '6') || 6}
+        />
+      )}
     </section>
   )
 }
@@ -327,15 +491,21 @@ export function TextImage({
   side,
   style,
   anim,
+  button = null,
   metadata,
-}: WithMetadata<TextImageProps>) {
+}: WithMetadata<Loose<TextImageProps, 'button'>>) {
   const photo = getPhoto(metadata, image)
   if (!metadata.editing && !filled(title) && !filled(text) && !photo) return null
   // Sem foto no site, o texto fica no centro, na largura de leitura (e não meia tela vazia). No
   // editor continua o aviso "Escolha uma foto" no lugar dela.
   const solo = !photo && !metadata.editing
   // Só a foto (C5, achado TextImage-1): no centro e mais larga, sem meia tela vazia ao lado.
-  const photoOnly = Boolean(photo) && !metadata.editing && !filled(title) && !filled(text)
+  const photoOnly =
+    Boolean(photo) &&
+    !metadata.editing &&
+    !filled(title) &&
+    !filled(text) &&
+    !showsButton(button, metadata)
   // Texto longo (achado TextImage-3): a foto fica parada no topo enquanto o texto passa.
   const long = typeof text === 'string' && text.trim().length > TEXT_IMAGE_LONG
   const classes = [
@@ -358,13 +528,17 @@ export function TextImage({
           <div className="text-image__text anim-part">
             {filled(title) && <h2>{title}</h2>}
             <Paragraphs text={text} />
+            {/* Botão do Texto com foto (C4): na largura do texto dele, à esquerda. */}
+            <SectionButton button={button} className="text-image__button" metadata={metadata} />
           </div>
         )}
         {(photo || metadata.editing) && (
           <div className="text-image__photo anim-part">
             {photo ? (
               <Photo
+                backdrop={image?.backdrop}
                 fill
+                fit={image?.fit}
                 media={photo}
                 sizes={
                   photoOnly ? '(max-width: 720px) 100vw, 960px' : '(max-width: 720px) 100vw, 540px'
@@ -445,7 +619,7 @@ function FeaturePhoto({ photo, metadata }: { photo?: PhotoRef; metadata: Content
   if (media) {
     return (
       <span className="features__photo">
-        <Photo alt="" fill media={media} sizes="72px" />
+        <Photo alt="" backdrop={photo?.backdrop} fill fit={photo?.fit} media={media} sizes="72px" />
       </span>
     )
   }
@@ -609,10 +783,11 @@ export function Gallery({
   images,
   layout = 'grid',
   showCaptions = false,
+  fit = 'cover',
   style,
   anim,
   metadata,
-}: WithMetadata<GalleryProps>) {
+}: WithMetadata<Loose<GalleryProps, 'fit'>>) {
   // Fotos apagadas da biblioteca somem da galeria; sem nenhuma, a seção some. A legenda vazia usa a
   // descrição da foto.
   const photos = images.flatMap((ref) => {
@@ -633,6 +808,7 @@ export function Gallery({
         {photos.length ? (
           // No site, cada foto abre em tela cheia (GalleryGrid); no editor, o clique escolhe a seção.
           <GalleryGrid
+            fit={fit}
             items={photos}
             layout={layout}
             showCaptions={showCaptions}
@@ -653,10 +829,12 @@ export function CallToAction({
   title,
   text,
   button,
+  layout = 'block',
+  tag = '',
   style,
   anim,
   metadata,
-}: WithMetadata<CallToActionProps>) {
+}: WithMetadata<Loose<CallToActionProps, 'layout' | 'tag'>>) {
   const shown = sectionAnim('CallToAction', anim, metadata)
   // Toda vazia (sem título, frase e botão que leve a algum lugar), ela sumia numa faixa colorida
   // vazia (B1, achado CallToAction-1): no site, some. O Publicar avisa (hiddenSections.ts).
@@ -665,7 +843,21 @@ export function CallToAction({
     const buttonShows = Boolean(
       button && filled(button.label) && getHref(metadata, button.link) !== null,
     )
-    if (!filled(title) && !filled(text) && !buttonShows) return null
+    // Na faixa fina, a frase não aparece: sem título e sem botão, ela também some.
+    if (!filled(title) && (layout === 'strip' || !filled(text)) && !buttonShows) return null
+  }
+  // Faixa fina (C4): etiqueta curta, o título e o botão numa linha só (no celular, quebra). A frase
+  // fica de fora: a faixa é um lembrete, não um bloco.
+  if (layout === 'strip') {
+    return (
+      <Section anim={shown} id={id} metadata={metadata} style={style}>
+        <div className="container cta cta--strip anim-part">
+          {filled(tag) && <span className="cta__tag">{tag}</span>}
+          {filled(title) && <h2 className="cta__title">{title}</h2>}
+          <SectionButton button={button} className="anim-part" metadata={metadata} />
+        </div>
+      </Section>
+    )
   }
   return (
     <Section anim={shown} id={id} metadata={metadata} style={style}>
@@ -1250,8 +1442,10 @@ export function Products({
                 <div className="product__photo">
                   {photo ? (
                     <Photo
+                      backdrop={item.image?.backdrop}
                       className="anim-part"
                       fill
+                      fit={item.image?.fit}
                       media={photo}
                       sizes={PRODUCT_PHOTO_SIZES[layout]}
                     />
@@ -1586,6 +1780,26 @@ export function InstagramStrip({
  * número já vem escrito no HTML (o Google e quem está sem JavaScript leem o valor certo); a
  * contagem do zero é só o efeito, ligado com a animação do site (`startReveal`).
  */
+/**
+ * O número que conta, com o que vem antes e depois ("R$ ", " milhão") fora da contagem: os
+ * algarismos têm todos a mesma largura (não tremem ao contar), e os espaços continuam estreitos
+ * (com a largura fixa, "R$ 1,2 milhão" ficava com buracos entre as palavras, C4).
+ */
+function StatValue({ value }: { value: string }) {
+  const target = parseCount(value)
+  if (!target) return <span className="stats__value">{value}</span>
+  const number = value.slice(target.before.length, value.length - target.after.length)
+  return (
+    <span className="stats__value">
+      {target.before && <span className="stats__affix">{target.before}</span>}
+      <span className="stats__number" data-countup={number}>
+        {number}
+      </span>
+      {target.after && <span className="stats__affix">{target.after}</span>}
+    </span>
+  )
+}
+
 export function Stats({ id, title, items, style, anim, metadata }: WithMetadata<StatsProps>) {
   const shown = metadata.editing
     ? items
@@ -1598,15 +1812,12 @@ export function Stats({ id, title, items, style, anim, metadata }: WithMetadata<
         <ul className="stats" data-items={shown.length}>
           {shown.map((item, index) => (
             <li className="stats__item anim-part" key={index} style={order(index)}>
-              <span
-                className="stats__value"
-                // No editor o número é o campo do Puck (não um texto): a contagem é só no site.
-                data-countup={
-                  !metadata.editing && typeof item.value === 'string' ? item.value : undefined
-                }
-              >
-                {item.value}
-              </span>
+              {/* No editor o número é o campo do Puck (não um texto): a contagem é só no site. */}
+              {!metadata.editing && typeof item.value === 'string' ? (
+                <StatValue value={item.value} />
+              ) : (
+                <span className="stats__value">{item.value}</span>
+              )}
               {filled(item.text) && <span className="stats__label">{item.text}</span>}
             </li>
           ))}

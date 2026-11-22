@@ -32,7 +32,7 @@ export function canRotate(state: {
 export const nextIndex = (current: number, count: number) => (count ? (current + 1) % count : 0)
 
 /** Faixa de aviso Correndo visível na tela (ela já se mexe). */
-function movingStripVisible(): boolean {
+export function movingStripVisible(): boolean {
   return [...document.querySelectorAll('.announce--move')].some((strip) => {
     const box = strip.getBoundingClientRect()
     return box.bottom > 0 && box.top < window.innerHeight

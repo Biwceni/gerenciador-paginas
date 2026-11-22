@@ -16,6 +16,7 @@ import {
   OnlyWhen,
   PhotoField,
   PhotoListField,
+  StripNotice,
   VideoField,
 } from '@/components/editor/fields'
 import { AnimField } from '@/components/editor/AnimField'
@@ -47,6 +48,9 @@ import {
   CONTACT_CHANNELS,
   FEATURE_ICONS,
   type FeatureMarker,
+  HERO_EXTRA_SLIDES,
+  HERO_INTERVALS,
+  HERO_SLIDE_DEFAULTS,
   type GalleryImage,
   INSTAGRAM_MAX_PHOTOS,
   type LinkRef,
@@ -78,12 +82,17 @@ const menuLabel: CustomField<string> = {
  * computador; `banner`, a do banner, só quando o fundo escolhido mostra a foto. Sem ele, sem aviso
  * de foto pequena, como nas fotinhas dos depoimentos.
  */
-const photo = (label: string, minWidth?: number | 'banner'): CustomField<PhotoRef> => ({
+const photo = (
+  label: string,
+  minWidth?: number | 'banner',
+  /** Proporção do espaço (largura / altura): com ela, "Preencher" ou "Foto inteira" (C2). */
+  frame?: number,
+): CustomField<PhotoRef> => ({
   type: 'custom',
   label,
   render: (props) => (
     <FieldLabel el="div" label={props.field.label ?? ''}>
-      <PhotoField {...props} minWidth={minWidth} />
+      <PhotoField {...props} frame={frame} minWidth={minWidth} />
     </FieldLabel>
   ),
 })
@@ -209,7 +218,7 @@ const featureItems: Field = {
     title: text('Título'),
     text: textarea('Texto'),
     icon: onlyWhen(featureIcon, 'marker', ['icon']),
-    photo: onlyWhen(photo('Foto'), 'marker', ['photo']),
+    photo: onlyWhen(photo('Foto', undefined, 1), 'marker', ['photo']),
     // Só botões: não guarda nada no item.
     move: {
       type: 'custom',
@@ -239,11 +248,11 @@ const featureItems: Field = {
   ),
 }
 
-// Números do negócio (E10): de 2 a 4, cada um com a frase embaixo.
+// Números do negócio (E10): de 1 a 4. Com um só (C4), o número fica grande, com a frase ao lado.
 const statItems: Field = {
   type: 'array',
-  label: 'Números (de 2 a 4)',
-  min: 2,
+  label: 'Números (de 1 a 4)',
+  min: 1,
   max: 4,
   arrayFields: {
     value: text('Número (ex.: 12, +3.000, 4,9)'),
@@ -271,7 +280,7 @@ const productItems: Field = {
   min: 1,
   max: 12,
   arrayFields: {
-    image: photo('Foto (obrigatória para aparecer no site)', SECTION_MIN_WIDTH),
+    image: photo('Foto (obrigatória para aparecer no site)', SECTION_MIN_WIDTH, 1),
     name: text('Nome'),
     text: textarea('Frase curta'),
     price: text('Preço (opcional)'),
@@ -302,6 +311,40 @@ const productItems: Field = {
       nameKey="name"
       problem={productProblem}
     />
+  ),
+}
+
+// Chamadas 2 e 3 do Banner (C1). A primeira é a do próprio banner (título, frase, foto e botões).
+// No editor aparece só a primeira; as outras trocam no site.
+const heroSlides: Field = {
+  type: 'array',
+  label: 'Mais chamadas (até 2, trocam no site)',
+  max: HERO_EXTRA_SLIDES,
+  arrayFields: {
+    title: { type: 'text', label: 'Título' },
+    text: { type: 'textarea', label: 'Frase' },
+    image: onlyWhen(photo('Foto', 'banner'), 'style', ['image', 'side']),
+    button,
+    button2: { ...button, label: 'Segundo botão (opcional)' } as Field,
+    move: {
+      type: 'custom',
+      label: 'Ordem',
+      render: ({ field, name }) => (
+        <FieldLabel el="div" label={field.label ?? ''}>
+          <ArrayItemMoves label="title" name={name} noun="Chamada" />
+        </FieldLabel>
+      ),
+    },
+  },
+  defaultItemProps: {
+    title: 'Mais uma chamada',
+    text: 'Uma frase curta sobre outra coisa que você oferece.',
+    image: null,
+    button: { label: 'Saiba mais', link: null },
+    button2: { label: '', link: null },
+  },
+  getItemSummary: (item: { title?: string; text?: string }) => (
+    <ItemSummary detail={item.text} fallback="Chamada" field="slides" item={item} nameKey="title" />
   ),
 }
 
@@ -351,6 +394,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       },
       text: textarea('Frase'),
       button,
+      button2: { ...button, label: 'Segundo botão (opcional)' } as Field,
       style: thumbChoice(
         'Fundo',
         [
@@ -380,6 +424,40 @@ const sections: { [K in keyof Components]: Section<K> } = {
           { label: 'Compacto', value: 'compact' },
         ],
       },
+      slides: heroSlides,
+      autoplay: {
+        type: 'radio',
+        label: 'Trocar sozinho',
+        options: [
+          { label: 'Sim', value: true },
+          { label: 'Não', value: false },
+        ],
+        ...({ showWhen: { prop: 'slides', filled: true } } as object),
+      },
+      interval: {
+        type: 'radio',
+        label: 'Tempo de cada chamada',
+        options: HERO_INTERVALS.map((value) => ({ label: `${value} s`, value })),
+        ...({ showWhen: { prop: 'slides', filled: true } } as object),
+      },
+      transition: {
+        type: 'radio',
+        label: 'Jeito de trocar',
+        options: [
+          { label: 'Esmaecer', value: 'fade' },
+          { label: 'Deslizar', value: 'slide' },
+        ],
+        ...({ showWhen: { prop: 'slides', filled: true } } as object),
+      },
+      dots: {
+        type: 'radio',
+        label: 'Bolinhas embaixo',
+        options: [
+          { label: 'Mostrar', value: true },
+          { label: 'Esconder', value: false },
+        ],
+        ...({ showWhen: { prop: 'slides', filled: true } } as object),
+      },
       anim: animField('Hero'),
     },
     defaultProps: {
@@ -392,6 +470,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       align: 'left',
       height: 'normal',
       highlight: '',
+      ...HERO_SLIDE_DEFAULTS,
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },
@@ -399,7 +478,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
     fields: {
       title: text('Título'),
       text: textarea('Texto'),
-      image: photo('Foto', SECTION_MIN_WIDTH),
+      button,
+      image: photo('Foto', SECTION_MIN_WIDTH, 4 / 3),
       side: thumbChoice('Lado da foto', [
         { value: 'left', label: 'Esquerda', thumb: 'side-left' },
         { value: 'right', label: 'Direita', thumb: 'side-right' },
@@ -413,6 +493,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       menuLabel: '',
       title: 'Conte um pouco mais',
       text: 'Use este espaço para explicar com calma.',
+      button: null,
       image: null,
       side: 'right',
       style: 'light',
@@ -584,6 +665,16 @@ const sections: { [K in keyof Components]: Section<K> } = {
         ],
         ...({ showWhen: { prop: 'images', filled: true } } as object),
       },
+      // C2: fotos inteiras (sem cortar no quadrado), com o fundo neutro nas sobras.
+      fit: {
+        type: 'radio',
+        label: 'Como as fotos ocupam o espaço',
+        options: [
+          { label: 'Preencher', value: 'cover' },
+          { label: 'Foto inteira', value: 'contain' },
+        ],
+        ...({ showWhen: { prop: 'images', filled: true } } as object),
+      },
       ...({
         captionsHint: {
           type: 'custom',
@@ -608,6 +699,7 @@ const sections: { [K in keyof Components]: Section<K> } = {
       images: [],
       layout: 'grid',
       showCaptions: false,
+      fit: 'cover',
       style: 'light',
     },
     // A primeira legenda escrita liga "Legendas embaixo das fotos" sozinha (A5, achado ODO7): antes
@@ -844,8 +936,27 @@ const sections: { [K in keyof Components]: Section<K> } = {
   },
   CallToAction: {
     fields: {
+      layout: thumbChoice('Jeito', [
+        { value: 'block', label: 'Bloco', hint: 'Título grande no centro', thumb: 'cta-block' },
+        {
+          value: 'strip',
+          label: 'Faixa fina',
+          hint: 'Uma linha só, entre as seções (uma por página)',
+          thumb: 'cta-strip',
+        },
+      ]),
+      ...({
+        stripNotice: { type: 'custom', render: () => <StripNotice /> },
+      } as object),
+      tag: {
+        ...text('Etiqueta (opcional, ex.: Novidade)'),
+        ...({ showWhen: { prop: 'layout', values: ['strip'] } } as object),
+      } as Field,
       title: text('Título'),
-      text: textarea('Frase'),
+      text: {
+        ...textarea('Frase'),
+        ...({ showWhen: { prop: 'layout', values: ['block'] } } as object),
+      } as Field,
       button,
       style: sectionStyle,
       menuLabel,
@@ -858,6 +969,8 @@ const sections: { [K in keyof Components]: Section<K> } = {
       text: 'Chame a gente no WhatsApp.',
       button: { label: 'Chamar no WhatsApp', link: whatsapp },
       style: 'brand',
+      layout: 'block',
+      tag: '',
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },

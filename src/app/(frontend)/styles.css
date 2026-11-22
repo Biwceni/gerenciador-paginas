@@ -2448,7 +2448,7 @@
   --delay: 0.35s;
 }
 
-.site .hero.anim--linhas .hero__inner > .button {
+.site .hero.anim--linhas .hero__inner > :is(.button, .hero__buttons) {
   --anim: site-fade;
   --dur: 0.9s;
   --delay: 0.35s;
@@ -4074,7 +4074,7 @@
   font-size: min(var(--fs-h1), clamp(40px, 6cqi, 68px));
 }
 
-.site .hero--side .hero__inner > .button {
+.site .hero--side :is(.hero__inner, .hero__copy, .hero__buttons) > .button {
   min-height: 52px;
   padding-inline: 26px;
 }
@@ -5045,6 +5045,11 @@
   color: var(--color-on-primary);
 }
 
+/* "R$ " e " milhão" com os espaços de sempre (a largura fixa vale só para os algarismos). */
+.site .stats__affix {
+  font-variant-numeric: normal;
+}
+
 .site .stats__label {
   opacity: max(0.85, var(--soft-min, 0));
   overflow-wrap: anywhere;
@@ -5952,4 +5957,238 @@
 
 .site .site-footer--line .site-footer__company {
   margin-top: 8px;
+}
+
+/*
+ * Banner com até 3 chamadas (C1). As camadas de cada chamada ficam uma sobre a outra (as fotos no
+ * fundo e os textos na mesma casa da grade, para a altura ser a do texto maior e nada pular), e só a
+ * que tem `data-on` aparece. Sem setas: as bolinhas embaixo escolhem a chamada.
+ */
+.site .hero__layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Chamada sem foto num banner de foto: o tom escuro do site, para o texto branco e o botão na cor
+   do site continuarem legíveis. */
+.site .hero__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--color-deep, var(--color-primary));
+}
+
+.site .hero__inner--slides {
+  display: grid;
+  max-width: 620px;
+}
+
+.site .hero--plain .hero__inner--slides,
+.site[data-personality='vitrine'] .hero.section--image .hero__inner--slides {
+  max-width: none;
+}
+
+.site .hero__copy {
+  display: grid;
+  grid-area: 1 / 1;
+  align-content: center;
+  justify-items: inherit;
+  gap: inherit;
+  min-width: 0;
+}
+
+.site .hero--slides [data-slide] {
+  transition:
+    opacity 0.7s ease,
+    visibility 0.7s,
+    transform 0.7s ease;
+}
+
+.site .hero--slides [data-slide]:not([data-on]) {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* Deslizar: o texto da próxima chamada entra pela direita; a foto troca esmaecendo. */
+.site .hero--slide .hero__copy:not([data-on]) {
+  transform: translateX(48px);
+}
+
+.site .hero__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: inherit;
+  gap: 12px;
+}
+
+.site .hero--center .hero__buttons {
+  justify-content: center;
+}
+
+.site .hero--right .hero__buttons {
+  justify-content: flex-end;
+}
+
+/* No fundo de foto, o botão de contorno fica branco. */
+.site .hero.section--image .button--ghost {
+  color: #fff;
+}
+
+.site .hero__dots {
+  position: absolute;
+  inset-inline: 0;
+  bottom: clamp(6px, 1.4cqi, 16px);
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.site .hero__dots[hidden] {
+  display: none;
+}
+
+/* Área de toque de 32 px, com a bolinha de 10 px no meio. */
+.site .hero__dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.site .hero__dot::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+  opacity: 0.45;
+  transition:
+    width 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.site .hero__dot[aria-current='true']::before {
+  width: 24px;
+  opacity: 1;
+}
+
+.site .hero__dot:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -4px;
+  border-radius: 999px;
+}
+
+/* Espaço para as bolinhas embaixo do texto. */
+.site .hero--slides:not(.hero--side) {
+  padding-bottom: calc(var(--section-pad, clamp(44px, 8vw, 88px)) + 24px);
+}
+
+.site .hero--side.hero--slides .hero__dots {
+  position: static;
+  grid-column: 1 / -1;
+  padding-block: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site .hero--slides [data-slide],
+  .site .hero__dot::before {
+    transition: none;
+  }
+
+  .site .hero--slide .hero__copy:not([data-on]) {
+    transform: none;
+  }
+}
+
+/* Botão do Texto com foto (C4): na largura do texto dele, à esquerda. */
+.site .text-image__button {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/*
+ * Chamada em faixa fina (C4): etiqueta, título e botão numa linha, com pouco respiro. No celular,
+ * o título pode ter duas linhas e o botão desce para baixo dele.
+ */
+.site .section:has(> .cta--strip) {
+  padding-block: clamp(20px, 3cqi, 32px);
+}
+
+.site .section .cta.cta--strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px clamp(16px, 2.4cqi, 28px);
+  max-width: var(--container, 1080px);
+  text-align: left;
+}
+
+.site .section .cta.cta--strip .cta__title {
+  /* Cresce no meio da faixa e quebra em linhas antes de empurrar o botão para baixo. */
+  flex: 1 1 18ch;
+  max-width: none;
+  margin: 0;
+  font-size: clamp(19px, 2.2cqi, 26px);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.site .cta__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.site .section .cta--strip .button {
+  min-height: 48px;
+  margin-top: 0;
+  padding: 0 22px;
+  font-size: 16px;
+}
+
+@container site (max-width: 720px) {
+  .site .section .cta.cta--strip .cta__title {
+    flex: 1 1 100%;
+  }
+}
+
+/* Um número só (C4): grande, com a frase ao lado; em tela estreita, a frase desce. */
+.site .stats[data-items='1'] {
+  display: flex;
+  justify-content: center;
+}
+
+.site .stats[data-items='1'] > .stats__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px clamp(16px, 3cqi, 32px);
+  text-align: left;
+}
+
+.site .stats[data-items='1'] .stats__value {
+  font-size: clamp(2.6rem, 7.5cqi, 5.2rem);
+  overflow-wrap: normal;
+}
+
+.site .stats[data-items='1'] .stats__label {
+  flex: 0 1 24ch;
+  font-size: var(--fs-lead);
+  text-wrap: pretty;
 }
