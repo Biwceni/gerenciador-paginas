@@ -562,14 +562,14 @@ const sections: { [K in keyof Components]: Section<K> } = {
       layout: thumbChoice('Arrumação', [
         {
           value: 'grid',
-          label: 'Grade',
-          hint: 'Quadrados do mesmo tamanho',
+          label: 'Grade igual',
+          hint: 'Todas as fotos do mesmo tamanho',
           thumb: 'gallery-grid',
         },
         {
           value: 'masonry',
           label: 'Mosaico',
-          hint: 'Cada foto no formato dela, sem cortar, na ordem da lista',
+          hint: 'A primeira foto grande e as outras em volta (a partir de 3 fotos)',
           thumb: 'gallery-masonry',
         },
       ]),

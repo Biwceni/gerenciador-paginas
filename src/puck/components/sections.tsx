@@ -1182,6 +1182,9 @@ function productHref(item: ProductItem, metadata: ContentMetadata): string | nul
 /** Preço até este tamanho cabe ao lado de tudo; maior ("a partir de R$ 1.200,00") fica menor, numa linha só. */
 export const PRODUCT_PRICE_SHORT = 14
 
+/** Frase do produto até este tamanho cabe no cartão estreito do celular (2 por linha, A4). */
+export const PRODUCT_TEXT_SHORT = 60
+
 /** Tamanho da foto do produto em cada arrumação, para o navegador baixar a medida certa. */
 const PRODUCT_PHOTO_SIZES = {
   three: '(max-width: 460px) 100vw, (max-width: 720px) 50vw, 380px',
@@ -1217,7 +1220,15 @@ export function Products({
     >
       <div className="container anim-part">
         <SectionHead text={text} title={title} />
-        <ul className={`products products--${layout}`} data-count={shown.length}>
+        <ul
+          className={`products products--${layout}`}
+          data-count={shown.length}
+          // Frase longa num cartão: no celular estreito, um por linha (A4).
+          data-wordy={
+            shown.some((item) => String(item.text ?? '').trim().length > PRODUCT_TEXT_SHORT) ||
+            undefined
+          }
+        >
           {shown.map((item, index) => {
             const photo = getPhoto(metadata, item.image ?? null)
             const href = metadata.editing ? null : productHref(item, metadata)

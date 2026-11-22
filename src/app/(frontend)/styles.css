@@ -925,27 +925,6 @@
     line-height: 1.45;
   }
 
-  .gallery--masonry {
-    display: block;
-    columns: var(--n);
-    column-gap: 14px;
-  }
-
-  .gallery--masonry > li {
-    margin-bottom: 14px;
-    break-inside: avoid;
-  }
-
-  .gallery--masonry .gallery__frame {
-    aspect-ratio: auto;
-  }
-
-  .gallery--masonry .gallery__frame img {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
   /* Chamada para ação */
 
   .cta {
@@ -2153,56 +2132,10 @@
     }
   }
 
-  /* Vitrine e Editorial: o 2º destaque de cada linha desce um pouco, como numa vitrine. */
-
-  &[data-personality='vitrine']
-    .features:not(.features--two, .features--steps)
-    > .features__item:nth-child(3n + 2) {
-    margin-top: clamp(0px, 6cqi, 72px);
-  }
-
-  &[data-personality='vitrine'] .features--two > .features__item:nth-child(2n) {
-    margin-top: clamp(0px, 6cqi, 72px);
-  }
-
-  &[data-personality='editorial']
-    .features:not(.features--two, .features--steps)
-    > .features__item:nth-child(3n + 2) {
-    margin-top: clamp(0px, 8cqi, 96px);
-  }
-
-  &[data-personality='editorial'] .features--two > .features__item:nth-child(2n) {
-    margin-top: clamp(0px, 8cqi, 96px);
-  }
-
-  /* Numa coluna só, todos alinhados (os mesmos seletores, para valer por cima). */
-  @container site (max-width: 720px) {
-    &[data-personality='vitrine']
-      .features:not(.features--two, .features--steps)
-      > .features__item:nth-child(3n + 2) {
-      margin-top: 0;
-    }
-
-    &[data-personality='vitrine'] .features--two > .features__item:nth-child(2n) {
-      margin-top: 0;
-    }
-
-    &[data-personality='editorial']
-      .features:not(.features--two, .features--steps)
-      > .features__item:nth-child(3n + 2) {
-      margin-top: 0;
-    }
-
-    &[data-personality='editorial'] .features--two > .features__item:nth-child(2n) {
-      margin-top: 0;
-    }
-  }
-
   /*
    * Vitrine: o banner com foto cobre a tela, com o texto no pé e o título enorme. O topo fica
-   * transparente por cima da foto e sólido ao rolar (só onde o navegador acompanha a rolagem pelo
-   * CSS; nos outros, o topo é o de sempre, em cima do banner). Só no site: na prévia do editor o
-   * topo é outra peça.
+   * transparente por cima da foto e sólido ao rolar (regras logo abaixo). Só no site: na prévia do
+   * editor o topo é outra peça.
    */
 
   &[data-personality='vitrine'] .hero.section--image {
@@ -2230,71 +2163,98 @@
     );
   }
 
-  /* Quem pediu menos movimento vê o topo de sempre, sólido, sem a troca ao rolar. */
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: scroll()) {
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > .site-header {
-        position: sticky;
-        top: 0;
-        z-index: 6;
-        border-bottom-color: transparent;
-        background: transparent;
-        color: #fff;
-        animation: site-header-solid linear both;
-        animation-timeline: scroll(root);
-        animation-range: 0 80px;
+  /*
+   * Topo por cima da foto (A1, A2). Vale quando o banner com foto é a primeira coisa da página
+   * (`:first-child`: com uma faixa de aviso ou o título antes, nada sobe e o topo fica o de sempre).
+   * A foto sobe a altura medida do topo (`--site-header-top`, de HeaderWatch.tsx, medida sem
+   * rolagem; antes do JavaScript, a altura de uma linha). Transparente no alto da página e sólido ao
+   * rolar (`--scrolled`), em todo navegador e também para quem pediu menos movimento (só sem a
+   * transição). Uma sombra de força fixa no alto da foto deixa o nome e o menu legíveis em foto
+   * clara ou escura, em qualquer cor de site.
+   */
+  &[data-personality='vitrine']:has(> main > .hero.section--image:first-child) {
+    & > .site-header {
+      border-bottom-color: transparent;
+      background-color: transparent;
+      color: #fff;
+    }
+
+    & > .site-header .site-header__bar {
+      min-height: 80px;
+    }
+
+    & > .site-header .site-header__burger {
+      border-color: color-mix(in srgb, currentColor 40%, transparent);
+      color: inherit;
+    }
+
+    & > .site-header .site-header__nav ul a[aria-current='page'] {
+      color: inherit;
+    }
+
+    & > .site-header--rows .site-header__nav {
+      border-top-color: rgb(255 255 255 / 30%);
+    }
+
+    & > .site-header .site-header__mobile {
+      color: var(--color-text);
+    }
+
+    & > :is(.site-header--scrolled, .site-header--open) {
+      border-bottom-color: var(--color-line);
+      background-color: color-mix(in srgb, var(--color-background) 86%, transparent);
+      color: var(--color-text);
+      backdrop-filter: blur(14px) saturate(1.3);
+    }
+
+    & > :is(.site-header--scrolled, .site-header--open).site-header--rows .site-header__nav {
+      border-top-color: var(--color-line);
+    }
+
+    & > main > .hero.section--image:first-child {
+      --header-over-photo: 81px;
+      margin-top: calc(-1 * var(--site-header-top, var(--header-over-photo)));
+    }
+
+    & > main > .hero.section--image:first-child .hero__shade {
+      background:
+        linear-gradient(
+          180deg,
+          rgb(0 0 0 / 45%) 0,
+          rgb(0 0 0 / 45%) var(--site-header-top, var(--header-over-photo)),
+          rgb(0 0 0 / 0%) calc(var(--site-header-top, var(--header-over-photo)) + 72px)
+        ),
+        linear-gradient(
+          180deg,
+          rgb(0 0 0 / 42%) 0%,
+          rgb(0 0 0 / 22%) 28%,
+          color-mix(in srgb, var(--color-deep) 80%, transparent) 60%,
+          color-mix(in srgb, var(--color-deep) 94%, transparent) 100%
+        );
+    }
+
+    & section[id] {
+      scroll-margin-top: 96px;
+    }
+
+    @container site (max-width: 720px) {
+      & > main > .hero.section--image:first-child {
+        --header-over-photo: 65px;
       }
 
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > .site-header
-        .site-header__bar {
-        min-height: 80px;
+      & > .site-header .site-header__bar {
+        min-height: 64px;
       }
+    }
 
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > .site-header
-        .site-header__burger {
-        border-color: color-mix(in srgb, currentColor 40%, transparent);
-        color: inherit;
-      }
-
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > .site-header
-        .site-header__nav
-        ul
-        a[aria-current='page'] {
-        color: inherit;
-      }
-
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > .site-header
-        .site-header__mobile {
-        color: var(--color-text);
-      }
-
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-        > main
-        > .hero.section--image:first-of-type {
-        margin-top: -81px;
-      }
-
-      &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type) section[id] {
-        scroll-margin-top: 96px;
-      }
-
-      @container site (max-width: 720px) {
-        &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-          > .site-header
-          .site-header__bar {
-          min-height: 64px;
-        }
-
-        &[data-personality='vitrine']:has(> main > .hero.section--image:first-of-type)
-          > main
-          > .hero.section--image:first-of-type {
-          margin-top: -65px;
-        }
+    @media (prefers-reduced-motion: no-preference) {
+      & > .site-header {
+        transition:
+          background-color 0.25s,
+          border-color 0.25s,
+          color 0.25s,
+          box-shadow 0.2s,
+          transform 0.25s ease;
       }
     }
   }
@@ -2408,19 +2368,6 @@
   &[data-personality='editorial'] .testimonials figure {
     padding-top: 20px;
     border-top: 2px solid currentColor;
-  }
-}
-
-/*
- * Topo da Vitrine por cima da foto: nos primeiros 80 px de rolagem fica sólido, com o fundo do site
- * um pouco translúcido e a foto desfocada por trás (styles acima).
- */
-@keyframes site-header-solid {
-  to {
-    border-bottom-color: var(--color-line);
-    background-color: color-mix(in srgb, var(--color-background) 86%, transparent);
-    color: var(--color-text);
-    backdrop-filter: blur(14px) saturate(1.3);
   }
 }
 
@@ -3095,12 +3042,6 @@
   font-size: 13px;
 }
 
-/* Mosaico: o botão de abrir a foto fica no fluxo, e a foto dá a altura. */
-.site .gallery--masonry .gallery__open {
-  position: relative;
-  inset: auto;
-}
-
 /* Título e frase de abertura (e o botão do Instagram ao lado, quando cabe). */
 .site .section-head {
   display: flex;
@@ -3246,6 +3187,17 @@
 
 .site .section--brand .product__link:focus-visible {
   outline-color: var(--color-on-primary);
+}
+
+/* Grades iguais (A4): em todo jeito, os cartões têm o mesmo tamanho, e o preço e o botão ficam no
+   pé, na mesma altura entre os cartões, mesmo com nomes ou frases de tamanhos diferentes. */
+.site .products:not(.products--list) .product__price {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.site .products:not(.products--list) .product__price ~ .product__link {
+  margin-top: 6px;
 }
 
 /* Preço comprido ("a partir de R$ 1.200,00"): numa linha só, um pouco menor (achado Products-4). */
@@ -3549,7 +3501,32 @@
   white-space: nowrap;
 }
 
-/* A faixa recebe o foco do teclado para parar (C2: sem botão de parar). */
+/* Botão de pausar (A2): só quando a faixa se mexe (site no ar, sem "reduzir movimento"). */
+.site .announce__pause {
+  display: none;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-inline: 4px clamp(8px, 2cqi, 16px);
+  padding: 0;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.site .announce__pause:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.site .announce__pause:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* A faixa também recebe o foco do teclado para parar enquanto o foco estiver nela. */
 .site .announce__note:focus-visible {
   outline: 3px solid currentColor;
   outline-offset: -3px;
@@ -3571,8 +3548,15 @@
     animation: site-marquee var(--duration, 34s) linear infinite;
   }
   /* Para com o mouse em cima, com o foco do teclado e com o dedo encostado. */
-  .site[data-animate] .announce--move:is(:hover, :focus-within, [data-held]) .announce__track {
+  .site[data-animate]
+    .announce--move:is(:hover, :focus-within, [data-held], [data-paused])
+    .announce__track {
     animation-play-state: paused;
+  }
+  .site[data-animate]
+    :is(.announce--move, :has(> .announce__note > .announce__still--rotate))
+    > .announce__pause {
+    display: grid;
   }
   /* Parada com mais de duas frases: uma por vez, entrando de leve. */
   .site[data-animate] .announce__still--rotate .announce__item:not([data-on]) {
@@ -3580,6 +3564,43 @@
   }
   .site[data-animate] .announce__still--rotate .announce__item[data-on] {
     animation: announce-in 0.5s ease both;
+  }
+}
+/* Aviso no alto do site (extra do A2): fino, na cor do site, acima do topo, em todas as páginas. */
+.site .site-notice {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.site .site-notice[hidden] {
+  display: none;
+}
+
+.site .site-notice > p {
+  margin-block: 0;
+  padding-block: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Celular (A2): a faixa fica numa linha só, com no máximo 44 px, para o banner aparecer logo. */
+@container site (max-width: 720px) {
+  .site .announce {
+    padding-block: 8px;
+    font-size: 16px;
+  }
+
+  .site[data-animate] .announce--move {
+    max-height: 44px;
+    padding-block: 4px;
+  }
+
+  .site .announce__pause {
+    width: 32px;
+    height: 32px;
   }
 }
 @keyframes announce-in {
@@ -3629,21 +3650,8 @@
   max-width: 18ch;
 }
 
-/* Vitrine e Editorial: o 2º produto de cada linha desce um pouco, como numa vitrine. */
-.site[data-personality='vitrine'] .products--three > .product:nth-child(3n + 2) {
-  margin-top: clamp(0px, 6cqi, 72px);
-}
-
 .site[data-personality='vitrine'] .announce {
   font-style: italic;
-}
-
-.site[data-personality='editorial'] .products--three {
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.site[data-personality='editorial'] .products--three > .product:nth-child(3n + 2) {
-  margin-top: clamp(0px, 10cqi, 120px);
 }
 
 .site[data-personality='editorial'] .announce {
@@ -3677,20 +3685,6 @@
 
 .site[data-personality='aconchego'] .price-group__photo {
   border-radius: 999px 999px 28px 28px;
-}
-
-@container site (max-width: 720px) {
-  .site[data-personality='vitrine'] .products--three > .product:nth-child(3n + 2) {
-    margin-top: 0;
-  }
-
-  .site[data-personality='editorial'] .products--three {
-    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
-  }
-
-  .site[data-personality='editorial'] .products--three > .product:nth-child(3n + 2) {
-    margin-top: 0;
-  }
 }
 
 /* Título e frase lado a lado, quando cabem (personalidades novas). */
@@ -3883,6 +3877,21 @@
 
   .site .products--three .product__name {
     font-size: 16px;
+  }
+
+  /* Cartão com frase longa (A4): um por linha, com a foto mais baixa, para a frase caber. */
+  .site .products--three[data-wordy] {
+    --n: 1;
+  }
+
+  .site .products--three[data-wordy] .product__photo {
+    aspect-ratio: 5 / 4;
+  }
+
+  .site .products--three[data-wordy] > .product:last-child:nth-child(odd) {
+    grid-column: auto;
+    justify-self: stretch;
+    width: auto;
   }
 }
 
@@ -4323,39 +4332,76 @@
   }
 }
 
-/* Galeria (C9). Mosaico em linhas (Gallery-3): na ordem da lista, a mesma altura em cada linha e a
-   largura pelo formato da foto (`--ar`, de GalleryGrid), sem cortar. A última linha não estica. */
+/* Galeria em Mosaico (A4, opção; o padrão é a Grade igual): a primeira foto grande, as outras em
+   volta, todas cortadas para preencher. Nunca sobra buraco: as últimas fotos alargam para fechar a
+   linha (`data-end-*` e `data-tall`, de GalleryGrid). 3 colunas; no celular, 2. */
 .site .gallery.gallery--masonry {
-  --row-h: clamp(160px, 22cqi, 260px);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  columns: auto;
-}
-
-.site .gallery.gallery--masonry::after {
-  flex: 999 1 0;
-  content: '';
 }
 
 .site .gallery.gallery--masonry > li {
-  flex: var(--ar, 1) 1 calc(var(--ar, 1) * var(--row-h));
-  margin-bottom: 0;
+  min-width: 0;
 }
 
-.site .gallery--masonry .gallery__frame {
-  aspect-ratio: var(--ar, 1);
+.site .gallery--masonry > li:first-child {
+  grid-row: span 2;
+  grid-column: span 2;
 }
 
-.site .gallery--masonry .gallery__frame img {
+.site .gallery--masonry > li:first-child .gallery__item {
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
-  object-fit: cover;
+}
+
+.site .gallery--masonry > li:first-child .gallery__frame {
+  aspect-ratio: auto;
+  min-height: 100%;
+}
+
+.site .gallery--masonry > li[data-end-wide='2'] {
+  grid-column: span 2;
+}
+
+.site .gallery--masonry > li[data-end-wide='2'] .gallery__frame {
+  aspect-ratio: 2 / 1;
+}
+
+.site .gallery--masonry > li[data-tall] {
+  grid-row: span 3;
 }
 
 @container site (max-width: 720px) {
   .site .gallery.gallery--masonry {
-    --row-h: 120px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .site .gallery--masonry > li[data-end-wide] {
+    grid-column: auto;
+  }
+
+  .site .gallery--masonry > li[data-end-wide] .gallery__frame {
+    aspect-ratio: 1;
+  }
+
+  /* No celular a grande ocupa a largura toda, quadrada (sem outra foto ao lado para dar a altura). */
+  .site .gallery--masonry > li:first-child {
+    grid-row: auto;
+  }
+
+  .site .gallery--masonry > li:first-child .gallery__frame {
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+
+  .site .gallery--masonry > li[data-end-narrow] {
+    grid-column: 1 / -1;
+  }
+
+  .site .gallery--masonry > li[data-end-narrow] .gallery__frame {
+    aspect-ratio: 2 / 1;
   }
 }
 

@@ -19,8 +19,9 @@ import * as migration_20261107_205051_animacao_do_site from './20261107_205051_a
 import * as migration_20261115_022319_personalidade_papel from './20261115_022319_personalidade_papel';
 import * as migration_20261115_022320_personalidade_papel_padrao from './20261115_022320_personalidade_papel_padrao';
 import * as migration_20261116_012023_minhas_secoes from './20261116_012023_minhas_secoes';
-import * as migration_20261116_180000_menu_rodape_whatsapp from './20261116_180000_menu_rodape_whatsapp';
 import * as migration_20261116_170000_versoes_em_cascata from './20261116_170000_versoes_em_cascata';
+import * as migration_20261116_180000_menu_rodape_whatsapp from './20261116_180000_menu_rodape_whatsapp';
+import * as migration_20261122_013907_aviso_no_alto from './20261122_013907_aviso_no_alto';
 
 export const migrations = [
   {
@@ -137,5 +138,10 @@ export const migrations = [
     up: migration_20261116_180000_menu_rodape_whatsapp.up,
     down: migration_20261116_180000_menu_rodape_whatsapp.down,
     name: '20261116_180000_menu_rodape_whatsapp',
+  },
+  {
+    up: migration_20261122_013907_aviso_no_alto.up,
+    down: migration_20261122_013907_aviso_no_alto.down,
+    name: '20261122_013907_aviso_no_alto'
   },
 ];

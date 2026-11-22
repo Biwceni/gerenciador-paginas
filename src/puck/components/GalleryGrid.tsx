@@ -11,7 +11,7 @@ import { galleryColumns } from '../layout'
 type Props = {
   /** Cada foto e a legenda dela (a escrita na galeria ou, sem ela, a descrição da foto). */
   items: { photo: Media; caption: string }[]
-  /** Grade de quadrados ou mosaico em colunas (fotos na proporção delas). */
+  /** Grade igual (quadrados do mesmo tamanho) ou mosaico (uma foto grande e as outras em volta). */
   layout?: 'grid' | 'masonry'
   /** Legenda embaixo de cada foto. Na tela cheia, a legenda aparece sempre. */
   showCaptions?: boolean
@@ -79,28 +79,49 @@ export function GalleryGrid({
     }
   }
 
-  const masonry = layout === 'masonry'
-  // Grade: quadrados que preenchem a moldura. Mosaico: a foto na proporção dela.
-  const picture = (photo: Media) => (
+  // Mosaico com 3 fotos ou mais (com menos, fica a grade): a primeira grande e as outras em volta.
+  const masonry = layout === 'masonry' && total >= 3
+  const picture = (photo: Media, index: number) => (
     <Photo
       className="anim-part"
-      fill={!masonry}
+      fill
       media={photo}
-      sizes="(max-width: 720px) 50vw, 380px"
+      sizes={
+        masonry && index === 0
+          ? '(max-width: 720px) 100vw, 760px'
+          : '(max-width: 720px) 50vw, 380px'
+      }
     />
   )
 
-  // Mosaico em linhas (C9, achado Gallery-3): a ordem da lista, a mesma altura em cada linha e a
-  // largura pelo formato da foto (`--ar`), sem cortar.
-  const ratio = (photo: Media) =>
-    photo.width && photo.height ? Math.round((photo.width / photo.height) * 1000) / 1000 : 1
+  // Mosaico (A4): a última foto que aparece alarga até o fim da linha, para não sobrar buraco. A
+  // grande ocupa 4 casas; no computador são 3 colunas (até 12 fotos antes do "Ver mais"), no celular
+  // 2 (até 10).
+  const shownWide = viewer && !showAll ? Math.min(total, GALLERY_FOLD) : total
+  const shownNarrow = viewer && !showAll ? Math.min(total, GALLERY_FOLD_MOBILE) : total
+  const endWide = (index: number) => {
+    if (!masonry || index === 0 || shownWide === 4) return undefined
+    const rest = shownWide % 3
+    // Sobram 2 casas: a última foto ocupa duas.
+    if (rest === 2) return index === shownWide - 1 ? '2' : undefined
+    // Sobram 2 casas na última linha com uma foto só: a penúltima e a antepenúltima ocupam duas cada
+    // (as duas últimas linhas ficam "1 + 2" e "2 + 1").
+    if (rest === 1) return index === shownWide - 3 || index === shownWide - 2 ? '2' : undefined
+    return undefined
+  }
+  const endNarrow = (index: number) =>
+    masonry && index !== 0 && index === shownNarrow - 1 && (shownNarrow - 1) % 2 === 1
+      ? '2'
+      : undefined
   const items = entries.map(({ photo, caption }, index) => (
     <li
       className="anim-part"
+      data-end-narrow={endNarrow(index)}
+      data-end-wide={endWide(index)}
+      // 4 fotos: a grande ocupa a altura das outras três, empilhadas ao lado.
+      data-tall={masonry && index === 0 && shownWide === 4 ? true : undefined}
       key={`${photo.id}-${index}`}
-      style={
-        masonry ? ({ ...order(index), '--ar': ratio(photo) } as React.CSSProperties) : order(index)
-      }
+      style={order(index)}
     >
       <figure className="gallery__item">
         <div className="gallery__frame">
@@ -111,10 +132,10 @@ export function GalleryGrid({
               onClick={(event) => open(index, event.currentTarget)}
               type="button"
             >
-              {picture(photo)}
+              {picture(photo, index)}
             </button>
           ) : (
-            picture(photo)
+            picture(photo, index)
           )}
         </div>
         {showCaptions && caption && <figcaption className="gallery__caption">{caption}</figcaption>}
@@ -125,10 +146,10 @@ export function GalleryGrid({
   const photo = current === null ? null : photos[current]
   const caption = current === null ? '' : entries[current].caption
   // Grade: colunas pela quantidade, sem foto sozinha na última linha (a sobra fica no centro).
-  const columns = masonry ? Math.min(Math.max(total, 1), 3) : galleryColumns(total)
+  const columns = masonry ? 3 : galleryColumns(total)
   const classes = [
     'gallery',
-    `gallery--${layout}`,
+    `gallery--${masonry ? 'masonry' : 'grid'}`,
     total % 2 && !masonry && 'gallery--odd',
     showCaptions && 'gallery--captions',
   ]

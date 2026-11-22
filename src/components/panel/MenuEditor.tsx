@@ -16,8 +16,10 @@ import {
   SiteFooterView,
   SiteHeaderView,
 } from '@/components/site/SiteChrome'
+import { SiteNoticeView } from '@/components/site/SiteNoticeView'
 import { externalLink, isSafeURL, validateExternalURL, validateLinkInput } from '@/lib/links'
 import { distinctPageTitles } from '@/lib/pageTitle'
+import { activeNotice, NOTICE_MAX } from '@/lib/notice'
 import { panelHref } from '@/lib/panel'
 import type { Header, Media } from '@/payload-types'
 import type { PageSummary } from '@/puck/summary'
@@ -46,7 +48,12 @@ const CTA_TITLE_LIMIT = 50
 type Item = NonNullable<Header['items']>[number]
 type LinkValue = NonNullable<Item['link']>
 type Footer = FooterData
-type HeaderState = { items: Item[]; button: NonNullable<Header['button']>; showButton: boolean }
+type HeaderState = {
+  items: Item[]
+  button: NonNullable<Header['button']>
+  notice: NonNullable<Header['notice']>
+  showButton: boolean
+}
 
 type Props = {
   adminRoute: string
@@ -339,8 +346,10 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   }
 
   // O que a prévia desenha; a mesma coisa na miniatura e na janela de tamanho real.
+  const notice = activeNotice(header.notice)
   const previewContent = (
     <>
+      {part !== 'footer' && notice && <SiteNoticeView text={notice.text} />}
       {part !== 'footer' && (
         <SiteHeaderView
           brand={site.brand}
@@ -619,6 +628,52 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
             )}
           </section>
 
+          <section className="gp-card" onFocus={() => setPart('header')}>
+            <h2>Aviso no alto do site</h2>
+            <p className="gp-small gp-muted">
+              Uma linha fina acima do topo, em todas as páginas. Bom para avisos que valem para o
+              site inteiro, como horário de feriado ou uma promoção.
+            </p>
+            <div className="gp-field">
+              <label htmlFor="hf-notice-text">Texto do aviso</label>
+              <input
+                className="gp-input"
+                id="hf-notice-text"
+                maxLength={NOTICE_MAX}
+                onChange={(event) =>
+                  changeHeader({
+                    ...header,
+                    notice: { ...header.notice, text: event.target.value },
+                  })
+                }
+                placeholder="Ex.: Fechado no feriado de 25/12"
+                value={header.notice.text ?? ''}
+              />
+              <span className="gp-small gp-muted">
+                {(header.notice.text ?? '').length} de {NOTICE_MAX} letras. Vazio: sem aviso.
+              </span>
+            </div>
+            <div className="gp-field">
+              <label htmlFor="hf-notice-until">Mostrar até (opcional)</label>
+              <input
+                className="gp-input"
+                id="hf-notice-until"
+                onChange={(event) =>
+                  changeHeader({
+                    ...header,
+                    notice: {
+                      ...header.notice,
+                      until: event.target.value ? `${event.target.value}T12:00:00.000Z` : null,
+                    },
+                  })
+                }
+                type="date"
+                value={(header.notice.until ?? '').slice(0, 10)}
+              />
+              <span className="gp-small gp-muted">{noticeEndText(header.notice)}</span>
+            </div>
+          </section>
+
           <section className="gp-card" onFocus={() => setPart('footer')}>
             <h2>Chamada no fim do site</h2>
             <p className="gp-small gp-muted">
@@ -815,6 +870,17 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message.replace(/^./, (c) => c.toUpperCase()) : 'Tente de novo.'
 
+/** O que acontece com o aviso, pelo dia escolhido. */
+function noticeEndText(notice: HeaderState['notice']): string {
+  const day = (notice.until ?? '').slice(0, 10)
+  if (!day) return 'Sem dia: fica no ar até você apagar o texto.'
+  const [year, month, date] = day.split('-')
+  if (!activeNotice({ text: 'x', until: notice.until })) {
+    return `Esse dia já passou: o aviso não aparece no site.`
+  }
+  return `Some sozinho depois de ${date}/${month}/${year}.`
+}
+
 /** O cabeçalho como o Payload guarda: botão desligado vai sem texto (e some do site). */
 function toHeaderData(header: HeaderState): HeaderData {
   return {
@@ -823,6 +889,7 @@ function toHeaderData(header: HeaderState): HeaderData {
       ...header.button,
       label: header.showButton ? (header.button.label ?? '').trim() : '',
     },
+    notice: { text: (header.notice.text ?? '').trim(), until: header.notice.until || null },
   }
 }
 

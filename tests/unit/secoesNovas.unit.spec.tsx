@@ -442,7 +442,8 @@ describe('ajustes nas seções que já existem', () => {
         title=""
       />,
     )
-    expect(html).toContain('gallery gallery--masonry gallery--captions')
+    // Com 2 fotos o mosaico ainda não cabe (precisa de 3): fica a grade igual (A4).
+    expect(html).toContain('gallery gallery--grid gallery--captions')
     expect(html).toContain('class="gallery__caption">Bolo de pote de morango</figcaption>')
     expect(html).toContain('class="gallery__caption">Mesa de doces</figcaption>')
     expect(html).toContain('em tela cheia: Mesa de doces')

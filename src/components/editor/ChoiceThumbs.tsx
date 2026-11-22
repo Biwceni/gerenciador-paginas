@@ -182,14 +182,12 @@ export const CHOICE_THUMBS = {
       )}
     </>
   ),
+  // Mosaico (A4): a primeira foto grande e as outras em volta, sem buraco no fim.
   'gallery-masonry': (
     <>
-      <Box f={ACCENT} h={26} o={0.55} r={2} w={22} x={14} y={4} />
-      <Box f={ACCENT} h={18} o={0.4} r={2} w={22} x={14} y={33} />
-      <Box f={ACCENT} h={16} o={0.4} r={2} w={22} x={39} y={4} />
-      <Box f={ACCENT} h={28} o={0.55} r={2} w={22} x={39} y={23} />
-      <Box f={ACCENT} h={22} o={0.55} r={2} w={22} x={64} y={4} />
-      <Box f={ACCENT} h={22} o={0.4} r={2} w={22} x={64} y={29} />
+      <Box f={ACCENT} h={44} o={0.6} r={2} w={44} x={16} y={6} />
+      <Box f={ACCENT} h={20} o={0.45} r={2} w={20} x={64} y={6} />
+      <Box f={ACCENT} h={20} o={0.45} r={2} w={20} x={64} y={30} />
     </>
   ),
   // Fundo da seção (Claro, Suave, Cor do site) e os fundos próprios do banner.
