@@ -8,6 +8,7 @@ import {
   DEFAULT_CTA_TITLE,
   footerContact,
   footerSocial,
+  logoLook,
   siteBrand,
   SiteFooterView,
 } from './SiteChrome'
@@ -44,6 +45,7 @@ export async function SiteFooter({
       cta={cta}
       logo={populatedMedia(site.logo)}
       logoRing={Boolean(site.logoRing?.footer)}
+      look={logoLook(site, populatedMedia(site.logoLight))}
       contact={footerContact(site)}
       menu={!campaign && footer.showMenu !== false ? await getMenuItems(null, draftSite) : []}
       name={site.name || FALLBACK_SITE_NAME}

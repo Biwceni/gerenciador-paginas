@@ -1046,6 +1046,15 @@ export interface Site {
    * Sem logo, o site usa as iniciais do nome.
    */
   logo?: (number | null) | Media;
+  /**
+   * Desligado, o topo mostra só o logo. Ligue se o logo não tem o nome escrito.
+   */
+  showNameWithLogo?: boolean | null;
+  /**
+   * Usada no lugar do logo sobre fundo escuro: rodapé, topo escuro e topo por cima da foto.
+   */
+  logoLight?: (number | null) | Media;
+  logoOnDark?: ('auto' | 'white' | 'plate') | null;
   logoRing?: {
     header?: boolean | null;
     footer?: boolean | null;
@@ -1075,6 +1084,10 @@ export interface Site {
     surface: string;
     text: string;
     footer: string;
+    /**
+     * Opcional. Em branco, esses lugares usam a cor principal.
+     */
+    second?: string | null;
   };
   /**
    * A fonte é copiada do Google Fonts para o seu site quando você publica.
@@ -1228,6 +1241,9 @@ export interface SiteSelect<T extends boolean = true> {
   name?: T;
   tagline?: T;
   logo?: T;
+  showNameWithLogo?: T;
+  logoLight?: T;
+  logoOnDark?: T;
   logoRing?:
     | T
     | {
@@ -1246,6 +1262,7 @@ export interface SiteSelect<T extends boolean = true> {
         surface?: T;
         text?: T;
         footer?: T;
+        second?: T;
       };
   fonts?:
     | T

@@ -12,6 +12,11 @@ export type SettingsState = {
   name: string
   tagline: string
   logo: number | null
+  /** A3: o nome ao lado do logo no topo (desligado: só o logo). */
+  showNameWithLogo: boolean
+  /** E2: versão clara do logo e o que fazer com o logo sobre fundo escuro sem ela. */
+  logoLight: number | null
+  logoOnDark: 'auto' | 'white' | 'plate'
   homepage: number | null
   privacyPage: number | null
   colors: SiteColors
@@ -42,6 +47,10 @@ export function toSettingsState(site: Partial<Site>): SettingsState {
     name: site.name ?? '',
     tagline: site.tagline ?? '',
     logo: relationID(site.logo),
+    showNameWithLogo: site.showNameWithLogo === true,
+    logoLight: relationID(site.logoLight),
+    logoOnDark:
+      site.logoOnDark === 'white' || site.logoOnDark === 'plate' ? site.logoOnDark : 'auto',
     homepage: relationID(site.homepage),
     privacyPage: relationID(site.privacyPage),
     colors: { ...DEFAULT_COLORS, ...site.colors },
@@ -83,9 +92,12 @@ export function toSiteData(state: SettingsState) {
     name: state.name.trim(),
     tagline: orNull(state.tagline),
     logo: state.logo,
+    showNameWithLogo: state.showNameWithLogo,
+    logoLight: state.logoLight,
+    logoOnDark: state.logoOnDark,
     homepage: state.homepage,
     privacyPage: state.privacyPage,
-    colors: state.colors,
+    colors: { ...state.colors, second: state.colors.second || null },
     personality: state.personality,
     motion: state.motion,
     fonts: { headings: orNull(state.fonts.headings), body: orNull(state.fonts.body) },
@@ -146,6 +158,7 @@ export function sameLook(a: SiteLook, b: SiteLook): boolean {
   return (
     a.personality === b.personality &&
     COLOR_KEYS.every((key) => a.colors[key]?.toLowerCase() === b.colors[key]?.toLowerCase()) &&
+    (a.colors.second || '').toLowerCase() === (b.colors.second || '').toLowerCase() &&
     a.fonts.headings.trim() === b.fonts.headings.trim() &&
     a.fonts.body.trim() === b.fonts.body.trim()
   )

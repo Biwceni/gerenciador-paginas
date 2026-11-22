@@ -15,6 +15,7 @@ import {
   type SiteBrand,
   SiteFooterView,
   SiteHeaderView,
+  type LogoLook,
 } from '@/components/site/SiteChrome'
 import { SiteNoticeView } from '@/components/site/SiteNoticeView'
 import { externalLink, isSafeURL, validateExternalURL, validateLinkInput } from '@/lib/links'
@@ -78,6 +79,7 @@ type Props = {
     brand: SiteBrand
     shortcuts: HeaderShortcuts
     logoRing: { header: boolean; footer: boolean }
+    look: LogoLook
   }
 }
 
@@ -282,8 +284,9 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
   const buttonLabel = header.showButton ? (header.button.label ?? '').trim() : ''
   const buttonHref = buttonLabel ? previewHref(header.button.link) : null
   const menuFit = estimateMenuFit(
-    site.name,
-    Boolean(site.logo),
+    // A3: só o logo no topo (até 200 px, perto de 18 letras); o nome não ocupa lugar.
+    site.logo && !site.look.showName ? 'x'.repeat(18) : site.name,
+    Boolean(site.logo) && site.look.showName,
     header.items.map((item) => item.label),
     buttonLabel,
   )
@@ -357,6 +360,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           items={previewItems}
           logo={site.logo}
           logoRing={site.logoRing.header}
+          look={site.look}
           name={site.name}
           shortcuts={site.shortcuts}
         />
@@ -389,6 +393,7 @@ export function MenuEditor({ adminRoute, apiRoute, initial, pages, site }: Props
           }
           logo={site.logo}
           logoRing={site.logoRing.footer}
+          look={site.look}
           menu={footer.showMenu ? previewItems : []}
           name={site.name}
           privacyHref={site.privacyHref}

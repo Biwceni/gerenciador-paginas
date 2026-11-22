@@ -773,10 +773,11 @@ const sections: { [K in keyof Components]: Section<K> } = {
         'Fundo',
         [
           { value: 'brand', label: 'Cor do site', thumb: 'bg-brand' },
+          { value: 'second', label: 'Segunda cor', thumb: 'bg-second' },
           { value: 'soft', label: 'Suave', thumb: 'bg-soft' },
           { value: 'light', label: 'Igual ao site', thumb: 'bg-light' },
         ],
-        3,
+        2,
       ),
     },
     defaultProps: {

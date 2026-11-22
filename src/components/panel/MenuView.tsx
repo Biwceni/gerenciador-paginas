@@ -5,6 +5,7 @@ import {
   footerContact,
   footerSocial,
   headerShortcuts,
+  logoLook,
   siteBrand,
 } from '@/components/site/SiteChrome'
 import { themeStyle } from '@/components/site/theme'
@@ -86,6 +87,7 @@ export async function MenuView(props: AdminViewServerProps) {
             header: Boolean(site.logoRing?.header),
             footer: Boolean(site.logoRing?.footer),
           },
+          look: logoLook(site, populatedMedia(site.logoLight)),
         }}
       />
     </PanelTemplate>

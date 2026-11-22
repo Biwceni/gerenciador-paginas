@@ -22,6 +22,7 @@ import * as migration_20261116_012023_minhas_secoes from './20261116_012023_minh
 import * as migration_20261116_170000_versoes_em_cascata from './20261116_170000_versoes_em_cascata';
 import * as migration_20261116_180000_menu_rodape_whatsapp from './20261116_180000_menu_rodape_whatsapp';
 import * as migration_20261122_013907_aviso_no_alto from './20261122_013907_aviso_no_alto';
+import * as migration_20261122_112409_marca_logo_segunda_cor from './20261122_112409_marca_logo_segunda_cor';
 
 export const migrations = [
   {
@@ -142,6 +143,11 @@ export const migrations = [
   {
     up: migration_20261122_013907_aviso_no_alto.up,
     down: migration_20261122_013907_aviso_no_alto.down,
-    name: '20261122_013907_aviso_no_alto'
+    name: '20261122_013907_aviso_no_alto',
+  },
+  {
+    up: migration_20261122_112409_marca_logo_segunda_cor.up,
+    down: migration_20261122_112409_marca_logo_segunda_cor.down,
+    name: '20261122_112409_marca_logo_segunda_cor'
   },
 ];

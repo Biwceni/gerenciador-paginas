@@ -104,3 +104,14 @@ export function distinctSurface(surface: string, background: string, text: strin
   }
   return blendColors(text, background, 0.12)
 }
+
+/**
+ * As letras sobre a segunda cor (E1): branco ou a cor do texto do site, a que ler melhor. Se nenhuma
+ * das duas chega a 4,5:1, vale o preto ou o branco que ler melhor.
+ */
+export function secondTextColor(second: string, text: string): string {
+  const best = ['#ffffff', text].reduce((a, b) =>
+    contrastRatio(b, second) > contrastRatio(a, second) ? b : a,
+  )
+  return contrastRatio(best, second) >= 4.5 ? best : readableTextColor(second)
+}

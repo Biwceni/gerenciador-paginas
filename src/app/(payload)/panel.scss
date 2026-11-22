@@ -4637,3 +4637,211 @@ textarea.gp-input {
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+// ---------- Sua marca, etapa 2a: logo no topo e em fundo escuro (A3, E2), segunda cor (E1) ----------
+
+.gp-logoopts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 4px;
+
+  // A prévia mede a largura que sobra: sem isto, a janela de 390 px estica a coluna.
+  > .gp-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// O topo do site no celular, numa janela estreita de 390 px.
+.gp-logoopts__phone {
+  max-width: 390px;
+  overflow: hidden;
+  border: 1px solid var(--gp-line);
+  border-radius: 12px;
+}
+
+.gp-logodark {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  > legend {
+    padding: 0;
+  }
+}
+
+.gp-logodark__light {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+// Amostra do logo sobre o fundo escuro do site: como vai ficar no rodapé e no topo escuro.
+.gp-logodark__sample {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 112px;
+  height: 64px;
+  padding: 10px;
+  border-radius: 10px;
+  color: rgb(255 255 255 / 70%);
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.gp-logodark__sample--white img {
+  filter: brightness(0) invert(1);
+}
+
+.gp-logodark__sample--plate img {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.gp-logodark__list {
+  display: grid;
+  gap: 8px;
+}
+
+.gp-logodark__choice {
+  align-items: center;
+
+  > span:last-child {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.gp-tabicon {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 260px;
+  padding: 8px 14px;
+  border: 1px solid var(--gp-line);
+  border-radius: 10px 10px 0 0;
+  background: var(--gp-bg);
+}
+
+.gp-tabicon__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  border-radius: 4px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.gp-tabicon__title {
+  overflow: hidden;
+  font-size: var(--gp-fs-small);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.gp-cutout {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+
+.gp-cutout__compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  figure {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    text-align: center;
+  }
+
+  figcaption {
+    color: var(--gp-muted);
+    font-size: var(--gp-fs-small);
+  }
+}
+
+.gp-cutout__box {
+  display: grid;
+  place-items: center;
+  height: 140px;
+  padding: 12px;
+  border: 1px solid var(--gp-line);
+  border-radius: 10px;
+  background: var(--gp-surface);
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+// Xadrez cinza: o que ficou transparente aparece como transparente.
+.gp-cutout__box--clear {
+  background: conic-gradient(#d9d9d4 0 25%, #ffffff 0 50%, #d9d9d4 0 75%, #ffffff 0) 0 0 / 16px 16px;
+}
+
+.gp-second-suggest {
+  justify-self: start;
+
+  i {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 14%);
+  }
+}
+
+.gp-colorrow--second {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
+.gp-colorrow__end {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+
+  .gp-input--hex {
+    width: 108px;
+  }
+}
+
+@media (max-width: 720px) {
+  .gp-logodark__light {
+    align-items: flex-start;
+  }
+
+  .gp-logodark__sample {
+    width: 88px;
+    height: 56px;
+    padding: 8px;
+  }
+
+  .gp-colorrow--second {
+    grid-template-columns: 44px minmax(0, 1fr);
+
+    .gp-colorrow__end {
+      grid-column: 1 / -1;
+    }
+  }
+}

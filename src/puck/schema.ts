@@ -323,8 +323,8 @@ export const announcementPropsSchema = z.object({
     .min(1)
     .max(5),
   mode: z.enum(ANNOUNCEMENT_MODES).default('move'),
-  // Na cor principal por padrão.
-  style: sectionStyle.default('brand'),
+  // Na cor principal por padrão. "Segunda cor" (E1) usa a segunda cor de Sua marca, ou a principal.
+  style: z.enum(['light', 'soft', 'brand', 'second']).default('brand'),
 })
 
 /** Instagram: fotos escolhidas da biblioteca (não atualizam sozinhas) e o @ das Configurações. */

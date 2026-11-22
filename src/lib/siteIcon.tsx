@@ -9,7 +9,7 @@ import { DEFAULT_COLORS } from './theme'
 
 /**
  * O logo das configurações num quadrado, inteiro, sobre a cor de fundo do site (um logo largo, com o
- * nome por extenso, não perde as pontas). Em PNG; nada se não der.
+ * nome por extenso, não perde as pontas), sem a sobra em volta do desenho. Em PNG; nada se não der.
  */
 async function logoIcon(url: string, size: number, background: string): Promise<Buffer | null> {
   try {
@@ -18,7 +18,26 @@ async function logoIcon(url: string, size: number, background: string): Promise<
     })
     if (!response.ok) return null
     const file = Buffer.from(await response.arrayBuffer())
-    return await sharp(file).resize(size, size, { fit: 'contain', background }).png().toBuffer()
+    // Extra do E2: tira a sobra em volta do desenho (transparente ou da cor da borda) antes de
+    // encaixar, para o logo ocupar o quadrado todo, com uma margem pequena.
+    const trimmed = await sharp(file)
+      .trim({ threshold: 12 })
+      .toBuffer()
+      .catch(() => file)
+    const inner = Math.round(size * 0.88)
+    const pad = Math.floor((size - inner) / 2)
+    return await sharp(trimmed)
+      .resize(inner, inner, { fit: 'contain', background })
+      .extend({
+        top: pad,
+        bottom: size - inner - pad,
+        left: pad,
+        right: size - inner - pad,
+        background,
+      })
+      .flatten({ background })
+      .png()
+      .toBuffer()
   } catch {
     return null
   }

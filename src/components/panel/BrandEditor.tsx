@@ -11,6 +11,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { thumbnailURL } from '@/components/editor/context'
 import {
   type FooterSocial,
+  logoLook,
+  type LogoLook,
   type MenuItem,
   siteBrand,
   SiteFooterView,
@@ -22,9 +24,11 @@ import {
   brandPalette,
   type BrandPalette,
   currentCombo,
+  isWideLogo,
   logoBlends,
   type LogoColor,
   pickMainColor,
+  suggestSecond,
 } from '@/lib/brand'
 import { HEX_COLOR_PATTERN } from '@/lib/colors'
 import { type Business, businessLabel, FONT_PAIRS } from '@/lib/fontPairs'
@@ -53,6 +57,7 @@ import {
 import type { PuckPageData } from '@/puck/schema'
 
 import { fontStack, googleFontsURL, useFontSample } from './fontSamples'
+import { LogoOptions } from './LogoOptions'
 import { readLogoColors } from './logoColors'
 import { PanelDialog } from './PanelDialog'
 import { PanelIcon } from './PanelIcon'
@@ -168,6 +173,7 @@ export function BrandEditor({
 
   const [photos, setPhotos] = useState(initialPhotos)
   const [choosing, setChoosing] = useState(false)
+  const [choosingLight, setChoosingLight] = useState(false)
   // Resultado da leitura, guardado com o endereço do logo lido: trocar o logo invalida o anterior.
   const [read, setRead] = useState<{ url: string; colors: LogoColor[] | null } | null>(null)
   const [main, setMain] = useState<string | null>(null)
@@ -180,6 +186,15 @@ export function BrandEditor({
 
   const logo = photos.find((item) => item.id === state.logo) ?? null
   const logoURL = logo ? thumbnailURL(logo) : undefined
+  const logoLight = photos.find((item) => item.id === state.logoLight) ?? null
+  const look = logoLook(
+    {
+      showNameWithLogo: state.showNameWithLogo,
+      logoOnDark: state.logoOnDark,
+      colors: state.colors,
+    },
+    logoLight,
+  )
 
   // Cores de hoje, para a leitura (que termina depois) voltar a elas se o logo não der para ler.
   const colorsNow = useRef(state.colors)
@@ -260,10 +275,19 @@ export function BrandEditor({
   const combos = useMemo(() => brandCombos(palette), [palette])
   const activeCombo = currentCombo(state.colors, combos)
 
-  const applyColors = (colors: SiteColors) => {
+  const applyColors = (base: SiteColors) => {
+    // As combinações e os atalhos trazem as cinco cores de base: a segunda cor (E1) continua.
+    const colors = { ...base, second: state.colors.second ?? null }
     setHexText(colors)
     update({ colors, logoRing: ringFor(colors, logoColors) ?? state.logoRing })
   }
+  const setSecond = (value: string | null) => {
+    setHexText((current) => ({ ...current, second: value ?? '' }))
+    if (value === null || HEX_COLOR_PATTERN.test(value)) {
+      update({ colors: { ...state.colors, second: value ? value.toLowerCase() : null } })
+    }
+  }
+  const secondSuggestion = logoColors && main ? suggestSecond(logoColors, main) : null
   const setColor = (key: keyof SiteColors, value: string) => {
     setHexText((current) => ({ ...current, [key]: value }))
     if (HEX_COLOR_PATTERN.test(value)) {
@@ -326,7 +350,36 @@ export function BrandEditor({
   const publish = () => (failing.length ? setAskContrast(true) : void draft.publish())
 
   const preview = (
-    <BrandPreview chrome={chrome} home={home} logo={logo} photos={photos} state={state} />
+    <BrandPreview
+      chrome={chrome}
+      home={home}
+      logo={logo}
+      look={look}
+      photos={photos}
+      state={state}
+    />
+  )
+
+  // A3: o topo no celular, logo abaixo das opções do logo.
+  const headerPreview = (
+    <SiteFrame
+      fontFaces={fontFaces}
+      maxHeight={110}
+      stylesheets={previewFonts.map(googleFontCSS)}
+      theme={theme}
+      title="Topo do site no celular"
+      width={390}
+    >
+      <SiteHeaderView
+        brand={siteBrand({ personality: state.personality, tagline: state.tagline })}
+        button={chrome.button}
+        items={chrome.items}
+        logo={logo}
+        logoRing={state.logoRing.header}
+        look={look}
+        name={siteName}
+      />
+    </SiteFrame>
   )
 
   return (
@@ -508,6 +561,19 @@ export function BrandEditor({
               </div>
             </div>
 
+            {logo && (
+              <LogoOptions
+                headerPreview={headerPreview}
+                light={logoLight}
+                logo={logo}
+                onChooseLight={() => setChoosingLight(true)}
+                onUploaded={(uploaded) => setPhotos((current) => [uploaded, ...current])}
+                photos={photos}
+                state={state}
+                update={update}
+              />
+            )}
+
             <div aria-live="polite">
               {reading === 'reading' && (
                 <p className="gp-small gp-muted">Lendo as cores do logo…</p>
@@ -538,6 +604,16 @@ export function BrandEditor({
                     />
                   ))}
                 </div>
+                {secondSuggestion && secondSuggestion !== state.colors.second && (
+                  <button
+                    className="gp-btn gp-btn--sm gp-btn--ghost gp-second-suggest"
+                    onClick={() => setSecond(secondSuggestion)}
+                    type="button"
+                  >
+                    <i aria-hidden="true" style={{ background: secondSuggestion }} />
+                    Usar a outra cor do logo como segunda cor
+                  </button>
+                )}
               </div>
             )}
 
@@ -642,6 +718,57 @@ export function BrandEditor({
                         />
                       </div>
                     ))}
+                    <div className="gp-colorrow gp-colorrow--second">
+                      <input
+                        aria-label="Segunda cor"
+                        onChange={(event) => setSecond(event.target.value)}
+                        type="color"
+                        value={state.colors.second || state.colors.primary}
+                      />
+                      <div>
+                        <label htmlFor="mc-hex-second">
+                          <b>Segunda cor (opcional)</b>
+                        </label>
+                        <span className="gp-hint">
+                          {state.colors.second
+                            ? 'Faixa de aviso, selos e ofertas'
+                            : 'Sem ela, a faixa de aviso, os selos e as ofertas usam a cor principal'}
+                        </span>
+                      </div>
+                      <div className="gp-colorrow__end">
+                        <input
+                          aria-invalid={
+                            Boolean(hexText.second) && !HEX_COLOR_PATTERN.test(hexText.second ?? '')
+                          }
+                          className="gp-input gp-input--hex"
+                          id="mc-hex-second"
+                          maxLength={7}
+                          onBlur={() =>
+                            setHexText((current) => ({
+                              ...current,
+                              second: state.colors.second ?? '',
+                            }))
+                          }
+                          onChange={(event) => {
+                            const value = event.target.value.trim()
+                            if (!value) setSecond(null)
+                            else setSecond(value)
+                          }}
+                          placeholder="Sem"
+                          spellCheck={false}
+                          value={hexText.second ?? ''}
+                        />
+                        {state.colors.second && (
+                          <button
+                            className="gp-btn gp-btn--sm gp-btn--ghost"
+                            onClick={() => setSecond(null)}
+                            type="button"
+                          >
+                            Tirar
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div aria-live="polite" className="gp-contrast">
                     {failing.map((warning) => (
@@ -919,12 +1046,26 @@ export function BrandEditor({
           onClose={() => setChoosing(false)}
           onPick={(picked) => {
             logoChanged.current = true
-            update({ logo: picked.id })
+            // E2: logo largo quase sempre já tem o nome escrito; aí o topo mostra só o logo.
+            update({ logo: picked.id, showNameWithLogo: !isWideLogo(picked) })
             setChoosing(false)
           }}
           onUploaded={(uploaded) => setPhotos((current) => [uploaded, ...current])}
           photos={photos}
           title="Escolha o logo"
+        />
+      )}
+
+      {choosingLight && (
+        <PhotoChooser
+          onClose={() => setChoosingLight(false)}
+          onPick={(picked) => {
+            update({ logoLight: picked.id })
+            setChoosingLight(false)
+          }}
+          onUploaded={(uploaded) => setPhotos((current) => [uploaded, ...current])}
+          photos={photos}
+          title="Escolha a versão clara do logo"
         />
       )}
     </div>
@@ -939,12 +1080,14 @@ function BrandPreview({
   chrome,
   home,
   logo,
+  look,
   photos,
   state,
 }: {
   chrome: Chrome
   home: BrandHome | null
   logo: Media | null
+  look: LogoLook
   photos: Media[]
   state: SettingsState
 }) {
@@ -977,6 +1120,7 @@ function BrandPreview({
         items={chrome.items}
         logo={logo}
         logoRing={state.logoRing.header}
+        look={look}
         name={name}
       />
       {home && metadata ? (
@@ -1023,6 +1167,7 @@ function BrandPreview({
         brand={brand}
         campaign={home?.campaign}
         logoRing={state.logoRing.footer}
+        look={look}
         contact={{
           whatsapp: state.contact.whatsapp || null,
           whatsappHref: whatsAppURL(state.contact.whatsapp),
