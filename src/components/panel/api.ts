@@ -6,7 +6,7 @@ import { RequestError, stillLoggedIn } from '@/components/editor/api'
 import { askToLogin, request, SessionEndedError } from './session'
 import { FORM_STARTERS } from '@/lib/forms'
 import type { Footer, Form, Header, Page, Site } from '@/payload-types'
-import { emptyPageContent, type PageContent } from '@/puck/schema'
+import { emptyPageContent, HERO_SLIDE_DEFAULTS, type PageContent } from '@/puck/schema'
 
 import { lookOf, type SiteData, type SiteLook, toSettingsState, toSiteData } from './settings'
 
@@ -25,6 +25,7 @@ export function blankContent(title: string): PageContent {
   content.data.content.push({
     type: 'Hero',
     props: {
+      ...HERO_SLIDE_DEFAULTS,
       id: `Hero-${crypto.randomUUID()}`,
       title,
       text: '',

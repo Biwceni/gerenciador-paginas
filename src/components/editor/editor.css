@@ -437,6 +437,57 @@ textarea.ed-input {
   gap: 10px;
 }
 
+/* Como a foto ocupa o espaço (C2): ocupa a linha toda, embaixo da foto. */
+.ed-photo-fit {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 8px;
+}
+
+.ed-photo-fit__label {
+  font-size: var(--gp-fs-small);
+  font-weight: 700;
+}
+
+.ed-photo-fit__backdrop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ed-photo-fit__backdrop legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: var(--gp-fs-small);
+  font-weight: 700;
+}
+
+.ed-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--ed-line-strong);
+  border-radius: 999px;
+  font-size: var(--gp-fs-small);
+  cursor: pointer;
+}
+
+.ed-radio:has(input:checked) {
+  border-color: var(--ed-accent);
+  box-shadow: inset 0 0 0 1px var(--ed-accent);
+  font-weight: 700;
+}
+
+.ed-radio input {
+  margin: 0;
+}
+
 .ed-photo-field__actions {
   display: grid;
   gap: 6px;

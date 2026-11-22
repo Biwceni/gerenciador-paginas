@@ -1,5 +1,11 @@
 import { PRIVACY_TITLE } from '../../lib/privacy'
-import type { ButtonValue, FeatureIconName, LinkRef, PageComponent } from '../../puck/schema'
+import {
+  type ButtonValue,
+  type FeatureIconName,
+  HERO_SLIDE_DEFAULTS,
+  type LinkRef,
+  type PageComponent,
+} from '../../puck/schema'
 
 // Montadores das seções dos modelos (redesign v3, entrega 6). Os textos são de exemplo, no ramo do
 // cliente, com `{nome}` e `{cidade}` no lugar do nome do negócio e da cidade (trocados ao aplicar o
@@ -49,6 +55,7 @@ export function pageBuilder() {
     }): PageComponent => ({
       type: 'Hero',
       props: {
+        ...HERO_SLIDE_DEFAULTS,
         id: id('Hero'),
         title: o.title,
         text: o.text,
@@ -66,6 +73,7 @@ export function pageBuilder() {
     ): PageComponent => ({
       type: 'TextImage',
       props: {
+        button: null,
         id: id('TextImage', o.id),
         menuLabel: o.menu ?? '',
         title: o.title,
@@ -127,6 +135,7 @@ export function pageBuilder() {
     gallery: (o: Common & { title: string; layout?: 'grid' | 'masonry' }): PageComponent => ({
       type: 'Gallery',
       props: {
+        fit: 'cover',
         id: id('Gallery', o.id),
         menuLabel: o.menu ?? '',
         title: o.title,
@@ -142,6 +151,8 @@ export function pageBuilder() {
     ): PageComponent => ({
       type: 'CallToAction',
       props: {
+        layout: 'block',
+        tag: '',
         id: id('CallToAction', o.id),
         menuLabel: o.menu ?? '',
         title: o.title,

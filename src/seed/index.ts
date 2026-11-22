@@ -4,6 +4,7 @@ import type { Page } from '../payload-types'
 import {
   type ColumnPiece,
   CONTENT_VERSION,
+  HERO_SLIDE_DEFAULTS,
   type PageComponent,
   type PageContent,
 } from '../puck/schema'
@@ -52,6 +53,8 @@ const pages: SeedPage[] = [
       {
         type: 'CallToAction',
         props: {
+          layout: 'block',
+          tag: '',
           id: 'cta-novidades',
           menuLabel: '',
           title: 'Novidades',
@@ -71,6 +74,7 @@ const pages: SeedPage[] = [
       {
         type: 'Hero',
         props: {
+          ...HERO_SLIDE_DEFAULTS,
           id: 'hero-contato',
           title: HERO_TITLE,
           text: SHORT,
@@ -124,6 +128,7 @@ const pages: SeedPage[] = [
       {
         type: 'Hero',
         props: {
+          ...HERO_SLIDE_DEFAULTS,
           id: 'hero-cafes',
           title: HERO_TITLE,
           text: SHORT,
@@ -155,6 +160,8 @@ const pages: SeedPage[] = [
       {
         type: 'CallToAction',
         props: {
+          layout: 'block',
+          tag: '',
           id: 'cta-cafes',
           menuLabel: '',
           title: 'Novidades em breve',
@@ -174,6 +181,7 @@ const pages: SeedPage[] = [
       {
         type: 'Hero',
         props: {
+          ...HERO_SLIDE_DEFAULTS,
           id: 'hero-sobre',
           title: HERO_TITLE,
           text: SHORT,
@@ -189,6 +197,7 @@ const pages: SeedPage[] = [
       {
         type: 'TextImage',
         props: {
+          button: null,
           id: 'texto-sobre',
           menuLabel: '',
           title: 'Nossa história',
@@ -242,6 +251,7 @@ const pages: SeedPage[] = [
       {
         type: 'Gallery',
         props: {
+          fit: 'cover',
           id: 'galeria-sobre',
           menuLabel: '',
           title: 'Nosso cantinho',
@@ -257,6 +267,8 @@ const pages: SeedPage[] = [
       {
         type: 'CallToAction',
         props: {
+          layout: 'block',
+          tag: '',
           id: 'cta-sobre',
           menuLabel: '',
           title: 'Venha tomar um café',
@@ -276,6 +288,7 @@ const pages: SeedPage[] = [
       {
         type: 'Hero',
         props: {
+          ...HERO_SLIDE_DEFAULTS,
           id: 'hero-inicio',
           title: HERO_TITLE,
           text: SHORT,
@@ -294,6 +307,7 @@ const pages: SeedPage[] = [
       {
         type: 'TextImage',
         props: {
+          button: null,
           id: 'texto-inicio',
           menuLabel: '',
           title: 'Do grão à xícara',
@@ -307,6 +321,8 @@ const pages: SeedPage[] = [
       {
         type: 'CallToAction',
         props: {
+          layout: 'block',
+          tag: '',
           id: 'cta-inicio',
           menuLabel: '',
           title: 'Bateu a vontade?',

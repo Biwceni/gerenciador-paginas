@@ -16,6 +16,7 @@ import { countsVisibleLetters, fieldLimit } from '@/puck/fieldLimits'
 import { visibleLength } from '@/puck/limits'
 
 import { usePuck } from './puck'
+import { OnlyWhen, type ShowWhen } from './onlyWhen'
 
 const numbers = new Intl.NumberFormat('pt-BR')
 
@@ -164,7 +165,19 @@ export function GrowingText({
  * sempre, e embaixo "32 de 60". Perto do fim o número muda de cor; passou, o campo fica marcado e
  * diz quanto encurtar. O limite vem do formato da página (`fieldLimit`).
  */
-export function CountedField({
+export function CountedField(props: React.ComponentProps<typeof CountedInner>) {
+  // Campo de texto que só vale para algumas escolhas da seção (como a etiqueta da faixa fina).
+  const when = props.field?.showWhen
+  return when ? (
+    <OnlyWhen {...when}>
+      <CountedInner {...props} />
+    </OnlyWhen>
+  ) : (
+    <CountedInner {...props} />
+  )
+}
+
+function CountedInner({
   children,
   field,
   id: fieldId,
@@ -174,7 +187,7 @@ export function CountedField({
   value,
 }: {
   children: React.ReactNode
-  field?: { type?: string; label?: string; placeholder?: string }
+  field?: { type?: string; label?: string; placeholder?: string; showWhen?: ShowWhen }
   id?: string
   name: string
   onChange?: Change

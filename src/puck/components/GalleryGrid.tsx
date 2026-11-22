@@ -17,6 +17,8 @@ type Props = {
   showCaptions?: boolean
   /** No site, cada foto abre em tela cheia; no editor, não (o clique escolhe a seção). */
   viewer: boolean
+  /** Fotos inteiras, com o fundo neutro nas sobras, em vez de cortadas no quadrado (C2). */
+  fit?: 'cover' | 'contain'
 }
 
 /** Quantas fotos aparecem antes do "Ver mais fotos": no computador e no celular (2 colunas). */
@@ -44,6 +46,7 @@ export function GalleryGrid({
   layout = 'grid',
   showCaptions = false,
   viewer,
+  fit = 'cover',
 }: Props) {
   const photos = entries.map((entry) => entry.photo)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -85,6 +88,7 @@ export function GalleryGrid({
     <Photo
       className="anim-part"
       fill
+      fit={fit === 'contain' ? 'contain' : undefined}
       media={photo}
       sizes={
         masonry && index === 0

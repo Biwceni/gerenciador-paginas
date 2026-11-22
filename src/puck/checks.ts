@@ -7,6 +7,11 @@ import { INSTAGRAM_MIN_PHOTOS, type PuckPageData, visibleColumns } from './schem
 
 export type SectionCheck = { title: string; text: string }
 
+/** Chamadas em faixa fina na página (C4). */
+export const countStrips = (data: Pick<PuckPageData, 'content'>) =>
+  data.content.filter((item) => item.type === 'CallToAction' && item.props.layout === 'strip')
+    .length
+
 /** Nomes que o editor põe nos produtos e itens novos (`editor-config.tsx`). */
 const EXAMPLE_NAMES = new Set(['Nome do produto', 'Nome do item', 'Novo item'])
 
@@ -31,6 +36,15 @@ export function sectionChecks(
   const priceItems = data.content.flatMap((item) =>
     item.type === 'PriceList' ? item.props.groups.flatMap((group) => group.items) : [],
   )
+
+  // Faixa fina (C4): no máximo uma por página. Duas viram ruído e uma apaga a outra.
+  const strips = countStrips(data)
+  if (strips > 1) {
+    checks.push({
+      title: `A página tem ${strips} chamadas em faixa fina`,
+      text: 'Use no máximo uma faixa fina por página. Troque as outras para o jeito Bloco ou tire.',
+    })
+  }
 
   // Produto sem foto não aparece no site.
   const productsWithoutPhoto = products.filter((product) => !withPhoto(product.image)).length

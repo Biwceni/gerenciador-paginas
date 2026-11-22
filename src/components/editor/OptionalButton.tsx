@@ -9,6 +9,7 @@ type ObjectFieldProps = {
   name: string
   readOnly?: boolean
   value?: unknown
+  onChange?: (value: unknown) => void
 }
 
 /** O campo é um botão de seção: texto e destino. */
@@ -23,7 +24,7 @@ const emptyLabel = (value: unknown) =>
  * tracejado, "+ Pôr um botão (opcional)" (A5, achado ODO5): antes os dois campos vazios pareciam
  * um botão esquecido. Um toque abre os campos, com o foco no texto do botão.
  */
-export function OptionalButton({ children, field, readOnly, value }: ObjectFieldProps) {
+export function OptionalButton({ children, field, onChange, readOnly, value }: ObjectFieldProps) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   const asked = useRef(false)
@@ -45,6 +46,9 @@ export function OptionalButton({ children, field, readOnly, value }: ObjectField
         disabled={readOnly}
         onClick={() => {
           asked.current = true
+          // Botão ainda sem nada guardado (o segundo botão do Banner, o do Texto com foto): vira
+          // um botão vazio, para o texto digitado ter onde ficar.
+          if (value == null) onChange?.({ label: '', link: null })
           setOpen(true)
         }}
         type="button"

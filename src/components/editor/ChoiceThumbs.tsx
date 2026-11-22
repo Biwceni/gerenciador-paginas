@@ -213,6 +213,31 @@ export const CHOICE_THUMBS = {
       <Box f={ACCENT} h={56} o={0.55} r={0} w={42} x={58} y={0} />
     </>
   ),
+  // Como a foto ocupa o espaço (C2): preenche (corta as pontas) ou inteira, com sobra dos lados.
+  'fit-cover': (
+    <>
+      <Box f={SURFACE} h={44} r={3} w={64} x={18} y={6} />
+      <Box f={ACCENT} h={44} o={0.6} r={3} w={64} x={18} y={6} />
+      <path d="M18 50l22-20 14 11 12-9 16 18z" opacity=".55" style={{ fill: DEEP }} />
+    </>
+  ),
+  'fit-contain': (
+    <>
+      <Box f={SURFACE} h={44} r={3} w={64} x={18} y={6} />
+      <Box f={ACCENT} h={44} o={0.6} r={0} w={26} x={37} y={6} />
+      <path d="M37 50l10-14 6 6 10-10v18z" opacity=".55" style={{ fill: DEEP }} />
+    </>
+  ),
+  // Jeito da Chamada (C4): bloco no centro ou faixa fina numa linha.
+  'cta-block': <Background button={ON_ACCENT} fill={ACCENT} ink={ON_ACCENT} />,
+  'cta-strip': (
+    <>
+      <Box f={ACCENT} h={20} r={0} w={100} x={0} y={18} />
+      <Box f={ON_ACCENT} h={6} o={0.35} r={3} w={14} x={8} y={25} />
+      <Box f={ON_ACCENT} h={5} o={0.85} w={40} x={26} y={25.5} />
+      <Box f={ON_ACCENT} h={8} r={4} w={18} x={74} y={24} />
+    </>
+  ),
   // Lado da foto (Texto com foto).
   'side-left': (
     <>

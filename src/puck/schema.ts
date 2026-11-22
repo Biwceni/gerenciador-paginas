@@ -23,8 +23,25 @@ export const CONTENT_VERSION = 2
 
 const id = z.number().int().positive()
 
+/**
+ * Como a foto ocupa o espaço (C2): "Preencher" (pode cortar as bordas, no ponto de foco da foto) ou
+ * "Foto inteira" (sem corte, com um fundo atrás). Fundo da foto inteira: neutro do visual, cor do
+ * site ou nenhum. Opções novas com padrão (Preencher, neutro): as páginas salvas continuam iguais e a
+ * versão do conteúdo continua a 2.
+ */
+export const PHOTO_FITS = ['cover', 'contain'] as const
+export const PHOTO_BACKDROPS = ['neutral', 'brand', 'none'] as const
+export type PhotoFit = (typeof PHOTO_FITS)[number]
+export type PhotoBackdrop = (typeof PHOTO_BACKDROPS)[number]
+
 /** Foto da biblioteca, sempre por relação (o id), nunca a URL copiada. */
-export const photoRefSchema = z.object({ mediaId: id }).nullable()
+export const photoRefSchema = z
+  .object({
+    mediaId: id,
+    fit: z.enum(PHOTO_FITS).catch('cover').optional(),
+    backdrop: z.enum(PHOTO_BACKDROPS).catch('neutral').optional(),
+  })
+  .nullable()
 
 const componentId = z.string().min(1).max(100)
 
@@ -85,6 +102,24 @@ const anim = <const T extends readonly Anim[]>(options: T) =>
   // Com a lista genérica, o TypeScript não vê que 'site' está nela (está: é o primeiro item).
   z.enum(['site', 'none', ...options] as ['site', 'none', ...T]).catch('site' as never)
 
+/**
+ * Banner com várias chamadas (C1): a primeira chamada são os campos de sempre do banner (título,
+ * frase, foto e botões); estas são a 2ª e a 3ª. Cada uma com título, frase, foto e até dois botões.
+ * Lista nova com padrão vazio: os banners salvos continuam iguais, com uma chamada só, e a versão do
+ * conteúdo continua a 2 (nada muda de forma, só se acrescenta).
+ */
+export const HERO_EXTRA_SLIDES = 2
+export const heroSlideSchema = z.object({
+  title,
+  text: z.string().max(300).default(''),
+  image: photoRefSchema.default(null),
+  button: buttonSchema.nullable().default(null),
+  button2: buttonSchema.nullable().default(null),
+})
+
+/** Tempo de cada chamada na tela, em segundos (C1). */
+export const HERO_INTERVALS = ['4', '6', '8', '10'] as const
+
 export const heroPropsSchema = z.object({
   id: componentId,
   devices,
@@ -92,6 +127,16 @@ export const heroPropsSchema = z.object({
   text: z.string().max(300),
   image: photoRefSchema,
   button: buttonSchema.nullable(),
+  // Segundo botão (C1), ao lado do primeiro, com o desenho de contorno.
+  button2: buttonSchema.nullable().default(null),
+  slides: z.array(heroSlideSchema).max(HERO_EXTRA_SLIDES).default([]),
+  // Com mais de uma chamada: trocar sozinho, tempo de cada uma, bolinhas e jeito de trocar. Sem
+  // setas nem botão de pausa (decisão de 22/11): a troca para com o mouse, o toque ou o teclado e
+  // para de vez depois de 3 voltas.
+  autoplay: z.boolean().default(true),
+  interval: z.enum(HERO_INTERVALS).catch('6').default('6'),
+  dots: z.boolean().default(true),
+  transition: z.enum(['fade', 'slide']).catch('fade').default('fade'),
   // `image`: a foto cobre o fundo, escurecida, com texto branco. `side`: texto à esquerda e a foto
   // ao lado, com cantos arredondados (opção nova, só um valor a mais: a versão continua a 2).
   style: z.enum(['image', 'side', 'light', 'soft', 'brand']),
@@ -104,6 +149,19 @@ export const heroPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.Hero),
 })
 
+/** Os campos novos do banner (C1) com o valor padrão: um banner de uma chamada, como os de antes. */
+export const HERO_SLIDE_DEFAULTS: Pick<
+  z.infer<typeof heroPropsSchema>,
+  'button2' | 'slides' | 'autoplay' | 'interval' | 'dots' | 'transition'
+> = {
+  button2: null,
+  slides: [],
+  autoplay: true,
+  interval: '6',
+  dots: true,
+  transition: 'fade',
+}
+
 export const textImagePropsSchema = z.object({
   id: componentId,
   devices,
@@ -111,6 +169,8 @@ export const textImagePropsSchema = z.object({
   title,
   text: z.string().max(2000),
   image: photoRefSchema,
+  // Botão embaixo do texto (C4), com a largura do próprio texto. Sem botão por padrão.
+  button: buttonSchema.nullable().default(null),
   side: z.enum(['left', 'right']),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.TextImage),
@@ -233,6 +293,8 @@ export const galleryPropsSchema = z.object({
     .max(24),
   layout: z.enum(GALLERY_LAYOUTS).default('grid'),
   showCaptions: z.boolean().default(false),
+  // Como as fotos ocupam os quadrados (C2): preencher (padrão, como antes) ou fotos inteiras.
+  fit: z.enum(PHOTO_FITS).catch('cover').default('cover'),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Gallery),
 })
@@ -341,6 +403,9 @@ export const instagramStripPropsSchema = z.object({
   anim: anim(SECTION_ANIMS.InstagramStrip),
 })
 
+/** Tamanho da Chamada (C4): o bloco de sempre ou uma faixa fina, numa linha, com selo opcional. */
+export const CTA_LAYOUTS = ['block', 'strip'] as const
+
 export const callToActionPropsSchema = z.object({
   id: componentId,
   devices,
@@ -348,6 +413,9 @@ export const callToActionPropsSchema = z.object({
   title,
   text: z.string().max(300),
   button: buttonSchema.nullable(),
+  layout: z.enum(CTA_LAYOUTS).catch('block').default('block'),
+  // Selo curto antes do título, só na faixa fina: "Novo", "Até domingo".
+  tag: z.string().max(LIMITS.ctaTag).default(''),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.CallToAction),
 })
@@ -524,7 +592,7 @@ export const columnsPropsSchema = z.object({
 })
 
 /**
- * "Números do negócio" (Elementor, E10): de 2 a 4 números curtos ("12", "+3.000", "4,9") com uma
+ * "Números do negócio" (Elementor, E10): de 1 a 4 números curtos (um só, C4, vira um número grande com a frase ao lado) ("12", "+3.000", "4,9") com uma
  * frase embaixo. No site, contam do zero até o valor quando aparecem (com a animação do site).
  */
 export const statsPropsSchema = z.object({
@@ -539,7 +607,7 @@ export const statsPropsSchema = z.object({
         text: z.string().max(LIMITS.statLabel),
       }),
     )
-    .min(2)
+    .min(1)
     .max(4),
   style: sectionStyle,
   anim: anim(SECTION_ANIMS.Stats),
