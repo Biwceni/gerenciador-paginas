@@ -1359,6 +1359,37 @@ const sections: { [K in keyof Components]: Section<K> } = {
     },
     resolveData: ({ props }) => ({ props: withButton(props) }),
   },
+  Units: {
+    fields: {
+      title: text('Título'),
+      text: textarea('Frase (opcional)'),
+      // Campo que não guarda nada: só o aviso de onde vêm os dados.
+      ...({
+        notice: notice(
+          'As unidades vêm de Configurações › Contato: nome, endereço, telefones, WhatsApp, horário e feriados. Mudou lá, muda no site todo.',
+        ),
+      } as object),
+      map: radioChoice(
+        'Mapa de cada unidade',
+        [
+          { label: 'Botão “Ver no mapa”', value: true },
+          { label: 'Sem mapa', value: false },
+        ],
+        true,
+      ),
+      style: sectionStyle,
+      menuLabel,
+      anim: animField('Units'),
+    },
+    defaultProps: {
+      anim: 'site',
+      menuLabel: '',
+      title: 'Nossas unidades',
+      text: '',
+      map: true,
+      style: 'light',
+    },
+  },
   Contact: {
     fields: {
       title: text('Título'),

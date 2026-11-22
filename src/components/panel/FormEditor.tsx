@@ -13,7 +13,12 @@ import {
   FIELD_TYPE_LABELS,
   type FormFieldType,
   notifyEmailRows,
+  parseWeekdays,
   plainToRichText,
+  DATE_DAYS_DEFAULT,
+  DATE_DAYS_MAX,
+  TIME_STEPS,
+  timeSlots,
 } from '@/lib/forms'
 import { panelHref } from '@/lib/panel'
 import { PRIVACY_TEMPLATE_KEY } from '@/lib/privacy'
@@ -41,6 +46,8 @@ type Props = {
   /** Como está a página de privacidade do site. */
   privacy: { state: 'live' } | { state: 'draft'; pageId: number } | { state: 'none' }
   siteEmail: string
+  /** D2: nomes das unidades das Configurações (o tipo "Unidade" mostra estas). */
+  units: string[]
 }
 
 type RawOption = { label?: string | null; value?: string | null }
@@ -84,7 +91,16 @@ function toQuestion(block: NonNullable<Form['fields']>[number]): Question {
     optionValues: Object.fromEntries(
       (options ?? []).map((option) => [option.label ?? '', option.value ?? '']),
     ),
-    extra: { placeholder, defaultValue },
+    extra: {
+      placeholder,
+      defaultValue,
+      // D2: as opções dos tipos novos (arquivo, dia e horário) vão e voltam como estão.
+      ...Object.fromEntries(
+        (['accept', 'days', 'weekdays', 'from', 'to', 'step'] as const).flatMap((key) =>
+          key in block ? [[key, (block as Record<string, unknown>)[key]]] : [],
+        ),
+      ),
+    },
   }
 }
 
@@ -136,6 +152,7 @@ export function FormEditor({
   pages,
   privacy,
   siteEmail,
+  units,
 }: Props) {
   const router = useRouter()
   const [title, setTitle] = useState(form.title)
@@ -228,7 +245,9 @@ export function FormEditor({
     questions.some(
       (question) =>
         !question.label.trim() ||
-        (question.blockType === 'select' && !optionLines(question.optionsText).length),
+        (question.blockType === 'select' && !optionLines(question.optionsText).length) ||
+        (question.blockType === 'time' &&
+          String(question.extra.to ?? '18:00') <= String(question.extra.from ?? '08:00')),
     )
 
   const writing = questions.some((question) => question.writing)
@@ -439,6 +458,13 @@ export function FormEditor({
                     Escreva a pergunta.
                   </span>
                 )}
+                <QuestionOptions
+                  onChange={(extra) =>
+                    changeQuestion(question.id, { extra: { ...question.extra, ...extra } })
+                  }
+                  question={question}
+                  units={units}
+                />
                 {question.blockType === 'select' && (
                   <div className="gp-field gp-question__full">
                     <label htmlFor={`opts-${question.id}`}>Opções, uma por linha</label>
@@ -634,4 +660,149 @@ export function FormEditor({
       )}
     </div>
   )
+}
+
+const WEEKDAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+/** D2: as opções dos tipos novos, embaixo da pergunta. */
+function QuestionOptions({
+  question,
+  units,
+  onChange,
+}: {
+  question: Question
+  units: string[]
+  onChange: (extra: Record<string, unknown>) => void
+}) {
+  const { blockType, extra, id } = question
+  if (blockType === 'file') {
+    return (
+      <div className="gp-field gp-question__full">
+        <label htmlFor={`acc-${id}`}>Aceita</label>
+        <select
+          className="gp-input"
+          id={`acc-${id}`}
+          onChange={(event) => onChange({ accept: event.target.value })}
+          value={extra.accept === 'document' ? 'document' : 'photo'}
+        >
+          <option value="photo">Só foto</option>
+          <option value="document">Foto, PDF ou Word</option>
+        </select>
+        <span className="gp-hint">
+          Até 10 MB. No celular, o visitante também pode tirar a foto na hora. O arquivo fica
+          guardado só para o painel, em Mensagens, e é apagado sozinho depois de 90 dias.
+        </span>
+      </div>
+    )
+  }
+  if (blockType === 'date') {
+    const days = typeof extra.days === 'number' ? extra.days : DATE_DAYS_DEFAULT
+    const weekdays = parseWeekdays(typeof extra.weekdays === 'string' ? extra.weekdays : null)
+    return (
+      <div className="gp-question__full gp-qopts">
+        <div className="gp-field">
+          <label htmlFor={`days-${id}`}>Até quantos dias à frente</label>
+          <input
+            className="gp-input gp-input--short"
+            id={`days-${id}`}
+            inputMode="numeric"
+            max={DATE_DAYS_MAX}
+            min={1}
+            onChange={(event) =>
+              onChange({
+                days: Math.min(Math.max(Number(event.target.value) || 1, 1), DATE_DAYS_MAX),
+              })
+            }
+            type="number"
+            value={days}
+          />
+        </div>
+        <fieldset className="gp-qopts__days">
+          <legend className="gp-label">Dias em que atende</legend>
+          {WEEKDAY_NAMES.map((name, day) => (
+            <label className="gp-qopts__day" key={name}>
+              <input
+                checked={weekdays.includes(day)}
+                disabled={weekdays.length === 1 && weekdays.includes(day)}
+                onChange={(event) => {
+                  const next = event.target.checked
+                    ? [...weekdays, day]
+                    : weekdays.filter((item) => item !== day)
+                  onChange({ weekdays: [...new Set(next)].sort().join(',') })
+                }}
+                type="checkbox"
+              />
+              {name}
+            </label>
+          ))}
+        </fieldset>
+        <span className="gp-hint">
+          O visitante escolhe o dia em botões, de hoje até {days} dias à frente.
+        </span>
+      </div>
+    )
+  }
+  if (blockType === 'time') {
+    const from = typeof extra.from === 'string' ? extra.from : '08:00'
+    const to = typeof extra.to === 'string' ? extra.to : '18:00'
+    const step = TIME_STEPS.includes(extra.step as 15) ? (extra.step as number) : 30
+    return (
+      <div className="gp-question__full gp-qopts">
+        <div className="gp-field">
+          <label htmlFor={`from-${id}`}>Primeiro horário</label>
+          <input
+            className="gp-input"
+            id={`from-${id}`}
+            onChange={(event) => event.target.value && onChange({ from: event.target.value })}
+            step={900}
+            type="time"
+            value={from}
+          />
+        </div>
+        <div className="gp-field">
+          <label htmlFor={`to-${id}`}>Até</label>
+          <input
+            aria-invalid={to <= from}
+            className="gp-input"
+            id={`to-${id}`}
+            onChange={(event) => event.target.value && onChange({ to: event.target.value })}
+            step={900}
+            type="time"
+            value={to}
+          />
+        </div>
+        <div className="gp-field">
+          <label htmlFor={`step-${id}`}>De quanto em quanto tempo</label>
+          <select
+            className="gp-input"
+            id={`step-${id}`}
+            onChange={(event) => onChange({ step: Number(event.target.value) })}
+            value={step}
+          >
+            <option value={15}>15 minutos</option>
+            <option value={30}>30 minutos</option>
+            <option value={60}>1 hora</option>
+          </select>
+        </div>
+        <span className={to <= from ? 'gp-hint gp-hint--error' : 'gp-hint'}>
+          {to <= from
+            ? 'O último horário precisa ser depois do primeiro.'
+            : `${timeSlots(from, to, step).length} horários, em botões. Hoje, os que já passaram somem.`}
+        </span>
+      </div>
+    )
+  }
+  if (blockType === 'unit') {
+    return units.length ? (
+      <span className="gp-hint gp-question__full">
+        O visitante escolhe entre: {units.join(', ')}. As unidades ficam em Configurações › Contato.
+      </span>
+    ) : (
+      <span className="gp-hint gp-hint--error gp-question__full">
+        O site ainda não tem unidades. Cadastre em Configurações › Contato; até lá, esta pergunta
+        não aparece no site.
+      </span>
+    )
+  }
+  return null
 }

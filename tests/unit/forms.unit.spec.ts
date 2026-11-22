@@ -41,6 +41,7 @@ describe('formulários', () => {
         { field: 'nome', value: 'Ana' },
         { field: 'mensagem', value: 'Olá' },
       ],
+      files: [],
     })
   })
 

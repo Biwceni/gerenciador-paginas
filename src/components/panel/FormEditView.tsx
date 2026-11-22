@@ -10,6 +10,7 @@ import { relationID } from '@/lib/relations'
 
 import { countMessagesByForm } from './data'
 import { FormEditor } from './FormEditor'
+import { siteUnits, unitName } from '@/lib/units'
 import { PanelTemplate, requireUser } from './PanelTemplate'
 
 /** Editor simples de um formulário: `/admin/formularios/<id>`. Segue o `vForms`. */
@@ -65,6 +66,7 @@ export async function FormEditView(props: AdminViewServerProps) {
               : { state: 'none' }
         }
         siteEmail={site.contact?.email ?? ''}
+        units={siteUnits(site.contact).map((unit, index) => unitName(unit, index))}
       />
     </PanelTemplate>
   )

@@ -121,6 +121,7 @@ export const FIELD_TABS: { [K in keyof Components]: Record<string, FieldTabName>
     style: A,
     anim: M,
   },
+  Units: { title: C, text: C, notice: C, map: C, menuLabel: C, style: A, anim: M },
   LinkList: { title: C, text: C, items: C, menuLabel: C, style: A, anim: M },
   Columns: {
     pieces: C,

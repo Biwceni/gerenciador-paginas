@@ -260,6 +260,20 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
       ))}
     </>
   ),
+  // Dois cartões de endereço, cada um com o pino e o botão.
+  Units: (
+    <>
+      {[4, 31].map((x) => (
+        <React.Fragment key={x}>
+          <Bar h={30} o={0.25} r={3} w={25} x={x} y={5} />
+          <circle cx={x + 6} cy={12} r={3} style={{ fill: ACCENT }} />
+          <Bar h={2.5} r={1.25} w={14} x={x + 4} y={19} />
+          <Bar h={2.5} o={0.7} r={1.25} w={10} x={x + 4} y={24} />
+          <Bar f={ACCENT} h={4} r={2} w={15} x={x + 5} y={29} />
+        </React.Fragment>
+      ))}
+    </>
+  ),
   ColumnTitle: <Bar f={ACCENT} h={7} w={40} x={8} y={16} />,
   ColumnText: (
     <>
@@ -273,7 +287,7 @@ const DRAWINGS: Record<keyof Components, React.ReactNode> = {
 }
 
 /**
- * Seções que acabaram de chegar (etapa 4a): ganham o selo "novo" na lista. Tirar daqui
+ * Seções que acabaram de chegar (etapas 4a e 4b): ganham o selo "novo" na lista. Tirar daqui
  * quando deixarem de ser novidade.
  */
 export const NEW_SECTIONS: ReadonlySet<keyof Components> = new Set([
@@ -282,6 +296,7 @@ export const NEW_SECTIONS: ReadonlySet<keyof Components> = new Set([
   'LogoStrip',
   'BeforeAfter',
   'Events',
+  'Units',
 ])
 
 /** Uma frase curta do que cada seção é. */
@@ -310,6 +325,7 @@ export const SECTION_DESCRIPTIONS: Record<keyof Components, string> = {
   LogoStrip: 'Marcas de clientes e parceiros, do mesmo tamanho',
   BeforeAfter: 'Duas fotos para comparar, com um controle de arrastar',
   Events: 'Datas com local, horário e “Adicionar à agenda”',
+  Units: 'Endereço, telefones, WhatsApp e horário de cada unidade',
   ColumnTitle: 'Um título, dentro de uma coluna',
   ColumnText: 'Um parágrafo, dentro de uma coluna',
   ColumnImage: 'Uma foto, dentro de uma coluna',

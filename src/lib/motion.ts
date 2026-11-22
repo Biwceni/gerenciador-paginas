@@ -69,6 +69,7 @@ export const SECTION_ANIMS = {
   LogoStrip: ['cascata', 'esmaecer'],
   BeforeAfter: ['deslizar', 'esmaecer'],
   Events: ['cascata', 'esmaecer'],
+  Units: ['cascata', 'esmaecer'],
   Table: ['esmaecer'],
   LinkList: ['cascata', 'esmaecer'],
   Video: ['cortina', 'esmaecer'],

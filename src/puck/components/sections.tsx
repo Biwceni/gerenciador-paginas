@@ -19,7 +19,15 @@ import { parseCount } from '@/lib/countUp'
 import { splitHighlight } from '@/lib/highlight'
 import { initials } from '@/lib/site'
 import { parsePrice, productCategories, PRODUCTS_SEARCH_FROM } from '@/lib/products'
-import { eventDateParts, eventTimeText, icsHref, renderTime, validDate } from '@/lib/events'
+import {
+  eventDateParts,
+  eventTimeText,
+  icsHref,
+  renderTime,
+  todayInBrazil,
+  validDate,
+} from '@/lib/events'
+import { scheduleGroups, siteUnits, unitName } from '@/lib/units'
 import { logoBox, logoRatio, trimStyle } from '@/lib/logos'
 
 import {
@@ -35,6 +43,7 @@ import { HeroLater, HeroRotate } from './HeroRotate'
 import { type ProductCard, ProductDetails, ProductsBrowse } from './ProductsBrowse'
 import { BeforeAfterPair } from './BeforeAfter'
 import { type EventCard, EventsBrowse } from './EventsBrowse'
+import { UnitMap, UnitSpecials } from './UnitsParts'
 import { type ContentMetadata, getHref, getPhoto } from '../references'
 import {
   COLUMN_COUNT,
@@ -67,6 +76,7 @@ import type {
   BeforeAfterProps,
   EventsProps,
   EventItem,
+  UnitsProps,
   LinkListProps,
   PhotoFit,
   PhotoRef,
@@ -1172,6 +1182,7 @@ export function Form(props: WithMetadata<FormProps>) {
             preview={metadata.editing}
             privacyHref={metadata.site.privacyHref}
             successMessage={successMessage}
+            units={siteUnits(metadata.site.contact).map((unit, index) => unitName(unit, index))}
           />
         ) : (
           metadata.editing && (
@@ -2495,5 +2506,121 @@ function EventCardBody({
         </div>
       </div>
     </article>
+  )
+}
+
+/**
+ * D1: Nossas unidades. A lista vem das unidades das Configurações e fica sempre à vista: cada
+ * cartão tem endereço, telefones, WhatsApp, o horário da semana e os próximos dias especiais. O
+ * mapa de cada unidade só carrega depois do toque em "Ver no mapa".
+ */
+export function Units({
+  id,
+  title,
+  text = '',
+  map = true,
+  style,
+  anim,
+  metadata,
+}: WithMetadata<UnitsProps>) {
+  const units = siteUnits(metadata.site.contact)
+  if (!units.length && !metadata.editing) return null
+  const today = todayInBrazil(new Date(renderTime()))
+  return (
+    <Section anim={sectionAnim('Units', anim, metadata)} id={id} metadata={metadata} style={style}>
+      <div className="container anim-part">
+        <SectionHead text={text} title={title} />
+        {units.length ? (
+          <ul className={`units${units.length === 1 ? ' units--one' : ''}`}>
+            {units.map((unit, index) => {
+              const name = unitName(unit, index)
+              const whatsappHref = whatsAppURL(unit.whatsapp)
+              const phones = [unit.phone, unit.phone2].filter(Boolean)
+              const groups = unit.schedule ? scheduleGroups(unit.schedule) : []
+              const link = (href: string, children: React.ReactNode, className: string) =>
+                metadata.editing ? (
+                  <span className={className}>{children}</span>
+                ) : (
+                  <SiteLink className={className} href={href}>
+                    {children}
+                  </SiteLink>
+                )
+              return (
+                <li className="unit" key={unit.id}>
+                  {(units.length > 1 || unit.name) && <h3 className="unit__name">{name}</h3>}
+                  {unit.address && (
+                    <div className="unit__row">
+                      <ContactIcon name="map" />
+                      <div className="unit__body">
+                        <span className="unit__address">{unit.address}</span>
+                        {map && (
+                          <UnitMap address={unit.address} editing={metadata.editing} name={name} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {phones.length > 0 && (
+                    <div className="unit__row">
+                      <ContactIcon name="phone" />
+                      <div className="unit__body unit__phones">
+                        {phones.map((phone) => (
+                          <React.Fragment key={phone}>
+                            {link(telHref(phone) ?? '', phone, 'unit__phone')}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(groups.length > 0 || unit.hoursNote) && (
+                    <div className="unit__row">
+                      <ContactIcon name="clock" />
+                      <div className="unit__body">
+                        {groups.length > 0 && (
+                          <dl className="unit__hours">
+                            {groups.map((group) => (
+                              <div key={group.days}>
+                                <dt>{group.days}</dt>
+                                <dd>{group.hours ?? 'Fechado'}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                        {unit.hoursNote && <span className="unit__note">{unit.hoursNote}</span>}
+                        <UnitSpecials
+                          editing={metadata.editing}
+                          specials={unit.specials}
+                          today={today}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {whatsappHref &&
+                    (metadata.editing ? (
+                      <span className="button unit__whatsapp">
+                        <ContactIcon name="whatsapp" />
+                        Chamar no WhatsApp
+                      </span>
+                    ) : (
+                      <SiteLink
+                        aria-label={`Chamar no WhatsApp: ${name}`}
+                        className="button unit__whatsapp"
+                        href={whatsappHref}
+                      >
+                        <ContactIcon name="whatsapp" />
+                        Chamar no WhatsApp
+                      </SiteLink>
+                    ))}
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <EditorPlaceholder>
+            As unidades aparecem aqui quando forem preenchidas em Configurações › Contato: nome,
+            endereço, telefones, WhatsApp e horário.
+          </EditorPlaceholder>
+        )}
+      </div>
+    </Section>
   )
 }

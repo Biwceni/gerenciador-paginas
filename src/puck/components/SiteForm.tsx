@@ -11,6 +11,8 @@ import {
   validatePhone,
 } from '@/lib/forms'
 
+import { DayField, FileField, type FileState, TimeField, UnitField, useNow } from './SiteFormFields'
+
 type Props = {
   form: FormDefinition
   pageId?: number
@@ -20,6 +22,8 @@ type Props = {
   preview?: boolean
   /** Página de privacidade no ar: o "Concordo" leva até ela. */
   privacyHref?: string | null
+  /** D2: nomes das unidades das Configurações, para o campo "Unidade". */
+  units?: string[]
 }
 
 type Status = { state: 'idle' | 'sending' | 'sent' } | { state: 'error'; message: string }
@@ -38,9 +42,21 @@ type PayloadError = { errors?: { message?: string; data?: { errors?: { message?:
  * Formulário da seção "Formulário". Envia para a coleção de mensagens do plugin, que confere tudo
  * de novo no servidor (campos, e-mail, "Concordo" e a armadilha contra robôs).
  */
-export function SiteForm({ form, pageId, successMessage, preview, privacyHref }: Props) {
+export function SiteForm({
+  form,
+  pageId,
+  successMessage,
+  preview,
+  privacyHref,
+  units = [],
+}: Props) {
   const prefix = useId()
   const [status, setStatus] = useState<Status>({ state: 'idle' })
+  const now = useNow()
+  // O dia escolhido (o primeiro campo de dia): o horário de hoje esconde o que já passou.
+  const dayField = form.fields.find((field) => field.type === 'date')
+  const [day, setDay] = useState('')
+  const [files, setFiles] = useState<Record<string, FileState>>({})
 
   if (status.state === 'sent') {
     return (
@@ -55,6 +71,18 @@ export function SiteForm({ form, pageId, successMessage, preview, privacyHref }:
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (preview) return
+    for (const field of form.fields) {
+      if (field.type !== 'file') continue
+      const file = files[field.name]
+      if (file?.state === 'sending') {
+        setStatus({ state: 'error', message: 'Espere o arquivo terminar de enviar.' })
+        return
+      }
+      if (field.required && file?.state !== 'sent') {
+        setStatus({ state: 'error', message: `Envie o arquivo em “${field.label}”.` })
+        return
+      }
+    }
     const values = new FormData(event.currentTarget)
     setStatus({ state: 'sending' })
     try {
@@ -98,7 +126,36 @@ export function SiteForm({ form, pageId, successMessage, preview, privacyHref }:
   return (
     <form className="site-form" noValidate={false} onSubmit={submit}>
       {form.fields.map((field) =>
-        field.type === 'checkbox' ? (
+        field.type === 'date' ? (
+          <DayField
+            disabled={preview}
+            field={field}
+            key={field.name}
+            now={now}
+            onChange={field === dayField ? setDay : () => undefined}
+            value={field === dayField ? day : ''}
+          />
+        ) : field.type === 'time' ? (
+          <TimeField
+            day={day}
+            disabled={preview}
+            field={field}
+            hasDayField={Boolean(dayField)}
+            key={field.name}
+            now={now}
+          />
+        ) : field.type === 'unit' ? (
+          <UnitField disabled={preview} field={field} key={field.name} units={units} />
+        ) : field.type === 'file' ? (
+          <FileField
+            disabled={preview}
+            field={field}
+            formId={form.id}
+            key={field.name}
+            onChange={(next) => setFiles((current) => ({ ...current, [field.name]: next }))}
+            state={files[field.name] ?? { state: 'empty' }}
+          />
+        ) : field.type === 'checkbox' ? (
           <label className="site-form__check" key={field.name}>
             <input disabled={preview} name={field.name} required={field.required} type="checkbox" />
             <span>{field.label}</span>

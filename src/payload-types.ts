@@ -72,6 +72,7 @@ export interface Config {
     users: User;
     templates: Template;
     'saved-sections': SavedSection;
+    'form-files': FormFile;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -86,6 +87,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     templates: TemplatesSelect<false> | TemplatesSelect<true>;
     'saved-sections': SavedSectionsSelect<false> | SavedSectionsSelect<true>;
+    'form-files': FormFilesSelect<false> | FormFilesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -409,6 +411,24 @@ export interface SavedSection {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-files".
+ */
+export interface FormFile {
+  id: number;
+  form?: (number | null) | Form;
+  field: string;
+  filename: string;
+  mimeType?: string | null;
+  size: number;
+  key: string;
+  tokenHash: string;
+  status?: ('pending' | 'attached') | null;
+  submission?: (number | null) | FormSubmission;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Campos dos formulários que aparecem na seção "Formulário" das páginas.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -485,6 +505,48 @@ export interface Form {
             blockName?: string | null;
             blockType: 'phone';
           }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            days?: number | null;
+            weekdays?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'date';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            from?: string | null;
+            to?: string | null;
+            step?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'time';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'unit';
+          }
+        | {
+            name: string;
+            label?: string | null;
+            width?: number | null;
+            required?: boolean | null;
+            accept?: ('photo' | 'document') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'file';
+          }
       )[]
     | null;
   submitButtonLabel?: string | null;
@@ -555,6 +617,7 @@ export interface FormSubmission {
   consent?: boolean | null;
   consentText?: string | null;
   page?: (number | null) | Page;
+  files?: (number | FormFile)[] | null;
   read?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -602,6 +665,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'saved-sections';
         value: number | SavedSection;
+      } | null)
+    | ({
+        relationTo: 'form-files';
+        value: number | FormFile;
       } | null)
     | ({
         relationTo: 'forms';
@@ -868,6 +935,23 @@ export interface SavedSectionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-files_select".
+ */
+export interface FormFilesSelect<T extends boolean = true> {
+  form?: T;
+  field?: T;
+  filename?: T;
+  mimeType?: T;
+  size?: T;
+  key?: T;
+  tokenHash?: T;
+  status?: T;
+  submission?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -947,6 +1031,52 @@ export interface FormsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        date?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              days?: T;
+              weekdays?: T;
+              id?: T;
+              blockName?: T;
+            };
+        time?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              from?: T;
+              to?: T;
+              step?: T;
+              id?: T;
+              blockName?: T;
+            };
+        unit?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              id?: T;
+              blockName?: T;
+            };
+        file?:
+          | T
+          | {
+              name?: T;
+              label?: T;
+              width?: T;
+              required?: T;
+              accept?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   submitButtonLabel?: T;
   confirmationType?: T;
@@ -987,6 +1117,7 @@ export interface FormSubmissionsSelect<T extends boolean = true> {
   consent?: T;
   consentText?: T;
   page?: T;
+  files?: T;
   read?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1120,15 +1251,41 @@ export interface Site {
    */
   contact?: {
     /**
-     * Com DDD. Ex.: (31) 99999-0000. Os botões de WhatsApp usam este número.
+     * A primeira é a principal: o rodapé, o topo e os botões de WhatsApp usam os dados dela.
      */
+    units?:
+      | {
+          name?: string | null;
+          address?: string | null;
+          phone?: string | null;
+          phone2?: string | null;
+          whatsapp?: string | null;
+          schedule?:
+            | {
+                [k: string]: unknown;
+              }
+            | unknown[]
+            | string
+            | number
+            | boolean
+            | null;
+          hoursNote?: string | null;
+          specials?:
+            | {
+                [k: string]: unknown;
+              }
+            | unknown[]
+            | string
+            | number
+            | boolean
+            | null;
+          id?: string | null;
+        }[]
+      | null;
     whatsapp?: string | null;
     phone?: string | null;
     email?: string | null;
     address?: string | null;
-    /**
-     * Ex.: Seg a sáb, das 7h às 19h.
-     */
     hours?: string | null;
     /**
      * Quem toca num botão de WhatsApp do site já encontra este texto, com a página de onde veio.
@@ -1346,6 +1503,19 @@ export interface SiteSelect<T extends boolean = true> {
   contact?:
     | T
     | {
+        units?:
+          | T
+          | {
+              name?: T;
+              address?: T;
+              phone?: T;
+              phone2?: T;
+              whatsapp?: T;
+              schedule?: T;
+              hoursNote?: T;
+              specials?: T;
+              id?: T;
+            };
         whatsapp?: T;
         phone?: T;
         email?: T;

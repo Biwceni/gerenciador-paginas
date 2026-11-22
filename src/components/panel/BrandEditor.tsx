@@ -67,7 +67,7 @@ import { BlockNav } from './BlockNav'
 import { ConflictNotice } from './ConflictNotice'
 import { DiscardButton } from './DiscardButton'
 import { SaveStatus } from './SaveStatus'
-import type { SettingsState } from './settings'
+import { mainOf, type SettingsState } from './settings'
 import { SiteFrame } from './SiteFrame'
 import { useSettingsDraft } from './useSettingsDraft'
 import { WhyDisabled } from './WhyDisabled'
@@ -1093,6 +1093,7 @@ function BrandPreview({
 }) {
   const name = state.name.trim() || 'Meu site'
   const brand = siteBrand({ personality: state.personality, tagline: state.tagline })
+  const main = mainOf(state)
 
   const metadata = useMemo<ContentMetadata | null>(() => {
     if (!home) return null
@@ -1169,13 +1170,13 @@ function BrandPreview({
         logoRing={state.logoRing.footer}
         look={look}
         contact={{
-          whatsapp: state.contact.whatsapp || null,
-          whatsappHref: whatsAppURL(state.contact.whatsapp),
-          phone: state.contact.phone || null,
-          phoneHref: telHref(state.contact.phone),
+          whatsapp: main.whatsapp,
+          whatsappHref: whatsAppURL(main.whatsapp),
+          phone: main.phone,
+          phoneHref: telHref(main.phone),
           email: state.contact.email || null,
-          address: state.contact.address || null,
-          hours: state.contact.hours || null,
+          address: main.address,
+          hours: main.hours,
         }}
         logo={logo}
         menu={chrome.footerMenu}
