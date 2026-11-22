@@ -12,7 +12,7 @@ import {
 import { FALLBACK_SITE_NAME } from '@/lib/site'
 import type { Site } from '@/payload-types'
 
-import { headerShortcuts, type MenuItem, siteBrand, SiteHeaderView } from './SiteChrome'
+import { headerShortcuts, logoLook, type MenuItem, siteBrand, SiteHeaderView } from './SiteChrome'
 
 export type { MenuItem }
 
@@ -57,9 +57,7 @@ export async function getHeaderButton(
     getMenuAnchors(),
   ])
   const label = header.button?.label?.trim()
-  const href = label
-    ? resolveLink(header.button?.link, { ...siteLinks(site), pageAnchors })
-    : null
+  const href = label ? resolveLink(header.button?.link, { ...siteLinks(site), pageAnchors }) : null
   return label && href ? { label, href } : null
 }
 
@@ -79,6 +77,7 @@ export async function SiteHeader({ currentPageId, campaign, site: draftSite }: P
       items={items}
       logo={populatedMedia(site.logo)}
       logoRing={Boolean(site.logoRing?.header)}
+      look={logoLook(site, populatedMedia(site.logoLight))}
       name={site.name || FALLBACK_SITE_NAME}
       shortcuts={headerShortcuts(site)}
     />

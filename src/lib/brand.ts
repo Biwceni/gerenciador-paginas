@@ -273,10 +273,10 @@ export function brandCombos({ accent, dark }: BrandPalette): BrandCombo[] {
 
 /** Qual combinação está em uso, se as cores do site são exatamente as de uma delas. */
 export function currentCombo(colors: SiteColors, combos: BrandCombo[]): BrandComboKey | null {
+  // A segunda cor (E1) não faz parte das combinações: só as cinco de base contam.
+  const keys = ['primary', 'background', 'surface', 'text', 'footer'] as const
   const same = (a: SiteColors, b: SiteColors) =>
-    (Object.keys(a) as (keyof SiteColors)[]).every(
-      (key) => a[key].toLowerCase() === b[key].toLowerCase(),
-    )
+    keys.every((key) => a[key].toLowerCase() === b[key].toLowerCase())
   return combos.find((combo) => same(combo.colors, colors))?.key ?? null
 }
 
@@ -290,4 +290,112 @@ export function logoBlends(colors: LogoColor[], background: string): boolean {
     .filter((item) => contrastRatio(item.color, background) < 1.6)
     .reduce((sum, item) => sum + item.share, 0)
   return hidden >= 0.6
+}
+
+/** Distância de cor até a qual um pixel ainda é "o fundo" ao tirar o fundo de uma cor (E2). */
+const BACKGROUND_DISTANCE = 40
+/** Até esta distância a beirada fica meio transparente, para não ficar serrilhada. */
+const EDGE_DISTANCE = 80
+
+/**
+ * A cor do fundo, se a borda da imagem (RGBA) é quase toda opaca e de uma cor só: 90% dos pixels da
+ * borda a menos de 40 da cor média. Senão, `null` (fundo transparente, foto, degradê).
+ */
+export function borderColor(pixels: ArrayLike<number>, width: number, height: number) {
+  const border: RGB[] = []
+  const take = (x: number, y: number) => {
+    const index = (y * width + x) * 4
+    if (pixels[index + 3] < 250) return false
+    border.push([pixels[index], pixels[index + 1], pixels[index + 2]])
+    return true
+  }
+  let transparent = 0
+  for (let x = 0; x < width; x++) {
+    if (!take(x, 0)) transparent++
+    if (height > 1 && !take(x, height - 1)) transparent++
+  }
+  for (let y = 1; y < height - 1; y++) {
+    if (!take(0, y)) transparent++
+    if (width > 1 && !take(width - 1, y)) transparent++
+  }
+  const total = border.length + transparent
+  if (!border.length || transparent > total * 0.1) return null
+  const mean = [0, 1, 2].map(
+    (channel) => border.reduce((sum, rgb) => sum + rgb[channel], 0) / border.length,
+  ) as RGB
+  const near = border.filter((rgb) => distance(rgb, mean) < BACKGROUND_DISTANCE).length
+  return near >= total * 0.9 ? rgbToHex(mean) : null
+}
+
+/**
+ * Deixa transparentes os pixels da cor do fundo que estão ligados à borda (pelo vizinho de cima,
+ * de baixo e dos lados). Perto da cor, a transparência é parcial: a beirada do desenho fica suave.
+ * Muda `pixels` (RGBA) no lugar.
+ */
+export function removeConnected(
+  pixels: Uint8ClampedArray | number[],
+  width: number,
+  height: number,
+  color: string,
+) {
+  const target = hexToRgb(color)
+  const seen = new Uint8Array(width * height)
+  const stack: number[] = []
+  const far = (index: number) =>
+    distance([pixels[index * 4], pixels[index * 4 + 1], pixels[index * 4 + 2]] as RGB, target)
+  const push = (index: number) => {
+    if (seen[index]) return
+    seen[index] = 1
+    if (far(index) < EDGE_DISTANCE) stack.push(index)
+  }
+  for (let x = 0; x < width; x++) {
+    push(x)
+    push((height - 1) * width + x)
+  }
+  for (let y = 0; y < height; y++) {
+    push(y * width)
+    push(y * width + width - 1)
+  }
+  while (stack.length) {
+    const index = stack.pop() as number
+    const gap = far(index)
+    const alpha =
+      gap <= BACKGROUND_DISTANCE
+        ? 0
+        : (gap - BACKGROUND_DISTANCE) / (EDGE_DISTANCE - BACKGROUND_DISTANCE)
+    pixels[index * 4 + 3] = Math.round(pixels[index * 4 + 3] * alpha)
+    // Só o fundo de verdade espalha: a beirada suave não avança para dentro do desenho.
+    if (gap > BACKGROUND_DISTANCE) continue
+    const x = index % width
+    const y = (index - x) / width
+    if (x > 0) push(index - 1)
+    if (x < width - 1) push(index + 1)
+    if (y > 0) push(index - width)
+    if (y < height - 1) push(index + width)
+  }
+}
+
+/** Logo largo (pelo menos o dobro da altura): quase sempre já tem o nome escrito (E2). */
+export function isWideLogo(size: { width?: number | null; height?: number | null }): boolean {
+  return Boolean(size.width && size.height && size.width >= size.height * 2)
+}
+
+/**
+ * A segunda cor sugerida do logo (E1): a cor viva do logo mais diferente da principal (não o fundo
+ * branco nem o preto do texto). `null` se o logo só tem uma cor.
+ */
+export function suggestSecond(colors: LogoColor[], main: string): string | null {
+  const pool = colors.filter((item) => {
+    if (item.share < MIN_MAIN_SHARE) return false
+    const luminance = relativeLuminance(item.color)
+    return (
+      luminance > 0.04 &&
+      luminance < 0.8 &&
+      saturation(item.color) >= 0.3 &&
+      distance(hexToRgb(item.color), hexToRgb(main)) >= 90
+    )
+  })
+  if (!pool.length) return null
+  return pool.reduce((best, item) => (mainColorScore(item) > mainColorScore(best) ? item : best))
+    .color
 }

@@ -1312,6 +1312,8 @@ export function Editor(props: EditorProps) {
       ({
         '--ed-site-primary': theme['--color-primary'],
         '--ed-site-on-primary': theme['--color-on-primary'],
+        '--ed-site-second': theme['--color-second'] ?? theme['--color-primary'],
+        '--ed-site-on-second': theme['--color-on-second'] ?? theme['--color-on-primary'],
         '--ed-site-bg': theme['--color-background'],
         '--ed-site-surface': theme['--color-surface'],
         '--ed-site-text': theme['--color-text'],

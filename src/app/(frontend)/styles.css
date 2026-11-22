@@ -3452,6 +3452,11 @@
   color: var(--color-on-primary);
 }
 
+.site .announce--second {
+  background: var(--color-second, var(--color-primary));
+  color: var(--color-on-second, var(--color-on-primary));
+}
+
 .site .announce--soft {
   background: var(--color-surface);
   color: var(--color-text);
@@ -3589,8 +3594,8 @@
 }
 /* Aviso no alto do site (extra do A2): fino, na cor do site, acima do topo, em todas as páginas. */
 .site .site-notice {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  background: var(--color-second, var(--color-primary));
+  color: var(--color-on-second, var(--color-on-primary));
 }
 
 .site .site-notice[hidden] {
@@ -5128,6 +5133,97 @@
 
 .site .site-footer__logo--ring {
   background: var(--color-on-footer);
+}
+
+/*
+ * A3: com logo, o topo mostra só o logo (o nome fica para o leitor de tela). Altura de 44 px (38 no
+ * celular) e largura máxima de 200/160 px: um logo largo não empurra o menu, um alto não cresce o
+ * topo. O logo inteiro, sem corte.
+ */
+.site .site-header__brand--only .site-header__logo,
+.site .site-header--scrolled .site-header__brand--only .site-header__logo {
+  width: auto;
+  height: 44px;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.site .site-header__brand--only .site-header__logo--round {
+  width: 44px;
+  object-fit: cover;
+}
+
+@container site (max-width: 720px) {
+  .site .site-header__brand--only .site-header__logo,
+  .site .site-header--scrolled .site-header__brand--only .site-header__logo {
+    height: 38px;
+    max-width: 160px;
+  }
+
+  .site .site-header__brand--only .site-header__logo--round {
+    width: 38px;
+  }
+}
+
+/*
+ * E2: o logo sobre fundo escuro (topo escuro, topo por cima da foto do banner, rodapé escuro). Com a
+ * versão clara, ela entra no lugar. Sem ela, a versão branca (o desenho todo em branco) ou uma placa
+ * branca atrás, se a pessoa escolheu.
+ */
+.site .site-header__logo--light {
+  display: none;
+}
+
+:is(
+    .site .site-header--dark,
+    .site[data-personality='vitrine']:has(> main > .hero.section--image:first-child)
+      > .site-header:not(.site-header--scrolled, .site-header--open)
+  )
+  .site-header__brand[data-light]
+  .site-header__logo:not(.site-header__logo--light) {
+  display: none;
+}
+
+:is(
+    .site .site-header--dark,
+    .site[data-personality='vitrine']:has(> main > .hero.section--image:first-child)
+      > .site-header:not(.site-header--scrolled, .site-header--open)
+  )
+  .site-header__brand[data-light]
+  .site-header__logo--light {
+  display: block;
+}
+
+:is(
+    .site .site-header--dark,
+    .site[data-personality='vitrine']:has(> main > .hero.section--image:first-child)
+      > .site-header:not(.site-header--scrolled, .site-header--open)
+  )
+  .site-header__brand[data-on-dark='white']
+  .site-header__logo {
+  filter: brightness(0) invert(1);
+}
+
+:is(
+    .site .site-header--dark,
+    .site[data-personality='vitrine']:has(> main > .hero.section--image:first-child)
+      > .site-header:not(.site-header--scrolled, .site-header--open)
+  )
+  .site-header__brand[data-on-dark='plate']
+  .site-header__logo {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.site .site-footer__logo--white {
+  filter: brightness(0) invert(1);
+}
+
+.site .site-footer__logo--plate {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fff;
 }
 
 /*

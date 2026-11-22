@@ -6,6 +6,8 @@ import React from 'react'
 
 const ACCENT = 'var(--ed-site-primary)'
 const ON_ACCENT = 'var(--ed-site-on-primary)'
+const SECOND = 'var(--ed-site-second, var(--ed-site-primary))'
+const ON_SECOND = 'var(--ed-site-on-second, var(--ed-site-on-primary))'
 const SURFACE = 'var(--ed-site-surface)'
 const DEEP = 'var(--ed-site-deep)'
 const ON_DEEP = 'var(--ed-site-on-deep)'
@@ -194,6 +196,8 @@ export const CHOICE_THUMBS = {
   'bg-light': <Background button={ACCENT} />,
   'bg-soft': <Background button={ACCENT} fill={SURFACE} />,
   'bg-brand': <Background button={ON_ACCENT} fill={ACCENT} ink={ON_ACCENT} />,
+  // Segunda cor de Sua marca (E1); sem ela, igual à cor do site.
+  'bg-second': <Background button={ON_SECOND} fill={SECOND} ink={ON_SECOND} />,
   'hero-image': (
     <>
       <Box f={DEEP} h={56} r={0} w={100} x={0} y={0} />

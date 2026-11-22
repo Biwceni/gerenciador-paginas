@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { readableTextColor, safeColor } from '@/lib/colors'
 import { shortTagline } from '@/lib/highlight'
 import { instagramLink, mapsURL, telHref, whatsAppURL } from '@/lib/links'
 import { ContactIcon } from '@/puck/components/FeatureIcon'
-import type { Personality } from '@/lib/theme'
+import { DEFAULT_COLORS, type Personality } from '@/lib/theme'
 import type { Media, Site } from '@/payload-types'
 
 import { HeaderMenu } from './HeaderMenu'
@@ -38,6 +39,48 @@ export function isRoundLogo(logo: Media): boolean {
 const isBranded = (brand: SiteBrand | undefined): brand is SiteBrand =>
   Boolean(brand && brand.personality !== 'classico')
 
+/** O logo sobre fundo escuro, sem a versão clara (E2): como está, branco ou com uma placa branca. */
+export type LogoOnDark = 'auto' | 'white' | 'plate'
+
+/**
+ * Como o logo aparece (A3, E2): só o logo no topo ou com o nome ao lado, a versão clara e o que
+ * fazer sobre fundo escuro. `darkBar` e `darkFooter` dizem se o topo e o rodapé são escuros (a cor
+ * das letras deles é a branca); o topo por cima da foto do banner também conta como escuro (CSS).
+ */
+export type LogoLook = {
+  showName: boolean
+  light: Media | null
+  onDark: LogoOnDark
+  darkBar: boolean
+  darkFooter: boolean
+}
+
+const isDark = (color: string) => readableTextColor(color) === '#ffffff'
+
+export function logoLook(
+  site: Pick<Partial<Site>, 'showNameWithLogo' | 'logoOnDark' | 'colors'>,
+  light: Media | null,
+): LogoLook {
+  return {
+    showName: site.showNameWithLogo === true,
+    light,
+    onDark: site.logoOnDark === 'white' || site.logoOnDark === 'plate' ? site.logoOnDark : 'auto',
+    darkBar: isDark(safeColor(site.colors?.background, DEFAULT_COLORS.background)),
+    darkFooter: isDark(safeColor(site.colors?.footer, DEFAULT_COLORS.footer)),
+  }
+}
+
+/** Atributos da marca para o CSS: versão clara presente e o tratamento sobre fundo escuro. */
+function logoData(look: LogoLook | undefined) {
+  return {
+    'data-light': look?.light ? '' : undefined,
+    'data-on-dark': look && !look.light && look.onDark !== 'auto' ? look.onDark : undefined,
+  }
+}
+
+/** O contorno do T6 só vale quando a pessoa não escolheu outro jeito para o fundo escuro. */
+const ringAllowed = (look: LogoLook | undefined) => !look || (!look.light && look.onDark === 'auto')
+
 /**
  * Atalhos do menu do celular (T3), embaixo dos links: WhatsApp e Instagram, endereço e horário. Vêm
  * das Configurações; o que estiver vazio não aparece.
@@ -69,6 +112,8 @@ type HeaderProps = {
   shortcuts?: HeaderShortcuts
   /** Logo que some no fundo do topo ganha um contorno (T6, calculado em Sua marca). */
   logoRing?: boolean
+  /** Só o logo ou com o nome, versão clara e fundo escuro (A3, E2). Sem ele, como antes. */
+  look?: LogoLook
 }
 
 /** O destino do botão tem um ícone que diz o que ele faz (WhatsApp, telefone, e-mail). */
@@ -86,10 +131,13 @@ export function mobileCtaMode(
   name: string,
   button: { label: string; href: string },
   hasLogo = false,
+  logoOnly = false,
 ) {
   const label = button.label.trim()
   const room = hasLogo ? 24 : 30
-  if (label.length <= 12 && name.length + label.length <= room) return 'text'
+  // Só o logo (até 160 px no celular): ocupa o lugar de umas 12 letras, e o nome não aparece.
+  const used = logoOnly ? 12 : name.length
+  if (label.length <= 12 && used + label.length <= room + (logoOnly ? 6 : 0)) return 'text'
   return hasCtaIcon(button.href) ? 'icon' : 'menu'
 }
 
@@ -135,16 +183,21 @@ export function SiteHeaderView({
   brand,
   shortcuts,
   logoRing,
+  look,
 }: HeaderProps) {
   const hasNav = !campaign && (items.length > 0 || button)
   const branded = isBranded(brand)
-  const tagline = branded ? brand.tagline : null
+  // A3: com logo, o topo mostra só o logo, a não ser que a pessoa peça o nome ao lado.
+  const logoOnly = Boolean(logo && look && !look.showName)
+  const tagline = branded && !logoOnly ? brand.tagline : null
   const brandClass = [
     'site-header__brand',
     tagline && 'site-header__brand--tagline',
     tagline && logo && 'site-header__brand--logo',
+    logoOnly && 'site-header__brand--only',
   ]
   const round = branded && logo && isRoundLogo(logo)
+  const light = look?.light ?? null
 
   const links = (
     <ul>
@@ -207,25 +260,39 @@ export function SiteHeaderView({
 
   return (
     <header
-      className="site-header"
-      data-cta={button && hasNav ? mobileCtaMode(name, button, Boolean(logo)) : undefined}
+      className={['site-header', look?.darkBar && 'site-header--dark'].filter(Boolean).join(' ')}
+      data-cta={button && hasNav ? mobileCtaMode(name, button, Boolean(logo), logoOnly) : undefined}
     >
       <div className="container site-header__bar">
-        <Link className={brandClass.filter(Boolean).join(' ')} href="/">
+        <Link className={brandClass.filter(Boolean).join(' ')} href="/" {...logoData(look)}>
           {logo && (
             <Photo
               className={[
                 'site-header__logo',
                 round && 'site-header__logo--round',
-                logoRing && 'site-header__logo--ring',
+                logoRing && ringAllowed(look) && 'site-header__logo--ring',
               ]
                 .filter(Boolean)
                 .join(' ')}
               media={logo}
-              sizes="160px"
+              sizes="200px"
             />
           )}
-          <span>{name}</span>
+          {logo && light && (
+            <Photo
+              className={[
+                'site-header__logo',
+                'site-header__logo--light',
+                round && 'site-header__logo--round',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              media={light}
+              sizes="200px"
+            />
+          )}
+          {/* Só o logo: o nome continua no link, para o leitor de tela. */}
+          <span className={logoOnly ? 'visually-hidden' : undefined}>{name}</span>
           {tagline && <small className="site-header__tagline">{tagline}</small>}
         </Link>
         {hasNav && (
@@ -332,6 +399,8 @@ type FooterProps = {
   backToTop?: boolean
   /** Logo que some no fundo do rodapé ganha um contorno (T6). */
   logoRing?: boolean
+  /** Versão clara e fundo escuro do logo (E2). */
+  look?: LogoLook
 }
 
 function FooterItem({
@@ -374,6 +443,7 @@ export function SiteFooterView({
   showHours = true,
   backToTop = true,
   logoRing,
+  look,
 }: FooterProps) {
   const year = new Date().getFullYear()
   const privacy = privacyHref && (
@@ -405,16 +475,21 @@ export function SiteFooterView({
   const contactItems =
     showContact && (contact.whatsappHref || contact.phoneHref || contact.email || contact.address)
   const hours = showHours ? contact.hours?.trim() || null : null
-  const logoImage = logo && (
+  // Rodapé escuro com versão clara do logo (E2): ela entra no lugar. Sem ela, o tratamento escolhido.
+  const darkFooter = Boolean(look?.darkFooter)
+  const footerLogo = logo && darkFooter && look?.light ? look.light : logo
+  const onDark = darkFooter && look && !look.light && look.onDark !== 'auto' ? look.onDark : null
+  const logoImage = footerLogo && (
     <Photo
       className={[
         'site-footer__logo',
-        isRoundLogo(logo) && 'site-footer__logo--round',
-        logoRing && 'site-footer__logo--ring',
+        isRoundLogo(footerLogo) && 'site-footer__logo--round',
+        logoRing && ringAllowed(look) && 'site-footer__logo--ring',
+        onDark && `site-footer__logo--${onDark}`,
       ]
         .filter(Boolean)
         .join(' ')}
-      media={logo}
+      media={footerLogo}
       sizes="200px"
     />
   )

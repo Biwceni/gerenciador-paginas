@@ -1,4 +1,11 @@
-import { blendColors, contrastRatio, minReadableOpacity, readableTextColor } from './colors'
+import {
+  blendColors,
+  contrastRatio,
+  HEX_COLOR_PATTERN,
+  minReadableOpacity,
+  readableTextColor,
+  secondTextColor,
+} from './colors'
 
 // Atalhos do visual do site (do protótipo): só pontos de partida, as cores e fontes continuam livres.
 
@@ -8,6 +15,8 @@ export type SiteColors = {
   surface: string
   text: string
   footer: string
+  /** Segunda cor (E1), opcional: faixa de aviso, selos e ofertas. Sem ela, vale a principal. */
+  second?: string | null
 }
 
 export const COLOR_PRESETS: { name: string; colors: SiteColors }[] = [
@@ -83,7 +92,10 @@ export const COLOR_PRESETS: { name: string; colors: SiteColors }[] = [
   },
 ]
 
-export const COLOR_FIELDS: { key: keyof SiteColors; label: string; hint: string }[] = [
+/** As cinco cores de base (a segunda cor é opcional e tem campo próprio). */
+export type BaseColorKey = Exclude<keyof SiteColors, 'second'>
+
+export const COLOR_FIELDS: { key: BaseColorKey; label: string; hint: string }[] = [
   { key: 'primary', label: 'Cor principal', hint: 'Botões, destaques e faixas coloridas' },
   { key: 'background', label: 'Fundo', hint: 'Fundo das páginas' },
   { key: 'surface', label: 'Fundo suave', hint: 'Faixas que separam as seções' },
@@ -206,6 +218,16 @@ export function contrastChecks(colors: SiteColors): ContrastWarning[] {
       ratio: contrastRatio(readableTextColor(colors.footer), colors.footer),
       hint: 'Use um rodapé bem escuro ou bem claro.',
     },
+    // E1: a segunda cor só entra na conta quando foi escolhida.
+    ...(colors.second && HEX_COLOR_PATTERN.test(colors.second)
+      ? [
+          {
+            label: 'Faixa de aviso na segunda cor',
+            ratio: contrastRatio(secondTextColor(colors.second, colors.text), colors.second),
+            hint: 'A segunda cor está num tom médio. Um pouco mais escura ou mais clara ajuda.',
+          },
+        ]
+      : []),
   ]
 }
 

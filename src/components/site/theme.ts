@@ -2,12 +2,14 @@ import type { CSSProperties } from 'react'
 
 import {
   blendColors,
+  HEX_COLOR_PATTERN,
   deepShade,
   distinctSurface,
   minReadableOpacity,
   readableTextColor,
   readableTint,
   safeColor,
+  secondTextColor,
 } from '@/lib/colors'
 import { DEFAULT_COLORS, FONT_NAME_PATTERN, type Personality, safePersonality } from '@/lib/theme'
 import type { Site } from '@/payload-types'
@@ -124,6 +126,12 @@ export function brandShades(colors: Partial<Site['colors']> | null | undefined) 
   }
 }
 
+/** A segunda cor (E1), quando a pessoa escolheu uma. Sem ela, os lugares dela usam a principal. */
+export function secondColor(colors: Partial<Site['colors']> | null | undefined): string | null {
+  const value = colors?.second
+  return value && HEX_COLOR_PATTERN.test(value) ? value.toLowerCase() : null
+}
+
 /** O fundo "Suave" do site, sempre um pouco diferente do fundo (achado 3.2). */
 export function siteSurface(colors: Partial<Site['colors']> | null | undefined): string {
   return distinctSurface(
@@ -155,7 +163,12 @@ export function themeStyle(site: Partial<Site>): CSSProperties {
   const onPrimary = readableTextColor(primary)
   const onFooter = readableTextColor(footer)
 
+  const second = secondColor(site.colors)
+
   return {
+    ...(second
+      ? { '--color-second': second, '--color-on-second': secondTextColor(second, text) }
+      : {}),
     '--color-primary': primary,
     '--color-on-primary': onPrimary,
     '--color-background': background,

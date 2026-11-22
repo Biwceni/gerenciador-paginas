@@ -4,6 +4,7 @@ import { ValidationError } from 'payload'
 import { authenticated } from '../access/authenticated'
 import { publishedOrAuthenticated } from '../access/published'
 import { colorField } from '../fields/color'
+import { HEX_COLOR_PATTERN } from '../lib/colors'
 import { revalidateGlobalOnPublish } from '../hooks/revalidate'
 import { FontNotFoundError, prepareFonts, resolveFontNames } from '../lib/fonts'
 import { normalizeWhatsApp, validateExternalURL, validateInstagram } from '../lib/links'
@@ -161,6 +162,39 @@ export const Site: GlobalConfig = {
               label: 'Logo',
               admin: { description: 'Sem logo, o site usa as iniciais do nome.' },
             },
+            // A3: com logo, o topo mostra só o logo; o nome continua para o leitor de tela.
+            {
+              name: 'showNameWithLogo',
+              type: 'checkbox',
+              label: 'Mostrar o nome ao lado do logo',
+              defaultValue: false,
+              admin: {
+                description:
+                  'Desligado, o topo mostra só o logo. Ligue se o logo não tem o nome escrito.',
+              },
+            },
+            // E2: o logo sobre fundo escuro (rodapé escuro, topo escuro ou por cima da foto).
+            {
+              name: 'logoLight',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Versão clara do logo',
+              admin: {
+                description:
+                  'Usada no lugar do logo sobre fundo escuro: rodapé, topo escuro e topo por cima da foto.',
+              },
+            },
+            {
+              name: 'logoOnDark',
+              type: 'select',
+              label: 'Logo sobre fundo escuro (sem a versão clara)',
+              defaultValue: 'auto',
+              options: [
+                { value: 'auto', label: 'Como está (com contorno quando some no fundo)' },
+                { value: 'white', label: 'Versão branca' },
+                { value: 'plate', label: 'Placa branca atrás do logo' },
+              ],
+            },
             // Calculado em Sua marca a partir das cores do logo (T6): logo que some no fundo do topo
             // ou do rodapé ganha um contorno.
             {
@@ -236,6 +270,17 @@ export const Site: GlobalConfig = {
                 colorField('surface', 'Fundo suave (faixas e caixas)', DEFAULT_COLORS.surface),
                 colorField('text', 'Texto', DEFAULT_COLORS.text),
                 colorField('footer', 'Rodapé', DEFAULT_COLORS.footer),
+                // E1: segunda cor, opcional. Sem ela, vale a principal.
+                {
+                  name: 'second',
+                  type: 'text',
+                  label: 'Segunda cor (faixa de aviso, selos e ofertas)',
+                  admin: {
+                    description: 'Opcional. Em branco, esses lugares usam a cor principal.',
+                  },
+                  validate: (value: null | string | undefined) =>
+                    !value || HEX_COLOR_PATTERN.test(value) ? true : 'Escolha uma cor.',
+                },
               ],
             },
             {
