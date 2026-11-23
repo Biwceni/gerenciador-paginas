@@ -187,8 +187,8 @@ test.describe.serial('painel: avaliação Impeccable', () => {
     const summary = page.locator('.gp-disclosure > summary')
     await expect(summary).toContainText('Escolher outras letras')
     await expect(summary.locator('.gp-disclosure__icon svg')).toHaveCount(1)
-    await expect(page.locator('.gp-toc').getByText('Jeito do site')).toBeVisible()
-    await expect(page.getByText('Jeito do site', { exact: true }).nth(1)).toBeVisible()
+    await expect(page.locator('.gp-toc').getByText('Visual do site')).toBeVisible()
+    await expect(page.getByText('Visual do site', { exact: true }).nth(1)).toBeVisible()
     // A caixa do logo não é mais um cartão dentro do cartão.
     const logo = await page
       .locator('.gp-logopick')

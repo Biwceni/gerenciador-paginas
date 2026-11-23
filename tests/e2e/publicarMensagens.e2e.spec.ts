@@ -176,7 +176,7 @@ test.describe('editor: publicar com confiança e mensagens que ajudam', () => {
     await openEditor(page, id, 1)
     await page.getByRole('button', { name: /^Sua marca/ }).click()
     const panel = page.getByRole('dialog', { name: 'Sua marca' })
-    const personalities = panel.getByRole('group', { name: 'Personalidade' }).getByRole('button')
+    const personalities = panel.getByRole('group', { name: 'Visual' }).getByRole('button')
     const before = personalities.and(page.locator('[aria-pressed="true"]'))
     const beforeName = ((await before.locator('b').textContent()) ?? '').trim()
     await personalities.and(page.locator('[aria-pressed="false"]')).first().click()
@@ -188,7 +188,7 @@ test.describe('editor: publicar com confiança e mensagens que ajudam', () => {
     await expect(withBrand).toBeChecked()
     await expect(dialog.getByText('Sua marca vai junto')).toBeVisible()
     await withBrand.uncheck()
-    await expect(dialog.getByText(/A personalidade .* ainda não está no ar/)).toBeVisible()
+    await expect(dialog.getByText(/O visual .* ainda não está no ar/)).toBeVisible()
     await expect(dialog.getByRole('link', { name: /publique em Sua/ })).toBeVisible()
     await dialog.getByRole('button', { name: 'Agora não' }).click()
 

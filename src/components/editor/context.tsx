@@ -26,6 +26,8 @@ export type EditorContextValue = {
   adminRoute: string
   /** Abre a biblioteca de fotos; `onPick` recebe a foto escolhida ou enviada na hora. */
   pickPhoto: (onPick: (photo: Media) => void) => void
+  /** Abre a biblioteca para escolher várias fotos de uma vez, até `max`, na ordem dos toques. */
+  pickPhotos: (max: number, onPick: (photos: Media[]) => void) => void
   /** Troca uma foto pela versão nova (o ponto de foco mudou): a prévia redesenha com ela. */
   updatePhoto: (photo: Media) => void
 }

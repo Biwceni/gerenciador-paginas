@@ -26,16 +26,16 @@ export const DEFAULT_PERSONALITY: Personality = 'papel'
  */
 const FALLBACK_PERSONALITY: Personality = 'classico'
 
-/** Nome e descrição de cada personalidade, para o painel. */
+/**
+ * Nome e frase de cada visual, para o painel (F2, opção A). Só os nomes à vista mudaram: o valor
+ * guardado continua o mesmo (`papel`, `classico`…), e nenhum site muda sozinho.
+ */
 export const PERSONALITY_LABELS: Record<Personality, { name: string; description: string }> = {
-  papel: {
-    name: 'Papel',
-    description: 'Cartões de papel com picote, preço pontilhado e títulos fortes.',
-  },
-  classico: { name: 'Clássico', description: 'Limpo e direto, como o site sempre foi.' },
-  vitrine: { name: 'Vitrine', description: 'Foto grande, letras enormes, cara de loja.' },
-  aconchego: { name: 'Aconchego', description: 'Formas redondas e fotos em arco.' },
-  editorial: { name: 'Editorial', description: 'Grade de revista, títulos gigantes e fios.' },
+  papel: { name: 'Simples', description: 'Fundo claro, linhas retas, sem enfeite.' },
+  classico: { name: 'Sóbrio', description: 'Cantos arredondados e visual calmo.' },
+  vitrine: { name: 'Impacto', description: 'Foto grande no topo e letras enormes.' },
+  aconchego: { name: 'Acolhedor', description: 'Formas redondas e fotos em arco.' },
+  editorial: { name: 'Revista', description: 'Títulos gigantes e grade de revista.' },
 }
 
 /** A personalidade guardada, ou a padrão se vier vazia ou desconhecida. */

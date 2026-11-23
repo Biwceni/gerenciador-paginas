@@ -53,6 +53,15 @@ export const Media: CollectionConfig = {
       },
     },
     {
+      // Pasta da biblioteca (C6): só organiza o painel. Apagar a pasta solta a foto ("Sem pasta").
+      name: 'folder',
+      type: 'relationship',
+      relationTo: 'photo-folders',
+      label: 'Pasta',
+      index: true,
+      admin: { position: 'sidebar' },
+    },
+    {
       // Endereço de onde a foto de um modelo foi copiada (fase 4): aplicar o modelo de novo, ou
       // criar outra página com ele, usa a mesma foto em vez de copiar outra vez.
       // Só a rotina dos modelos (com `overrideAccess`) escreve; pela API o campo é recusado.

@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     pages: Page;
     media: Media;
+    'photo-folders': PhotoFolder;
     users: User;
     templates: Template;
     'saved-sections': SavedSection;
@@ -84,6 +85,7 @@ export interface Config {
   collectionsSelect: {
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'photo-folders': PhotoFoldersSelect<false> | PhotoFoldersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     templates: TemplatesSelect<false> | TemplatesSelect<true>;
     'saved-sections': SavedSectionsSelect<false> | SavedSectionsSelect<true>;
@@ -197,6 +199,7 @@ export interface Media {
    * Descreva a foto em poucas palavras, como se contasse para alguém que não pode vê-la. Ex.: "Xícara de café sobre a mesa de madeira".
    */
   alt?: string | null;
+  folder?: (number | null) | PhotoFolder;
   sourceUrl?: string | null;
   prefix?: string | null;
   _objectKey?: string | null;
@@ -229,6 +232,16 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-folders".
+ */
+export interface PhotoFolder {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -655,6 +668,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'photo-folders';
+        value: number | PhotoFolder;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null)
@@ -748,6 +765,7 @@ export interface PagesSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  folder?: T;
   sourceUrl?: T;
   prefix?: T;
   _objectKey?: T;
@@ -786,6 +804,15 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photo-folders_select".
+ */
+export interface PhotoFoldersSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

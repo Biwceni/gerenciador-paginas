@@ -20,7 +20,7 @@ type Progress = (percent: number) => void
 
 /** XHR no lugar de `fetch`: é o único jeito de saber quanto do arquivo já foi. */
 function send(
-  method: 'POST' | 'PUT',
+  method: 'POST' | 'PUT' | 'PATCH',
   url: string,
   body: Blob | FormData,
   headers: Record<string, string>,
@@ -42,12 +42,50 @@ function send(
   })
 }
 
-const documentBody = (file: Blob | string) => {
+/** Dados da foto que vão junto com o arquivo. */
+type PhotoData = { alt?: string; folder?: number | null; focalX?: number; focalY?: number }
+
+const documentBody = (file: Blob | string, data: PhotoData, name?: string) => {
   const body = new FormData()
-  // Descrição vazia, não ausente: a descrição é escrita depois, em cada foto.
-  body.append('_payload', JSON.stringify({ alt: '' }))
-  body.append('file', file)
+  body.append('_payload', JSON.stringify(data))
+  if (name && typeof file !== 'string') body.append('file', file, name)
+  else body.append('file', file)
   return body
+}
+
+/**
+ * Manda o arquivo para o Storage com o envio assinado e devolve a referência que o Payload aceita
+ * no lugar do arquivo (o recibo da assinatura).
+ */
+async function sendToStorage(
+  apiRoute: string,
+  file: Blob,
+  filename: string,
+  onProgress: Progress,
+): Promise<string> {
+  const signed = await request<SignedUpload>(apiRoute, SIGNED_URL_PATH, {
+    method: 'POST',
+    body: JSON.stringify({
+      collectionSlug: 'media',
+      filename,
+      filesize: file.size,
+      mimeType: file.type,
+    }),
+  })
+  // O navegador põe o tamanho sozinho e recusa quem tenta definir este cabeçalho.
+  const { 'Content-Length': _length, ...headers } = signed.headers
+  await send('PUT', signed.url, file, headers, onProgress)
+  const { clientUploadContext } = signed
+  return JSON.stringify({
+    clientUploadContext: {
+      prefix: clientUploadContext.prefix,
+      signedReceipt: clientUploadContext.signedReceipt,
+    },
+    collectionSlug: 'media',
+    filename: signed.filename ?? filename,
+    mimeType: file.type,
+    size: file.size,
+  })
 }
 
 /**
@@ -65,40 +103,48 @@ export async function uploadPhoto(
   file: File,
   direct: boolean,
   onProgress: Progress,
+  extra: { folder?: number | null } = {},
 ): Promise<Media> {
   const url = `${apiRoute}/media`
+  // Descrição vazia, não ausente: a descrição é escrita depois, em cada foto.
+  const data: PhotoData = { alt: '', ...(extra.folder ? { folder: extra.folder } : {}) }
   if (!direct) {
-    return JSON.parse(await send('POST', url, documentBody(file), {}, onProgress)).doc
+    return JSON.parse(await send('POST', url, documentBody(file, data), {}, onProgress)).doc
   }
-
-  const signed = await request<SignedUpload>(apiRoute, SIGNED_URL_PATH, {
-    method: 'POST',
-    body: JSON.stringify({
-      collectionSlug: 'media',
-      filename: file.name,
-      filesize: file.size,
-      mimeType: file.type,
-    }),
-  })
-  // O navegador põe o tamanho sozinho e recusa quem tenta definir este cabeçalho.
-  const { 'Content-Length': _length, ...headers } = signed.headers
-  await send('PUT', signed.url, file, headers, onProgress)
-
-  const { clientUploadContext, filename } = signed
-  const reference = JSON.stringify({
-    clientUploadContext: {
-      prefix: clientUploadContext.prefix,
-      signedReceipt: clientUploadContext.signedReceipt,
-    },
-    collectionSlug: 'media',
-    filename: filename ?? file.name,
-    mimeType: file.type,
-    size: file.size,
-  })
+  const reference = await sendToStorage(apiRoute, file, file.name, onProgress)
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'include',
-    body: documentBody(reference),
+    body: documentBody(reference, data),
+  })
+  if (!response.ok) throw new Error(`Erro ${response.status}`)
+  return ((await response.json()) as { doc: Media }).doc
+}
+
+/**
+ * Troca o arquivo de uma foto que já existe (cortar e girar, C6), pelo mesmo caminho do envio. A foto
+ * continua a mesma: as páginas que a usam mostram o arquivo novo. O ponto de foco volta ao centro,
+ * porque o recorte mudou.
+ */
+export async function replacePhotoFile(
+  apiRoute: string,
+  id: number,
+  file: Blob,
+  filename: string,
+  direct: boolean,
+  onProgress: Progress = () => {},
+): Promise<Media> {
+  const url = `${apiRoute}/media/${id}`
+  const data: PhotoData = { focalX: 50, focalY: 50 }
+  if (!direct) {
+    return JSON.parse(await send('PATCH', url, documentBody(file, data, filename), {}, onProgress))
+      .doc
+  }
+  const reference = await sendToStorage(apiRoute, file, filename, onProgress)
+  const response = await fetch(url, {
+    method: 'PATCH',
+    credentials: 'include',
+    body: documentBody(reference, data),
   })
   if (!response.ok) throw new Error(`Erro ${response.status}`)
   return ((await response.json()) as { doc: Media }).doc

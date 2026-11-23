@@ -334,7 +334,7 @@ export const Site: GlobalConfig = {
             {
               name: 'personality',
               type: 'select',
-              label: 'Personalidade do site',
+              label: 'Visual do site',
               defaultValue: DEFAULT_PERSONALITY,
               options: PERSONALITIES.map((value) => ({
                 value,

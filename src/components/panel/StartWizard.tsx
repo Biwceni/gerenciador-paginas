@@ -269,7 +269,7 @@ export function StartWizard({
   // não diz nada para quem não é do ramo; as letras aparecem na própria prévia.
   const lookNote = (template: StartTemplate) => {
     const personality = templatePersonality(template.key)
-    return personality ? `Personalidade ${PERSONALITY_LABELS[personality].name}` : ''
+    return personality ? `Visual ${PERSONALITY_LABELS[personality].name}` : ''
   }
 
   const pagesNote = (template: StartTemplate) =>
@@ -467,8 +467,8 @@ export function StartWizard({
                 </div>
               )}
               <Tip>
-                A personalidade, as cores e as letras do modelo são sugestões para o seu ramo. Em
-                Sua marca você escolhe quaisquer outras.
+                O visual, as cores e as letras do modelo são sugestões para o seu ramo. Em Sua marca
+                você escolhe quaisquer outras.
               </Tip>
               {error && (
                 <p className="gp-error" role="alert">

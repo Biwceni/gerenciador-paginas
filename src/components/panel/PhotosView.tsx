@@ -12,7 +12,7 @@ import { PhotosLibrary } from './PhotosLibrary'
 export async function PhotosView(props: AdminViewServerProps) {
   const { payload, user, adminRoute } = requireUser(props, PANEL_PATHS.photos)
   const access = { overrideAccess: false, user } as const
-  const [photos, usage] = await Promise.all([
+  const [photos, usage, folders] = await Promise.all([
     payload.find({
       collection: 'media',
       depth: 0,
@@ -22,6 +22,14 @@ export async function PhotosView(props: AdminViewServerProps) {
       ...access,
     }),
     photoUsage(payload, access),
+    payload.find({
+      collection: 'photo-folders',
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      sort: 'name',
+      ...access,
+    }),
   ])
   const small = await loadSmallPhotos(payload, user, photos.docs)
 
@@ -30,6 +38,7 @@ export async function PhotosView(props: AdminViewServerProps) {
       <PhotosLibrary
         adminRoute={adminRoute}
         apiRoute={payload.config.routes.api}
+        folders={folders.docs.map(({ id, name }) => ({ id, name }))}
         photos={photos.docs}
         small={small}
         usage={Object.fromEntries(usage)}

@@ -427,11 +427,11 @@ export function BrandEditor({
               label: 'Letras',
               summary:
                 [state.fonts.headings, state.fonts.body].filter(Boolean).join(' e ') ||
-                'As do jeito do site',
+                'As do visual do site',
             },
             {
               id: 'mc-jeito',
-              label: 'Jeito do site',
+              label: 'Visual do site',
               summary: PERSONALITY_LABELS[state.personality].name,
             },
             { id: 'mc-animacao', label: 'Animação', summary: MOTION_LABELS[state.motion].name },
@@ -904,6 +904,30 @@ export function BrandEditor({
             <PersonalityPicker
               colors={state.colors}
               onChange={(personality) => update({ personality })}
+              renderPreview={(personality, size) => (
+                <SiteFrame
+                  fontFaces={fontFaces}
+                  stylesheets={previewFonts.map(googleFontCSS)}
+                  theme={
+                    themeStyle({
+                      colors: state.colors,
+                      fonts: state.fonts,
+                      personality,
+                    } as Partial<Site>) as Record<string, string>
+                  }
+                  title={`Prévia do site no visual ${PERSONALITY_LABELS[personality].name}`}
+                  width={size === 'phone' ? 390 : 1280}
+                >
+                  <BrandPreview
+                    chrome={chrome}
+                    home={home}
+                    logo={logo}
+                    look={look}
+                    photos={photos}
+                    state={{ ...state, personality }}
+                  />
+                </SiteFrame>
+              )}
               value={state.personality}
             />
           </section>

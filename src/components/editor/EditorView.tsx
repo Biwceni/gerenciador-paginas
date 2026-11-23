@@ -53,6 +53,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
     templates,
     footer,
     footerTexts,
+    photoFolders,
   ] = await Promise.all([
     payload.findByID({
       collection: 'pages',
@@ -124,6 +125,14 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
     // O rodapé como a pessoa está mexendo: texto de exemplo nele entra no aviso (A7).
     payload.findGlobal({ slug: 'footer', depth: 0, draft: true, ...access }),
     loadFooterExampleTexts(payload, user),
+    payload.find({
+      collection: 'photo-folders',
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      sort: 'name',
+      ...access,
+    }),
   ])
   if (!draft) notFound()
 
@@ -192,6 +201,7 @@ export async function EditorView({ initPageResult, params }: AdminViewServerProp
         updatedAt: draft.updatedAt,
       }}
       pages={summaries}
+      photoFolders={photoFolders.docs.map(({ id, name }) => ({ id, name }))}
       photos={photos.docs}
       site={siteInfo(site)}
       tagline={site.tagline ?? null}

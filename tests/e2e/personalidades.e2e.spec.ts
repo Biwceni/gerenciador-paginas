@@ -267,8 +267,11 @@ test.describe.serial('personalidades do site', () => {
     await publishPersonality('classico')
     await page.setViewportSize({ width: 1440, height: 900 })
     await open(page, '/admin/sua-marca')
-    const option = page.getByRole('button', { name: /^Aconchego/ })
+    const option = page.getByRole('button', { name: /^Acolhedor/ })
+    // F2: o toque abre a prévia grande do visual; só "Usar o visual" troca.
     await option.click()
+    await expect(option).toHaveAttribute('aria-pressed', 'false')
+    await page.getByRole('button', { name: 'Usar o visual Acolhedor' }).click()
     await expect(option).toHaveAttribute('aria-pressed', 'true')
     const preview = page.frameLocator('iframe[title="Prévia da sua marca"]')
     await expect(preview.locator('body')).toHaveAttribute('data-personality', 'aconchego')

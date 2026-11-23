@@ -167,8 +167,8 @@ test.describe.serial('modelos por ramo', () => {
 
     // Os modelos sugerem a personalidade do ramo (e o Papel, igual em todos); a prévia já tem o nome e a cidade.
     await expect(page.getByRole('heading', { name: 'Escolha um modelo' })).toBeVisible()
-    await expect(page.getByText('Personalidade Vitrine', { exact: true })).toBeVisible()
-    await expect(page.getByText(/Personalidade Aconchego/)).toBeVisible()
+    await expect(page.getByText('Visual Impacto', { exact: true })).toBeVisible()
+    await expect(page.getByText(/Visual Acolhedor/)).toBeVisible()
     const preview = page.frameLocator('.gp-tplsite__preview iframe').first()
     await expect(preview.getByText(`Entregamos em ${CITY}`).first()).toBeVisible()
     await expect(preview.getByText(/Lorem/)).toHaveCount(0)

@@ -359,7 +359,7 @@ test.describe('editor: melhorias do Elementor, etapa 2', () => {
     await expect(panel).toContainText('É a mesma Sua marca do painel.')
     await expect(panel).toContainText('Vale para todas as páginas do site.')
 
-    await panel.getByRole('button', { name: /^Aconchego/ }).click()
+    await panel.getByRole('button', { name: /^Acolhedor/ }).click()
     await expect(preview(page).locator('body')).toHaveAttribute('data-personality', 'aconchego')
     await expect(
       page.getByText('Sua marca guardada. O site muda quando você publicar.'),
@@ -424,7 +424,7 @@ test.describe('editor: melhorias do Elementor, etapa 2', () => {
     await expect(
       dialog.getByRole('checkbox', { name: /Publicar também Sua marca/ }),
     ).not.toBeChecked()
-    await expect(dialog).toContainText('A personalidade Vitrine ainda não está no ar')
+    await expect(dialog).toContainText('O visual Impacto ainda não está no ar')
     await expect(dialog.getByRole('button', { name: 'Publicar mesmo assim' })).toBeVisible()
     await dialog.getByRole('button', { name: /Publicar mesmo assim/ }).click()
     await expect(page.getByText('Pronto, a página está no ar')).toBeVisible({ timeout: 30_000 })
@@ -442,7 +442,7 @@ test.describe('editor: melhorias do Elementor, etapa 2', () => {
     await page.getByRole('button', { name: /^Sua marca/ }).click()
     await page
       .getByRole('dialog', { name: 'Sua marca' })
-      .getByRole('button', { name: /^Editorial/ })
+      .getByRole('button', { name: /^Revista/ })
       .click()
     await expect(page.getByText('Sua marca guardada.')).toBeVisible()
 
