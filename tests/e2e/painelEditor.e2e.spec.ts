@@ -244,7 +244,7 @@ test.describe.serial('Painel e editor no visual do produto', () => {
     await page.getByRole('button', { name: /^Sua marca/ }).click()
     await page
       .getByRole('dialog', { name: 'Sua marca' })
-      .getByRole('button', { name: /^Aconchego/ })
+      .getByRole('button', { name: /^Acolhedor/ })
       .click()
     const preview = page.frameLocator('.ed-root iframe').first()
     await expect(preview.locator('body')).toHaveAttribute('data-personality', 'aconchego')

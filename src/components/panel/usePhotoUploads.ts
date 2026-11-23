@@ -48,6 +48,8 @@ type Options = {
   onFinished?: (result: { uploaded: Media[]; problems: number }) => void
   /** Fotos que já estão na biblioteca: a mesma foto enviada de novo é avisada antes. */
   library?: readonly Pick<Media, 'filename' | 'filesize' | 'alt'>[]
+  /** Pasta onde as fotos novas entram (a pasta aberta na biblioteca). */
+  folder?: number | null
 }
 
 let nextId = 1
@@ -82,8 +84,12 @@ export function usePhotoUploads(options: Options = {}) {
         // Com o Storage ligado, o plugin registra aqui o envio direto. Só na hora de enviar: ele
         // registra num efeito, depois do primeiro desenho, sem desenhar a tela de novo.
         const direct = Boolean(getUploadHandler({ collectionSlug: 'media' }))
-        return uploadPhoto(apiRoute, upload.file, direct, (progress) =>
-          change(upload.id, { progress }),
+        return uploadPhoto(
+          apiRoute,
+          upload.file,
+          direct,
+          (progress) => change(upload.id, { progress }),
+          { folder: latest.current.folder ?? null },
         )
       },
       onStart: (upload) => change(upload.id, { state: 'sending', progress: 0 }),

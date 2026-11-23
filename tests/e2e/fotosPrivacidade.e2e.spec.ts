@@ -170,7 +170,7 @@ test.describe.serial('fotos, privacidade e avançado', () => {
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: new RegExp(`uma-${SUFFIX}`) }).click()
     await page.getByLabel('O que aparece na foto?').fill('Fachada da loja')
-    await expect(page.getByText('Salvo.')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('✓ Guardado')).toBeVisible({ timeout: 15_000 })
 
     await page.reload()
     await page.waitForLoadState('networkidle')

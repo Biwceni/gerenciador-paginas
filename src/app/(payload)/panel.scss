@@ -5154,3 +5154,343 @@ textarea.gp-input {
   gap: 6px;
   overflow-wrap: anywhere;
 }
+
+// ---------- C6: pastas, várias fotos de uma vez, cortar e girar ----------
+
+// As miniaturas levam largura e altura no HTML (reserva o lugar antes de baixar); quem manda no
+// tamanho é a proporção do CSS.
+.gp-media__item img,
+.ed-media-item img {
+  height: auto;
+}
+
+.gp-folders__bar {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+// Fila de pastas: rola para o lado no celular, sem quebrar em várias linhas.
+.gp-folders {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  min-width: 0;
+  padding: 2px 2px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gp-line-strong) transparent;
+
+  &__chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    max-width: 240px;
+    padding: 6px 14px;
+    border: 1px solid var(--gp-line-strong);
+    border-radius: 999px;
+    background: var(--gp-surface);
+    color: var(--gp-ink);
+    font: inherit;
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--gp-accent);
+      background: var(--gp-accent);
+      color: var(--gp-accent-ink);
+
+      .gp-folders__count {
+        color: inherit;
+        opacity: 0.85;
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--gp-accent);
+      outline-offset: 2px;
+    }
+
+    &--add {
+      border-style: dashed;
+      color: var(--gp-accent);
+    }
+  }
+
+  &__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__count {
+    color: var(--gp-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
+// Seletor do editor: as pastas ocupam a linha toda, a busca vem embaixo.
+.ed-picker-bar .gp-folders {
+  flex: 1 1 100%;
+}
+
+// Escolher várias: marca no canto de cada foto.
+.gp-media__item--pick[aria-pressed='true'] {
+  border-color: var(--gp-accent);
+  background: var(--gp-accent-soft);
+}
+
+.gp-media__check {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 35%);
+  color: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+
+  [aria-pressed='true'] > & {
+    background: var(--gp-accent);
+    border-color: var(--gp-accent);
+  }
+}
+
+.gp-media__more,
+.ed-media-more {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+// Barra das fotos escolhidas: fica presa no pé da tela enquanto a pessoa escolhe.
+.gp-selectbar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--gp-line-strong);
+  border-radius: 14px;
+  background: var(--gp-surface);
+  box-shadow: 0 8px 24px var(--gp-shadow);
+
+  &__count {
+    font-weight: 700;
+    margin-right: auto;
+  }
+
+  &__move .gp-input {
+    min-height: 40px;
+    width: auto;
+    min-width: 160px;
+  }
+}
+
+.gp-folderform {
+  display: grid;
+  gap: 16px;
+
+  &__foot {
+    justify-content: flex-end;
+  }
+}
+
+// Cortar e girar.
+.gp-photoedit {
+  display: grid;
+  // Coluna que encolhe: a foto larga não estica o diálogo no celular.
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+
+  &__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  &__ratios {
+    flex-wrap: wrap;
+  }
+
+  &__area {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  &__stage {
+    position: relative;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--gp-surface-2);
+    touch-action: none;
+    user-select: none;
+  }
+
+  &__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  // A área clara é o recorte; o resto escurece com a sombra enorme do próprio quadro.
+  &__crop {
+    position: absolute;
+    box-shadow: 0 0 0 9999px rgb(0 0 0 / 55%);
+    outline: 2px solid #fff;
+    cursor: move;
+
+    &:focus-visible {
+      outline: 3px solid var(--gp-accent);
+      outline-offset: 0;
+    }
+  }
+
+  // Cantos de 24 px: dá para pegar com o dedo.
+  &__handle {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #fff;
+    background: rgb(0 0 0 / 25%);
+
+    &--nw {
+      top: -4px;
+      left: -4px;
+      border-width: 4px 0 0 4px;
+      cursor: nwse-resize;
+    }
+
+    &--ne {
+      top: -4px;
+      right: -4px;
+      border-width: 4px 4px 0 0;
+      cursor: nesw-resize;
+    }
+
+    &--sw {
+      bottom: -4px;
+      left: -4px;
+      border-width: 0 0 4px 4px;
+      cursor: nesw-resize;
+    }
+
+    &--se {
+      right: -4px;
+      bottom: -4px;
+      border-width: 0 4px 4px 0;
+      cursor: nwse-resize;
+    }
+  }
+
+  &__foot {
+    align-items: center;
+  }
+
+  &__spacer {
+    flex: 1;
+  }
+}
+
+// F2: prévia grande de um visual, antes de trocar.
+.gp-lookpreview {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+
+  &__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+
+    .gp-actions {
+      margin-left: auto;
+    }
+  }
+
+  &__text {
+    margin: 0;
+    flex: 1 1 260px;
+  }
+}
+
+// Busca e "Escolher várias" juntas, à direita dos filtros.
+.gp-media__find {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 320px;
+  min-width: 0;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  max-width: 520px;
+
+  .gp-searchbox {
+    flex: 1 1 200px;
+    min-width: 0;
+    max-width: 340px;
+  }
+
+  > .gp-btn {
+    flex: none;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 720px) {
+  .gp-media__find {
+    max-width: none;
+    justify-content: stretch;
+
+    .gp-searchbox {
+      max-width: none;
+    }
+  }
+
+  .gp-selectbar {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .gp-selectbar__count {
+    flex-basis: 100%;
+  }
+
+  // No celular a caixa de pasta ocupa a linha com o Mover, sem passar da tela.
+  .gp-selectbar__move {
+    flex: 1 1 60%;
+    min-width: 0;
+
+    .gp-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+    }
+  }
+}

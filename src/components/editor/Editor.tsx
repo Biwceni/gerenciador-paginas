@@ -84,6 +84,10 @@ import { BrandDots, BrandPanel } from './BrandPanel'
 import { SAVE_EVENT, SaveSectionDialog, VIEW_EVENT } from './savedSections'
 import type { SectionItem } from '@/puck/sectionClipboard'
 import { PhotoPicker } from './PhotoPicker'
+import type { PhotoFolder } from '@/lib/photoLibrary'
+
+type PickRequest =
+  { one: (photo: Media) => void } | { many: (photos: Media[]) => void; max: number }
 import { PreviewTools } from './PreviewTools'
 import { VisitorPreview } from './VisitorPreview'
 import { SectionVariantsBar } from './SectionVariants'
@@ -108,6 +112,8 @@ export type EditorProps = {
   page: PageSettings & { id: number; live: boolean; hasChanges: boolean; updatedAt: string }
   initialData: PuckPageData
   photos: Media[]
+  /** Pastas da biblioteca de fotos (C6). */
+  photoFolders: PhotoFolder[]
   forms: FormDefinition[]
   pages: EditorPageSummary[]
   homepageId: number | null
@@ -282,7 +288,7 @@ function EditorHeader() {
         aria-label={`Sua marca${chrome.brand.pending ? ', em rascunho' : ''}`}
         className="ed-btn ed-brandbtn ed-hide-sm"
         onClick={() => chrome.open('brand')}
-        title="Personalidade, cores e letras do site todo"
+        title="Visual, cores e letras do site todo"
         type="button"
       >
         <BrandDots colors={chrome.brand.look.colors} />
@@ -464,7 +470,8 @@ export function Editor(props: EditorProps) {
   const [recovery, setRecovery] = useState<LocalCopy | null>(null)
   const [photos, setPhotos] = useState(props.photos)
   const [forms, setForms] = useState(props.forms)
-  const [picking, setPicking] = useState<((photo: Media) => void) | null>(null)
+  // Biblioteca aberta: uma foto (campo de foto) ou várias, até `max` (listas de fotos, C6).
+  const [picking, setPicking] = useState<PickRequest | null>(null)
   const [data, setData] = useState<PuckPageData>(initialData)
   // O catálogo só abre sozinho com a página vazia; com seções, a prévia começa grande, sem ele
   // (rodada 2, F5). "Adicionar seção" continua à vista na barra da esquerda.
@@ -1253,7 +1260,9 @@ export function Editor(props: EditorProps) {
       forms,
       addForm,
       adminRoute,
-      pickPhoto: (onPick: (photo: Media) => void) => setPicking(() => onPick),
+      pickPhoto: (onPick: (photo: Media) => void) => setPicking({ one: onPick }),
+      pickPhotos: (max: number, onPick: (photos: Media[]) => void) =>
+        setPicking({ many: onPick, max }),
       updatePhoto: addPhoto,
     }),
     [
@@ -1588,9 +1597,13 @@ export function Editor(props: EditorProps) {
                 último, por cima delas. */}
             {picking && (
               <PhotoPicker
+                folders={props.photoFolders}
+                max={'many' in picking ? picking.max : 1}
+                multiple={'many' in picking}
                 onClose={() => setPicking(null)}
-                onPick={(photo) => {
-                  picking(photo)
+                onPick={(chosen) => {
+                  if ('many' in picking) picking.many(chosen)
+                  else if (chosen[0]) picking.one(chosen[0])
                   setPicking(null)
                 }}
                 onUploaded={addPhoto}

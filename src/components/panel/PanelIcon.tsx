@@ -241,6 +241,25 @@ const PATHS = {
       <path d="M20 9H9a5 5 0 0 0 0 10h3" />
     </>
   ),
+  'rotate-left': (
+    <>
+      <path d="M4 4v5h5" />
+      <path d="M4.6 15a8 8 0 1 0 1.8-8.3L4 9" />
+    </>
+  ),
+  'rotate-right': (
+    <>
+      <path d="M20 4v5h-5" />
+      <path d="M19.4 15a8 8 0 1 1-1.8-8.3L20 9" />
+    </>
+  ),
+  crop: (
+    <>
+      <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+      <path d="M2 6h14a2 2 0 0 1 2 2v14" />
+    </>
+  ),
+  folder: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />,
   history: (
     <>
       <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />

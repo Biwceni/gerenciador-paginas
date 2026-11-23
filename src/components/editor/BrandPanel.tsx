@@ -190,7 +190,7 @@ export function BrandPanel({
         </p>
 
         <section aria-labelledby={`${titleId}-p`} className="ed-brandpanel__group">
-          <h3 id={`${titleId}-p`}>Personalidade</h3>
+          <h3 id={`${titleId}-p`}>Visual</h3>
           <div aria-labelledby={`${titleId}-p`} className="ed-brandpanel__list" role="group">
             {PERSONALITIES.map((personality) => (
               <button

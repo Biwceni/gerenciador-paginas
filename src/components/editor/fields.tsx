@@ -323,7 +323,7 @@ export function PhotoListField<T extends PhotoListItem>({
   /** Como chamar cada item nos botões e avisos: "foto" ou "logo". */
   noun?: 'foto' | 'logo'
 }) {
-  const { photoById, pickPhoto } = useEditor()
+  const { photoById, pickPhotos } = useEditor()
   const getPuck = useGetPuck()
   const setCaption = (index: number, caption: string) =>
     onChange(value.map((item, i) => (i === index ? { ...item, caption } : item)))
@@ -392,16 +392,22 @@ export function PhotoListField<T extends PhotoListItem>({
           className="ed-btn ed-btn--sm"
           disabled={readOnly}
           onClick={() =>
-            pickPhoto(async (picked) => {
-              const item = (
-                captions ? { mediaId: picked.id, caption: '' } : { mediaId: picked.id }
-              ) as T
-              onChange([...value, prepare ? await prepare(item, picked) : item])
+            // C6: várias de uma vez, na ordem dos toques, até o que ainda cabe na seção.
+            pickPhotos(max - value.length, async (picked) => {
+              const items = await Promise.all(
+                picked.map((photo) => {
+                  const item = (
+                    captions ? { mediaId: photo.id, caption: '' } : { mediaId: photo.id }
+                  ) as T
+                  return prepare ? prepare(item, photo) : item
+                }),
+              )
+              onChange([...value, ...items].slice(0, max))
             })
           }
           type="button"
         >
-          + Adicionar {noun}
+          + Adicionar {noun}s
         </button>
       )}
       {value.length >= max && (

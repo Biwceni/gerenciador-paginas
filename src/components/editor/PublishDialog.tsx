@@ -618,14 +618,14 @@ export function PublishDialog({
         {brand &&
           (withBrand ? (
             <Check ok title="Sua marca vai junto">
-              {brand.personality ? `Personalidade ${brand.personality}, cores` : 'Cores'} e letras
-              mudam em todas as páginas. Vai junto também o que estiver guardado em Configurações.
+              {brand.personality ? `Visual ${brand.personality}, cores` : 'Cores'} e letras mudam em
+              todas as páginas. Vai junto também o que estiver guardado em Configurações.
             </Check>
           ) : (
             <Check
               title={
                 brand.personality
-                  ? `A personalidade ${brand.personality} ainda não está no ar`
+                  ? `O visual ${brand.personality} ainda não está no ar`
                   : 'Sua marca tem mudanças que ainda não estão no ar'
               }
             >

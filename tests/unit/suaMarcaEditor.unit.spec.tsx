@@ -82,12 +82,12 @@ describe('Sua marca no editor (E8): painel', () => {
     expect(render(LOOK, true)).toContain('Em rascunho: o site muda quando você publicar.')
   })
 
-  it('as personalidades, com a de agora marcada', () => {
+  it('os visuais (F2: nomes novos), com o de agora marcado', () => {
     const html = render({ ...LOOK, personality: 'vitrine' })
-    expect(html.match(/<b>(Papel|Clássico|Vitrine|Aconchego|Editorial)<\/b>/g)).toHaveLength(
+    expect(html.match(/<b>(Simples|Sóbrio|Impacto|Acolhedor|Revista)<\/b>/g)).toHaveLength(
       PERSONALITIES.length,
     )
-    expect(html).toMatch(/aria-pressed="true"[^>]*><span class="ed-brandpanel__text"><b>Vitrine/)
+    expect(html).toMatch(/aria-pressed="true"[^>]*><span class="ed-brandpanel__text"><b>Impacto/)
   })
 
   it('cores e letras fora das sugestões: "Como estava" fica na lista, marcado', () => {
