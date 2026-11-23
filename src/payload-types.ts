@@ -290,6 +290,7 @@ export interface Template {
   kind: 'site' | 'page';
   siteType?: ('institucional' | 'onepage' | 'landing' | 'evento' | 'pessoal' | 'links' | 'embreve') | null;
   segment?: ('cafe' | 'saude' | 'servicos' | 'loja' | 'outro') | null;
+  fromPage?: boolean | null;
   order?: number | null;
   /**
    * A primeira vira a página inicial. Modelo de página tem uma só.
@@ -330,10 +331,11 @@ export interface Template {
         submitButtonLabel: string;
         fields?:
           | {
-              type: 'text' | 'email' | 'textarea';
+              type: 'text' | 'email' | 'textarea' | 'file';
               name: string;
               label: string;
               required?: boolean | null;
+              accept?: ('photo' | 'document') | null;
               id?: string | null;
             }[]
           | null;
@@ -902,6 +904,7 @@ export interface TemplatesSelect<T extends boolean = true> {
   kind?: T;
   siteType?: T;
   segment?: T;
+  fromPage?: T;
   order?: T;
   pages?:
     | T
@@ -931,6 +934,7 @@ export interface TemplatesSelect<T extends boolean = true> {
               name?: T;
               label?: T;
               required?: T;
+              accept?: T;
               id?: T;
             };
         id?: T;

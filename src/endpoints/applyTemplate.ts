@@ -170,3 +170,105 @@ export const templatePageEndpoint: Endpoint = {
     }
   },
 }
+
+/** Quantos modelos salvos de páginas o site guarda, no máximo (a Nova página fica legível). */
+export const SAVED_TEMPLATES_MAX = 30
+
+/**
+ * `POST /api/templates/da-pagina` (F3): guarda uma página do site como modelo da Nova página, com o
+ * rascunho mais recente dela (fotos, links e formulários do site, como estão).
+ */
+export const savePageTemplateEndpoint: Endpoint = {
+  path: '/da-pagina',
+  method: 'post',
+  handler: async (req) => {
+    if (!req.user) return fail('Entre no painel para salvar modelos.', 401)
+    const body = await readBody(req)
+    const name = text(body.name, 60)
+    const description = text(body.description, 120)
+    const pageId = Number(body.pageId)
+    if (!name) return fail('Dê um nome para o modelo.')
+    if (!Number.isInteger(pageId)) return fail('Página não encontrada.', 404)
+    try {
+      const page = await req.payload
+        .findByID({
+          collection: 'pages',
+          id: pageId,
+          depth: 0,
+          draft: true,
+          overrideAccess: false,
+          req,
+        })
+        .catch(() => null)
+      if (!page) return fail('Página não encontrada.', 404)
+      const countSaved = async () =>
+        (
+          await req.payload.count({
+            collection: 'templates',
+            where: { fromPage: { equals: true } },
+            overrideAccess: true,
+            req,
+          })
+        ).totalDocs
+      const full = () =>
+        fail(
+          `Já há ${SAVED_TEMPLATES_MAX} modelos salvos. Apague um na Nova página para salvar outro.`,
+        )
+      if ((await countSaved()) >= SAVED_TEMPLATES_MAX) return full()
+      const doc = await req.payload.create({
+        collection: 'templates',
+        data: {
+          key: `salvo-${page.id}-${Date.now().toString(36)}`,
+          name,
+          description: description || null,
+          kind: 'page',
+          fromPage: true,
+          order: 2000,
+          pages: [
+            {
+              title: page.title,
+              slug: page.slug,
+              campaign: Boolean(page.campaign),
+              content: page.content,
+            },
+          ],
+          photos: [],
+          forms: [],
+        },
+        // A coleção Modelos é só do administrador; este caminho grava só modelos de página do site.
+        overrideAccess: true,
+        req,
+      })
+      // Dois salvamentos ao mesmo tempo passariam juntos pela conta de cima: confere de novo.
+      if ((await countSaved()) > SAVED_TEMPLATES_MAX) {
+        await req.payload.delete({ collection: 'templates', id: doc.id, overrideAccess: true, req })
+        return full()
+      }
+      return Response.json({ doc: { id: doc.id, name: doc.name } })
+    } catch (error) {
+      return failFrom(req, error, 'Não deu para salvar o modelo')
+    }
+  },
+}
+
+/** `DELETE /api/templates/:id/salvo` (F3): apaga um modelo salvo de uma página. Os da equipe ficam. */
+export const deleteSavedTemplateEndpoint: Endpoint = {
+  path: '/:id/salvo',
+  method: 'delete',
+  handler: async (req) => {
+    if (!req.user) return fail('Entre no painel para apagar modelos.', 401)
+    const template = await findTemplate(req, 'page')
+    if (!template?.fromPage) return fail('Modelo não encontrado.', 404)
+    try {
+      await req.payload.delete({
+        collection: 'templates',
+        id: template.id,
+        overrideAccess: true,
+        req,
+      })
+      return Response.json({ ok: true })
+    } catch (error) {
+      return failFrom(req, error, 'Não deu para apagar o modelo')
+    }
+  },
+}

@@ -81,3 +81,51 @@ export function showPageTitles(shows: readonly SiteShow[]): string[] {
 export function showInfo(show: SiteShow) {
   return SITE_SHOWS.find((item) => item.value === show)!
 }
+
+/**
+ * F3: o modelo de página da Nova página para cada escolha (identificador na coleção Modelos). Os
+ * das escolhas do Começar aparecem primeiro.
+ */
+export const SHOW_PAGE_MODELS: Record<SiteShow, { key: string; name: string; slug: string }> = {
+  products: { key: 'pagina-vitrine', name: 'Vitrine de produtos', slug: 'produtos' },
+  services: { key: 'pagina-servicos', name: 'Serviços', slug: 'servicos' },
+  units: { key: 'pagina-unidades', name: 'Unidades', slug: 'unidades' },
+  agenda: { key: 'pagina-agenda', name: 'Agenda', slug: 'agenda' },
+  team: { key: 'pagina-equipe', name: 'Equipe', slug: 'equipe' },
+  files: { key: 'pagina-formulario', name: 'Formulário', slug: 'formulario' },
+  contact: { key: 'pagina-contato', name: 'Contato', slug: 'contato' },
+}
+
+/** A escolha do Começar ligada a um modelo de página, se houver. */
+export function showOfPageModel(key: string): SiteShow | null {
+  return SITE_SHOW_VALUES.find((show) => SHOW_PAGE_MODELS[show].key === key) ?? null
+}
+
+export type PageModelGroup = 'suggested' | 'team' | 'saved'
+
+/**
+ * F3: a ordem dos modelos na Nova página. Os ligados ao que o site mostra (Começar) vêm primeiro,
+ * na ordem das escolhas; depois os outros da equipe, na ordem da coleção; os salvos de páginas do
+ * site formam um grupo à parte, no fim.
+ */
+export function sortPageModels<T extends { key: string; fromPage?: boolean | null }>(
+  models: T[],
+  shows: readonly SiteShow[],
+): (T & { group: PageModelGroup })[] {
+  const rank = (key: string) => {
+    const show = showOfPageModel(key)
+    const index = show ? shows.indexOf(show) : -1
+    return index === -1 ? shows.length : index
+  }
+  const order = { suggested: 0, team: 1, saved: 2 }
+  return models
+    .map((model) => ({
+      ...model,
+      group: (model.fromPage
+        ? 'saved'
+        : rank(model.key) < shows.length
+          ? 'suggested'
+          : 'team') as PageModelGroup,
+    }))
+    .sort((a, b) => order[a.group] - order[b.group] || rank(a.key) - rank(b.key))
+}

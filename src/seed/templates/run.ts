@@ -11,7 +11,10 @@ import { getPayload } from 'payload'
 import config from '../../payload.config'
 import { templateSeeds } from './data'
 
-/** Identificadores dos modelos de site de antes dos ramos (entrega 6), que o `atualizar` apaga. */
+/**
+ * Identificadores que o `atualizar` apaga: os modelos de site de antes dos ramos (entrega 6) e os
+ * modelos de página por ramo (F3).
+ */
 const RETIRED = [
   'cafe-aconchegante',
   'cafe-moderno',
@@ -35,6 +38,12 @@ const RETIRED = [
   'links-noite',
   'embreve-serra',
   'embreve-doce',
+  // F3: modelos de página por ramo, trocados pelos modelos pelo que a página mostra.
+  'pagina-cardapio',
+  'pagina-galeria',
+  'pagina-encomendas',
+  'pagina-promocao',
+  'pagina-perguntas',
 ]
 
 const update = process.argv.includes('atualizar')
@@ -76,7 +85,8 @@ if (update) {
   removed = docs.length
   const { docs: others } = await payload.find({
     collection: 'templates',
-    where: { key: { not_in: [...current] } },
+    // Os salvos de páginas do site (F3) são da pessoa: nem contam aqui.
+    where: { key: { not_in: [...current] }, fromPage: { not_equals: true } },
     depth: 0,
     pagination: false,
     overrideAccess: true,

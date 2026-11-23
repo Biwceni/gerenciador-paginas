@@ -9,11 +9,12 @@ import {
 } from '@/lib/examples'
 import { fillExamples } from '@/lib/templates'
 import { parsePageContent, type PageComponent, type PuckPageData } from '@/puck/schema'
-import { templateSeeds } from '@/seed/templates/data'
+import { legacyPageExamples, templateSeeds } from '@/seed/templates/data'
 import { pageBuilder } from '@/seed/templates/sections'
 
 const page = (content: PageComponent[]): PuckPageData => ({ root: { props: {} }, content })
-const texts = exampleTexts(templateSeeds)
+// Como o painel lê: os modelos da coleção e os textos dos modelos de página de antes do F3.
+const texts = exampleTexts([...templateSeeds, legacyPageExamples()])
 
 // Um texto de exemplo da confeitaria, sem marcador, e um com o nome e a cidade.
 const PLAIN = 'Brigadeiro, beijinho e cajuzinho, à sua escolha.'

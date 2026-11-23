@@ -119,6 +119,22 @@ export function restoreSiteBackup(apiRoute: string, backupId: number) {
   )
 }
 
+/** F3: guarda a página (o rascunho mais recente) como modelo da Nova página. */
+export function savePageAsTemplate(
+  apiRoute: string,
+  data: { pageId: number; name: string; description?: string },
+) {
+  return request<{ doc: { id: number; name: string } }>(apiRoute, '/templates/da-pagina', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/** F3: apaga um modelo salvo de uma página. As páginas criadas com ele ficam. */
+export function deleteSavedTemplate(apiRoute: string, templateId: number) {
+  return request<{ ok: true }>(apiRoute, `/templates/${templateId}/salvo`, { method: 'DELETE' })
+}
+
 export function deletePage(apiRoute: string, pageId: number) {
   return request<DocResponse<Page>>(apiRoute, `/pages/${pageId}`, { method: 'DELETE' })
 }

@@ -1,6 +1,7 @@
 import { type BrandComboKey, brandCombos } from '../../lib/brand'
 import { FONT_PAIRS, type Business } from '../../lib/fontPairs'
 import { PRIVACY_TEMPLATE_KEY, PRIVACY_TITLE } from '../../lib/privacy'
+import { SHOW_PAGE_MODELS, showInfo, SITE_SHOW_VALUES, type SiteShow } from '../../lib/siteShows'
 import { BUSINESSES, type BusinessType, type SiteType, templateKey } from '../../lib/templates'
 import { type Personality } from '../../lib/theme'
 import type { Template } from '../../payload-types'
@@ -20,6 +21,7 @@ import {
   WHATSAPP,
   whatsapp,
 } from './sections'
+import { showPageModel } from './compose'
 
 // Os modelos (redesign v3, entrega 6): o "Site da empresa" com 8 ramos e os outros 6 tipos de site,
 // 3 modelos cada um, e os modelos de página da "Nova página". Cada ramo tem as páginas e a ordem de
@@ -2041,16 +2043,22 @@ function siteTemplates(pack: Pack, packIndex: number): TemplateSeed[] {
   })
 }
 
-// Modelos da "Nova página". Sem `{cidade}`: a cidade só é perguntada no Começar; `{nome}` vira o nome
-// do site das Configurações.
-const pageModels: {
+type PageModel = {
   key: string
   name: string
+  /** Nome da página criada, quando não é o nome do modelo (a Nova página já o preenche). */
+  title?: string
   description: string
   slug: string
   build: Pack['pages'][number]['build']
   forms?: TemplateSeed['forms']
-}[] = [
+}
+
+/**
+ * Os modelos da "Nova página" de antes do F3 (por ramo). Não são mais gravados: ficam aqui só para
+ * a conferência "Ainda há texto de exemplo" reconhecer os textos das páginas criadas com eles.
+ */
+export const legacyPageModels: PageModel[] = [
   {
     key: 'pagina-vitrine',
     name: 'Vitrine de produtos',
@@ -2294,6 +2302,74 @@ const pageModels: {
     ],
     forms: [CONTACT_FORM],
   },
+]
+
+/** Descrição de cada modelo de escolha na Nova página. */
+const SHOW_MODEL_TEXT: Record<SiteShow, string> = {
+  products: 'Fotos, preço e botão de pedir. Serve também para itens com ficha',
+  services: 'O que você faz, com preço ou “sob consulta”, e perguntas frequentes',
+  units: 'Endereço, telefone, horário e mapa de cada lugar onde você atende',
+  agenda: 'Eventos, turmas e datas, com os próximos primeiro',
+  team: 'Quem atende, com foto e cargo',
+  files: 'Quem visita manda dados, foto ou documento por um formulário',
+  contact: 'WhatsApp, endereço e um formulário de mensagem',
+}
+
+// F3: modelos da "Nova página" pelo que a página mostra, os mesmos do Começar (F1), mais Sobre e a
+// política de privacidade. `{nome}` vira o nome do site e `{cidade}`, a cidade do endereço.
+const pageModels: PageModel[] = [
+  ...SITE_SHOW_VALUES.map((show): PageModel => {
+    const { key, name, slug } = SHOW_PAGE_MODELS[show]
+    const model = showPageModel(show)
+    return {
+      key,
+      name,
+      title: showInfo(show).page.title,
+      description: SHOW_MODEL_TEXT[show],
+      slug,
+      build: () => model.items,
+      forms: model.forms,
+    }
+  }),
+  {
+    key: 'pagina-sobre',
+    name: 'Sobre',
+    description: 'História, o que vocês fazem e o que os clientes dizem',
+    slug: 'sobre',
+    build: (b) => [
+      b.hero({
+        title: 'Quem somos',
+        text: 'A história e o jeito de trabalhar de quem está por trás de {nome}.',
+        style: 'side',
+      }),
+      b.textImage({
+        title: 'Nossa história',
+        text: 'Conte como tudo começou: quem teve a ideia, quando abriu as portas e o que mudou desde então. {nome} existe para...\n\nOs clientes gostam de saber quem está do outro lado.',
+        side: 'left',
+      }),
+      b.features({
+        title: 'No que acreditamos',
+        style: 'soft',
+        items: [
+          ['Atendimento de perto', 'Você fala direto com quem faz.', 'heart'],
+          ['Capricho', 'Cada detalhe conferido antes da entrega.', 'star'],
+          ['Palavra cumprida', 'Prazo combinado é prazo entregue.', 'check'],
+        ],
+      }),
+      b.testimonials({
+        title: 'O que dizem os clientes',
+        items: [
+          ['Atendimento excelente do começo ao fim. Recomendo!', 'Cliente satisfeito'],
+          ['Fizeram exatamente o que eu pedi, no prazo combinado.', 'Cliente fiel'],
+        ],
+      }),
+      b.cta({
+        title: 'Vamos conversar?',
+        text: 'Fale com a gente pelo WhatsApp.',
+        button: 'Fale com a gente',
+      }),
+    ],
+  },
   {
     key: PRIVACY_TEMPLATE_KEY,
     name: PRIVACY_TITLE,
@@ -2315,7 +2391,7 @@ export const templateSeeds: TemplateSeed[] = [
     order: 1000 + index,
     pages: [
       {
-        title: model.name,
+        title: model.title ?? model.name,
         slug: model.slug,
         campaign: false,
         content: content(model.build(pageBuilder())),
@@ -2325,3 +2401,15 @@ export const templateSeeds: TemplateSeed[] = [
     forms: model.forms ?? [],
   })),
 ]
+
+/** As páginas dos modelos de antes do F3, para a conferência de texto de exemplo. */
+export function legacyPageExamples(): Pick<Template, 'pages'> {
+  return {
+    pages: legacyPageModels.map((model) => ({
+      title: model.name,
+      slug: model.slug,
+      campaign: false,
+      content: content(model.build(pageBuilder())),
+    })),
+  }
+}

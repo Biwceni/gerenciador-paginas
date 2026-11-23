@@ -7,15 +7,35 @@ import React, { useRef, useState } from 'react'
 import { SectionThumb } from '@/components/editor/SectionThumb'
 import { editorPath } from '@/lib/editor'
 import { panelHref } from '@/lib/panel'
-import { PRIVACY_TEMPLATE_KEY, PRIVACY_TITLE } from '@/lib/privacy'
+import type { PageModelGroup } from '@/lib/siteShows'
 import { slugify, uniqueSlug } from '@/lib/slug'
 import { type Components, SECTION_LABELS } from '@/puck/config'
 
-import { blankContent, copyPage, createPage, createPageFromTemplate } from './api'
+import {
+  blankContent,
+  copyPage,
+  createPage,
+  createPageFromTemplate,
+  deleteSavedTemplate,
+} from './api'
 import { PanelIcon } from './PanelIcon'
 
 /** Uma seção na miniatura do modelo. `band`: banner baixo, desenhado como uma faixa fina. */
 export type MiniSection = { type: string; band?: boolean }
+
+/**
+ * Um modelo de página na tela. `group`: ligado ao que o site mostra (F1), outro da equipe, ou salvo
+ * de uma página do site. `pageTitle`: o nome que a página nova já ganha.
+ */
+export type NewPageModel = {
+  id: number
+  key: string
+  title: string
+  text: string
+  pageTitle: string
+  group: PageModelGroup
+  sections: MiniSection[]
+}
 
 type Props = {
   adminRoute: string
@@ -25,8 +45,8 @@ type Props = {
   domain: string
   /** Identificador do modelo que já vem escolhido (`?modelo=`), como o "Criar agora" dos formulários. */
   initialModel: string | null
-  /** Modelos de página (coleção Modelos, fase 4). */
-  models: { id: number; key: string; title: string; text: string; sections: MiniSection[] }[]
+  /** Modelos de página (coleção Modelos, fase 4), já na ordem da tela. */
+  models: NewPageModel[]
   pages: { id: number; title: string; slug: string }[]
 }
 
@@ -99,15 +119,48 @@ export function NewPageForm({
   pages,
 }: Props) {
   const router = useRouter()
-  const privacyModel = models.find((model) => model.key === PRIVACY_TEMPLATE_KEY)
-  const asked = models.find((model) => model.key === initialModel)
-  const [start, setStart] = useState<Start>(asked?.id ?? models[0]?.id ?? 'blank')
+  const [list, setList] = useState(models)
+  const asked = list.find((model) => model.key === initialModel)
+  const first = asked ?? list.find((model) => model.group !== 'saved')
+  const [start, setStart] = useState<Start>(first?.id ?? 'blank')
   const [sourceId, setSourceId] = useState(pages[0]?.id ?? 0)
-  // A política já tem um bom nome: a pessoa só confirma.
-  const [name, setName] = useState(asked && asked === privacyModel ? PRIVACY_TITLE : '')
+  // O nome já vem do modelo; se a pessoa trocar de modelo sem mexer nele, troca junto.
+  const [name, setName] = useState(first?.pageTitle ?? '')
+  const [autoName, setAutoName] = useState(first?.pageTitle ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const nameField = useRef<HTMLInputElement>(null)
+
+  const choose = (key: Start) => {
+    setStart(key)
+    const model = list.find((item) => item.id === key)
+    const next = model?.pageTitle ?? ''
+    if (!name.trim() || name === autoName) {
+      setName(next)
+      setAutoName(next)
+    }
+    // No celular o campo fica bem abaixo dos cartões: leva até ele.
+    const field = nameField.current
+    if (field) {
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      field.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+      field.focus({ preventScroll: true })
+    }
+  }
+
+  const removeSaved = async (id: number) => {
+    setDeleteError(null)
+    try {
+      await deleteSavedTemplate(apiRoute, id)
+      setList((current) => current.filter((model) => model.id !== id))
+      setDeleting(null)
+      if (start === id) choose(list.find((model) => model.group !== 'saved')?.id ?? 'blank')
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Tente de novo.')
+    }
+  }
 
   const title = name.trim()
   const taken = pages.map((page) => page.slug)
@@ -135,6 +188,29 @@ export function NewPageForm({
     }
   }
 
+  const saved = list.filter((model) => model.group === 'saved')
+  const card = (item: {
+    id: Start
+    title: string
+    text: string
+    sections?: MiniSection[]
+    group?: NewPageModel['group']
+  }) => (
+    <button
+      aria-checked={start === item.id}
+      className="gp-start"
+      key={item.id}
+      onClick={() => choose(item.id)}
+      role="radio"
+      type="button"
+    >
+      <StartMini sections={item.sections} start={item.id} />
+      <b>{item.title}</b>
+      {item.group === 'suggested' && <span className="gp-start__tag">No seu site</span>}
+      <span className="gp-small gp-muted">{item.text}</span>
+    </button>
+  )
+
   return (
     <div className="gp-page" role="main">
       <header className="gp-pagehead">
@@ -148,41 +224,75 @@ export function NewPageForm({
           </Link>
           <h1>Nova página</h1>
           <p>
-            Escolha um modelo. A estrutura vem pronta, com textos de exemplo do seu ramo para você
-            trocar pelos seus. As fotos ficam para você escolher.
+            Escolha um modelo. A estrutura vem pronta, com textos de exemplo para você trocar pelos
+            seus. As fotos ficam para você escolher.
           </p>
         </div>
       </header>
 
       <div aria-label="Como começar" className="gp-starts" role="radiogroup" style={colors}>
         {[
-          ...models.map((model) => ({ ...model, key: model.id as Start })),
-          ...STARTS.filter((item) => item.key === 'blank' || pages.length > 0),
-        ].map((item) => (
-          <button
-            aria-checked={start === item.key}
-            className="gp-start"
-            key={item.key}
-            onClick={() => {
-              setStart(item.key)
-              if (item.key === privacyModel?.id && !name.trim()) setName(PRIVACY_TITLE)
-              // No celular o campo fica bem abaixo dos cartões: leva até ele.
-              const field = nameField.current
-              if (field) {
-                const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                field.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
-                field.focus({ preventScroll: true })
-              }
-            }}
-            role="radio"
-            type="button"
-          >
-            <StartMini sections={'sections' in item ? item.sections : undefined} start={item.key} />
-            <b>{item.title}</b>
-            <span className="gp-small gp-muted">{item.text}</span>
-          </button>
-        ))}
+          ...list.filter((model) => model.group !== 'saved').map(card),
+          ...STARTS.filter((item) => item.key === 'blank' || pages.length > 0).map((item) =>
+            card({ ...item, id: item.key }),
+          ),
+        ]}
       </div>
+
+      {saved.length > 0 && (
+        <section aria-labelledby="np-saved" className="gp-savedmodels">
+          <h2 id="np-saved">Seus modelos</h2>
+          <p className="gp-small gp-muted">
+            Páginas do site guardadas como modelo, com os textos e as fotos delas.
+          </p>
+          <div aria-labelledby="np-saved" className="gp-starts" role="radiogroup" style={colors}>
+            {saved.map((model) => (
+              <div className="gp-savedstart" key={model.id}>
+                {card(model)}
+                {deleting === model.id ? (
+                  <span className="gp-savedstart__ask" role="group" aria-label="Apagar o modelo?">
+                    <span className="gp-small">
+                      Apagar o modelo? As páginas feitas com ele ficam.
+                    </span>
+                    <button
+                      className="gp-btn gp-btn--sm gp-btn--danger"
+                      onClick={() => removeSaved(model.id)}
+                      type="button"
+                    >
+                      Apagar
+                    </button>
+                    <button
+                      className="gp-btn gp-btn--sm gp-btn--ghost"
+                      onClick={() => setDeleting(null)}
+                      type="button"
+                    >
+                      Cancelar
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    aria-label={`Apagar o modelo ${model.title}`}
+                    className="gp-btn gp-btn--sm gp-btn--ghost gp-savedstart__delete"
+                    onClick={() => {
+                      setDeleteError(null)
+                      setDeleting(model.id)
+                    }}
+                    type="button"
+                  >
+                    <PanelIcon name="trash" size={14} />
+                    Apagar
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {deleteError && (
+            <p className="gp-error" role="alert">
+              Não deu para apagar: {deleteError}
+            </p>
+          )}
+        </section>
+      )}
 
       <form className="gp-card gp-card--narrow" onSubmit={create}>
         {start === 'copy' && (
@@ -234,7 +344,7 @@ export function NewPageForm({
             type="submit"
           >
             {busy
-              ? typeof start === 'number'
+              ? typeof start === 'number' && list.find((m) => m.id === start)?.group !== 'saved'
                 ? 'Criando e copiando as fotos…'
                 : 'Criando…'
               : 'Criar e começar a editar'}

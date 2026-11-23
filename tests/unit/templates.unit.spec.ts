@@ -21,8 +21,11 @@ import {
 } from '@/lib/templates'
 import type { Template } from '@/payload-types'
 import { collectReferences } from '@/puck/references'
-import { parsePageContent, type PuckPageData } from '@/puck/schema'
+import { emptyPageContent, parsePageContent, type PuckPageData } from '@/puck/schema'
 import { templateSeeds } from '@/seed/templates/data'
+import { pageBuilder } from '@/seed/templates/sections'
+import { PRIVACY_TEMPLATE_KEY } from '@/lib/privacy'
+import { SHOW_PAGE_MODELS, SITE_SHOW_VALUES } from '@/lib/siteShows'
 
 const asTemplate = (seed: (typeof templateSeeds)[number], id = 1) =>
   ({ ...seed, id, updatedAt: '', createdAt: '' }) as Template
@@ -148,9 +151,12 @@ describe('modelos por ramo (entrega 6)', () => {
     }
   })
 
-  it('os modelos de página não usam a cidade (ela só é perguntada no Começar)', () => {
-    for (const seed of pageModels)
-      expect(JSON.stringify(seed.pages), seed.key).not.toContain('{cidade}')
+  it('os modelos de página são os do F3: um por escolha do Começar, Sobre e a política', () => {
+    expect(pageModels.map((seed) => seed.key)).toEqual([
+      ...SITE_SHOW_VALUES.map((show) => SHOW_PAGE_MODELS[show].key),
+      'pagina-sobre',
+      PRIVACY_TEMPLATE_KEY,
+    ])
   })
 
   it('apontam o menu para seções que existem na página', () => {
@@ -612,17 +618,40 @@ describe('página a partir de um modelo', () => {
     expect(JSON.stringify(data.content.data)).not.toContain('{nome}')
   })
 
-  it('a promoção começa pela faixa de aviso e põe o nome no banner', async () => {
-    const seed = templateSeeds.find((item) => item.key === 'pagina-promocao')!
-    const { req, calls } = fakeReq()
-    await applyPageTemplate(req, asTemplate(seed), {
-      title: 'Promoção de inverno',
-      slug: 'promocao-de-inverno',
-    })
+  it('a cidade dos textos vem do endereço das Configurações', async () => {
+    const seed = templateSeeds.find((item) => item.key === 'pagina-contato')!
+    expect(JSON.stringify(seed.pages)).toContain('{cidade}')
+    const site = { name: 'Casa Azul', contact: { address: 'Rua A, 10 - Centro, Lavras - MG' } }
+    const { req, calls } = fakeReq({ site })
+    await applyPageTemplate(req, asTemplate(seed), { title: 'Onde estamos', slug: 'onde-estamos' })
     const create = calls.find((c) => c.op === 'create' && c.args.collection === 'pages')!
-    const data = create.args.data as { content: { data: PuckPageData } }
-    const [first, second] = data.content.data.content
-    expect(first.type).toBe('Announcement')
-    expect(second.props).toMatchObject({ title: 'Promoção de inverno' })
+    const text = JSON.stringify((create.args.data as { content: unknown }).content)
+    expect(text).toContain('Lavras')
+    expect(text).not.toContain('{cidade}')
+  })
+
+  it('modelo salvo de uma página entra como cópia, sem copiar fotos nem criar formulários', async () => {
+    const banner = pageBuilder().hero({ title: 'Curso de bolos {nome}', text: '' })
+    if (banner.type === 'Hero') banner.props.image = { mediaId: 5 }
+    const content = emptyPageContent()
+    content.data.content.push(banner)
+    const template = {
+      id: 9,
+      key: 'salvo-3-x',
+      name: 'Curso',
+      kind: 'page',
+      fromPage: true,
+      pages: [{ title: 'Curso', slug: 'curso', content }],
+      photos: [{ url: 'https://images.pexels.com/x.jpg' }],
+      forms: [{ title: 'Inscrição', fields: [] }],
+    } as unknown as Template
+    const { req, calls } = fakeReq({ site: { name: 'Loja' } })
+    const result = await applyPageTemplate(req, template, { title: 'Curso 2', slug: 'curso-2' })
+    expect(result.missingPhotos).toBe(0)
+    expect(calls.filter((c) => c.op === 'create').map((c) => c.args.collection)).toEqual(['pages'])
+    const create = calls.find((c) => c.op === 'create')!
+    const first = (create.args.data as { content: { data: PuckPageData } }).content.data.content[0]
+    // Texto e foto como a pessoa deixou: nada de marcador trocado nem banner renomeado.
+    expect(first.props).toMatchObject({ title: 'Curso de bolos {nome}', image: { mediaId: 5 } })
   })
 })

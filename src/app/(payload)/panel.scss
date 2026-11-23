@@ -1189,7 +1189,62 @@ time {
 
   b {
     font-size: var(--gp-fs-text);
+    // Nome de modelo salvo pode ser uma palavra comprida só.
+    overflow-wrap: anywhere;
   }
+
+  > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+// F3: selo do modelo ligado ao que o site mostra (Começar).
+.gp-start__tag {
+  justify-self: start;
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: var(--gp-accent-soft);
+  color: var(--gp-ink);
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+}
+
+// F3: modelos salvos de páginas do site, com o Apagar embaixo de cada cartão.
+.gp-savedmodels {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+
+  h2 {
+    margin: 0;
+    font-size: var(--gp-fs-card);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.gp-savedstart {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+
+  > .gp-start {
+    height: 100%;
+  }
+}
+
+.gp-savedstart__delete {
+  justify-self: start;
+}
+
+.gp-savedstart__ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
 }
 
 // Miniatura do cartão: uma folha com as seções do modelo, de cima para baixo. O que não cabe
@@ -1282,6 +1337,11 @@ time {
     row-gap: 2px;
     align-items: center;
     padding: 10px 44px 10px 10px;
+
+    // Com o selo "No seu site", a descrição desce uma linha: o desenho acompanha.
+    &:has(.gp-start__tag) .gp-mini {
+      grid-row: 1 / span 3;
+    }
 
     .gp-mini {
       grid-row: 1 / span 2;

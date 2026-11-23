@@ -6,6 +6,7 @@ import type { Personality } from '../../lib/theme'
 import type { Template } from '../../payload-types'
 import type { PageComponent } from '../../puck/schema'
 import {
+  CONTACT_FORM,
   content,
   EMAIL,
   finishPage,
@@ -361,4 +362,24 @@ export function composeSiteTemplate(
  */
 export function composedExamplePages(): Pick<ComposedTemplate, 'pages'> {
   return composeSiteTemplate({ shows: SITE_SHOW_VALUES, personality: 'classico' })
+}
+
+/**
+ * F3: o modelo de página de uma escolha, para a Nova página. É a mesma página que o Começar monta
+ * (seção principal, o "Fale com a gente" no fim e o formulário que ela usa), sem depender do resto
+ * do site. As datas da agenda são acertadas de novo ao criar a página (`freshEventDates`).
+ */
+export function showPageModel(
+  show: SiteShow,
+  today = new Date(),
+): { items: PageComponent[]; forms: TemplateForm[] } {
+  const forms: TemplateForm[] =
+    show === 'files' ? [FILE_FORM] : show === 'contact' ? [CONTACT_FORM] : []
+  const b = pageBuilder()
+  const items = finishPage(SHOW_PAGES[show](b, today, 1), b, {
+    whatsappLabel: BUTTON,
+    contactForm: 1,
+    internal: true,
+  })
+  return { items, forms }
 }

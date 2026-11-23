@@ -16,6 +16,7 @@ import {
   deletePage,
   restorePage,
   restoreSiteBackup,
+  savePageAsTemplate,
   setHomepage,
   unpublishPage,
 } from './api'
@@ -43,7 +44,7 @@ type Props = {
 
 export type SiteBackupRow = { id: number; name: string; createdAt: string; pages: number }
 
-type Notice = { text: string; editId?: number }
+type Notice = { text: string; editId?: number; newPage?: boolean }
 
 export function PagesList({
   adminRoute,
@@ -65,6 +66,8 @@ export function PagesList({
   const [restoreError, setRestoreError] = useState<string | null>(null)
   const [backTo, setBackTo] = useState<SiteBackupRow | null>(null)
   const [backError, setBackError] = useState<string | null>(null)
+  const [saveFrom, setSaveFrom] = useState<PageRow | null>(null)
+  const closeSave = useCallback(() => setSaveFrom(null), [])
 
   // B10: página que acabou de ser arquivada ou excluída sai da lista na hora do aviso; se o servidor
   // recusar, ela volta. Depois da nova leitura do servidor, a lista já vem sem ela; ao restaurar,
@@ -141,10 +144,12 @@ export function PagesList({
           return { text: `“${page.title}” saiu do ar e voltou a ser rascunho.` }
         })
 
-  // Cópia e página inicial vão direto; o que tira do site ou apaga pede confirmação.
+  // Cópia e página inicial vão direto; o que tira do site ou apaga pede confirmação. Salvar como
+  // modelo pede o nome do modelo.
   const pick = (page: PageRow, kind: Action) => {
     setActionError(null)
-    if (kind === 'copy' || kind === 'home') perform(page, kind)
+    if (kind === 'template') setSaveFrom(page)
+    else if (kind === 'copy' || kind === 'home') perform(page, kind)
     else setConfirm({ page, kind })
   }
 
@@ -211,6 +216,9 @@ export function PagesList({
             {notice.text}
             {notice.editId && (
               <Link href={editorPath(adminRoute, notice.editId)}>Editar a cópia</Link>
+            )}
+            {notice.newPage && (
+              <Link href={panelHref(adminRoute, 'newPage')}>Ver na Nova página</Link>
             )}
             <button
               aria-label="Fechar aviso"
@@ -387,6 +395,21 @@ export function PagesList({
         </PanelDialog>
       )}
 
+      {saveFrom && (
+        <SaveTemplateDialog
+          apiRoute={apiRoute}
+          onClose={closeSave}
+          onSaved={(name) => {
+            setSaveFrom(null)
+            setNotice({
+              text: `“${name}” foi salvo. Ele aparece em “Seus modelos” quando você cria uma página.`,
+              newPage: true,
+            })
+          }}
+          page={saveFrom}
+        />
+      )}
+
       {confirm && (
         <ConfirmDialog
           busy={busy}
@@ -402,7 +425,7 @@ export function PagesList({
   )
 }
 
-type Action = 'copy' | 'home' | Confirm
+type Action = 'copy' | 'template' | 'home' | Confirm
 type Confirm = 'unpublish' | 'archive' | 'delete'
 
 /**
@@ -523,6 +546,7 @@ function MoreMenu({
           style={place}
         >
           {item('copy', 'copy', 'Fazer uma cópia desta página')}
+          {active && item('template', 'layout', 'Salvar como modelo de página')}
           {!page.home &&
             active &&
             item('home', 'home', `Usar como página inicial${live ? '' : ' (publique antes)'}`)}
@@ -555,6 +579,93 @@ function MoreMenu({
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * F3: guarda a página como modelo da Nova página, com um nome (o da página, para trocar) e uma
+ * descrição opcional. Vai o rascunho mais recente, com os textos e as fotos dela.
+ */
+function SaveTemplateDialog({
+  apiRoute,
+  onClose,
+  onSaved,
+  page,
+}: {
+  apiRoute: string
+  onClose: () => void
+  onSaved: (name: string) => void
+  page: PageRow
+}) {
+  const [name, setName] = useState(page.title.slice(0, 60))
+  const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const title = name.trim()
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!title) return
+    setSaving(true)
+    setError(null)
+    try {
+      const { doc } = await savePageAsTemplate(apiRoute, {
+        pageId: page.id,
+        name: title,
+        description: description.trim(),
+      })
+      onSaved(doc.name)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Tente de novo.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <PanelDialog onClose={onClose} title="Salvar como modelo de página">
+      <form className="gp-stack" onSubmit={save}>
+        <p>
+          Guarda “{page.title}” como está agora, com as seções, os textos e as fotos. Na Nova
+          página, ele aparece em “Seus modelos” para criar páginas parecidas. Esta página não muda.
+        </p>
+        <div className="gp-field">
+          <label htmlFor="st-name">Nome do modelo</label>
+          <input
+            className="gp-input"
+            id="st-name"
+            maxLength={60}
+            onChange={(event) => setName(event.target.value)}
+            value={name}
+          />
+        </div>
+        <div className="gp-field">
+          <label htmlFor="st-text">
+            Para que serve <span className="gp-muted">(opcional)</span>
+          </label>
+          <input
+            className="gp-input"
+            id="st-text"
+            maxLength={120}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Ex.: página de um curso, com turmas e preço"
+            value={description}
+          />
+        </div>
+        {error && (
+          <p className="gp-error" role="alert">
+            Não deu para salvar: {error}
+          </p>
+        )}
+        <div className="gp-actions gp-actions--end">
+          <button className="gp-btn" onClick={onClose} type="button">
+            Cancelar
+          </button>
+          <button className="gp-btn gp-btn--primary" disabled={!title || saving} type="submit">
+            {saving ? 'Salvando…' : 'Salvar modelo'}
+          </button>
+        </div>
+      </form>
+    </PanelDialog>
   )
 }
 

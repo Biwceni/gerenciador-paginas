@@ -6,6 +6,8 @@ import { authenticated } from '../access/authenticated'
 import {
   applyTemplateEndpoint,
   composeSiteEndpoint,
+  deleteSavedTemplateEndpoint,
+  savePageTemplateEndpoint,
   templatePageEndpoint,
 } from '../endpoints/applyTemplate'
 import { colorField } from '../fields/color'
@@ -17,6 +19,7 @@ import { describeContentError, parsePageContent } from '../puck/schema'
 
 type TemplateData = {
   kind?: 'site' | 'page'
+  fromPage?: boolean | null
   pages?: { content?: unknown }[] | null
   photos?: unknown[] | null
   forms?: unknown[] | null
@@ -26,9 +29,10 @@ type TemplateData = {
  * O conteúdo de cada página do modelo passa pelo mesmo esquema das páginas (já migrado para a
  * versão atual) e só pode citar fotos, páginas e formulários que o modelo tem.
  */
-const validateTemplate: CollectionBeforeValidateHook = ({ data, req }) => {
+const validateTemplate: CollectionBeforeValidateHook = ({ data, originalDoc, req }) => {
   const template = data as TemplateData | undefined
   if (!template?.pages) return data
+  const fromPage = template.fromPage ?? (originalDoc as TemplateData | undefined)?.fromPage
   const counts = {
     pages: template.kind === 'page' ? 0 : template.pages.length,
     photos: template.photos?.length ?? 0,
@@ -36,9 +40,12 @@ const validateTemplate: CollectionBeforeValidateHook = ({ data, req }) => {
   }
   template.pages.forEach((page, index) => {
     const result = parsePageContent(page.content)
-    const message = result.success
-      ? checkTemplateReferences(result.data.data, counts)
-      : describeContentError(result.error)
+    // Modelo salvo de uma página do site: as fotos, as páginas e os formulários são os de verdade.
+    const message = !result.success
+      ? describeContentError(result.error)
+      : fromPage
+        ? true
+        : checkTemplateReferences(result.data.data, counts)
     if (message !== true) {
       throw new ValidationError({
         collection: 'templates',
@@ -139,7 +146,13 @@ export const Templates: CollectionConfig = {
   hooks: {
     beforeValidate: [validateTemplate],
   },
-  endpoints: [composeSiteEndpoint, applyTemplateEndpoint, templatePageEndpoint],
+  endpoints: [
+    composeSiteEndpoint,
+    savePageTemplateEndpoint,
+    applyTemplateEndpoint,
+    templatePageEndpoint,
+    deleteSavedTemplateEndpoint,
+  ],
   fields: [
     {
       // Nome fixo do modelo para o script `npm run modelos` saber o que já existe.
@@ -188,6 +201,14 @@ export const Templates: CollectionConfig = {
         { data }: { data: Partial<TemplateData> & { siteType?: string } },
       ) =>
         !isSite(data) || data?.siteType !== 'institucional' || value ? true : 'Escolha o ramo.',
+    },
+    {
+      // "Salvar como modelo": a página guarda as fotos, os links e os formulários do site como estão.
+      name: 'fromPage',
+      type: 'checkbox',
+      label: 'Salvo de uma página do site',
+      defaultValue: false,
+      admin: { position: 'sidebar', readOnly: true },
     },
     {
       name: 'order',
@@ -268,11 +289,23 @@ export const Templates: CollectionConfig = {
                 { label: 'Texto curto', value: 'text' },
                 { label: 'E-mail', value: 'email' },
                 { label: 'Texto longo', value: 'textarea' },
+                // F3: o modelo "Formulário" pede um arquivo (receita, foto, documento).
+                { label: 'Arquivo', value: 'file' },
               ],
             },
             { name: 'name', type: 'text', label: 'Nome do campo', required: true },
             { name: 'label', type: 'text', label: 'Pergunta', required: true },
             { name: 'required', type: 'checkbox', label: 'Obrigatório', defaultValue: false },
+            {
+              name: 'accept',
+              type: 'select',
+              label: 'Aceita',
+              options: [
+                { label: 'Só foto', value: 'photo' },
+                { label: 'Foto, PDF ou Word', value: 'document' },
+              ],
+              admin: { condition: (_, sibling) => sibling?.type === 'file' },
+            },
           ],
         },
       ],
