@@ -2,12 +2,15 @@ import type { PayloadRequest } from 'payload'
 import { commitTransaction, initTransaction, killTransaction } from 'payload'
 
 import type { Page, Site, Template } from '../payload-types'
+import type { TemplateForm } from '../seed/templates/sections'
 import { collectReferences } from '../puck/references'
 import { emptyPageContent, parsePageContent, type PuckPageData } from '../puck/schema'
 import { templateBlockType } from './forms'
 import { PRIVACY_TEMPLATE_KEY } from './privacy'
 import { relationID } from './relations'
 import { archivedSlug, slugify, uniqueSlug } from './slug'
+import { backupSite } from './siteBackup'
+import type { SiteShow } from './siteShows'
 import { siteUnits, toUnitData } from './units'
 
 export { archivedSlug }
@@ -134,7 +137,16 @@ async function reusableForm(req: PayloadRequest, title: string): Promise<number 
   return null
 }
 
-async function createTemplateForms(req: PayloadRequest, template: Template): Promise<number[]> {
+/** O que montar o site usa de um modelo: o da coleção ou o montado pelo Começar (F1). */
+export type SiteTemplate = Pick<
+  Template,
+  'key' | 'pages' | 'photos' | 'site' | 'header' | 'footer'
+> & { forms?: TemplateForm[] | null }
+
+async function createTemplateForms(
+  req: PayloadRequest,
+  template: Pick<SiteTemplate, 'forms'>,
+): Promise<number[]> {
   const ids: number[] = []
   for (const form of template.forms ?? []) {
     const reused = await reusableForm(req, form.title)
@@ -153,6 +165,7 @@ async function createTemplateForms(req: PayloadRequest, template: Template): Pro
           label: field.label,
           required: Boolean(field.required),
           width: 100,
+          ...(field.type === 'file' ? { accept: field.accept ?? 'document' } : {}),
         })),
       },
       overrideAccess: false,
@@ -202,6 +215,15 @@ function headerLink(link: TemplateLink | null | undefined, pageIds: number[]) {
 /** O que a pessoa respondeu no Começar. A cidade só entra nos textos de exemplo. */
 export type SiteAnswers = { name: string; tagline: string; whatsapp: string; city?: string }
 
+/**
+ * A8: o que sai do site anterior ao trocar de negócio. Marcado, o campo fica em branco no site
+ * novo; desmarcado, continua como está. No primeiro site não há nada para tirar.
+ */
+export type SiteClear = { logo?: boolean; social?: boolean; contact?: boolean; seo?: boolean }
+
+/** Opções de montar o site: o que sai do anterior e as escolhas do Começar (F1). */
+export type SiteOptions = { clear?: SiteClear; shows?: SiteShow[] }
+
 /** Dados para guardar uma página em "Arquivadas": o rascunho mais recente inteiro, com o endereço. */
 function archivedPageData(page: Page, slug: string) {
   return {
@@ -231,15 +253,20 @@ export function templateSiteData(
   template: Pick<Template, 'key' | 'site'>,
   answers: SiteAnswers,
   homepage: number,
+  options: SiteOptions = {},
 ) {
   const sample = template.site
+  const clear = options.clear ?? {}
+  const contact = clear.contact ? emptyContact(site.contact) : site.contact
   return {
-    logo: relationID(site.logo),
+    logo: clear.logo ? null : relationID(site.logo),
+    ...(clear.logo ? { logoLight: null, showNameWithLogo: false } : {}),
     // A página de privacidade de antes vai para "Arquivadas" com as outras, e a nova se cria depois.
     privacyPage: null,
-    social: site.social,
-    seoDescription: site.seoDescription,
-    shareImage: relationID(site.shareImage),
+    // Cada rede em branco, uma por uma: um grupo vazio o Payload completaria com o que já está lá.
+    social: clear.social ? NO_SOCIAL : site.social,
+    seoDescription: clear.seo ? null : site.seoDescription,
+    shareImage: clear.seo ? null : relationID(site.shareImage),
     name: answers.name,
     tagline: answers.tagline || null,
     homepage,
@@ -248,16 +275,36 @@ export function templateSiteData(
     personality: templatePersonality(template.key) ?? site.personality,
     motion: site.motion,
     contact: {
-      ...site.contact,
+      ...contact,
       // D1: o WhatsApp respondido vai para a unidade principal (os campos de sempre são cópia dela).
-      units: templateUnits(site.contact, answers.whatsapp),
-      whatsapp: answers.whatsapp || site.contact?.whatsapp || null,
-      address: site.contact?.address || null,
-      hours: site.contact?.hours || null,
+      units: templateUnits(contact, answers.whatsapp),
+      whatsapp: answers.whatsapp || contact?.whatsapp || null,
+      address: contact?.address || null,
+      hours: contact?.hours || null,
       // A mensagem pronta do WhatsApp é a do ramo novo (W2); sem ela no modelo, fica a de antes.
-      whatsappMessage: sample?.whatsappMessage || site.contact?.whatsappMessage || null,
+      whatsappMessage: sample?.whatsappMessage || contact?.whatsappMessage || null,
     },
+    // F1: as escolhas do Começar ficam guardadas. Modelo pronto (outro tipo de site): nenhuma.
+    start: { shows: options.shows ?? [] },
     _status: 'published' as const,
+  }
+}
+
+const NO_SOCIAL = { instagram: null, facebook: null, youtube: null, tiktok: null, linkedin: null }
+
+/**
+ * A8: o contato sem endereço, telefones, horário e unidades. O e-mail fica: é para onde vão os
+ * avisos de mensagem dos formulários.
+ */
+function emptyContact(contact: Site['contact']): Site['contact'] {
+  return {
+    email: contact?.email ?? null,
+    whatsapp: null,
+    phone: null,
+    address: null,
+    hours: null,
+    units: [],
+    whatsappMessage: contact?.whatsappMessage ?? null,
   }
 }
 
@@ -280,9 +327,10 @@ export function templateUnits(contact: Site['contact'], whatsapp: string | null 
  */
 export async function applySiteTemplate(
   req: PayloadRequest,
-  template: Template,
+  template: SiteTemplate,
   answers: SiteAnswers,
-): Promise<{ homepage: number; pages: number[]; missingPhotos: number }> {
+  options: SiteOptions = {},
+): Promise<{ homepage: number; pages: number[]; missingPhotos: number; backup: number | null }> {
   // Fora da transação: copiar foto leva tempo e o arquivo vai para o Storage de qualquer jeito.
   const { ids: photos, missing: missingPhotos } = await copyTemplatePhotos(req, template)
 
@@ -299,6 +347,8 @@ export async function applySiteTemplate(
       ...access,
     })
     const firstSite = existing.every((page) => page.archived)
+    // A8: antes de trocar, o site de agora vira uma cópia de segurança (Páginas › Arquivadas).
+    const backup = firstSite ? null : await backupSite(req, existing)
 
     // Endereços que as páginas do modelo querem. Página já arquivada com um deles libera o endereço
     // agora (sem isso, cada "Começar de novo" criava "contato-2", "contato-3"...). As que ainda
@@ -364,7 +414,7 @@ export async function applySiteTemplate(
     const site = await req.payload.findGlobal({ slug: 'site', depth: 0, draft: false, ...access })
     await req.payload.updateGlobal({
       slug: 'site',
-      data: templateSiteData(site, template, answers, ids.pages[0]),
+      data: templateSiteData(site, template, answers, ids.pages[0], options),
       ...access,
     })
 
@@ -438,7 +488,7 @@ export async function applySiteTemplate(
     }
 
     if (shouldCommit) await commitTransaction(req)
-    return { homepage: ids.pages[0], pages: ids.pages, missingPhotos }
+    return { homepage: ids.pages[0], pages: ids.pages, missingPhotos, backup }
   } catch (error) {
     await killTransaction(req)
     throw error

@@ -25,8 +25,9 @@ import * as migration_20261122_013907_aviso_no_alto from './20261122_013907_avis
 import * as migration_20261122_112409_marca_logo_segunda_cor from './20261122_112409_marca_logo_segunda_cor';
 import * as migration_20261122_125509_menu_grupos_rodape_empresa from './20261122_125509_menu_grupos_rodape_empresa';
 import * as migration_20261122_212843_unidades_formulario_arquivos from './20261122_212843_unidades_formulario_arquivos';
-import * as migration_20261122_231111_pastas_de_fotos from './20261122_231111_pastas_de_fotos';
 import * as migration_20261122_230500_rls_tabelas_4b from './20261122_230500_rls_tabelas_4b';
+import * as migration_20261122_231111_pastas_de_fotos from './20261122_231111_pastas_de_fotos';
+import * as migration_20261123_011530_comecar_e_copias from './20261123_011530_comecar_e_copias';
 
 export const migrations = [
   {
@@ -173,5 +174,10 @@ export const migrations = [
     up: migration_20261122_231111_pastas_de_fotos.up,
     down: migration_20261122_231111_pastas_de_fotos.down,
     name: '20261122_231111_pastas_de_fotos',
+  },
+  {
+    up: migration_20261123_011530_comecar_e_copias.up,
+    down: migration_20261123_011530_comecar_e_copias.down,
+    name: '20261123_011530_comecar_e_copias'
   },
 ];

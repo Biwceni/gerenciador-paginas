@@ -3,15 +3,19 @@ import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
 import { NOT_ARCHIVED, panelHref, PANEL_PATHS } from '@/lib/panel'
-import { cityFromAddress, templateBusiness } from '@/lib/templates'
+import { relationID } from '@/lib/relations'
+import { cleanShows } from '@/lib/siteShows'
+import { cityFromAddress } from '@/lib/templates'
+import type { Media } from '@/payload-types'
 import { parsePageContent } from '@/puck/schema'
 
 import { PanelTemplate, requireUser } from './PanelTemplate'
-import { StartWizard, type StartTemplate } from './StartWizard'
+import { type StartBrand, type StartPrevious, StartWizard, type StartTemplate } from './StartWizard'
 
 /**
- * Início guiado (`/admin/comecar`, fase 4): tipo de site, ramo (no site da empresa), o básico
- * (nome, cidade, frase e WhatsApp) e o modelo com prévia. Segue o `vOnboarding` do protótipo, em tela cheia.
+ * Início guiado (`/admin/comecar`, fase 4): tipo de site, o básico (nome, cidade, frase e
+ * WhatsApp) e, no site da empresa, o que ele mostra e o visual (F1); nos outros tipos, o modelo
+ * com prévia. No fim, Revisar, com o que sai do site anterior (A8). Em tela cheia.
  * Abre sozinho quando o site não tem nenhuma página; com páginas, o administrador chega pelas
  * Configurações ("Começar de novo com um modelo"), e o nome, a frase e o WhatsApp já vêm
  * preenchidos com o que está lá.
@@ -53,7 +57,7 @@ export async function StartView(props: AdminViewServerProps) {
     payload.count({ collection: 'pages', where: NOT_ARCHIVED, ...access }),
     payload.count({ collection: 'pages', where: { _status: { equals: 'published' } }, ...access }),
     // O rascunho mais recente, como a tela Configurações mostra.
-    payload.findGlobal({ slug: 'site', depth: 0, draft: true, ...access }),
+    payload.findGlobal({ slug: 'site', depth: 1, draft: true, ...access }),
   ])
 
   const list: StartTemplate[] = templates.docs.flatMap((doc) => {
@@ -67,7 +71,6 @@ export async function StartView(props: AdminViewServerProps) {
         name: doc.name,
         description: doc.description ?? null,
         siteType: doc.siteType,
-        business: templateBusiness(doc),
         photos: doc.photos,
         forms: doc.forms,
         site: doc.site,
@@ -78,6 +81,29 @@ export async function StartView(props: AdminViewServerProps) {
       },
     ]
   })
+
+  // A8: o que o site de hoje tem preenchido e pode sair do site novo.
+  const logo = site.logo && typeof site.logo === 'object' ? (site.logo as Media) : null
+  const contact = site.contact
+  const unit = contact?.units?.[0]
+  const previous: StartPrevious | null =
+    pages.totalDocs > 0
+      ? {
+          logo: logo ? logo.alt?.trim() || logo.filename || 'O logo de hoje' : null,
+          social: Object.values(site.social ?? {}).filter(
+            (value): value is string => typeof value === 'string' && Boolean(value.trim()),
+          ),
+          contact:
+            [unit?.address ?? contact?.address, unit?.phone ?? contact?.phone]
+              .filter((value) => value?.trim())
+              .join(' · ') || null,
+          seo: site.seoDescription?.trim() || null,
+        }
+      : null
+  const brand =
+    relationID(site.logo) && site.colors?.primary && site.fonts
+      ? { colors: site.colors as StartBrand['colors'], fonts: site.fonts }
+      : null
 
   return (
     <StartWizard
@@ -94,7 +120,10 @@ export async function StartView(props: AdminViewServerProps) {
             }
           : null
       }
+      initialShows={cleanShows(site.start?.shows)}
       livePages={live.totalDocs}
+      previous={previous}
+      brand={brand}
       settingsDraft={site._status === 'draft'}
       templates={list}
     />

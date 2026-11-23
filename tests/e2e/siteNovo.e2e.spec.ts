@@ -120,6 +120,8 @@ test.describe.serial('site novo', () => {
     await page.fill('#ob-name', SITE_NAME)
     await page.fill('#ob-city', 'Lavras')
     await page.getByRole('button', { name: 'Continuar' }).click()
+    // Modelo e depois Revisar (5b-1).
+    await page.getByRole('button', { name: 'Continuar' }).click()
     await page.getByRole('button', { name: 'Criar meu site' }).click()
     await page.waitForURL(/pronto=1/)
 

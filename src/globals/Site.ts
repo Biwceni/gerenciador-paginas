@@ -1,3 +1,4 @@
+import { SITE_SHOWS } from '../lib/siteShows'
 import type { GlobalBeforeChangeHook, GlobalConfig, TextField } from 'payload'
 import { ValidationError } from 'payload'
 
@@ -399,6 +400,21 @@ export const Site: GlobalConfig = {
             // Gerados ao publicar (`prepareSiteFonts`): o CSS das fontes e de quais fontes ele é.
             { name: 'fontFaces', type: 'textarea', admin: { hidden: true } },
             { name: 'fontKey', type: 'text', admin: { hidden: true } },
+            // F1: o que o site mostra, respondido no Começar. Fica guardado para o painel não
+            // precisar adivinhar o ramo pelas letras (A8).
+            {
+              name: 'start',
+              type: 'group',
+              admin: { hidden: true },
+              fields: [
+                {
+                  name: 'shows',
+                  type: 'select',
+                  hasMany: true,
+                  options: SITE_SHOWS.map(({ value, label }) => ({ value, label })),
+                },
+              ],
+            },
           ],
         },
         {

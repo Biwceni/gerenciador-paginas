@@ -1,6 +1,8 @@
 import { PRIVACY_TITLE } from '../../lib/privacy'
+import type { Template } from '../../payload-types'
 import {
   type ButtonValue,
+  CONTENT_VERSION,
   type FeatureIconName,
   HERO_SLIDE_DEFAULTS,
   type LinkRef,
@@ -276,6 +278,68 @@ export function pageBuilder() {
         anim: 'site',
       },
     }),
+    /** Equipe (C5), sem fotos: cada pessoa pede a foto antes de ir ao ar. */
+    team: (
+      o: Common & {
+        title: string
+        text?: string
+        items: [role: string, name: string, text: string][]
+      },
+    ): PageComponent => ({
+      type: 'Team',
+      props: {
+        id: id('Team', o.id),
+        menuLabel: o.menu ?? '',
+        title: o.title,
+        text: o.text ?? '',
+        items: o.items.map(([role, name, text]) => ({
+          photo: null,
+          role,
+          name,
+          text,
+          contact: null,
+        })),
+        style: o.style ?? 'light',
+        anim: 'site',
+      },
+    }),
+    /** Agenda (B5). As datas vêm prontas (`AAAA-MM-DD`), contadas a partir do dia de montar. */
+    events: (
+      o: Common & {
+        title: string
+        text?: string
+        items: { date: string; time: string; title: string; place: string; text: string }[]
+        button?: string
+      },
+    ): PageComponent => ({
+      type: 'Events',
+      props: {
+        id: id('Events', o.id),
+        menuLabel: o.menu ?? '',
+        title: o.title,
+        text: o.text ?? '',
+        items: o.items.map((item) => ({
+          ...item,
+          button: o.button ? button(o.button) : null,
+        })),
+        past: 'hide',
+        style: o.style ?? 'light',
+        anim: 'site',
+      },
+    }),
+    /** Nossas unidades (D1): os dados vêm das unidades das Configurações. */
+    units: (o: Common & { title: string; text?: string }): PageComponent => ({
+      type: 'Units',
+      props: {
+        id: id('Units', o.id),
+        menuLabel: o.menu ?? '',
+        title: o.title,
+        text: o.text ?? '',
+        map: true,
+        style: o.style ?? 'light',
+        anim: 'site',
+      },
+    }),
     announcement: (o: {
       items: string[]
       mode?: 'move' | 'static'
@@ -291,3 +355,111 @@ export function pageBuilder() {
     }),
   }
 }
+
+type Builder = ReturnType<typeof pageBuilder>
+
+type TemplateFormItem = NonNullable<Template['forms']>[number]
+type TemplateFormField = NonNullable<TemplateFormItem['fields']>[number]
+
+/**
+ * Formulário de um modelo. Além dos tipos da coleção Modelos, o Começar (F1) usa o campo de
+ * arquivo (D2), que só existe nos modelos montados na hora (não ficam gravados na coleção).
+ */
+export type TemplateForm = Omit<TemplateFormItem, 'fields'> & {
+  fields?:
+    | (Omit<TemplateFormField, 'type'> & {
+        type: TemplateFormField['type'] | 'file'
+        accept?: 'photo' | 'document'
+      })[]
+    | null
+}
+
+/** Campos dos formulários dos modelos. */
+export const NAME = { type: 'text', name: 'nome', label: 'Nome', required: true } as const
+export const WHATSAPP = {
+  type: 'text',
+  name: 'whatsapp',
+  label: 'WhatsApp',
+  required: true,
+} as const
+export const EMAIL = { type: 'email', name: 'email', label: 'E-mail', required: false } as const
+export const ask = (name: string, label: string, required = false) =>
+  ({ type: 'text', name, label, required }) as const
+export const longAsk = (name: string, label: string, required = false) =>
+  ({ type: 'textarea', name, label, required }) as const
+
+/** Formulário "Fale conosco" da página Contato dos modelos (C3), como o pronto de Formulários. */
+export const CONTACT_FORM: TemplateFormItem = {
+  title: 'Fale conosco',
+  submitButtonLabel: 'Enviar',
+  fields: [NAME, WHATSAPP, EMAIL, longAsk('mensagem', 'Mensagem')],
+}
+
+export type PageRules = {
+  /** Texto do botão de destaque do topo, quando ele leva ao WhatsApp. */
+  whatsappLabel: string | null
+  /** Posição (a partir de 1) do "Fale conosco" nos formulários do modelo. */
+  contactForm: number
+  /** Página interna: termina chamando para a ação. */
+  internal: boolean
+}
+
+/**
+ * Regras comuns das páginas dos modelos (crítica de design de 03/11/2026):
+ * - C6: todo botão que leva ao WhatsApp usa o texto do botão de destaque do topo;
+ * - C3: a página interna com Contato e endereço tem o banner compacto e, logo depois, o "Fale
+ *   conosco";
+ * - C5: página interna sem formulário no fim termina com uma Chamada para ação.
+ */
+export function finishPage(items: PageComponent[], b: Builder, rules: PageRules): PageComponent[] {
+  const label = rules.whatsappLabel
+  if (label) {
+    for (const item of items) {
+      if (item.type !== 'Hero' && item.type !== 'CallToAction') continue
+      if (item.props.button?.link?.kind === 'whatsapp') item.props.button.label = label
+    }
+  }
+
+  // Só na página Contato: nos sites de uma página só, o Contato fica na inicial, que não muda.
+  const contact = rules.internal ? items.findIndex((item) => item.type === 'Contact') : -1
+  if (contact >= 0) {
+    for (const item of items) if (item.type === 'Hero') item.props.height = 'compact'
+    if (!items.some((item) => item.type === 'Form')) {
+      items.splice(
+        contact + 1,
+        0,
+        b.form({
+          title: 'Mande uma mensagem',
+          text: 'Preencha e a gente responde pelo WhatsApp ou pelo e-mail.',
+          form: rules.contactForm,
+        }),
+      )
+    }
+  }
+
+  const last = items[items.length - 1]
+  if (rules.internal && last && last.type !== 'Form' && last.type !== 'CallToAction') {
+    items.push(
+      b.cta({
+        title: 'Fale com a gente',
+        text: 'Chame no WhatsApp: respondemos rapidinho.',
+        button: label ?? 'Fale com a gente',
+      }),
+    )
+  }
+  return items
+}
+
+/** Os formulários do modelo, com o "Fale conosco" no fim quando alguma página precisa dele. */
+export function modelForms<F extends TemplateForm>(
+  forms: F[] | null | undefined,
+  needsContact: boolean,
+): (F | TemplateFormItem)[] {
+  const list: (F | TemplateFormItem)[] = [...(forms ?? [])]
+  return needsContact ? [...list, CONTACT_FORM] : list
+}
+
+export const content = (items: PageComponent[]) => ({
+  version: CONTENT_VERSION,
+  data: { root: { props: {} }, content: items },
+})

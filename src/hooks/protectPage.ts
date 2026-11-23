@@ -90,16 +90,21 @@ export const protectPageDelete: CollectionBeforeDeleteHook = async ({ context, i
  * "tirar do ar" vem sem ele. A API local (código do servidor, como o seed) fica de fora; pelo
  * GraphQL, que não usamos, salvar rascunho da página inicial também é recusado.
  *
+ * Voltar para um site guardado (A8) também: a inicial dele volta como estava.
+ *
  * O Payload converte `req.query` antes dos ganchos: o `draft` chega como booleano. Aceita também o
  * texto, caso a conversão mude.
  */
 export const protectHomepageUnpublish: CollectionBeforeChangeHook = async ({
+  context,
   data,
   operation,
   originalDoc,
   req,
 }) => {
   if (operation !== 'update' || req.payloadAPI === 'local') return data
+  // A8: "Voltar para este site" devolve a página inicial como ela estava no site guardado.
+  if (context?.siteRestore) return data
   const savingDraft = req.query?.draft === true || req.query?.draft === 'true'
   if (data._status !== 'draft' || savingDraft) return data
   const pageId = Number(originalDoc?.id)

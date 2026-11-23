@@ -944,6 +944,38 @@ time {
   }
 }
 
+// A8: os sites guardados antes de trocar de negócio, no alto das Arquivadas.
+.gp-sitebackups {
+  // Sem caixa própria (já está dentro do cartão da lista): título e uma linha embaixo separam.
+  display: grid;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gp-line);
+
+  h2 {
+    margin: 0;
+    font-size: var(--gp-fs-card);
+  }
+}
+
+.gp-sitebackup {
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  &__text {
+    display: grid;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: minmax(0, 1fr);
+
+    .gp-btn {
+      justify-self: start;
+    }
+  }
+}
+
 .gp-notice {
   background: var(--gp-ok-soft);
   color: var(--gp-ink);
@@ -1570,6 +1602,211 @@ time {
 
 .gp-actions--end {
   justify-content: flex-end;
+}
+
+// ---------- F1 e A8: o que o site mostra e Revisar ----------
+
+// No celular, os nomes dos passos não cabem: só "Passo 5 de 5 · Revisar".
+.gp-stepnow {
+  display: none;
+  margin: 0;
+  font-size: var(--gp-fs-small);
+  font-weight: 600;
+  color: var(--gp-accent);
+}
+
+// Cartões de marcar vários: o ✓ no canto, num quadradinho que fica cheio quando marcado.
+.gp-showcard {
+  position: relative;
+  padding-right: 44px;
+
+  &__text {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__check {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--gp-line-strong);
+    background: var(--gp-surface);
+    display: grid;
+    place-items: center;
+    color: var(--gp-accent-ink);
+  }
+
+  &[aria-checked='true'] &__check {
+    border-color: var(--gp-accent);
+    background: var(--gp-accent);
+  }
+}
+
+// As páginas que vão ser criadas, embaixo das escolhas.
+.gp-showpages {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--gp-surface-2);
+  font-size: var(--gp-fs-help);
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--gp-line-strong);
+    background: var(--gp-surface);
+  }
+}
+
+// O resumo de Revisar: rótulo em cima, valor embaixo, dois por linha.
+.gp-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+
+  div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  dt {
+    font-size: var(--gp-fs-small);
+    font-weight: 600;
+    color: var(--gp-muted);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.gp-clearlist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+
+  legend {
+    padding: 0;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--gp-line);
+    border-radius: 10px;
+    cursor: pointer;
+
+    input {
+      width: 18px;
+      height: 18px;
+      margin: 2px 0 0;
+      accent-color: var(--gp-accent);
+    }
+
+    > span {
+      display: grid;
+      min-width: 0;
+    }
+  }
+
+  &__detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.gp-backupnote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-weight: 600;
+
+  .gp-ic {
+    flex: none;
+    margin-top: 3px;
+    color: var(--gp-ok, var(--gp-accent));
+  }
+}
+
+@media (max-width: 560px) {
+  .gp-stepnames {
+    display: none;
+  }
+
+  .gp-stepnow {
+    display: block;
+  }
+
+  // Cartões compactos: ícone menor ao lado do texto, um por linha.
+  .gp-showgrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .gp-showcard {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 12px 44px 12px 12px;
+
+    .gp-typecard__icon {
+      width: 34px;
+      height: 34px;
+    }
+
+    &__check {
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+    }
+  }
+
+  .gp-review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // Continuar sempre à mão: a barra de baixo acompanha a rolagem.
+  .gp-obnav {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 0 -16px -20px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--gp-surface);
+    border-top: 1px solid var(--gp-line);
+    border-radius: 0 0 18px 18px;
+  }
 }
 
 @media (max-width: #{$desktop - 1px}) {

@@ -12,6 +12,7 @@ import { FormFiles } from './collections/FormFiles'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { PhotoFolders } from './collections/PhotoFolders'
+import { SiteBackups } from './collections/SiteBackups'
 import { Templates } from './collections/Templates'
 import { SavedSections } from './collections/SavedSections'
 import { Users } from './collections/Users'
@@ -269,7 +270,16 @@ export default buildConfig({
       },
     },
   },
-  collections: [Pages, Media, PhotoFolders, Users, Templates, SavedSections, FormFiles],
+  collections: [
+    Pages,
+    Media,
+    PhotoFolders,
+    Users,
+    Templates,
+    SavedSections,
+    FormFiles,
+    SiteBackups,
+  ],
   globals: [Site, Header, Footer],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

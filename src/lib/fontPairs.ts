@@ -105,6 +105,8 @@ export function businessLabel(business: Business): string | null {
 type SiteLook = {
   colors?: Record<string, string | null | undefined> | null
   fonts?: { headings?: string | null; body?: string | null } | null
+  /** F1: o que o Começar montou. Com escolhas, o site não é de um ramo só. */
+  start?: { shows?: string[] | null } | null
 }
 
 export type BusinessTemplate = {
@@ -121,13 +123,15 @@ const COMMON_SLUGS = new Set(['inicio', 'sobre', 'contato', 'politica-de-privaci
 /**
  * O ramo do site. Nenhum campo guarda o modelo aplicado no Começar (e criar um pediria migração),
  * então vale o modelo mais parecido: as mesmas fontes, as mesmas cores e os endereços das páginas
- * típicos do ramo (como "tratamentos" ou "nossos-cafes"). Sem pista nenhuma, `geral`.
+ * típicos do ramo (como "tratamentos" ou "nossos-cafes"). Sem pista nenhuma, `geral`. Site montado
+ * pelo que mostra (F1) é sempre `geral`: as páginas são as das escolhas, não as de um ramo.
  */
 export function guessBusiness(
   site: SiteLook,
   pageSlugs: string[],
   templates: BusinessTemplate[],
 ): Business {
+  if (site.start?.shows?.length) return 'geral'
   const slugs = new Set(pageSlugs)
   const same = (a: unknown, b: unknown) =>
     typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase()
