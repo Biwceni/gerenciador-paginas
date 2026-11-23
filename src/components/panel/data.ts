@@ -29,6 +29,7 @@ import type { FormSubmission, Media } from '@/payload-types'
 import { pageHref, pagePhotoIds } from '@/puck/references'
 import { parsePageContent } from '@/puck/schema'
 import { composedExamplePages } from '@/seed/templates/compose'
+import { legacyPageExamples } from '@/seed/templates/data'
 
 export type PageRow = {
   id: number
@@ -97,14 +98,17 @@ export async function loadPageRows(payload: Payload, user: TypedUser): Promise<P
 export async function loadExampleTexts(payload: Payload, user: TypedUser): Promise<string[]> {
   const { docs } = await payload.find({
     collection: 'templates',
+    // Um modelo salvo de uma página do site tem os textos da pessoa, que não são exemplo.
+    where: { fromPage: { not_equals: true } },
     select: { pages: true },
     depth: 0,
     pagination: false,
     overrideAccess: false,
     user,
   })
-  // F1: os textos do site montado pelo Começar não ficam gravados na coleção Modelos.
-  return exampleTexts([...docs, composedExamplePages()])
+  // F1: os textos do site montado pelo Começar não ficam gravados na coleção Modelos. Os modelos de
+  // página por ramo saíram da coleção (F3), mas páginas criadas com eles podem ainda ter os textos.
+  return exampleTexts([...docs, composedExamplePages(), legacyPageExamples()])
 }
 
 /** Textos do rodapé que vêm dos modelos: a frase e a chamada (A7). */

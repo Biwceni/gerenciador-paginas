@@ -286,3 +286,41 @@ function remap(value: unknown, ids: TemplateIds): unknown {
 export function remapTemplateContent(data: PuckPageData, ids: TemplateIds): PuckPageData {
   return remap(data, ids) as PuckPageData
 }
+
+const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function dayValue(text: string): number | null {
+  const match = text.match(ISO_DAY)
+  return match ? Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null
+}
+
+function dayText(value: number) {
+  return new Date(value).toISOString().slice(0, 10)
+}
+
+/**
+ * A agenda de exemplo de um modelo foi escrita no dia em que o modelo entrou no banco. Se alguma data
+ * já passou, todas andam o mesmo número de semanas (o dia da semana fica), e a primeira cai pelo
+ * menos duas semanas à frente. Datas que a pessoa escreveu (modelos salvos) não passam por aqui.
+ */
+export function freshEventDates<T extends { content: unknown[] }>(data: T, today = new Date()): T {
+  const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  const events = data.content.filter(
+    (item): item is { type: 'Events'; props: { items: { date?: string | null }[] } } =>
+      !!item && typeof item === 'object' && (item as { type?: unknown }).type === 'Events',
+  )
+  const days = events
+    .flatMap((item) => item.props.items ?? [])
+    .map((item) => (typeof item.date === 'string' ? dayValue(item.date) : null))
+    .filter((value): value is number => value !== null)
+  if (!days.length || Math.min(...days) >= now) return data
+  const weeks = Math.ceil((now - Math.min(...days)) / (7 * DAY_MS)) + 2
+  for (const event of events) {
+    for (const item of event.props.items ?? []) {
+      const value = typeof item.date === 'string' ? dayValue(item.date) : null
+      if (value !== null) item.date = dayText(value + weeks * 7 * DAY_MS)
+    }
+  }
+  return data
+}

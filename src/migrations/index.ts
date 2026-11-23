@@ -28,6 +28,7 @@ import * as migration_20261122_212843_unidades_formulario_arquivos from './20261
 import * as migration_20261122_230500_rls_tabelas_4b from './20261122_230500_rls_tabelas_4b';
 import * as migration_20261122_231111_pastas_de_fotos from './20261122_231111_pastas_de_fotos';
 import * as migration_20261123_011530_comecar_e_copias from './20261123_011530_comecar_e_copias';
+import * as migration_20261123_080806_modelos_salvos from './20261123_080806_modelos_salvos';
 
 export const migrations = [
   {
@@ -178,6 +179,11 @@ export const migrations = [
   {
     up: migration_20261123_011530_comecar_e_copias.up,
     down: migration_20261123_011530_comecar_e_copias.down,
-    name: '20261123_011530_comecar_e_copias'
+    name: '20261123_011530_comecar_e_copias',
+  },
+  {
+    up: migration_20261123_080806_modelos_salvos.up,
+    down: migration_20261123_080806_modelos_salvos.down,
+    name: '20261123_080806_modelos_salvos'
   },
 ];

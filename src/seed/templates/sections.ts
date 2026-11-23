@@ -358,21 +358,11 @@ export function pageBuilder() {
 
 type Builder = ReturnType<typeof pageBuilder>
 
-type TemplateFormItem = NonNullable<Template['forms']>[number]
-type TemplateFormField = NonNullable<TemplateFormItem['fields']>[number]
-
 /**
- * Formulário de um modelo. Além dos tipos da coleção Modelos, o Começar (F1) usa o campo de
- * arquivo (D2), que só existe nos modelos montados na hora (não ficam gravados na coleção).
+ * Formulário de um modelo, como a coleção Modelos guarda. O campo de arquivo (D2) entra no
+ * Começar (F1) e no modelo de página "Formulário" (F3).
  */
-export type TemplateForm = Omit<TemplateFormItem, 'fields'> & {
-  fields?:
-    | (Omit<TemplateFormField, 'type'> & {
-        type: TemplateFormField['type'] | 'file'
-        accept?: 'photo' | 'document'
-      })[]
-    | null
-}
+export type TemplateForm = NonNullable<Template['forms']>[number]
 
 /** Campos dos formulários dos modelos. */
 export const NAME = { type: 'text', name: 'nome', label: 'Nome', required: true } as const
@@ -389,7 +379,7 @@ export const longAsk = (name: string, label: string, required = false) =>
   ({ type: 'textarea', name, label, required }) as const
 
 /** Formulário "Fale conosco" da página Contato dos modelos (C3), como o pronto de Formulários. */
-export const CONTACT_FORM: TemplateFormItem = {
+export const CONTACT_FORM: TemplateForm = {
   title: 'Fale conosco',
   submitButtonLabel: 'Enviar',
   fields: [NAME, WHATSAPP, EMAIL, longAsk('mensagem', 'Mensagem')],
@@ -454,8 +444,8 @@ export function finishPage(items: PageComponent[], b: Builder, rules: PageRules)
 export function modelForms<F extends TemplateForm>(
   forms: F[] | null | undefined,
   needsContact: boolean,
-): (F | TemplateFormItem)[] {
-  const list: (F | TemplateFormItem)[] = [...(forms ?? [])]
+): (F | TemplateForm)[] {
+  const list: (F | TemplateForm)[] = [...(forms ?? [])]
   return needsContact ? [...list, CONTACT_FORM] : list
 }
 

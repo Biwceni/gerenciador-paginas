@@ -15,7 +15,9 @@ import { siteUnits, toUnitData } from './units'
 
 export { archivedSlug }
 import {
+  cityFromAddress,
   fillExamples,
+  freshEventDates,
   isTemplatePhotoURL,
   remapTemplateContent,
   type TemplateIds,
@@ -390,7 +392,9 @@ export async function applySiteTemplate(
     const ids: TemplateIds = { pages: created.map((page) => page.id), photos, forms }
     const examples = { name: answers.name, city: answers.city ?? '' }
     for (const [index, page] of (template.pages ?? []).entries()) {
-      const data = fillExamples(remapTemplateContent(templateContent(page), ids), examples)
+      const data = freshEventDates(
+        fillExamples(remapTemplateContent(templateContent(page), ids), examples),
+      )
       if (index === 0) {
         const linkPage = data.content[0]?.type === 'LinkList'
         personalizeOpening(data, {
@@ -530,33 +534,45 @@ async function setPrivacyPage(req: PayloadRequest, pageId: number) {
 
 /**
  * Página nova (rascunho) a partir de um modelo de página. O título da abertura vira o nome da
- * página, e o nome do site entra nos textos de exemplo; botões que levariam a outra página do modelo levam ao WhatsApp.
+ * página, e o nome do site entra nos textos de exemplo; botões que levariam a outra página do modelo
+ * levam ao WhatsApp. Um modelo salvo de uma página do site (`fromPage`) entra como cópia: fotos,
+ * formulários e links já são do site e ficam como estão.
  */
 export async function applyPageTemplate(
   req: PayloadRequest,
   template: Template,
   page: { title: string; slug: string },
+  today = new Date(),
 ): Promise<{ doc: Page; missingPhotos: number }> {
   const source = template.pages?.[0]
   if (!source) throw new Error('O modelo não tem página.')
-  const { ids: photos, missing: missingPhotos } = await copyTemplatePhotos(req, template)
+  const saved = Boolean(template.fromPage)
+  const { ids: photos, missing: missingPhotos } = saved
+    ? { ids: [], missing: 0 }
+    : await copyTemplatePhotos(req, template)
 
   const shouldCommit = await initTransaction(req)
   try {
-    const forms = await createTemplateForms(req, template)
-    // `{nome}` dos textos de exemplo vira o nome do site (a cidade só é perguntada no Começar).
-    const site = await req.payload.findGlobal({
-      slug: 'site',
-      depth: 0,
-      draft: false,
-      overrideAccess: false,
-      req,
-    })
-    const data = fillExamples(
-      remapTemplateContent(templateContent(source), { pages: [], photos, forms }),
-      { name: site.name ?? '', city: '' },
-    )
-    personalizeOpening(data, { title: page.title })
+    let data: PuckPageData
+    if (saved) {
+      data = templateContent(source)
+    } else {
+      const forms = await createTemplateForms(req, template)
+      // `{nome}` e `{cidade}` dos textos de exemplo: o nome do site e a cidade do endereço.
+      const site = await req.payload.findGlobal({
+        slug: 'site',
+        depth: 0,
+        draft: false,
+        overrideAccess: false,
+        req,
+      })
+      data = fillExamples(
+        remapTemplateContent(templateContent(source), { pages: [], photos, forms }),
+        { name: site.name ?? '', city: cityFromAddress(site.contact?.address) },
+      )
+      freshEventDates(data, today)
+      personalizeOpening(data, { title: page.title })
+    }
     const doc = await req.payload.create({
       collection: 'pages',
       data: {

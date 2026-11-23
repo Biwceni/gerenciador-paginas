@@ -4,14 +4,26 @@ import { templateSiteData } from '@/lib/applyTemplate'
 import { exampleTexts, findExampleSections } from '@/lib/examples'
 import { guessBusiness } from '@/lib/fontPairs'
 import { backupPages, keepLinks } from '@/lib/siteBackup'
-import { cleanShows, SITE_SHOW_VALUES, showPageTitles } from '@/lib/siteShows'
+import {
+  cleanShows,
+  SHOW_PAGE_MODELS,
+  showOfPageModel,
+  showPageTitles,
+  SITE_SHOW_VALUES,
+  sortPageModels,
+} from '@/lib/siteShows'
 import { contrastWarnings } from '@/lib/style-presets'
-import { checkTemplateReferences, fillExamples, templatePersonality } from '@/lib/templates'
+import {
+  checkTemplateReferences,
+  fillExamples,
+  freshEventDates,
+  templatePersonality,
+} from '@/lib/templates'
 import { PERSONALITIES } from '@/lib/theme'
 import type { Site } from '@/payload-types'
 import { parsePageContent } from '@/puck/schema'
-import { composedExamplePages, composeSiteTemplate } from '@/seed/templates/compose'
-import { templateSeeds } from '@/seed/templates/data'
+import { composedExamplePages, composeSiteTemplate, showPageModel } from '@/seed/templates/compose'
+import { legacyPageExamples, legacyPageModels, templateSeeds } from '@/seed/templates/data'
 
 // Etapa 5b-1: F1 (o Começar monta o site pelo que ele mostra) e A8 (cópia do site anterior).
 
@@ -216,5 +228,91 @@ describe('A8: voltar para o site guardado', () => {
     expect(kept.items.map((item) => item.label)).toEqual(['A', 'C', 'Grupo'])
     expect(kept.items[2].children?.map((item) => item.label)).toEqual(['E'])
     expect(kept.button.link).toEqual({ kind: 'page', page: null })
+  })
+})
+
+// Etapa 5b-2: F3 (modelos da Nova página pelo que a página mostra) e modelos salvos de páginas.
+
+describe('F3: os modelos da Nova página', () => {
+  const models = templateSeeds.filter((seed) => seed.kind === 'page')
+
+  it('um por escolha do Começar, com o nome da página que o Começar daria', () => {
+    for (const show of SITE_SHOW_VALUES) {
+      const seed = models.find((item) => item.key === SHOW_PAGE_MODELS[show].key)
+      expect(seed?.pages?.[0]?.title, show).toBe(showPageTitles([show])[1])
+      expect(showOfPageModel(seed!.key)).toBe(show)
+    }
+    expect(showOfPageModel('pagina-sobre')).toBeNull()
+  })
+
+  it('passam pelo esquema e só citam fotos, páginas e formulários que o modelo tem', () => {
+    for (const seed of models) {
+      const parsed = parsePageContent(seed.pages?.[0]?.content)
+      expect(parsed.success, seed.key).toBe(true)
+      if (!parsed.success) continue
+      const counts = { pages: 0, photos: seed.photos?.length ?? 0, forms: seed.forms?.length ?? 0 }
+      expect(checkTemplateReferences(parsed.data.data, counts), seed.key).toBe(true)
+    }
+  })
+
+  it('a página de uma escolha é a mesma seção principal que o Começar põe no site', () => {
+    const site = composeSiteTemplate({ shows: ['team'], personality: 'classico' }, new Date())
+    const model = showPageModel('team')
+    const main = (items: { type: string }[]) => items.map((item) => item.type)
+    expect(main(model.items)).toEqual(main(site.pages[1].content.data.content))
+  })
+
+  it('o que o site mostra vem primeiro, na ordem das escolhas; os salvos ficam no fim', () => {
+    const list = [
+      { key: 'pagina-vitrine' },
+      { key: 'salvo-1', fromPage: true },
+      { key: 'pagina-servicos' },
+      { key: 'pagina-sobre' },
+      { key: 'pagina-equipe' },
+    ]
+    const sorted = sortPageModels(list, ['team', 'products'])
+    expect(sorted.map((item) => [item.key, item.group])).toEqual([
+      ['pagina-equipe', 'suggested'],
+      ['pagina-vitrine', 'suggested'],
+      ['pagina-servicos', 'team'],
+      ['pagina-sobre', 'team'],
+      ['salvo-1', 'saved'],
+    ])
+    // Sem escolhas no Começar (site antigo), a ordem da coleção.
+    expect(sortPageModels(list, []).map((item) => item.key)).toEqual([
+      'pagina-vitrine',
+      'pagina-servicos',
+      'pagina-sobre',
+      'pagina-equipe',
+      'salvo-1',
+    ])
+  })
+
+  it('agenda de modelo com data passada anda semanas inteiras, sem trocar o dia da semana', () => {
+    const data = {
+      content: [
+        { type: 'Hero', props: {} },
+        {
+          type: 'Events',
+          props: { items: [{ date: '2026-11-01' }, { date: '2026-11-15' }, { date: '' }] },
+        },
+      ],
+    }
+    freshEventDates(data, new Date(2026, 10, 23))
+    const dates = (data.content[1].props as { items: { date: string }[] }).items.map((i) => i.date)
+    // 22 dias atrás: 4 semanas para chegar a hoje + 2 de folga = 6 semanas.
+    expect(dates).toEqual(['2026-12-13', '2026-12-27', ''])
+    expect(new Date(`${dates[0]}T12:00:00Z`).getUTCDay()).toBe(0)
+    // Datas que ainda não passaram ficam como estão.
+    const future = { content: [{ type: 'Events', props: { items: [{ date: '2027-01-10' }] } }] }
+    freshEventDates(future, new Date(2026, 10, 23))
+    expect(future.content[0].props.items[0].date).toBe('2027-01-10')
+  })
+
+  it('os textos dos modelos por ramo de antes continuam contando como exemplo', () => {
+    const texts = exampleTexts([legacyPageExamples()])
+    expect(texts.length).toBeGreaterThan(20)
+    expect(legacyPageModels.map((model) => model.key)).toContain('pagina-promocao')
+    expect(models.map((seed) => seed.key)).not.toContain('pagina-promocao')
   })
 })

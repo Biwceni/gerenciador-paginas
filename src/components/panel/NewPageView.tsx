@@ -5,11 +5,12 @@ import React from 'react'
 import { themeStyle } from '@/components/site/theme'
 import { blendColors } from '@/lib/colors'
 import { PANEL_PATHS } from '@/lib/panel'
+import { cleanShows, sortPageModels } from '@/lib/siteShows'
 import { getServerURL } from '@/lib/site'
 import { parsePageContent, type PuckPageData } from '@/puck/schema'
 
 import { loadPageRows } from './data'
-import { NewPageForm, type MiniSection } from './NewPageForm'
+import { NewPageForm, type MiniSection, type NewPageModel } from './NewPageForm'
 import { PanelTemplate, requireUser } from './PanelTemplate'
 
 /**
@@ -51,7 +52,7 @@ export async function NewPageView(props: AdminViewServerProps) {
     payload.find({
       collection: 'templates',
       where: { kind: { equals: 'page' } },
-      select: { key: true, name: true, description: true, pages: true },
+      select: { key: true, name: true, description: true, pages: true, fromPage: true },
       depth: 0,
       pagination: false,
       sort: 'order',
@@ -60,6 +61,26 @@ export async function NewPageView(props: AdminViewServerProps) {
     }),
     payload.findGlobal({ slug: 'site', depth: 0, draft: true, overrideAccess: false, user }),
   ])
+
+  // F3: os ligados ao que o site mostra (Começar) primeiro; os salvos de páginas, à parte.
+  const models = sortPageModels(templates.docs, cleanShows(site.start?.shows)).flatMap(
+    (doc): NewPageModel[] => {
+      const page = doc.pages?.[0]
+      const parsed = parsePageContent(page?.content)
+      if (!parsed.success) return []
+      return [
+        {
+          id: doc.id,
+          key: doc.key,
+          title: doc.name,
+          text: doc.description ?? '',
+          pageTitle: page?.title ?? doc.name,
+          group: doc.group,
+          sections: sectionsOf(parsed.data.data),
+        },
+      ]
+    },
+  )
 
   return (
     <PanelTemplate {...props}>
@@ -71,19 +92,7 @@ export async function NewPageView(props: AdminViewServerProps) {
         initialModel={
           typeof props.searchParams?.modelo === 'string' ? props.searchParams.modelo : null
         }
-        models={templates.docs.flatMap((doc) => {
-          const parsed = parsePageContent(doc.pages?.[0]?.content)
-          if (!parsed.success) return []
-          return [
-            {
-              id: doc.id,
-              key: doc.key,
-              title: doc.name,
-              text: doc.description ?? '',
-              sections: sectionsOf(parsed.data.data),
-            },
-          ]
-        })}
+        models={models}
         pages={pages
           .map(({ id, title, slug }) => ({ id, title, slug }))
           .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'pt-BR'))}
