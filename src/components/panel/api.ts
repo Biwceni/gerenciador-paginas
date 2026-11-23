@@ -110,6 +110,15 @@ export function restorePage(apiRoute: string, pageId: number) {
   return saveLatestAsDraft(apiRoute, pageId, false)
 }
 
+/** A8: volta para um site guardado antes de uma troca no Começar. */
+export function restoreSiteBackup(apiRoute: string, backupId: number) {
+  return request<{ homepage: number | null; restored: number; missing: number }>(
+    apiRoute,
+    `/site-backups/${backupId}/voltar`,
+    { method: 'POST' },
+  )
+}
+
 export function deletePage(apiRoute: string, pageId: number) {
   return request<DocResponse<Page>>(apiRoute, `/pages/${pageId}`, { method: 'DELETE' })
 }

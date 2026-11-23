@@ -187,10 +187,13 @@ export function PersonalityPicker({
   colors,
   onChange,
   renderPreview,
+  previewNote = 'É o seu site, com o seu nome, logo e páginas.',
 }: {
   value: Personality
   colors: SiteColors
   onChange: (value: Personality) => void
+  /** A frase da prévia grande, depois da descrição do visual. */
+  previewNote?: string
   /** A prévia do site num visual (com o nome, o logo e as páginas da pessoa). */
   renderPreview?: (personality: Personality, device: 'desktop' | 'phone') => React.ReactNode
 }) {
@@ -248,7 +251,7 @@ export function PersonalityPicker({
             <div className="gp-lookpreview__bar">
               <p className="gp-lookpreview__text">
                 {PERSONALITY_LABELS[looking].description}{' '}
-                <span className="gp-muted">É o seu site, com o seu nome, logo e páginas.</span>
+                <span className="gp-muted">{previewNote}</span>
               </p>
               <div aria-label="Tamanho da prévia" className="gp-seg" role="group">
                 <button

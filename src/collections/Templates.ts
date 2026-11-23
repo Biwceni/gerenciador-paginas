@@ -3,7 +3,11 @@ import { ValidationError } from 'payload'
 
 import { isAdmin } from '../access/users'
 import { authenticated } from '../access/authenticated'
-import { applyTemplateEndpoint, templatePageEndpoint } from '../endpoints/applyTemplate'
+import {
+  applyTemplateEndpoint,
+  composeSiteEndpoint,
+  templatePageEndpoint,
+} from '../endpoints/applyTemplate'
 import { colorField } from '../fields/color'
 import { validateExternalURL } from '../lib/links'
 import { SLUG_PATTERN } from '../lib/slug'
@@ -135,7 +139,7 @@ export const Templates: CollectionConfig = {
   hooks: {
     beforeValidate: [validateTemplate],
   },
-  endpoints: [applyTemplateEndpoint, templatePageEndpoint],
+  endpoints: [composeSiteEndpoint, applyTemplateEndpoint, templatePageEndpoint],
   fields: [
     {
       // Nome fixo do modelo para o script `npm run modelos` saber o que já existe.

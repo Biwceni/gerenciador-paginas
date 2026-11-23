@@ -74,6 +74,7 @@ export interface Config {
     templates: Template;
     'saved-sections': SavedSection;
     'form-files': FormFile;
+    'site-backups': SiteBackup;
     forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
@@ -90,6 +91,7 @@ export interface Config {
     templates: TemplatesSelect<false> | TemplatesSelect<true>;
     'saved-sections': SavedSectionsSelect<false> | SavedSectionsSelect<true>;
     'form-files': FormFilesSelect<false> | FormFilesSelect<true>;
+    'site-backups': SiteBackupsSelect<false> | SiteBackupsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -637,6 +639,52 @@ export interface FormSubmission {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-backups".
+ */
+export interface SiteBackup {
+  id: number;
+  name: string;
+  site:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  header:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  footer:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  pages:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -686,6 +734,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'form-files';
         value: number | FormFile;
+      } | null)
+    | ({
+        relationTo: 'site-backups';
+        value: number | SiteBackup;
       } | null)
     | ({
         relationTo: 'forms';
@@ -974,6 +1026,19 @@ export interface FormFilesSelect<T extends boolean = true> {
   tokenHash?: T;
   status?: T;
   submission?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-backups_select".
+ */
+export interface SiteBackupsSelect<T extends boolean = true> {
+  name?: T;
+  site?: T;
+  header?: T;
+  footer?: T;
+  pages?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1273,6 +1338,9 @@ export interface Site {
   };
   fontFaces?: string | null;
   fontKey?: string | null;
+  start?: {
+    shows?: ('products' | 'services' | 'units' | 'agenda' | 'team' | 'files' | 'contact')[] | null;
+  };
   /**
    * Aparece no rodapé e nas seções de contato de todas as páginas.
    */
@@ -1527,6 +1595,11 @@ export interface SiteSelect<T extends boolean = true> {
       };
   fontFaces?: T;
   fontKey?: T;
+  start?:
+    | T
+    | {
+        shows?: T;
+      };
   contact?:
     | T
     | {

@@ -6,10 +6,19 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { editorPath } from '@/lib/editor'
+import { messageDate } from '@/lib/messages'
 import { panelHref } from '@/lib/panel'
 import { uniqueSlug } from '@/lib/slug'
 
-import { archivePage, copyPage, deletePage, restorePage, setHomepage, unpublishPage } from './api'
+import {
+  archivePage,
+  copyPage,
+  deletePage,
+  restorePage,
+  restoreSiteBackup,
+  setHomepage,
+  unpublishPage,
+} from './api'
 import type { PageRow } from './data'
 import { PageRowItem } from './PageRowItem'
 import { OrphanNotice } from './OrphanNotice'
@@ -28,7 +37,11 @@ type Props = {
   pages: PageRow[]
   /** Rascunhos que ficaram sem página (B9 v2). */
   orphans?: OrphanDraft[]
+  /** A8: sites guardados antes de trocar de negócio no Começar, o mais novo primeiro. */
+  siteBackups?: SiteBackupRow[]
 }
+
+export type SiteBackupRow = { id: number; name: string; createdAt: string; pages: number }
 
 type Notice = { text: string; editId?: number }
 
@@ -40,6 +53,7 @@ export function PagesList({
   inMenu,
   orphans = [],
   pages,
+  siteBackups = [],
 }: Props) {
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -49,6 +63,8 @@ export function PagesList({
   const [notice, setNotice] = useState<Notice | null>(null)
   const [restoring, setRestoring] = useState<number | null>(null)
   const [restoreError, setRestoreError] = useState<string | null>(null)
+  const [backTo, setBackTo] = useState<SiteBackupRow | null>(null)
+  const [backError, setBackError] = useState<string | null>(null)
 
   // B10: página que acabou de ser arquivada ou excluída sai da lista na hora do aviso; se o servidor
   // recusar, ela volta. Depois da nova leitura do servidor, a lista já vem sem ela; ao restaurar,
@@ -146,6 +162,27 @@ export function PagesList({
     }
   }
 
+  const goBack = async (backup: SiteBackupRow) => {
+    setBusy(true)
+    setBackError(null)
+    try {
+      const { missing } = await restoreSiteBackup(apiRoute, backup.id)
+      setBackTo(null)
+      setNotice({
+        text: `“${backup.name}” voltou a ser o seu site. O de antes ficou guardado aqui em Arquivadas.${
+          missing > 0
+            ? ` ${missing === 1 ? '1 página dele tinha sido excluída e não voltou.' : `${missing} páginas dele tinham sido excluídas e não voltaram.`}`
+            : ''
+        }`,
+      })
+      router.refresh()
+    } catch (err) {
+      setBackError(err instanceof Error ? err.message : 'Tente de novo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="gp-page" role="main">
       <header className="gp-pagehead">
@@ -236,9 +273,43 @@ export function PagesList({
         )}
 
         {/* Numa busca, o grupo abre sozinho para mostrar o que achou. */}
-        {archivedList.length > 0 && (
+        {(archivedList.length > 0 || siteBackups.length > 0) && (
           <details className="gp-archived" open={search ? true : undefined}>
             <summary>Arquivadas ({archivedList.length})</summary>
+            {siteBackups.length > 0 && (
+              <div className="gp-sitebackups">
+                <h2>Sites anteriores</h2>
+                <p className="gp-small gp-muted">
+                  Guardados quando você trocou de site no Começar, com o menu, o rodapé e as
+                  Configurações de cada um.
+                </p>
+                <ul className="gp-rows">
+                  {siteBackups.map((backup) => (
+                    <li className="gp-row gp-sitebackup" key={backup.id}>
+                      <span className="gp-sitebackup__text">
+                        <b>{backup.name}</b>
+                        <span className="gp-small gp-muted">
+                          {backup.pages === 1 ? '1 página' : `${backup.pages} páginas`} · guardado
+                          em {messageDate(backup.createdAt)}
+                        </span>
+                      </span>
+                      <button
+                        className="gp-btn gp-btn--sm"
+                        disabled={busy}
+                        onClick={() => {
+                          setBackError(null)
+                          setBackTo(backup)
+                        }}
+                        type="button"
+                      >
+                        <PanelIcon name="back" size={14} />
+                        Voltar para este site
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <p className="gp-small gp-muted">
               Não estão no ar nem no menu. Restaure para editar e publicar de novo.
             </p>
@@ -282,6 +353,39 @@ export function PagesList({
         outra página ou vá em <Link href={panelHref(adminRoute, 'settings')}>Configurações</Link>. A
         ordem aqui segue o menu do site.
       </Tip>
+
+      {backTo && (
+        <PanelDialog onClose={() => setBackTo(null)} title={`Voltar para “${backTo.name}”?`}>
+          <div className="gp-stack">
+            <p>
+              As páginas dele saem de Arquivadas e o menu, o rodapé, as cores e as Configurações
+              voltam a ser os dele. As que estavam no ar voltam ao ar.
+            </p>
+            <p>
+              O site de agora vai para Arquivadas, guardado do mesmo jeito: dá para voltar para ele
+              depois.
+            </p>
+            {backError && (
+              <p className="gp-error" role="alert">
+                Não deu certo: {backError}
+              </p>
+            )}
+            <div className="gp-actions gp-actions--end">
+              <button className="gp-btn" onClick={() => setBackTo(null)} type="button">
+                Cancelar
+              </button>
+              <button
+                className="gp-btn gp-btn--primary"
+                disabled={busy}
+                onClick={() => goBack(backTo)}
+                type="button"
+              >
+                {busy ? 'Voltando…' : 'Voltar para este site'}
+              </button>
+            </div>
+          </div>
+        </PanelDialog>
+      )}
 
       {confirm && (
         <ConfirmDialog

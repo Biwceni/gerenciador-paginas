@@ -28,6 +28,7 @@ import { smallPhotos } from '@/lib/photoSize'
 import type { FormSubmission, Media } from '@/payload-types'
 import { pageHref, pagePhotoIds } from '@/puck/references'
 import { parsePageContent } from '@/puck/schema'
+import { composedExamplePages } from '@/seed/templates/compose'
 
 export type PageRow = {
   id: number
@@ -102,7 +103,8 @@ export async function loadExampleTexts(payload: Payload, user: TypedUser): Promi
     overrideAccess: false,
     user,
   })
-  return exampleTexts(docs)
+  // F1: os textos do site montado pelo Começar não ficam gravados na coleção Modelos.
+  return exampleTexts([...docs, composedExamplePages()])
 }
 
 /** Textos do rodapé que vêm dos modelos: a frase e a chamada (A7). */

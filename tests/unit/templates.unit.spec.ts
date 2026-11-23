@@ -380,7 +380,13 @@ function fakeReq({ pages = [] as object[], live = [] as object[], site = {} as o
     count: async () => ({ totalDocs: 0 }),
     create: async (args: Record<string, unknown>) => {
       calls.push({ op: 'create', args })
-      const id = args.collection === 'forms' ? nextFormId++ : nextId++
+      // A cópia do site anterior (A8) também à parte.
+      const id =
+        args.collection === 'forms'
+          ? nextFormId++
+          : args.collection === 'site-backups'
+            ? 800
+            : nextId++
       return { id, ...(args.data as object) }
     },
     update: async (args: Record<string, unknown>) => {
@@ -430,6 +436,12 @@ describe('aplicar um modelo de site', () => {
       'encomendas',
     ])
     expect(result.homepage).toBe(100)
+    // A8: antes de trocar, o site de hoje vira uma cópia, com a página que vai para Arquivadas.
+    expect(result.backup).toBe(800)
+    const backup = calls.find((c) => c.op === 'create' && c.args.collection === 'site-backups')!
+    expect((backup.args.data as { pages: unknown }).pages).toEqual([
+      { id: 5, slug: 'inicio', live: false },
+    ])
 
     const home = calls.find((c) => c.op === 'update' && c.args.id === 100)!
     const homeData = (home.args.data as { content: { data: PuckPageData } }).content.data
