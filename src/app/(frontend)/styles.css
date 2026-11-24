@@ -1666,6 +1666,22 @@
     resize: vertical;
   }
 
+  /* Lista com a seta desenhada aqui: o Safari (e todo navegador do iPhone) desenha a lista com o
+     visual dele, clara, e ignora o fundo e a cor do site. A seta usa a cor do texto. */
+  .site-form select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 40px;
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position:
+      right 20px center,
+      right 14px center;
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+  }
+
   .site-form input:focus-visible,
   .site-form textarea:focus-visible,
   .site-form select:focus-visible {
@@ -4050,6 +4066,13 @@
   padding-block: clamp(48px, 7cqi, 96px);
 }
 
+/* A foto do banner só tem a imagem solta dentro (posição absoluta), então a largura vem da coluna.
+   No WebKit (Safari, e todo navegador do iPhone), um item de grade com proporção não estica sozinho
+   na largura: sem "stretch" a foto ficava com 0 de largura no celular e sumia. */
+.site .hero__photo {
+  justify-self: stretch;
+}
+
 .site:not([data-personality='editorial']) .hero.hero--side .hero__photo {
   aspect-ratio: auto;
   max-height: none;
@@ -5448,6 +5471,12 @@
   display: none;
 }
 
+/* A página já tem um formulário (agendar, orçamento, contato): a chamada do fim pediria de novo o
+   que a pessoa acabou de ver, então não aparece (C4). */
+.site main:has(.site-form) + .site-cta {
+  display: none;
+}
+
 .site .site-cta__inner {
   display: flex;
   flex-wrap: wrap;
@@ -6301,13 +6330,6 @@
   opacity: 1;
 }
 
-.site .features--cover p {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
 .site .features--cover .features__link:focus-visible::after {
   outline-color: var(--color-primary);
 }
@@ -6327,13 +6349,11 @@
     min-height: 200px;
     padding: 14px;
   }
-
-  .site .features--cover p {
-    -webkit-line-clamp: 2;
-  }
 }
 
-@container site (max-width: 380px) {
+/* O texto do item aparece inteiro (o cartão cresce). No celular, um cartão por linha: em duas
+   colunas estreitas o texto ficava cortado com "…". */
+@container site (max-width: 560px) {
   .site .features--cover {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -6732,7 +6752,18 @@
 }
 
 .site .products-tools select {
-  padding: 8px 10px;
+  padding: 8px 34px 8px 10px;
+  /* Seta desenhada aqui, como na lista do formulário: o iPhone ignora o fundo da lista nativa. */
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 16px center,
+    right 10px center;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
 }
 
 .site .products-empty {
